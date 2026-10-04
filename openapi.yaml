@@ -1,0 +1,43 @@
+openapi: 3.0.3
+info:
+  title: OCTAGON Club API
+  version: 0.1.0
+  description: MVP contract skeleton. Endpoint schemas are refined contract-first per GitHub issue.
+servers:
+  - url: /api/v1
+paths:
+  /auth/login:
+    post:
+      summary: Login with email and password
+      responses:
+        '200': { description: Authenticated }
+        '401': { description: Invalid credentials }
+  /me:
+    get:
+      summary: Current user, permissions and linked athletes
+      responses:
+        '200': { description: Current identity }
+        '401': { description: Unauthorized }
+  /athletes:
+    get:
+      summary: List athletes visible to caller
+      responses:
+        '200': { description: Athlete collection }
+  /training-sessions:
+    get:
+      summary: List visible training sessions
+      responses:
+        '200': { description: Training session collection }
+  /news:
+    get:
+      summary: List club news
+      responses:
+        '200': { description: News collection }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - bearerAuth: []
