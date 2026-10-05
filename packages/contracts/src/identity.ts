@@ -6,7 +6,12 @@
  */
 
 import type { AthleteStatus, PermissionCode, UserRole, UserStatus } from './domain';
-import { FINANCIAL_PERMISSION_CODES, ROLE_PERMISSIONS, UserRole as Roles } from './domain';
+import {
+  FINANCIAL_PERMISSION_CODES,
+  PERMISSION_CODES,
+  ROLE_PERMISSIONS,
+  UserRole as Roles,
+} from './domain';
 
 /** Индивидуально выданное право (в отличие от права, пришедшего от роли). */
 export interface PermissionGrant {
@@ -59,6 +64,11 @@ export interface PermissionInput {
   role: UserRole;
   /** Индивидуальные выдачи. */
   grants: readonly PermissionGrant[];
+}
+
+/** Проверка права: принимает и литерал каталога, и пришедшую извне строку. */
+export function isPermissionCode(value: string): boolean {
+  return PERMISSION_CODES.includes(value as PermissionCode);
 }
 
 /**

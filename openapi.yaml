@@ -1167,6 +1167,462 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
 
+  /groups:
+    get:
+      tags: [groups]
+      summary: Группы в зоне видимости вызывающего
+      description: |
+        Список ограничен ресурсным scope: суперадмин и сотрудник с
+        `scopeAllGroups` видят все группы, тренер — только свои
+        (docs/21-permission-matrix.md).
+      operationId: listGroups
+      parameters:
+        - name: isActive
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          required: false
+          description: Поиск по названию
+          schema:
+            type: string
+            maxLength: 100
+      responses:
+        '200':
+          description: Список групп с числом активных участников
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GroupView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `groups.view` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    post:
+      tags: [groups]
+      summary: Создать группу
+      operationId: createGroup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGroupRequest'
+      responses:
+        '201':
+          description: Группа создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupView'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `groups.edit` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /groups/by-athlete/{athleteId}:
+    get:
+      tags: [groups]
+      summary: Действующая группа спортсмена
+      description: |
+        У спортсмена допускается одна активная группа (docs/08-database.md).
+        Ответ `null` означает, что спортсмен никуда не зачислен.
+      operationId: getAthleteActiveGroup
+      parameters:
+        - name: athleteId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Активное членство либо null
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActiveMembershipView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `groups.view` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /groups/{id}:
+    get:
+      tags: [groups]
+      summary: Группа с филиалами, тренерами и составом
+      operationId: getGroup
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      responses:
+        '200':
+          description: Детали группы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupDetails'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: |
+            Нет права `groups.view` или группа вне зоны доступа (`FORBIDDEN`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Группа не найдена (`GROUP_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    patch:
+      tags: [groups]
+      summary: Изменить группу
+      operationId: updateGroup
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGroupRequest'
+      responses:
+        '200':
+          description: Группа обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupDetails'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: |
+            Нет права `groups.edit` или группа вне зоны доступа (`FORBIDDEN`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Группа не найдена (`GROUP_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    delete:
+      tags: [groups]
+      summary: Архивировать группу
+      description: 'Мягкое удаление: `archivedAt` и `isActive: false`.'
+      operationId: archiveGroup
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      responses:
+        '204':
+          description: Группа архивирована
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: |
+            Нет права `groups.edit` или группа вне зоны доступа (`FORBIDDEN`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Группа не найдена (`GROUP_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /groups/{id}/branches:
+    post:
+      tags: [groups]
+      summary: Привязать филиал к группе
+      description: |
+        Группа может заниматься в нескольких филиалах
+        (docs/00-project-overview.md); «основным» помечается только один.
+      operationId: linkGroupBranch
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkGroupBranchRequest'
+      responses:
+        '200':
+          description: Группа с обновленными связями
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupDetails'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: |
+            Нет права `groups.edit` или группа вне зоны доступа (`FORBIDDEN`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: |
+            Группа (`GROUP_NOT_FOUND`) или филиал (`BRANCH_NOT_FOUND`) не найден.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Филиал уже привязан (`GROUP_BRANCH_ALREADY_LINKED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /groups/{id}/branches/{branchId}:
+    delete:
+      tags: [groups]
+      summary: Снять привязку филиала
+      operationId: unlinkGroupBranch
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+        - name: branchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Группа с обновленными связями
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupDetails'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: |
+            Нет права `groups.edit` или группа вне зоны доступа (`FORBIDDEN`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Привязки нет (`GROUP_BRANCH_NOT_LINKED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /groups/{id}/trainers:
+    post:
+      tags: [groups]
+      summary: Назначить тренера на группу
+      description: |
+        Повторное назначение активного тренера отклоняется: история назначений
+        хранится, дубликат создал бы две действующие записи.
+      operationId: assignGroupTrainer
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignGroupTrainerRequest'
+      responses:
+        '200':
+          description: Группа с обновленными тренерами
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupDetails'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: |
+            Нет права `groups.edit` или группа вне зоны доступа (`FORBIDDEN`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: |
+            Группа (`GROUP_NOT_FOUND`) или тренер (`TRAINER_NOT_FOUND`) не найден.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Тренер уже ведет эту группу (`GROUP_TRAINER_ALREADY_ASSIGNED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /groups/{id}/trainers/{trainerId}:
+    delete:
+      tags: [groups]
+      summary: Снять тренера с группы
+      operationId: unassignGroupTrainer
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+        - name: trainerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Группа с обновленными тренерами
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupDetails'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: |
+            Нет права `groups.edit` или группа вне зоны доступа (`FORBIDDEN`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Назначения нет (`GROUP_TRAINER_NOT_ASSIGNED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /groups/{id}/members:
+    post:
+      tags: [groups]
+      summary: Добавить спортсмена в группу
+      description: |
+        У спортсмена допускается одна активная группа (docs/08-database.md).
+        Если он уже зачислен, возвращается `ACTIVE_MEMBERSHIP_EXISTS` с
+        указанием текущей группы: сначала нужно завершить текущее членство.
+      operationId: addGroupMember
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddGroupMemberRequest'
+      responses:
+        '200':
+          description: Группа с обновленным составом
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupDetails'
+        '400':
+          description: |
+            Ошибка валидации (`VALIDATION_FAILED`) или неактивная группа
+            (`GROUP_ARCHIVED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: |
+            Нет права `groups.edit` или группа вне зоны доступа (`FORBIDDEN`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: |
+            Группа (`GROUP_NOT_FOUND`) или спортсмен (`ATHLETE_NOT_FOUND`) не
+            найден.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: |
+            Спортсмен уже в этой группе (`ATHLETE_ALREADY_MEMBER`) или у него
+            есть другая активная группа (`ACTIVE_MEMBERSHIP_EXISTS`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /groups/{id}/members/{athleteId}:
+    delete:
+      tags: [groups]
+      summary: Завершить членство спортсмена
+      description: |
+        Запись не удаляется: проставляются `state = ENDED` и `leftAt`, поэтому
+        история членства сохраняется. После этого спортсмена можно зачислить в
+        другую группу.
+      operationId: endGroupMembership
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+        - name: athleteId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Группа с обновленным составом
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupDetails'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: |
+            Нет права `groups.edit` или группа вне зоны доступа (`FORBIDDEN`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Активного членства нет (`MEMBERSHIP_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+
 
 components:
   securitySchemes:
@@ -1209,6 +1665,15 @@ components:
       in: path
       required: true
       description: Идентификатор спортсмена
+      schema:
+        type: string
+        format: uuid
+
+    GroupId:
+      name: id
+      in: path
+      required: true
+      description: Идентификатор группы
       schema:
         type: string
         format: uuid
@@ -1311,6 +1776,14 @@ components:
         - ACCOUNT_ALREADY_LINKED
         - ACCOUNT_NOT_LINKED
         - ACTIVE_MEMBERSHIP_EXISTS
+        - GROUP_NOT_FOUND
+        - GROUP_ARCHIVED
+        - GROUP_TRAINER_ALREADY_ASSIGNED
+        - GROUP_TRAINER_NOT_ASSIGNED
+        - GROUP_BRANCH_ALREADY_LINKED
+        - GROUP_BRANCH_NOT_LINKED
+        - ATHLETE_ALREADY_MEMBER
+        - MEMBERSHIP_NOT_FOUND
 
     PermissionCode:
       type: string
@@ -2027,6 +2500,174 @@ components:
         isPrimary:
           type: boolean
           description: Основной аккаунт спортсмена; он может быть один
+
+    GroupView:
+      type: object
+      required: [id, name, isActive, activeMembersCount, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        primaryBranchName:
+          type: string
+          nullable: true
+          description: Основной филиал, если он назначен
+        activeMembersCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    GroupDetails:
+      allOf:
+        - $ref: '#/components/schemas/GroupView'
+        - type: object
+          required: [branches, trainers, members]
+          properties:
+            branches:
+              type: array
+              items:
+                $ref: '#/components/schemas/GroupBranchView'
+            trainers:
+              type: array
+              items:
+                $ref: '#/components/schemas/GroupTrainerView'
+            members:
+              type: array
+              items:
+                $ref: '#/components/schemas/GroupMemberView'
+
+    GroupBranchView:
+      type: object
+      required: [branchId, branchName, isPrimary]
+      properties:
+        branchId:
+          type: string
+          format: uuid
+        branchName:
+          type: string
+        isPrimary:
+          type: boolean
+
+    GroupTrainerView:
+      type: object
+      required: [trainerId, displayName, isPrimary, assignedAt]
+      properties:
+        trainerId:
+          type: string
+          format: uuid
+          description: Идентификатор профиля тренера
+        displayName:
+          type: string
+        isPrimary:
+          type: boolean
+        assignedAt:
+          type: string
+          format: date-time
+
+    GroupMemberView:
+      type: object
+      required: [athleteId, firstName, lastName, status, joinedAt]
+      properties:
+        athleteId:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        status:
+          $ref: '#/components/schemas/AthleteStatus'
+        joinedAt:
+          type: string
+          format: date
+
+    ActiveMembershipView:
+      type: object
+      nullable: true
+      required: [membershipId, groupId, groupName, joinedAt]
+      properties:
+        membershipId:
+          type: string
+          format: uuid
+        groupId:
+          type: string
+          format: uuid
+        groupName:
+          type: string
+        joinedAt:
+          type: string
+          format: date
+
+    CreateGroupRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 2000
+
+    UpdateGroupRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 2000
+        isActive:
+          type: boolean
+
+    LinkGroupBranchRequest:
+      type: object
+      required: [branchId]
+      properties:
+        branchId:
+          type: string
+          format: uuid
+        isPrimary:
+          type: boolean
+          description: Основной филиал группы; он может быть один
+
+    AssignGroupTrainerRequest:
+      type: object
+      required: [trainerId]
+      properties:
+        trainerId:
+          type: string
+          format: uuid
+          description: Идентификатор профиля тренера, а не аккаунта
+        isPrimary:
+          type: boolean
+          description: Основной тренер группы; он может быть один
+
+    AddGroupMemberRequest:
+      type: object
+      required: [athleteId]
+      properties:
+        athleteId:
+          type: string
+          format: uuid
+        joinedAt:
+          type: string
+          format: date
+          description: Дата вступления; по умолчанию сегодня
 
 security:
   - bearerAuth: []

@@ -49,6 +49,8 @@ export const AuditAction = {
   GROUP_CREATED: 'group.created',
   GROUP_UPDATED: 'group.updated',
   GROUP_ARCHIVED: 'group.archived',
+  GROUP_BRANCH_LINKED: 'group.branch_linked',
+  GROUP_BRANCH_UNLINKED: 'group.branch_unlinked',
   GROUP_TRAINER_ASSIGNED: 'group.trainer_assigned',
   GROUP_TRAINER_UNASSIGNED: 'group.trainer_unassigned',
   GROUP_MEMBERSHIP_ADDED: 'group.membership_added',

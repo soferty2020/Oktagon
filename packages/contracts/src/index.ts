@@ -7,3 +7,4 @@ export * from './auth';
 export * from './invite';
 export * from './club-structure';
 export * from './athletes';
+export * from './groups';

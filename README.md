@@ -80,6 +80,12 @@ Swagger: `http://localhost:3000/api/v1/docs`
 | `GET/PATCH/DELETE /api/v1/athletes/{id}` | карточка спортсмена |
 | `POST /api/v1/athletes/{id}/accounts` | связать аккаунт со спортсменом |
 | `DELETE /api/v1/athletes/{id}/accounts/{userId}` | снять связь аккаунта |
+| `GET/POST /api/v1/groups` | группы (список ограничен scope; права `groups.view` / `groups.edit`) |
+| `GET /api/v1/groups/by-athlete/{athleteId}` | действующая группа спортсмена |
+| `GET/PATCH/DELETE /api/v1/groups/{id}` | группа с филиалами, тренерами и составом |
+| `POST/DELETE /api/v1/groups/{id}/branches[/{branchId}]` | привязка филиалов к группе |
+| `POST/DELETE /api/v1/groups/{id}/trainers[/{trainerId}]` | назначение тренеров |
+| `POST/DELETE /api/v1/groups/{id}/members[/{athleteId}]` | состав группы и завершение членства |
 
 ## Проверки
 
