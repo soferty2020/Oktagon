@@ -28,9 +28,21 @@ finance, freezes, news, chat, analytics, audit.
 - `PrismaModule` — единственный экземпляр PrismaClient;
 - `HealthModule` — `GET /api/v1/health` (liveness) и `GET /api/v1/health/ready` (readiness).
 
-Бизнес-логика модулей не реализована: каждый модуль — заготовка с указанием
-спецификации. Реализация ведется отдельными issue по merge order из
-`docs/24-multi-agent-plan.md`.
+Реализовано (issue A6 — инфраструктура аудита):
+
+- `AuditModule` — глобальный модуль аудита по BR-007;
+- `AuditService.record(event, tx?)` — запись события, в том числе внутри
+  транзакции вызывающего модуля, чтобы аудит не расходился с данными;
+- `AuditService.recordSafely` — запись, сбой которой не отменяет основное
+  действие (например, фиксация неудачной попытки входа);
+- `AuditService.list` — история изменений сущности для карточки в админке;
+- `RequestContextService` (AsyncLocalStorage) + `AuditContextInterceptor` —
+  автоподстановка `requestId`, IP и user-agent;
+- словарь `AuditAction` и `AuditEntityType` в `packages/contracts` — общий
+  контракт backend и админки.
+
+Остальные модули — заготовки с указанием спецификации. Реализация ведется
+отдельными issue по merge order из `docs/24-multi-agent-plan.md`.
 
 ### Данные
 
@@ -53,22 +65,22 @@ finance, freezes, news, chat, analytics, audit.
 ## Решения, требующие фиксации ADR
 
 1. **Prisma как ORM и миграционный инструмент.** `docs/08-database.md` требует
-   миграций, но ORM не выбирает. Предлагается ADR-0004.
+   миграций, но ORM не выбирает. Предлагается ADR-0005.
 2. **Формат справочника ролей/permissions.** В MVP permissions хранятся как
    каталог в БД (`Permission`) + индивидуальные выдачи (`UserPermission`), а
-   базовый набор роли задается кодом. Предлагается ADR-0005.
-3. **Хранение пароля на этапе до модуля auth.** `prisma/seed.ts` пишет scrypt-хеш
-   (`scrypt$<salt>$<hash>`); модуль auth должен закрепить Argon2id или bcrypt
-   (`docs/09-api.md`) и мигрировать формат.
+   базовый набор роли задается кодом. Предлагается ADR-0006.
+3. **Хеширование паролей — ADR-0004** (`docs/decisions/ADR-0004-password-hashing.md`,
+   статус Proposed): Argon2id с PHC-форматом. Требует подтверждения до старта B2.
 4. **Линтер: Biome вместо ESLint.** ESLint 9.39 в pnpm-раскладке не запускается
    из-за конфликта `@eslint/eslintrc` с `ajv`. Biome не требует плагинов.
-   Предлагается ADR-0006.
+   Предлагается ADR-0007.
 
 ## Проверено локально
 
-- `pnpm build`, `pnpm typecheck`, unit- и e2e-тесты, `pnpm lint` — проходят;
-- миграция применена к PostgreSQL 16.6, в базе 28 таблиц, 13 enum-типов и оба
-  частичных уникальных индекса;
+- `pnpm build`, `pnpm typecheck`, unit- и e2e-тесты, `pnpm lint` — проходят
+  (unit: 14 тестов, e2e без БД: 4, e2e на БД: 2);
+- миграция применена к PostgreSQL 16.6 в `octagon` и `octagon_test`: по 28 таблиц,
+  13 enum-типов и оба частичных уникальных индекса;
 - `pnpm db:seed` создает 26 permissions, суперадмина (пароль хранится как
   scrypt-хеш) и филиал-заглушку с одним залом;
 - запущенный API отвечает: `GET /api/v1/health` -> 200, `GET /api/v1/health/ready`
@@ -76,19 +88,28 @@ finance, freezes, news, chat, analytics, audit.
   `GET /api/v1/openapi.json` -> описание с путями health;
 - неизвестный маршрут отдает единый формат ошибки
   `{"code":"NOT_FOUND","message":"...","details":{}}`;
-- заголовок `x-request-id` проставляется и возвращается клиенту.
+- заголовок `x-request-id` проставляется и возвращается клиенту;
+- аудит: запись сохраняется в БД с JSON-снимками, `requestId`, IP и user-agent
+  (проверено e2e на реальной БД).
 
 Подробности запуска и обхода ограничений среды — `docs/27-local-development.md`.
 
 ## Следующие шаги
 
-1. ADR по ORM, модели permissions, формату хеша пароля и выбору линтера.
-2. `apps/admin` — каркас Next.js + генерация клиента из `openapi.yaml`.
-3. `apps/mobile` — каркас Flutter (требует установленного Flutter SDK).
-4. Реализация identity/auth: единственный workstream, который разблокирует
-   остальные (`docs/24-multi-agent-plan.md`, merge order).
-5. Наполнение `openapi.yaml` схемами по модулям до реализации клиентов.
-6. Rate limiting для auth-эндпоинтов (Redis) — требуется `docs/15-security.md`.
+1. Подтвердить ADR-0004 (Argon2id) и написать ADR по ORM, модели permissions и
+   выбору линтера.
+2. **B1** — слой identity: репозитории и сервис поверх `User`, `Permission`,
+   `UserPermission`, `UserInvite`, `RefreshToken`; сервис эффективных прав
+   (роль + индивидуальные permissions).
+3. **B2** — email/password auth: `POST /auth/login`, `POST /auth/refresh`,
+   `GET /me`, Argon2id, ротация refresh-токенов, rate limiting
+   (`docs/15-security.md`).
+4. **B3** — invite flow: `POST /auth/accept-invite` и приглашение администратором.
+5. **B5/B6** — guards для RBAC, permissions и resource scope
+   (`docs/21-permission-matrix.md`).
+6. `apps/admin` — каркас Next.js + генерация клиента из `openapi.yaml`.
+7. `apps/mobile` — каркас Flutter (требует установленного Flutter SDK).
+8. **A3** — CI pipeline: typecheck, lint, тесты, сборка.
 
 ## Команды
 

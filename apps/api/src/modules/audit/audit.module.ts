@@ -1,16 +1,24 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
+import { RequestContextService } from '../../shared/request-context.service';
+import { AuditContextInterceptor } from './audit-context.interceptor';
 import { AuditService } from './audit.service';
 
 /**
- * Модуль audit.
+ * Аудит (BR-007, docs/08-database.md).
  *
- * Спецификация: BR-007, docs/08-database.md (AuditLog), docs/15-security.md.
- * Публичный контракт и бизнес-логика добавляются отдельным issue
- * (docs/24-multi-agent-plan.md: contracts-first).
+ * Модуль глобальный: аудит нужен всем доменным модулям, начиная с identity.
+ * Интерсептор наполняет контекст запроса (requestId, IP, user-agent), который
+ * AuditService читает при записи.
  */
+@Global()
 @Module({
-  providers: [AuditService],
-  exports: [AuditService],
+  providers: [
+    RequestContextService,
+    AuditService,
+    { provide: APP_INTERCEPTOR, useClass: AuditContextInterceptor },
+  ],
+  exports: [AuditService, RequestContextService],
 })
 export class AuditModule {}

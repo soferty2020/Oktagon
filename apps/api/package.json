@@ -17,6 +17,7 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --runInBand --coverage",
     "test:e2e": "jest --config ./test/jest-e2e.json --runInBand --passWithNoTests",
+    "test:e2e:db": "jest --config ./test/jest-e2e-db.json --runInBand --passWithNoTests",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",

@@ -130,10 +130,16 @@ if ($Step -in @('all', 'test')) {
 
 if ($Step -in @('all', 'e2e')) {
   $jestE2e = Resolve-Tool -Name 'jest' -PackageDir $api
-  Invoke-Step 'e2e @octagon/api' {
+  Invoke-Step 'e2e @octagon/api (без БД)' {
     Push-Location $api
     try {
       & $jestE2e --config test/jest-e2e.json --runInBand --passWithNoTests
+    } finally { Pop-Location }
+  }
+  Invoke-Step 'e2e @octagon/api (с БД)' {
+    Push-Location $api
+    try {
+      & $jestE2e --config test/jest-e2e-db.json --runInBand --passWithNoTests
     } finally { Pop-Location }
   }
 }
