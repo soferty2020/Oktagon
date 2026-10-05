@@ -18,7 +18,17 @@ export interface UserProfileRecord {
   role: UserRole;
   status: UserStatus;
   scopeAllGroups: boolean;
-  grants: Array<{ code: string; grantedAt: Date }>;
+  grants: GrantRecord[];
+}
+
+/** Индивидуальная выдача права. */
+export interface GrantRecord {
+  code: string;
+  description: string;
+  isFinancial: boolean;
+  grantedAt: Date;
+  grantedById: string | null;
+  expiresAt: Date | null;
 }
 
 export interface LinkedAthleteRecord {
@@ -30,6 +40,16 @@ export interface LinkedAthleteRecord {
   status: AthleteStatus;
   relation: string;
   isPrimary: boolean;
+}
+
+/** Результат выдачи права. */
+export interface GrantPermissionRecord {
+  code: string;
+  description: string;
+  isFinancial: boolean;
+  grantedAt: Date;
+  grantedById: string | null;
+  expiresAt: Date | null;
 }
 
 /**
@@ -45,11 +65,51 @@ export abstract class IdentityRepository {
   abstract listLinkedAthletes(userId: string): Promise<LinkedAthleteRecord[]>;
   /** Идентификаторы спортсменов, которые занимаются в группах тренера. */
   abstract listCoachedAthleteIds(trainerUserId: string): Promise<string[]>;
+  /** Группы, которые ведет сотрудник (активные назначения). */
+  abstract listStaffGroupIds(userId: string): Promise<string[]>;
+
+  /** Каталог permissions: проверка, что код существует. */
+  abstract findPermissionByCode(
+    code: string,
+  ): Promise<{ code: string; description: string; isFinancial: boolean } | null>;
+  /** Выдает право (upsert): повторная выдача обновляет срок и автора. */
+  abstract grantPermission(input: {
+    userId: string;
+    code: string;
+    grantedById: string;
+    expiresAt: Date | null;
+  }): Promise<GrantPermissionRecord>;
+  /** Отзывает право. Возвращает автора прежней выдачи либо null, если ее нет. */
+  abstract revokePermission(input: {
+    userId: string;
+    code: string;
+  }): Promise<{ grantedById: string | null } | null>;
 }
 
+/**
+ * Условие «выдача действует»: бессрочная либо с непрошедшим сроком.
+ *
+ * Проверяется при каждом чтении: иначе истекшая выдача продолжала бы давать
+ * права (ADR-0006). Без `as const`: Prisma ожидает изменяемый массив условий.
+ */
+function activeGrantFilter(): {
+  OR: Array<{ expiresAt: null } | { expiresAt: { gt: Date } }>;
+} {
+  return { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] };
+}
+
+const GRANT_SELECT = {
+  grantedAt: true,
+  grantedById: true,
+  expiresAt: true,
+  permission: { select: { code: true, description: true, isFinancial: true } },
+} as const;
+
 @Injectable()
-export class PrismaIdentityRepository implements IdentityRepository {
-  constructor(private readonly prisma: PrismaService) {}
+export class PrismaIdentityRepository extends IdentityRepository {
+  constructor(private readonly prisma: PrismaService) {
+    super();
+  }
 
   async findProfile(userId: string): Promise<UserProfileRecord | null> {
     const user = await this.prisma.db.user.findFirst({
@@ -65,10 +125,8 @@ export class PrismaIdentityRepository implements IdentityRepository {
         status: true,
         scopeAllGroups: true,
         permissions: {
-          select: {
-            grantedAt: true,
-            permission: { select: { code: true } },
-          },
+          where: activeGrantFilter(),
+          select: GRANT_SELECT,
         },
       },
     });
@@ -87,10 +145,7 @@ export class PrismaIdentityRepository implements IdentityRepository {
       role: user.role,
       status: user.status,
       scopeAllGroups: user.scopeAllGroups,
-      grants: user.permissions.map((grant) => ({
-        code: grant.permission.code,
-        grantedAt: grant.grantedAt,
-      })),
+      grants: user.permissions.map(toGrantRecord),
     };
   }
 
@@ -146,4 +201,88 @@ export class PrismaIdentityRepository implements IdentityRepository {
 
     return [...new Set(memberships.map((membership) => membership.athleteId))];
   }
+
+  async listStaffGroupIds(userId: string): Promise<string[]> {
+    const assignments = await this.prisma.db.groupTrainer.findMany({
+      where: {
+        unassignedAt: null,
+        group: { isActive: true },
+        trainerProfile: { userId, isActive: true },
+      },
+      select: { groupId: true },
+    });
+
+    return [...new Set(assignments.map((assignment) => assignment.groupId))];
+  }
+
+  async findPermissionByCode(
+    code: string,
+  ): Promise<{ code: string; description: string; isFinancial: boolean } | null> {
+    return this.prisma.db.permission.findUnique({
+      where: { code },
+      select: { code: true, description: true, isFinancial: true },
+    });
+  }
+
+  async grantPermission(input: {
+    userId: string;
+    code: string;
+    grantedById: string;
+    expiresAt: Date | null;
+  }): Promise<GrantPermissionRecord> {
+    const grant = await this.prisma.db.userPermission.upsert({
+      where: { userId_permissionId: { userId: input.userId, permissionId: input.code } },
+      create: {
+        userId: input.userId,
+        permissionId: input.code,
+        grantedById: input.grantedById,
+        expiresAt: input.expiresAt,
+      },
+      // Повторная выдача обновляет срок и автора: так продлевают временный доступ.
+      update: {
+        grantedById: input.grantedById,
+        grantedAt: new Date(),
+        expiresAt: input.expiresAt,
+      },
+      select: GRANT_SELECT,
+    });
+
+    return toGrantRecord(grant);
+  }
+
+  async revokePermission(input: {
+    userId: string;
+    code: string;
+  }): Promise<{ grantedById: string | null } | null> {
+    const existing = await this.prisma.db.userPermission.findUnique({
+      where: { userId_permissionId: { userId: input.userId, permissionId: input.code } },
+      select: { grantedById: true },
+    });
+
+    if (!existing) {
+      return null;
+    }
+
+    await this.prisma.db.userPermission.delete({
+      where: { userId_permissionId: { userId: input.userId, permissionId: input.code } },
+    });
+
+    return { grantedById: existing.grantedById };
+  }
+}
+
+function toGrantRecord(grant: {
+  grantedAt: Date;
+  grantedById: string | null;
+  expiresAt: Date | null;
+  permission: { code: string; description: string; isFinancial: boolean };
+}): GrantRecord {
+  return {
+    code: grant.permission.code,
+    description: grant.permission.description,
+    isFinancial: grant.permission.isFinancial,
+    grantedAt: grant.grantedAt,
+    grantedById: grant.grantedById,
+    expiresAt: grant.expiresAt,
+  };
 }

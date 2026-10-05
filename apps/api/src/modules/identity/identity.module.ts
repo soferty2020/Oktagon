@@ -4,20 +4,27 @@ import { PermissionResolver, PermissionsGuard } from '../../shared/permissions.g
 import { IdentityController } from './identity.controller';
 import { IdentityRepository, PrismaIdentityRepository } from './identity.repository';
 import { IdentityService } from './identity.service';
+import { PermissionGrantService } from './permission-grant.service';
+import { ResourceScopeService } from './resource-scope.service';
+import { UserPermissionsController } from './user-permissions.controller';
 
 /**
- * Модуль identity (issue B1).
+ * Модуль identity (issues B1, B5, B6).
  *
  * Спецификация: docs/04-roles-permissions.md, docs/21-permission-matrix.md,
- * docs/22-erd.md (User, Permission, UserPermission, UserInvite), ADR-0006, ADR-0007.
+ * docs/22-erd.md (User, Permission, UserPermission, UserInvite),
+ * ADR-0006, ADR-0007.
  *
- * Здесь же живет PermissionsGuard: проверка прав — часть identity, а
- * IdentityService выступает источником эффективных прав для guard-а.
+ * Здесь же живут проверка прав (PermissionsGuard) и ресурсный scope
+ * (ResourceScopeService): это части identity, а IdentityService выступает
+ * источником эффективных прав для guard-а.
  */
 @Module({
-  controllers: [IdentityController],
+  controllers: [IdentityController, UserPermissionsController],
   providers: [
     IdentityService,
+    PermissionGrantService,
+    ResourceScopeService,
     PrismaIdentityRepository,
     { provide: IdentityRepository, useExisting: PrismaIdentityRepository },
     { provide: PermissionResolver, useExisting: IdentityService },
@@ -25,6 +32,14 @@ import { IdentityService } from './identity.service';
   ],
   // PermissionsGuard резолвится в модулях-потребителях, поэтому вместе с ним
   // экспортируется и его зависимость — токен PermissionResolver.
-  exports: [IdentityService, PermissionsGuard, PermissionResolver],
+  // ResourceScopeService экспортируется для доменных модулей: наличие права не
+  // заменяет проверку scope (docs/21-permission-matrix.md).
+  exports: [
+    IdentityService,
+    PermissionGrantService,
+    ResourceScopeService,
+    PermissionsGuard,
+    PermissionResolver,
+  ],
 })
 export class IdentityModule {}

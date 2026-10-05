@@ -27,7 +27,16 @@ describe('toProfile', () => {
     const profile = toProfile({
       ...baseRecord,
       role: PrismaUserRole.STAFF,
-      grants: [{ code: 'payments.view', grantedAt: new Date('2026-02-01T10:00:00.000Z') }],
+      grants: [
+        {
+          code: 'payments.view',
+          description: 'Просмотр оплат',
+          isFinancial: true,
+          grantedAt: new Date('2026-02-01T10:00:00.000Z'),
+          grantedById: 'admin-1',
+          expiresAt: null,
+        },
+      ],
     });
 
     expect(profile).toMatchObject({
@@ -185,8 +194,14 @@ describe('IdentityService', () => {
       },
     ]);
 
-    await expect(service.canAccessAthlete('user-1', 'athlete-1')).resolves.toBe(true);
-    await expect(service.canAccessAthlete('user-1', 'athlete-2')).resolves.toBe(false);
+    await expect(service.canAccessAthlete('user-1', 'athlete-1')).resolves.toEqual({
+      allowed: true,
+      reason: 'linked_member',
+    });
+    await expect(service.canAccessAthlete('user-1', 'athlete-2')).resolves.toEqual({
+      allowed: false,
+      reason: 'denied_no_relation',
+    });
   });
 
   it('STAFF без scopeAllGroups получает доступ только к спортсменам своих групп', async () => {
@@ -197,8 +212,14 @@ describe('IdentityService', () => {
     });
     repository.listCoachedAthleteIds.mockResolvedValue(['athlete-1']);
 
-    await expect(service.canAccessAthlete('user-1', 'athlete-1')).resolves.toBe(true);
-    await expect(service.canAccessAthlete('user-1', 'athlete-9')).resolves.toBe(false);
+    await expect(service.canAccessAthlete('user-1', 'athlete-1')).resolves.toEqual({
+      allowed: true,
+      reason: 'staff_coached_group',
+    });
+    await expect(service.canAccessAthlete('user-1', 'athlete-9')).resolves.toEqual({
+      allowed: false,
+      reason: 'denied_out_of_scope',
+    });
   });
 
   it('STAFF с scopeAllGroups получает доступ ко всем спортсменам', async () => {
@@ -209,7 +230,10 @@ describe('IdentityService', () => {
     });
     repository.listCoachedAthleteIds.mockResolvedValue([]);
 
-    await expect(service.canAccessAthlete('user-1', 'athlete-9')).resolves.toBe(true);
+    await expect(service.canAccessAthlete('user-1', 'athlete-9')).resolves.toEqual({
+      allowed: true,
+      reason: 'staff_all_groups',
+    });
   });
 
   it('SUPERADMIN получает доступ к любому спортсмену без запросов к группам', async () => {
@@ -219,7 +243,10 @@ describe('IdentityService', () => {
       scopeAllGroups: true,
     });
 
-    await expect(service.canAccessAthlete('user-1', 'athlete-9')).resolves.toBe(true);
+    await expect(service.canAccessAthlete('user-1', 'athlete-9')).resolves.toEqual({
+      allowed: true,
+      reason: 'role_superadmin',
+    });
     expect(repository.listCoachedAthleteIds).not.toHaveBeenCalled();
   });
 });

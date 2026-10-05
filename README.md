@@ -67,6 +67,9 @@ Swagger: `http://localhost:3000/api/v1/docs`
 | `POST /api/v1/users/invites` | пригласить пользователя (право `users.manage`); токен возвращается один раз |
 | `GET /api/v1/users/invites` | действующие приглашения (право `users.manage`) |
 | `POST /api/v1/auth/accept-invite` | принять приглашение: задать пароль и профиль |
+| `GET /api/v1/users/{id}/permissions` | права пользователя: ролевые, выданные лично, итоговые |
+| `POST /api/v1/users/{id}/permissions` | выдать индивидуальное право (право `permissions.manage`) |
+| `DELETE /api/v1/users/{id}/permissions/{code}` | отозвать индивидуальное право |
 
 ## Проверки
 

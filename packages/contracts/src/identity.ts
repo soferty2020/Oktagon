@@ -91,26 +91,66 @@ export interface AthleteAccessInput {
   scopeAllGroups?: boolean;
 }
 
+/** Почему доступ разрешен или запрещен — нужно для логов и тестов. */
+export type ScopeReason =
+  | 'role_superadmin'
+  | 'linked_member'
+  | 'staff_all_groups'
+  | 'staff_coached_group'
+  | 'denied_no_relation'
+  | 'denied_out_of_scope';
+
+/** Результат проверки ресурсного scope (docs/21-permission-matrix.md). */
+export interface ScopeDecision {
+  allowed: boolean;
+  reason: ScopeReason;
+}
+
 /**
  * Проверяет, попадает ли спортсмен в scope пользователя (ADR-0007, п.7).
  *
  * ВАЖНО: это только ресурсный scope. Наличие permission проверяется отдельно —
  * по docs/21-permission-matrix.md проверяются оба условия.
  */
-export function canAccessAthlete(input: AthleteAccessInput, athleteId: string): boolean {
+export function canAccessAthlete(input: AthleteAccessInput, athleteId: string): ScopeDecision {
   if (input.role === Roles.SUPERADMIN) {
-    return true;
+    return { allowed: true, reason: 'role_superadmin' };
   }
 
   if (input.role === Roles.MEMBER) {
-    return input.linkedAthleteIds.includes(athleteId);
+    return input.linkedAthleteIds.includes(athleteId)
+      ? { allowed: true, reason: 'linked_member' }
+      : { allowed: false, reason: 'denied_no_relation' };
   }
 
   // STAFF
   if (input.scopeAllGroups) {
-    return true;
+    return { allowed: true, reason: 'staff_all_groups' };
   }
-  return (input.coachedAthleteIds ?? []).includes(athleteId);
+  return (input.coachedAthleteIds ?? []).includes(athleteId)
+    ? { allowed: true, reason: 'staff_coached_group' }
+    : { allowed: false, reason: 'denied_out_of_scope' };
+}
+
+/**
+ * Проверяет, видит ли сотрудник группу.
+ *
+ * В MVP scope описывается флагом `scopeAllGroups` и списком групп тренера
+ * (ADR-0006); отдельного scope по филиалам нет.
+ */
+export function canAccessGroup(
+  input: { role: UserRole; scopeAllGroups?: boolean; staffGroupIds?: readonly string[] },
+  groupId: string,
+): ScopeDecision {
+  if (input.role === Roles.SUPERADMIN) {
+    return { allowed: true, reason: 'role_superadmin' };
+  }
+  if (input.scopeAllGroups) {
+    return { allowed: true, reason: 'staff_all_groups' };
+  }
+  return (input.staffGroupIds ?? []).includes(groupId)
+    ? { allowed: true, reason: 'staff_coached_group' }
+    : { allowed: false, reason: 'denied_out_of_scope' };
 }
 
 /** Проверяет, входит ли право в эффективный набор. */
@@ -125,3 +165,53 @@ export function hasPermission(
 export function isFinancialPermission(code: PermissionCode): boolean {
   return FINANCIAL_PERMISSION_CODES.includes(code);
 }
+
+// ---------------------------------------------------------------------------
+// Управление индивидуальными выдачами (docs/04-roles-permissions.md)
+// ---------------------------------------------------------------------------
+
+/** Одна индивидуальная выдача права. */
+export interface UserPermissionGrant {
+  code: PermissionCode;
+  description: string;
+  /** Финансовое право — особо защищенное (BR-010). */
+  isFinancial: boolean;
+  grantedAt: string;
+  /** Кто выдал; null, если автор записи недоступен. */
+  grantedById: string | null;
+  /** Срок действия; null — бессрочно. Истекшая выдача не действует. */
+  expiresAt: string | null;
+}
+
+/** `GET /api/v1/users/{id}/permissions`. */
+export interface UserPermissionsView {
+  userId: string;
+  role: UserRole;
+  scopeAllGroups: boolean;
+  /** Права, которые дает роль (ADR-0006). */
+  rolePermissions: PermissionCode[];
+  /** Права, выданные лично. */
+  grants: UserPermissionGrant[];
+  /** Итоговый набор: роль плюс действующие выдачи. */
+  effective: PermissionCode[];
+}
+
+/** `POST /api/v1/users/{id}/permissions`. */
+export interface GrantPermissionInput {
+  code: PermissionCode;
+  /** ISO-8601; не задан — бессрочно. */
+  expiresAt?: string | null;
+}
+
+/** Причины отказа в управлении выдачами. */
+export const PermissionGrantIssue = {
+  UNKNOWN_CODE: 'UNKNOWN_CODE',
+  /** Право уже гарантировано ролью: выдавать его лично не нужно. */
+  GRANTED_BY_ROLE: 'GRANTED_BY_ROLE',
+  /** Право отозвать нельзя: оно пришло от роли (ADR-0006). */
+  ROLE_PERMISSION: 'ROLE_PERMISSION',
+  EXPIRES_IN_PAST: 'EXPIRES_IN_PAST',
+  NOT_GRANTED: 'NOT_GRANTED',
+} as const;
+export type PermissionGrantIssue =
+  (typeof PermissionGrantIssue)[keyof typeof PermissionGrantIssue];

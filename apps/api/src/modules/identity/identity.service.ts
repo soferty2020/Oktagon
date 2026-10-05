@@ -5,6 +5,7 @@ import {
   AuditEntityType,
   type LinkedAthlete,
   type PermissionCode,
+  type ScopeDecision,
   type UserPermissions,
   type UserProfile,
   canAccessAthlete,
@@ -52,6 +53,12 @@ export class IdentityService {
     return toProfile(record).permissions;
   }
 
+  /** Базовый набор прав роли, без индивидуальных выдач. */
+  async getRolePermissions(userId: string): Promise<PermissionCode[]> {
+    const record = await this.requireProfile(userId);
+    return resolvePermissions({ role: record.role, grants: [] }).codes;
+  }
+
   /**
    * Связанные спортсмены для `GET /me/athletes`.
    *
@@ -82,7 +89,7 @@ export class IdentityService {
    * Наличие permission проверяется отдельно: по docs/21-permission-matrix.md
    * нужны оба условия.
    */
-  async canAccessAthlete(userId: string, athleteId: string): Promise<boolean> {
+  async canAccessAthlete(userId: string, athleteId: string): Promise<ScopeDecision> {
     const record = await this.requireProfile(userId);
 
     if (record.role === 'MEMBER') {
@@ -96,7 +103,7 @@ export class IdentityService {
     const coached =
       record.role === 'STAFF' ? await this.repository.listCoachedAthleteIds(userId) : [];
 
-    const allowed = canAccessAthlete(
+    const decision = canAccessAthlete(
       {
         role: record.role,
         linkedAthleteIds: [],
@@ -106,12 +113,14 @@ export class IdentityService {
       athleteId,
     );
 
-    if (!allowed) {
+    if (!decision.allowed) {
       // Отказ в доступе фиксируем в логах: персональные данные не пишем.
-      this.logger.debug(`Доступ к спортсмену отклонен по scope: пользователь ${userId}`);
+      this.logger.debug(
+        `Доступ к спортсмену отклонен по scope (${decision.reason}): пользователь ${userId}`,
+      );
     }
 
-    return allowed;
+    return decision;
   }
 
   private async requireProfile(userId: string): Promise<UserProfileRecord> {

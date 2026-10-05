@@ -24,6 +24,16 @@ export const ApiErrorCode = {
   /** Приглашение выдано на другой адрес: принимающий вошел под своим аккаунтом. */
   INVITE_EMAIL_MISMATCH: 'INVITE_EMAIL_MISMATCH',
   USER_BLOCKED: 'USER_BLOCKED',
+  /** Неизвестный код права: каталог permissions не содержит такого значения. */
+  PERMISSION_UNKNOWN: 'PERMISSION_UNKNOWN',
+  /** Право уже гарантировано ролью пользователя. */
+  PERMISSION_GRANTED_BY_ROLE: 'PERMISSION_GRANTED_BY_ROLE',
+  /** Право пришло от роли и не может быть отозвано индивидуально. */
+  PERMISSION_IS_ROLE_BASED: 'PERMISSION_IS_ROLE_BASED',
+  /** Индивидуальной выдачи с таким правом нет. */
+  PERMISSION_NOT_GRANTED: 'PERMISSION_NOT_GRANTED',
+  /** Срок действия выдачи уже истек. */
+  PERMISSION_EXPIRES_IN_PAST: 'PERMISSION_EXPIRES_IN_PAST',
 
   // club structure / groups
   BRANCH_ARCHIVED: 'BRANCH_ARCHIVED',
@@ -87,6 +97,11 @@ export const API_ERROR_HTTP_STATUS: Readonly<Record<ApiErrorCode, number>> = {
   INVITE_ALREADY_USED: 409,
   INVITE_EMAIL_MISMATCH: 403,
   USER_BLOCKED: 403,
+  PERMISSION_UNKNOWN: 400,
+  PERMISSION_GRANTED_BY_ROLE: 409,
+  PERMISSION_IS_ROLE_BASED: 409,
+  PERMISSION_NOT_GRANTED: 404,
+  PERMISSION_EXPIRES_IN_PAST: 400,
 
   BRANCH_ARCHIVED: 409,
   HALL_NOT_IN_BRANCH: 400,

@@ -93,6 +93,27 @@ finance, freezes, news, chat, analytics, audit.
 - эндпоинты `POST /users/invites`, `GET /users/invites`,
   `POST /auth/accept-invite` (с лимитом попыток по IP: токен — секрет).
 
+Реализовано (issues B5/B6 — индивидуальные права и ресурсный scope):
+
+- `PermissionGrantService` — выдача и отзыв индивидуальных прав;
+  `GET/POST /users/{id}/permissions`, `DELETE /users/{id}/permissions/{code}`
+  под правом `permissions.manage`;
+- истекшая выдача не действует: фильтр «бессрочная или с непрошедшим сроком»
+  применяется при каждом чтении, иначе временный доступ остался бы навсегда;
+- право, которое уже обеспечивает роль, нельзя ни выдать, ни отозвать
+  (`PERMISSION_GRANTED_BY_ROLE` / `PERMISSION_IS_ROLE_BASED`): роль остается
+  предсказуемой, а выдача не создает иллюзию управляемого доступа;
+- изменения прав пишутся в audit log (BR-007), финансовые выдачи
+  дополнительно отмечаются в логах (BR-010);
+- `ResourceScopeService` — вторая половина правила из
+  `docs/21-permission-matrix.md`: наличие permission не дает доступа к чужой
+  группе или спортсмену. Методы `checkAthlete`, `checkGroup`,
+  `assertAthleteAccess`, `assertGroupAccess`, `visibleGroupIds`;
+- `canAccessAthlete` и `canAccessGroup` возвращают решение с причиной
+  (`ScopeDecision`), а не boolean: причину видно в логах и проверяют тесты;
+- модуль identity экспортирует `ResourceScopeService`: доменные модули обязаны
+  проверять scope отдельно от прав.
+
 Остальные модули — заготовки с указанием спецификации. Реализация ведется
 отдельными issue по merge order из `docs/24-multi-agent-plan.md`.
 
@@ -189,27 +210,33 @@ finance, freezes, news, chat, analytics, audit.
   хеша токена; принятие -> 200 и вход новым пользователем (STAFF, 7 прав
   роли); повторное принятие -> 409 `INVITE_ALREADY_USED`; STAFF без
   `users.manage` при попытке пригласить получает 403 `FORBIDDEN` со списком
-  недостающих прав; неизвестный токен -> 400 `INVITE_INVALID`.
+  недостающих прав; неизвестный токен -> 400 `INVITE_INVALID`;
+- права и scope на реальной БД: выдача права включает его в эффективный набор;
+  истекшая выдача (срок сдвинут в прошлое) перестает действовать; право роли
+  нельзя выдать (`PERMISSION_GRANTED_BY_ROLE`) и нельзя отозвать
+  (`PERMISSION_IS_ROLE_BASED`); тренер видит только свои группы, чужая группа
+  дает `denied_out_of_scope` и 403; суперадмин видит все.
 
-Проверок всего: unit — 88 (11 contracts + 77 api), e2e — 26 без БД и 15 на БД.
+Проверок всего: unit — 106 (11 contracts + 95 api), e2e — 36 без БД и 22 на БД.
 
 Подробности запуска и обхода ограничений среды — `docs/27-local-development.md`.
 
 ## Следующие шаги
 
-1. **B5/B6** — расширение RBAC: resource scope в guards (сейчас проверяются
-   только permissions), управление индивидуальными выдачами
-   (`POST/DELETE /users/{id}/permissions`) с аудитом по BR-007.
-2. **C1..C8** — эпик Club structure: филиалы, залы, тренеры, спортсмены, группы.
-3. `apps/admin` — каркас Next.js + генерация клиента из `openapi.yaml`.
-4. `apps/mobile` — каркас Flutter (требует установленного Flutter SDK).
-5. Обновить `docs/22-erd.md` под `GroupBranch` (см. ADR-0005).
-6. Наполнить `openapi.yaml` схемами auth/identity/invites (сейчас там только
-   заготовка).
-7. Доставка приглашений письмом — когда будет выбран провайдер
+1. **C1..C8** — эпик Club structure: филиалы, залы, тренеры, спортсмены, группы.
+   Это первый эпик, который использует `ResourceScopeService` для фильтрации
+   списков, а не только проверок.
+2. `apps/admin` — каркас Next.js + генерация клиента из `openapi.yaml`.
+3. `apps/mobile` — каркас Flutter (требует установленного Flutter SDK).
+4. Обновить `docs/22-erd.md` под `GroupBranch` (см. ADR-0005).
+5. Наполнить `openapi.yaml` схемами auth/identity/invites/permissions (сейчас
+   там только заготовка).
+6. Доставка приглашений письмом — когда будет выбран провайдер
    (`docs/25-open-questions.md`). Контракт при этом не меняется.
+7. Scope по филиалам: сейчас `User.scopeAllGroups` — булев флаг. Отдельная
+   таблица scope потребует нового ADR (см. ADR-0006, раздел Consequences).
 
-Закрыто: A3 (CI) — см. `.github/workflows/ci.yml`.
+Закрыто: A3 (CI), B1, B2, B3, B5, B6.
 
 ## Команды
 
