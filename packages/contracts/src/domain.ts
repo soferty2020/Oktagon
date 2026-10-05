@@ -61,9 +61,19 @@ export const FINANCIAL_PERMISSION_CODES: readonly PermissionCode[] = [
   PermissionCode.FreezesEdit,
 ];
 
-/** Базовый набор прав роли. Индивидуальные permissions добавляются поверх. */
+/**
+ * Базовый набор прав роли. Индивидуальные permissions добавляются поверх.
+ *
+ * MEMBER не получает permissions: по docs/21-permission-matrix.md его доступ
+ * («own linked athletes», «own schedule») ограничен ресурсом через UserAthlete,
+ * а не capability. Такой доступ выдают guards scope, а не этот набор.
+ *
+ * Каталог permissions в БД (seed) должен содержать ровно PERMISSION_CODES;
+ * права, не выданные ни одной роли, включая payments.* и freezes.*, доступны
+ * только через индивидуальную выдачу (BR-010).
+ */
 export const ROLE_PERMISSIONS: Readonly<Record<UserRole, readonly PermissionCode[]>> = {
-  MEMBER: [PermissionCode.ChatUse],
+  MEMBER: [],
   STAFF: [
     PermissionCode.AthletesView,
     PermissionCode.AthletesContactsView,

@@ -1,6 +1,6 @@
 # ADR-0004: Хеширование паролей — Argon2id
 
-Status: Proposed
+Status: Accepted
 
 ## Context
 

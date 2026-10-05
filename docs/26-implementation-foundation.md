@@ -62,18 +62,29 @@ finance, freezes, news, chat, analytics, audit.
 1. один открытый `FreezePeriod` на спортсмена;
 2. не более одной активной `GroupMembership` на спортсмена.
 
-## Решения, требующие фиксации ADR
+## Архитектурные решения
 
-1. **Prisma как ORM и миграционный инструмент.** `docs/08-database.md` требует
-   миграций, но ORM не выбирает. Предлагается ADR-0005.
-2. **Формат справочника ролей/permissions.** В MVP permissions хранятся как
-   каталог в БД (`Permission`) + индивидуальные выдачи (`UserPermission`), а
-   базовый набор роли задается кодом. Предлагается ADR-0006.
-3. **Хеширование паролей — ADR-0004** (`docs/decisions/ADR-0004-password-hashing.md`,
-   статус Proposed): Argon2id с PHC-форматом. Требует подтверждения до старта B2.
-4. **Линтер: Biome вместо ESLint.** ESLint 9.39 в pnpm-раскладке не запускается
-   из-за конфликта `@eslint/eslintrc` с `ajv`. Biome не требует плагинов.
-   Предлагается ADR-0007.
+Зафиксированы ADR:
+
+- `docs/decisions/ADR-0004-password-hashing.md` — Argon2id с PHC-форматом.
+  Реализуется в B2; временный scrypt в seed подлежит замене.
+- `docs/decisions/ADR-0005-orm-prisma.md` — Prisma как ORM и миграции, явный
+  `output` клиента, частичные индексы рядом с миграцией, `GroupBranch`.
+  Отклонение от ERD v1: связь группы с филиалом через `GroupBranch`, а не
+  `branchId`. Кандидат на обновление `docs/22-erd.md`.
+- `docs/decisions/ADR-0006-permissions-model.md` — модель прав: базовый набор
+  роли в коде (MEMBER без permissions, доступ по scope), каталог и
+  индивидуальные выдачи в БД, scope отдельным измерением, финансы через
+  `isFinancial`.
+
+Открытые вопросы для ADR:
+
+1. **Граница identity-профиля** — форма `GET /me` и прав-ответа для клиентов.
+   Публичный контракт для `apps/mobile` и `apps/admin`, фиксируется в рамках B1
+   до того, как клиенты начнут его использовать.
+
+Осознанно не оформляется ADR: выбор Biome вместо ESLint (инструмент, не
+архитектура; причина описана в `docs/27-local-development.md`).
 
 ## Проверено локально
 
@@ -96,20 +107,19 @@ finance, freezes, news, chat, analytics, audit.
 
 ## Следующие шаги
 
-1. Подтвердить ADR-0004 (Argon2id) и написать ADR по ORM, модели permissions и
-   выбору линтера.
-2. **B1** — слой identity: репозитории и сервис поверх `User`, `Permission`,
+1. **B1** — слой identity: репозитории и сервис поверх `User`, `Permission`,
    `UserPermission`, `UserInvite`, `RefreshToken`; сервис эффективных прав
-   (роль + индивидуальные permissions).
-3. **B2** — email/password auth: `POST /auth/login`, `POST /auth/refresh`,
-   `GET /me`, Argon2id, ротация refresh-токенов, rate limiting
+   (роль + индивидуальные permissions по ADR-0006); ADR по границе профиля.
+2. **B2** — email/password auth: `POST /auth/login`, `POST /auth/refresh`,
+   `GET /me`, Argon2id (ADR-0004), ротация refresh-токенов, rate limiting
    (`docs/15-security.md`).
-4. **B3** — invite flow: `POST /auth/accept-invite` и приглашение администратором.
-5. **B5/B6** — guards для RBAC, permissions и resource scope
+3. **B3** — invite flow: `POST /auth/accept-invite` и приглашение администратором.
+4. **B5/B6** — guards для RBAC, permissions и resource scope
    (`docs/21-permission-matrix.md`).
-6. `apps/admin` — каркас Next.js + генерация клиента из `openapi.yaml`.
-7. `apps/mobile` — каркас Flutter (требует установленного Flutter SDK).
-8. **A3** — CI pipeline: typecheck, lint, тесты, сборка.
+5. `apps/admin` — каркас Next.js + генерация клиента из `openapi.yaml`.
+6. `apps/mobile` — каркас Flutter (требует установленного Flutter SDK).
+7. **A3** — CI pipeline: typecheck, lint, тесты, сборка.
+8. Обновить `docs/22-erd.md` под `GroupBranch` (см. ADR-0005).
 
 ## Команды
 
