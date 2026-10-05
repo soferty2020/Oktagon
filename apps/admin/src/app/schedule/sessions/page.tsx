@@ -1,0 +1,181 @@
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+
+import { AppShell, Notice, PageHeader } from '@/components/app-shell';
+import { apiFetch, describeError } from '@/lib/api/client';
+import { getCurrentUser, readTokens } from '@/lib/server/session';
+import { CancelSessionForm, MoveSessionForm } from '../schedule-forms';
+
+export const metadata = {
+  title: 'Занятия — OCTAGON',
+};
+
+interface TrainingSessionView {
+  id: string;
+  groupId: string;
+  groupName: string;
+  hallName: string | null;
+  trainerName: string | null;
+  startsAt: string;
+  endsAt: string;
+  status: string;
+  changeReason: string | null;
+  cancelledAt: string | null;
+  fromTemplate: boolean;
+}
+
+/**
+ * Список занятий.
+ *
+ * Показывает, какие занятия созданы из расписания, а какие изменены точечно:
+ * статус MOVED или CANCELLED означает, что квартальный шаблон не менялся
+ * (BR-009).
+ */
+export default async function SessionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ groupId?: string; from?: string; to?: string }>;
+}) {
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect('/login');
+  }
+
+  const { groupId, from, to } = await searchParams;
+  const { accessToken } = await readTokens();
+
+  const query = new URLSearchParams();
+  if (groupId) {
+    query.set('groupId', groupId);
+  }
+  if (from) {
+    query.set('from', from);
+  }
+  if (to) {
+    query.set('to', to);
+  }
+
+  const sessions = await apiFetch<TrainingSessionView[]>(
+    `/training-sessions${query.size > 0 ? `?${query.toString()}` : ''}`,
+    { accessToken },
+  );
+
+  const canEdit = user.permissions.includes('schedule.edit');
+  const canCancel = user.permissions.includes('schedule.cancel');
+
+  return (
+    <AppShell user={user}>
+      <PageHeader
+        title="Занятия"
+        description="По умолчанию: неделя назад и месяц вперед. Время указано по часовому поясу клуба."
+        actions={
+          <Link href="/schedule" className="text-sm text-slate-500 hover:text-slate-900">
+            ← Расписания
+          </Link>
+        }
+      />
+
+      {sessions.ok && sessions.data.length === 0 ? (
+        <Notice>
+          Занятий за период нет. Если расписание опубликовано, создайте занятия на странице
+          расписания группы.
+        </Notice>
+      ) : null}
+
+      {!sessions.ok ? <Notice tone="error">{describeError(sessions.error)}</Notice> : null}
+
+      <div className="flex flex-col gap-3">
+        {sessions.ok
+          ? sessions.data.map((session) => (
+              <article
+                key={session.id}
+                className="rounded-xl border border-slate-200 bg-white p-5"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-slate-900">{session.groupName}</p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {formatLocal(session.startsAt)} — {formatLocal(session.endsAt, true)}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {session.hallName ?? 'зал не назначен'} ·{' '}
+                      {session.trainerName ?? 'тренер не назначен'}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={statusClass(session.status)}>{statusLabel(session.status)}</span>
+                    <span className="text-xs text-slate-400">
+                      {session.fromTemplate ? 'из расписания' : 'добавлено вручную'}
+                    </span>
+                  </div>
+                </div>
+
+                {session.changeReason ? (
+                  <p className="mt-2 rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                    Причина: {session.changeReason}
+                  </p>
+                ) : null}
+
+                {session.status === 'CANCELLED' ? null : (
+                  <div className="mt-4 flex flex-col gap-4 border-t border-slate-100 pt-4 lg:flex-row">
+                    {canEdit ? (
+                      <div className="flex-1">
+                        <p className="mb-2 text-xs font-medium text-slate-600">Перенести</p>
+                        <MoveSessionForm sessionId={session.id} />
+                      </div>
+                    ) : null}
+                    {canCancel ? (
+                      <div className="flex-1">
+                        <p className="mb-2 text-xs font-medium text-slate-600">Отменить</p>
+                        <CancelSessionForm sessionId={session.id} />
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </article>
+            ))
+          : null}
+      </div>
+    </AppShell>
+  );
+}
+
+function statusLabel(status: string): string {
+  switch (status) {
+    case 'CANCELLED':
+      return 'отменено';
+    case 'MOVED':
+      return 'перенесено';
+    default:
+      return 'по расписанию';
+  }
+}
+
+function statusClass(status: string): string {
+  switch (status) {
+    case 'CANCELLED':
+      return 'rounded-full bg-red-50 px-2 py-1 text-xs text-red-700';
+    case 'MOVED':
+      return 'rounded-full bg-amber-50 px-2 py-1 text-xs text-amber-700';
+    default:
+      return 'rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700';
+  }
+}
+
+/**
+ * Момент UTC в локальном времени сервера.
+ *
+ * Отдельная функция, чтобы форматирование было в одном месте: значения приходят
+ * в UTC, а показывать их нужно человеку.
+ */
+function formatLocal(iso: string, timeOnly = false): string {
+  const date = new Date(iso);
+  const pad = (value: number) => String(value).padStart(2, '0');
+  const time = `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+
+  if (timeOnly) {
+    return time;
+  }
+  return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()} ${time}`;
+}

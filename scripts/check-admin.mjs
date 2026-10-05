@@ -129,6 +129,71 @@ async function main() {
   await checkPage(cookie, '/athletes', 'Новый спортсмен', 'спортсмены');
   await checkPage(cookie, '/users', 'Пользователи', 'пользователи');
 
+  // 8б. Расписание: список шаблонов и список занятий.
+  await checkPage(cookie, '/schedule', 'Расписание на квартал', 'расписание (шаблоны)');
+  await checkPage(cookie, '/schedule/sessions', 'Занятия', 'занятия');
+
+  // 8в. Карточка расписания со слотами.
+  const templates = await (
+    await fetch(`${base}/api/proxy/schedule-templates`, { headers: { cookie } })
+  ).json();
+  if (Array.isArray(templates) && templates.length > 0) {
+    const { html } = await fetchHtml(`/schedule/${templates[0].id}`, cookie);
+    const published = templates[0].publishedAt !== null;
+    log(
+      8,
+      `карточка расписания (${published ? 'опубликовано' : 'черновик'}): слоты ${html.includes(
+        'Слоты расписания',
+      )} | публикация ${html.includes('Опубликовать расписание')} | генерация занятий ${html.includes(
+        'Создать занятия из расписания',
+      )}`,
+    );
+  } else {
+    log(8, 'расписаний нет: карточку проверить нечем');
+  }
+
+  // 8г. Черновик: слоты можно менять, форма добавления видна. Проверяется на
+  // будущем квартале, чтобы не мешать текущему расписанию.
+  const draftLogin = await fetch(`${apiBase}/auth/login`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  const draftToken = (await draftLogin.json())?.accessToken;
+
+  const groupsForDraft = await (
+    await fetch(`${base}/api/proxy/groups`, { headers: { cookie } })
+  ).json();
+  if (Array.isArray(groupsForDraft) && groupsForDraft.length > 0 && draftToken) {
+    const draftYear = new Date().getFullYear() + 1;
+    const draft = await fetch(`${apiBase}/schedule-templates`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${draftToken}`,
+      },
+      body: JSON.stringify({ groupId: groupsForDraft[0].id, year: draftYear, quarter: 1 }),
+    });
+
+    if (draft.ok) {
+      const created = await draft.json();
+      const { html } = await fetchHtml(`/schedule/${created.id}`, cookie);
+      log(
+        '8г',
+        `черновик расписания (${draftYear} Q1): добавление слота ${html.includes(
+          'Добавить слот',
+        )} | кнопка публикации ${html.includes('Опубликовать расписание')}`,
+      );
+      // Удаляем черновик, чтобы не оставлять данные после проверки.
+      await fetch(`${apiBase}/schedule-templates/${created.id}`, {
+        method: 'DELETE',
+        headers: { authorization: `Bearer ${draftToken}` },
+      });
+    } else {
+      log('8г', `черновик создать не удалось: ${draft.status}`);
+    }
+  }
+
   // 9. Карточка группы: филиалы, тренеры, состав.
   const groups = await (
     await fetch(`${base}/api/proxy/groups`, { headers: { cookie } })

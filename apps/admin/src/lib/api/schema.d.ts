@@ -697,6 +697,235 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schedule-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Шаблоны расписания в зоне видимости вызывающего
+         * @description Список ограничен ресурсным scope: тренер видит расписание только своих
+         *     групп (docs/21-permission-matrix.md).
+         */
+        get: operations["listScheduleTemplates"];
+        put?: never;
+        /**
+         * Создать шаблон расписания на квартал
+         * @description Границы квартала вычисляются календарно. Повторный шаблон на тот же
+         *     квартал отклоняется (`SCHEDULE_TEMPLATE_EXISTS`): расписание группы на
+         *     квартал одно.
+         */
+        post: operations["createScheduleTemplate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedule-templates/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Шаблон расписания */
+        get: operations["getScheduleTemplate"];
+        put?: never;
+        post?: never;
+        /**
+         * Удалить неопубликованный шаблон
+         * @description Опубликованное расписание удалить нельзя (`SCHEDULE_TEMPLATE_PUBLISHED`):
+         *     занятия уже созданы и показаны родителям, изменения вносятся точечно.
+         */
+        delete: operations["deleteScheduleTemplate"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedule-templates/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Опубликовать расписание
+         * @description Публикация фиксирует шаблон: после нее слоты не меняются. Пустое
+         *     расписание опубликовать нельзя (`SCHEDULE_TEMPLATE_EMPTY`).
+         */
+        post: operations["publishScheduleTemplate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedule-templates/{id}/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Материализовать занятия квартала из шаблона
+         * @description Создает экземпляры занятий на будущие даты квартала. Повторный вызов
+         *     дублей не создает: уникальность `(groupId, startsAt)` и `skipDuplicates`.
+         *
+         *     При `regenerate` удаляются только занятия, которые еще не начались:
+         *     прошедшее занятие — факт истории, его пересоздание стерло бы
+         *     посещаемость.
+         *
+         *     Если тренер или зал заняты в это время в другой группе, генерация
+         *     отклоняется с перечнем конфликтов: иначе о накладке узнали бы родители.
+         */
+        post: operations["generateTrainingSessions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedule-templates/{id}/slots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Добавить слот в шаблон
+         * @description Слот задает регулярность: день недели и локальное время клуба. Слоты
+         *     внутри одного шаблона не должны пересекаться по времени
+         *     (`SCHEDULE_SLOT_OVERLAPS`).
+         *
+         *     В опубликованный шаблон слот добавить нельзя
+         *     (`SCHEDULE_TEMPLATE_PUBLISHED`).
+         */
+        post: operations["addScheduleSlot"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedule-templates/{id}/slots/{slotId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Удалить слот
+         * @description Доступно только до публикации шаблона.
+         */
+        delete: operations["deleteScheduleSlot"];
+        options?: never;
+        head?: never;
+        /**
+         * Изменить слот
+         * @description Доступно только до публикации шаблона.
+         */
+        patch: operations["updateScheduleSlot"];
+        trace?: never;
+    };
+    "/training-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Занятия за период
+         * @description По умолчанию отдается неделя назад и месяц вперед. Период задается
+         *     `from` и `to`; список ограничен ресурсным scope.
+         */
+        get: operations["listTrainingSessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/training-sessions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Карточка занятия */
+        get: operations["getTrainingSession"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/training-sessions/{id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Перенести занятие
+         * @description BR-009: меняется только экземпляр, квартальный шаблон остается прежним.
+         *     Причина обязательна: родитель должен понимать, почему занятие переехало.
+         *
+         *     Прошедшее занятие перенести нельзя (`SESSION_ALREADY_STARTED`).
+         */
+        patch: operations["moveTrainingSession"];
+        trace?: never;
+    };
+    "/training-sessions/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Отменить занятие
+         * @description Занятие не удаляется: проставляются статус `CANCELLED`, причина, время и
+         *     автор отмены. Шаблон не меняется.
+         */
+        post: operations["cancelTrainingSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -735,7 +964,7 @@ export interface components {
          *     он расширяется по мере реализации модулей.
          * @enum {string}
          */
-        ErrorCode: "VALIDATION_FAILED" | "UNAUTHENTICATED" | "INVALID_CREDENTIALS" | "TOKEN_EXPIRED" | "TOKEN_INVALID" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "INTERNAL_ERROR" | "EMAIL_ALREADY_EXISTS" | "INVITE_INVALID" | "INVITE_EXPIRED" | "INVITE_ALREADY_USED" | "INVITE_EMAIL_MISMATCH" | "USER_BLOCKED" | "PERMISSION_UNKNOWN" | "PERMISSION_GRANTED_BY_ROLE" | "PERMISSION_IS_ROLE_BASED" | "PERMISSION_NOT_GRANTED" | "PERMISSION_EXPIRES_IN_PAST" | "BRANCH_NOT_FOUND" | "BRANCH_ARCHIVED" | "HALL_NOT_FOUND" | "HALL_NOT_IN_BRANCH" | "TRAINER_NOT_FOUND" | "TRAINER_ALREADY_ASSIGNED" | "ATHLETE_NOT_FOUND" | "ATHLETE_ARCHIVED" | "ACCOUNT_ALREADY_LINKED" | "ACCOUNT_NOT_LINKED" | "ACTIVE_MEMBERSHIP_EXISTS" | "GROUP_NOT_FOUND" | "GROUP_ARCHIVED" | "GROUP_TRAINER_ALREADY_ASSIGNED" | "GROUP_TRAINER_NOT_ASSIGNED" | "GROUP_BRANCH_ALREADY_LINKED" | "GROUP_BRANCH_NOT_LINKED" | "ATHLETE_ALREADY_MEMBER" | "MEMBERSHIP_NOT_FOUND";
+        ErrorCode: "VALIDATION_FAILED" | "UNAUTHENTICATED" | "INVALID_CREDENTIALS" | "TOKEN_EXPIRED" | "TOKEN_INVALID" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "INTERNAL_ERROR" | "EMAIL_ALREADY_EXISTS" | "INVITE_INVALID" | "INVITE_EXPIRED" | "INVITE_ALREADY_USED" | "INVITE_EMAIL_MISMATCH" | "USER_BLOCKED" | "PERMISSION_UNKNOWN" | "PERMISSION_GRANTED_BY_ROLE" | "PERMISSION_IS_ROLE_BASED" | "PERMISSION_NOT_GRANTED" | "PERMISSION_EXPIRES_IN_PAST" | "BRANCH_NOT_FOUND" | "BRANCH_ARCHIVED" | "HALL_NOT_FOUND" | "HALL_NOT_IN_BRANCH" | "TRAINER_NOT_FOUND" | "TRAINER_ALREADY_ASSIGNED" | "ATHLETE_NOT_FOUND" | "ATHLETE_ARCHIVED" | "ACCOUNT_ALREADY_LINKED" | "ACCOUNT_NOT_LINKED" | "ACTIVE_MEMBERSHIP_EXISTS" | "GROUP_NOT_FOUND" | "GROUP_ARCHIVED" | "GROUP_TRAINER_ALREADY_ASSIGNED" | "GROUP_TRAINER_NOT_ASSIGNED" | "GROUP_BRANCH_ALREADY_LINKED" | "GROUP_BRANCH_NOT_LINKED" | "ATHLETE_ALREADY_MEMBER" | "MEMBERSHIP_NOT_FOUND" | "SCHEDULE_TEMPLATE_NOT_FOUND" | "SCHEDULE_TEMPLATE_EXISTS" | "SCHEDULE_TEMPLATE_ALREADY_PUBLISHED" | "SCHEDULE_TEMPLATE_PUBLISHED" | "SCHEDULE_TEMPLATE_EMPTY" | "SCHEDULE_SLOT_NOT_FOUND" | "SCHEDULE_SLOT_OVERLAPS" | "SCHEDULE_SLOT_INVALID_TIME" | "TRAINING_SESSION_NOT_FOUND" | "TRAINING_SESSION_CANCELLED" | "TRAINING_SESSION_CONFLICT" | "TRAINER_BUSY" | "HALL_BUSY" | "SESSION_ALREADY_STARTED";
         /**
          * @description Право из каталога (`docs/04-roles-permissions.md`)
          * @enum {string}
@@ -1192,6 +1421,147 @@ export interface components {
             name: string;
             description?: string;
         };
+        /**
+         * @description Регулярность группы: день недели и локальное время клуба. В БД время
+         *     хранится типом `time`, а UTC-моменты вычисляются при материализации.
+         */
+        ScheduleSlotView: {
+            /** Format: uuid */
+            id: string;
+            weekday: components["schemas"]["Weekday"];
+            /**
+             * @description Локальное время клуба, HH:mm
+             * @example 18:00
+             */
+            startTime: string;
+            /** @example 19:30 */
+            endTime: string;
+            /** Format: uuid */
+            hallId?: string | null;
+            hallName?: string | null;
+            /**
+             * Format: uuid
+             * @description Идентификатор профиля тренера
+             */
+            trainerId?: string | null;
+            trainerName?: string | null;
+        };
+        ScheduleTemplateView: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            groupId: string;
+            groupName: string;
+            year: number;
+            quarter: number;
+            /** Format: date */
+            validFrom: string;
+            /** Format: date */
+            validTo: string;
+            /**
+             * Format: date-time
+             * @description После публикации слоты не меняются
+             */
+            publishedAt?: string | null;
+            slots: components["schemas"]["ScheduleSlotView"][];
+        };
+        /**
+         * @description Экземпляр занятия. Зал, тренер и филиал скопированы из шаблона при
+         *     материализации, поэтому смена тренера в шаблоне не переписывает уже
+         *     созданные занятия (BR-009).
+         */
+        TrainingSessionView: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            groupId: string;
+            groupName: string;
+            /** Format: uuid */
+            branchId?: string | null;
+            /** Format: uuid */
+            hallId?: string | null;
+            hallName?: string | null;
+            /** Format: uuid */
+            trainerId?: string | null;
+            trainerName?: string | null;
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            status: components["schemas"]["TrainingSessionStatus"];
+            /** @description Причина переноса или отмены */
+            changeReason?: string | null;
+            /** Format: date-time */
+            cancelledAt?: string | null;
+            /** @description Занятие создано материализацией, а не добавлено вручную */
+            fromTemplate: boolean;
+        };
+        /**
+         * @description BR-009 — точечное изменение экземпляра занятия
+         * @enum {string}
+         */
+        TrainingSessionStatus: "SCHEDULED" | "CANCELLED" | "MOVED";
+        /** @enum {string} */
+        Weekday: "MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | "SUNDAY";
+        CreateScheduleTemplateRequest: {
+            /** Format: uuid */
+            groupId: string;
+            year: number;
+            quarter: number;
+        };
+        AddScheduleSlotRequest: {
+            weekday: components["schemas"]["Weekday"];
+            /** @example 18:00 */
+            startTime: string;
+            /** @example 19:30 */
+            endTime: string;
+            /** Format: uuid */
+            hallId?: string;
+            /**
+             * Format: uuid
+             * @description Идентификатор профиля тренера, а не аккаунта
+             */
+            trainerId?: string;
+        };
+        UpdateScheduleSlotRequest: {
+            weekday?: components["schemas"]["Weekday"];
+            startTime?: string;
+            endTime?: string;
+            /** Format: uuid */
+            hallId?: string | null;
+            /** Format: uuid */
+            trainerId?: string | null;
+        };
+        GenerateSessionsRequest: {
+            /**
+             * @description Пересоздать занятия: удаляются только те, что еще не начались.
+             *     Отмененные вручную занятия сохраняются.
+             */
+            regenerate?: boolean;
+        };
+        GenerateSessionsResult: {
+            created: number;
+            /** @description Уже существовавшие занятия (уникальность groupId + startsAt) */
+            skipped: number;
+            /** @description Удалено при пересоздании */
+            removed: number;
+        };
+        MoveSessionRequest: {
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            /** Format: uuid */
+            hallId?: string | null;
+            /** Format: uuid */
+            trainerId?: string | null;
+            /** @example Карантин в школе */
+            reason: string;
+        };
+        CancelSessionRequest: {
+            /** @example Низкая температура в зале */
+            reason: string;
+        };
         UpdateGroupRequest: {
             name?: string;
             description?: string;
@@ -1281,6 +1651,10 @@ export interface components {
         TrainerId: string;
         /** @description Идентификатор спортсмена */
         AthleteId: string;
+        /** @description Идентификатор шаблона расписания */
+        ScheduleTemplateId: string;
+        /** @description Идентификатор занятия */
+        TrainingSessionId: string;
         /** @description Идентификатор группы */
         GroupId: string;
     };
@@ -3251,6 +3625,690 @@ export interface operations {
             };
             /** @description Активного членства нет (`MEMBERSHIP_NOT_FOUND`) */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listScheduleTemplates: {
+        parameters: {
+            query?: {
+                groupId?: string;
+                year?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Шаблоны со слотами */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleTemplateView"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `schedule.view` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    createScheduleTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateScheduleTemplateRequest"];
+            };
+        };
+        responses: {
+            /** @description Шаблон создан */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleTemplateView"];
+                };
+            };
+            400: components["responses"]["ValidationFailed"];
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `schedule.edit` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Группа не найдена (`GROUP_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Шаблон на этот квартал уже есть (`SCHEDULE_TEMPLATE_EXISTS`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getScheduleTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Идентификатор шаблона расписания */
+                id: components["parameters"]["ScheduleTemplateId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Шаблон со слотами */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleTemplateView"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `schedule.view` или группа вне доступа (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Шаблон не найден (`SCHEDULE_TEMPLATE_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    deleteScheduleTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Идентификатор шаблона расписания */
+                id: components["parameters"]["ScheduleTemplateId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Шаблон удален */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `schedule.edit` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Шаблон не найден (`SCHEDULE_TEMPLATE_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Шаблон опубликован (`SCHEDULE_TEMPLATE_PUBLISHED`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    publishScheduleTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Идентификатор шаблона расписания */
+                id: components["parameters"]["ScheduleTemplateId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Шаблон опубликован */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleTemplateView"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `schedule.edit` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Шаблон не найден (`SCHEDULE_TEMPLATE_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /**
+             * @description Расписание пустое (`SCHEDULE_TEMPLATE_EMPTY`) или уже опубликовано
+             *     (`SCHEDULE_TEMPLATE_ALREADY_PUBLISHED`).
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    generateTrainingSessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Идентификатор шаблона расписания */
+                id: components["parameters"]["ScheduleTemplateId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["GenerateSessionsRequest"];
+            };
+        };
+        responses: {
+            /** @description Сколько занятий создано, пропущено и удалено */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerateSessionsResult"];
+                };
+            };
+            400: components["responses"]["ValidationFailed"];
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `schedule.edit` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Шаблон не найден (`SCHEDULE_TEMPLATE_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /**
+             * @description Расписание не опубликовано или пусто (`SCHEDULE_TEMPLATE_EMPTY`),
+             *     либо есть конфликты (`TRAINING_SESSION_CONFLICT`). В `details`
+             *     перечислены конфликтующие даты.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    addScheduleSlot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Идентификатор шаблона расписания */
+                id: components["parameters"]["ScheduleTemplateId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddScheduleSlotRequest"];
+            };
+        };
+        responses: {
+            /** @description Шаблон с обновленными слотами */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleTemplateView"];
+                };
+            };
+            /**
+             * @description Ошибка валидации (`VALIDATION_FAILED`) или некорректный интервал
+             *     (`SCHEDULE_SLOT_INVALID_TIME`).
+             */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `schedule.edit` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Шаблон не найден (`SCHEDULE_TEMPLATE_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /**
+             * @description Слот пересекается с другим (`SCHEDULE_SLOT_OVERLAPS`) или шаблон
+             *     опубликован (`SCHEDULE_TEMPLATE_PUBLISHED`).
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    deleteScheduleSlot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Идентификатор шаблона расписания */
+                id: components["parameters"]["ScheduleTemplateId"];
+                slotId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Шаблон с обновленными слотами */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleTemplateView"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `schedule.edit` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Слот не найден (`SCHEDULE_SLOT_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Шаблон опубликован (`SCHEDULE_TEMPLATE_PUBLISHED`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    updateScheduleSlot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Идентификатор шаблона расписания */
+                id: components["parameters"]["ScheduleTemplateId"];
+                slotId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateScheduleSlotRequest"];
+            };
+        };
+        responses: {
+            /** @description Шаблон с обновленными слотами */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleTemplateView"];
+                };
+            };
+            400: components["responses"]["ValidationFailed"];
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `schedule.edit` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Слот не найден (`SCHEDULE_SLOT_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /**
+             * @description Слот пересекается с другим (`SCHEDULE_SLOT_OVERLAPS`) или шаблон
+             *     опубликован (`SCHEDULE_TEMPLATE_PUBLISHED`).
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listTrainingSessions: {
+        parameters: {
+            query?: {
+                /** @description Начало периода, ISO-8601; включительно */
+                from?: string;
+                /** @description Конец периода, ISO-8601; исключительно */
+                to?: string;
+                groupId?: string;
+                /** @description Идентификатор профиля тренера */
+                trainerId?: string;
+                status?: components["schemas"]["TrainingSessionStatus"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Список занятий по возрастанию времени */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingSessionView"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `schedule.view` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getTrainingSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Идентификатор занятия */
+                id: components["parameters"]["TrainingSessionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Занятие */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingSessionView"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `schedule.view` или группа вне доступа (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Занятие не найдено (`TRAINING_SESSION_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    moveTrainingSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Идентификатор занятия */
+                id: components["parameters"]["TrainingSessionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description Занятие перенесено */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingSessionView"];
+                };
+            };
+            /**
+             * @description Ошибка валидации (`VALIDATION_FAILED`) или окончание раньше начала
+             *     (`SCHEDULE_SLOT_INVALID_TIME`).
+             */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `schedule.edit` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Занятие не найдено (`TRAINING_SESSION_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /**
+             * @description Тренер занят (`TRAINER_BUSY`), зал занят (`HALL_BUSY`), у группы уже
+             *     есть занятие (`TRAINING_SESSION_CONFLICT`) или занятие началось
+             *     (`SESSION_ALREADY_STARTED`).
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    cancelTrainingSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Идентификатор занятия */
+                id: components["parameters"]["TrainingSessionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description Занятие отменено */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingSessionView"];
+                };
+            };
+            400: components["responses"]["ValidationFailed"];
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `schedule.cancel` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Занятие не найдено (`TRAINING_SESSION_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /**
+             * @description Занятие уже отменено (`TRAINING_SESSION_CANCELLED`) или началось
+             *     (`SESSION_ALREADY_STARTED`).
+             */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

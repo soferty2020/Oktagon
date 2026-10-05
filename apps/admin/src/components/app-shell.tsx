@@ -8,6 +8,7 @@ const NAVIGATION = [
   { href: '/branches', label: 'Филиалы' },
   { href: '/groups', label: 'Группы' },
   { href: '/athletes', label: 'Спортсмены' },
+  { href: '/schedule', label: 'Расписание' },
   { href: '/users', label: 'Пользователи' },
 ] as const;
 
