@@ -5,17 +5,19 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { ApiExceptionFilter, RequestIdInterceptor } from '../src/shared';
 import { PrismaService } from '../src/prisma';
+import { RedisService } from '../src/redis';
 
 /**
  * Smoke e2e: приложение поднимается, единый формат ошибок соблюдается,
  * readiness отдает 503 при недоступной БД, request id проставляется.
  *
- * Переменные окружения задаются в test/setup-env.ts (до импорта AppModule).
- * docs/16-testing.md, docs/17-acceptance-criteria.md.
+ * Redis подменяется заглушкой: тест проверяет контракт маршрута, а не
+ * доступность локального Redis (docs/16-testing.md).
  */
 describe('Health (e2e)', () => {
   let app: INestApplication;
   let databaseUp = false;
+  let redisUp = true;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
@@ -25,6 +27,11 @@ describe('Health (e2e)', () => {
         onModuleDestroy: async () => undefined,
         isReachable: async () => databaseUp,
         db: {},
+      })
+      .overrideProvider(RedisService)
+      .useValue({
+        isConfigured: true,
+        isReachable: async () => redisUp,
       })
       .compile();
 
@@ -48,22 +55,37 @@ describe('Health (e2e)', () => {
 
   it('GET /health/ready returns 200 when the database responds', async () => {
     databaseUp = true;
+    redisUp = true;
 
     const response = await request(app.getHttpServer()).get('/health/ready').expect(200);
 
     expect(response.body).toMatchObject({
       status: 'ok',
-      checks: [{ name: 'database', status: 'up' }],
+      checks: [
+        { name: 'database', status: 'up' },
+        { name: 'redis', status: 'up' },
+      ],
     });
   });
 
   it('GET /health/ready returns the unified error body when the database is down', async () => {
     databaseUp = false;
+    redisUp = true;
 
     const response = await request(app.getHttpServer()).get('/health/ready').expect(503);
 
     expect(response.body.code).toBe('SERVICE_UNAVAILABLE');
     expect(response.body.message).toBeDefined();
+  });
+
+  it('GET /health/ready возвращает 503, когда Redis недоступен', async () => {
+    databaseUp = true;
+    redisUp = false;
+
+    const response = await request(app.getHttpServer()).get('/health/ready').expect(503);
+
+    expect(response.body.code).toBe('SERVICE_UNAVAILABLE');
+    expect(response.body.details.checks).toContainEqual({ name: 'redis', status: 'down' });
   });
 
   it('keeps the incoming request id', async () => {

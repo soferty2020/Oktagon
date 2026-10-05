@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { AppConfigModule } from './config/config.module';
 import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma';
+import { RedisModule } from './redis';
 import { AnalyticsModule } from './modules/analytics';
 import { AthletesModule } from './modules/athletes';
 import { AttendanceModule } from './modules/attendance';
@@ -29,6 +30,7 @@ import { SchedulingModule } from './modules/scheduling';
     // Foundation
     AppConfigModule,
     PrismaModule,
+    RedisModule,
     HealthModule,
     AuditModule,
 

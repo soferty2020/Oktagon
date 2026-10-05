@@ -85,6 +85,40 @@ node scripts/pg-start.mjs
 `pg_ctl start` в ограниченных средах не работает, потому что запускает сервер
 через pipe.
 
+## 3a. Redis
+
+Redis нужен для rate limiting auth-эндпоинтов (`docs/15-security.md`) и
+кэша/очередей (`docs/14-infrastructure.md`). В MVP обязателен для rate limiting.
+
+### Вариант A: Docker
+
+Поднимается вместе с PostgreSQL: `docker compose up -d postgres redis`.
+
+### Вариант B: portable-сборка в `.tools/redis`
+
+```bash
+# нативная Windows-сборка (без msys), например tporadowski/redis 5.0.14.1
+node scripts/download.mjs <url-сборки> .tools/redis.zip
+tar -xf .tools/redis.zip -C .tools/redis
+
+# запуск на 6379 без персистентности
+node scripts/redis-start.mjs
+```
+
+Проверка: `.tools/redis/redis-cli.exe -p 6379 ping` должен ответить `PONG`.
+
+Важно про выбор сборки: msys2-варианты (`redis-windows/redis-windows`) в
+ограниченных средах не запускаются — их `msys-2.0.dll` не может создать signal
+pipe (`couldn't create signal pipe, Win32 error 5`). Используйте нативную
+Windows-сборку.
+
+Для rate limiting нужны только `INCR`, `EXPIRE` и `TTL`, поэтому версия Redis
+не критична: локально достаточно 5.0, а `docker-compose.yml` использует
+`redis:7-alpine`.
+
+Если `REDIS_URL` не задан, приложение работает, а readiness-проба не проверяет
+Redis. Если задан — Redis становится обязательной зависимостью readiness.
+
 ## 4. Окружение backend
 
 ```bash
@@ -181,7 +215,10 @@ powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 - **Prettier** (`.prettierrc.json`) — форматирование, отдельной командой
   `pnpm format`.
 
-## 9. Redis
+## 9. Redis в коде
 
-Для MVP Redis не обязателен: `REDIS_URL` опционален. Он понадобится для
-rate limiting и очередей; до этого момента переменную можно не задавать.
+- `RedisModule` (`apps/api/src/redis`) — глобальный модуль с единственным
+  клиентом ioredis;
+- подключение ленивое: отсутствие Redis не мешает приложению подняться;
+- `GET /api/v1/health/ready` проверяет Redis, если задан `REDIS_URL`, и
+  возвращает 503 при недоступности.

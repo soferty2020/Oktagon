@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
-import { type AppEnvironment } from '@octagon/config';
+import type { AppEnvironment } from '@octagon/config';
 import { PrismaService } from '../prisma';
+import { RedisService } from '../redis';
 
 export interface LivenessReport {
   status: 'ok';
@@ -31,6 +32,7 @@ export class HealthService {
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
     private readonly config: ConfigService<AppEnvironment, true>,
   ) {}
 
@@ -46,11 +48,23 @@ export class HealthService {
     };
   }
 
+  /**
+   * Проверяет зависимости. Redis проверяется только если задан REDIS_URL:
+   * в MVP он обязателен для rate limiting auth-эндпоинтов
+   * (docs/15-security.md), но локально может быть не запущен.
+   */
   async readiness(): Promise<ReadinessReport> {
-    const databaseUp = await this.prisma.isReachable();
+    const [databaseUp, redisUp] = await Promise.all([
+      this.prisma.isReachable(),
+      this.redis.isReachable(),
+    ]);
+
     const checks: ReadinessCheck[] = [
       { name: 'database', status: databaseUp ? 'up' : 'down' },
     ];
+    if (this.redis.isConfigured) {
+      checks.push({ name: 'redis', status: redisUp ? 'up' : 'down' });
+    }
 
     return {
       status: checks.every((check) => check.status === 'up') ? 'ok' : 'degraded',

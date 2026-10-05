@@ -22,6 +22,10 @@ export interface AppEnvironment {
   /** Локальная timezone клуба; хранится в конфигурации (docs/08-database.md). */
   CLUB_TIMEZONE: string;
   DATABASE_URL: string;
+  /**
+   * Redis: rate limiting auth-эндпоинтов (docs/15-security.md) и кэш/очереди.
+   * Не задан — readiness не проверяет Redis (docs/14-infrastructure.md).
+   */
   REDIS_URL?: string;
   JWT_ACCESS_SECRET: string;
   JWT_ACCESS_TTL_SECONDS: number;

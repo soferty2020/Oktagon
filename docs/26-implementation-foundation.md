@@ -26,6 +26,8 @@ finance, freezes, news, chat, analytics, audit.
 
 - `AppConfigModule` — валидация окружения на старте;
 - `PrismaModule` — единственный экземпляр PrismaClient;
+- `RedisModule` — клиент Redis (rate limiting auth, кэш/очереди); readiness
+  проверяет Redis, если задан `REDIS_URL`;
 - `HealthModule` — `GET /api/v1/health` (liveness) и `GET /api/v1/health/ready` (readiness).
 
 Реализовано (issue A6 — инфраструктура аудита):
@@ -117,7 +119,10 @@ finance, freezes, news, chat, analytics, audit.
 - `GET /api/v1/me` на реальных данных seed: 200, роль `SUPERADMIN`, 26 прав,
   поля `passwordHash` и `athletes` в ответе отсутствуют (ADR-0007);
 - `GET /api/v1/me` без заголовка `x-user-id` или при выключенной заглушке —
-  401 `UNAUTHENTICATED`.
+  401 `UNAUTHENTICATED`;
+- readiness с живыми PostgreSQL и Redis: 200, проверки `database` и `redis`;
+- при остановленном Redis readiness отдает 503 `SERVICE_UNAVAILABLE` с
+  `checks: [{database: up}, {redis: down}]`.
 
 Проверок всего: unit — 38 (11 contracts + 27 api), e2e — 7 без БД и 2 на БД.
 
