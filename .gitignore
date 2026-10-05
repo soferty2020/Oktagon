@@ -34,3 +34,9 @@ Thumbs.db
 
 # build info
 *.tsbuildinfo
+*.d.ts.map
+
+# артефакты компиляции, если tsc запущен из каталога пакета без outDir (#build)
+packages/*/src/*.js
+packages/*/src/*.js.map
+packages/*/src/*.d.ts
