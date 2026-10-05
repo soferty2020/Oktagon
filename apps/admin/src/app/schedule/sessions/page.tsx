@@ -108,6 +108,12 @@ export default async function SessionsPage({
                     <span className="text-xs text-slate-400">
                       {session.fromTemplate ? 'из расписания' : 'добавлено вручную'}
                     </span>
+                    <Link
+                      href={`/schedule/sessions/${session.id}/attendance`}
+                      className="text-xs text-slate-500 underline hover:text-slate-900"
+                    >
+                      Посещаемость
+                    </Link>
                   </div>
                 </div>
 

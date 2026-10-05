@@ -194,6 +194,83 @@ async function main() {
     }
   }
 
+  // 8д. Посещаемость занятия: журнал, отметки и предупреждения.
+  const demoLogin = await fetch(`${apiBase}/auth/login`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  const demoToken = (await demoLogin.json())?.accessToken;
+
+  if (demoToken) {
+    const sessions = await (
+      await fetch(`${apiBase}/training-sessions`, {
+        headers: { authorization: `Bearer ${demoToken}` },
+      })
+    ).json();
+
+    // Нужно занятие с непустым составом: у групп, оставшихся от прошлых
+    // проверок, участников может уже не быть.
+    let reportable = null;
+    let withAbsence = null;
+    if (Array.isArray(sessions)) {
+      for (const candidate of sessions.slice(0, 10)) {
+        const journal = await fetch(
+          `${apiBase}/training-sessions/${candidate.id}/attendance`,
+          { headers: { authorization: `Bearer ${demoToken}` } },
+        );
+        if (!journal.ok) {
+          continue;
+        }
+        const payload = await journal.json();
+        const roster = payload.roster ?? [];
+        if (roster.length > 0 && !reportable) {
+          reportable = { session: candidate, rosterSize: roster.length };
+        }
+        if (roster.some((entry) => entry.plannedAbsence !== null) && !withAbsence) {
+          withAbsence = { session: candidate };
+        }
+        if (reportable && withAbsence) {
+          break;
+        }
+      }
+    }
+
+    if (reportable) {
+      const { html } = await fetchHtml(
+        `/schedule/sessions/${reportable.session.id}/attendance`,
+        cookie,
+      );
+      log(
+        '8д',
+        `журнал занятия (${reportable.rosterSize} спортсменов): заголовок ${html.includes(
+          'Посещаемость:',
+        )} | кнопки отметок ${html.includes('Уваж.')} | форма предупреждения ${html.includes(
+          'Сообщить о планируемом отсутствии',
+        )}`,
+      );
+    } else {
+      log('8д', 'занятия с непустым составом не найдены: журнал проверить нечем');
+    }
+
+    if (withAbsence) {
+      const { html } = await fetchHtml(
+        `/schedule/sessions/${withAbsence.session.id}/attendance`,
+        cookie,
+      );
+      log(
+        '8е',
+        `предупреждения об отсутствии: баннер ${html.includes(
+          'Предупреждения об отсутствии',
+        )} | пометка в списке ${html.includes('предупредил')} | подпись про итог тренера ${html.includes(
+          'итог подтверждает тренер',
+        )}`,
+      );
+    } else {
+      log('8е', 'занятий с предупреждениями нет: баннер проверить нечем');
+    }
+  }
+
   // 9. Карточка группы: филиалы, тренеры, состав.
   const groups = await (
     await fetch(`${base}/api/proxy/groups`, { headers: { cookie } })
