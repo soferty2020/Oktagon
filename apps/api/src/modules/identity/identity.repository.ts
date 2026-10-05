@@ -42,6 +42,28 @@ export interface LinkedAthleteRecord {
   isPrimary: boolean;
 }
 
+/** Пользователь в списке админки. */
+export interface UserListRecord {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  middleName: string | null;
+  phone: string | null;
+  role: UserRole;
+  status: UserStatus;
+  scopeAllGroups: boolean;
+  createdAt: Date;
+}
+
+export interface ListUsersRecordQuery {
+  role?: UserRole;
+  status?: UserStatus;
+  search?: string;
+  skip: number;
+  take: number;
+}
+
 /** Результат выдачи права. */
 export interface GrantPermissionRecord {
   code: string;
@@ -63,6 +85,10 @@ export interface GrantPermissionRecord {
 export abstract class IdentityRepository {
   abstract findProfile(userId: string): Promise<UserProfileRecord | null>;
   abstract listLinkedAthletes(userId: string): Promise<LinkedAthleteRecord[]>;
+  /** Список пользователей для админки: фильтры, пагинация и общее количество. */
+  abstract listUsers(
+    query: ListUsersRecordQuery,
+  ): Promise<{ items: UserListRecord[]; total: number }>;
   /** Идентификаторы спортсменов, которые занимаются в группах тренера. */
   abstract listCoachedAthleteIds(trainerUserId: string): Promise<string[]>;
   /** Группы, которые ведет сотрудник (активные назначения). */
@@ -181,8 +207,51 @@ export class PrismaIdentityRepository extends IdentityRepository {
     }));
   }
 
-  async listCoachedAthleteIds(trainerUserId: string): Promise<string[]> {
-    const memberships = await this.prisma.db.groupMembership.findMany({
+  async listUsers(
+    query: ListUsersRecordQuery,
+  ): Promise<{ items: UserListRecord[]; total: number }> {
+    const search = query.search?.trim();
+    const where = {
+      archivedAt: null,
+      ...(query.role ? { role: query.role } : {}),
+      ...(query.status ? { status: query.status } : {}),
+      ...(search
+        ? {
+            OR: [
+              { email: { contains: search, mode: 'insensitive' as const } },
+              { firstName: { contains: search, mode: 'insensitive' as const } },
+              { lastName: { contains: search, mode: 'insensitive' as const } },
+            ],
+          }
+        : {}),
+    };
+
+    const [items, total] = await Promise.all([
+      this.prisma.db.user.findMany({
+        where,
+        orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+        skip: query.skip,
+        take: query.take,
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          middleName: true,
+          phone: true,
+          role: true,
+          status: true,
+          scopeAllGroups: true,
+          createdAt: true,
+        },
+      }),
+      this.prisma.db.user.count({ where }),
+    ]);
+
+    return { items, total };
+  }
+
+  async listCoachedAthleteIds(trainerUserId: string): Promise<string[]> {    const memberships = await this.prisma.db.groupMembership.findMany({
       where: {
         state: MembershipState.ACTIVE,
         athlete: { archivedAt: null },

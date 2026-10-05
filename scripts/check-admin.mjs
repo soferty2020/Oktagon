@@ -6,13 +6,14 @@
  * устанавливает httpOnly-cookie, а прокси отдает данные backend от имени
  * пользователя.
  *
- * Скрытые поля формы (в том числе $ACTION_KEY) разбираются из HTML: в
- * проде это делает браузер, а в проверке — скрипт, поэтому формат не
- * дублируется вручную.
+ * Скрытые поля формы (в том числе $ACTION_KEY) разбираются из HTML: в проде это
+ * делает браузер, а в проверке — скрипт, поэтому формат не дублируется вручную.
  *
- * Использование: node .tools/check-admin.mjs [baseUrl]
+ * Использование:
+ *   node scripts/check-admin.mjs [baseUrl] [apiBaseUrl]
  */
 const base = process.argv[2] ?? 'http://127.0.0.1:3001';
+const apiBase = process.argv[3] ?? 'http://127.0.0.1:3900/api/v1';
 const email = process.env.ADMIN_EMAIL ?? 'superadmin@octagon.local';
 const password = process.env.ADMIN_PASSWORD ?? 'ChangeMe-Octagon-2026!';
 
@@ -34,24 +35,40 @@ function readHiddenFields(html) {
   }
 
   const fields = new Map();
-  for (const match of form.matchAll(/<input type="hidden" name="([^"]+)"(?: value="([^"]*)")?\/>/g)) {
+  for (const match of form.matchAll(
+    /<input type="hidden" name="([^"]+)"(?: value="([^"]*)")?\/>/g,
+  )) {
     fields.set(match[1], decodeHtml(match[2] ?? ''));
   }
   return fields;
 }
 
+async function fetchHtml(path, cookie) {
+  const response = await fetch(`${base}${path}`, { headers: cookie ? { cookie } : {} });
+  return { status: response.status, html: await response.text() };
+}
+
+/** Проверяет, что страница отдается и содержит ожидаемый текст. */
+async function checkPage(cookie, path, expected, label) {
+  const { status, html } = await fetchHtml(path, cookie);
+  const found = html.includes(expected);
+  console.log(
+    `${found ? '✔' : '✕'} ${label}: ${path} → ${status}${
+      found ? '' : ` (нет текста «${expected}»)`
+    }`,
+  );
+}
+
 async function main() {
   // 1. Страница входа доступна без сессии.
-  const loginPage = await fetch(`${base}/login`);
-  const loginHtml = await loginPage.text();
-  log(
-    1,
-    `/login: ${loginPage.status} | форма входа отрисована: ${loginHtml.includes('name="email"')}`,
-  );
+  const { status: loginStatus, html: loginHtml } = await fetchHtml('/login');
+  log(1, `/login: ${loginStatus} | форма входа: ${loginHtml.includes('name="email"')}`);
 
-  // 2. Защищенная страница без cookie отправляет на вход.
-  const root = await fetch(`${base}/`, { redirect: 'manual' });
-  log(2, `/ без сессии: ${root.status} | redirect: ${root.headers.get('location')}`);
+  // 2. Защищенные страницы без cookie отправляют на вход.
+  for (const path of ['/', '/groups', '/athletes', '/users']) {
+    const response = await fetch(`${base}${path}`, { redirect: 'manual' });
+    log(2, `${path} без сессии: ${response.status} → ${response.headers.get('location')}`);
+  }
 
   // 3. Прокси без сессии не пропускает.
   const anonProxy = await fetch(`${base}/api/proxy/branches`, { redirect: 'manual' });
@@ -99,45 +116,88 @@ async function main() {
     )}`,
   );
 
-  const cookieHeader = setCookie.map((cookie) => cookie.split(';')[0]).join('; ');
+  const cookie = setCookie.map((entry) => entry.split(';')[0]).join('; ');
 
-  // 7. Защищенная страница с cookie отдается и показывает права пользователя.
-  const dashboard = await fetch(`${base}/`, { headers: { cookie: cookieHeader } });
-  const dashboardHtml = await dashboard.text();
+  // 7. Прокси отдает данные backend от имени пользователя.
+  const viaProxy = await fetch(`${base}/api/proxy/branches`, { headers: { cookie } });
+  log(7, `/api/proxy/branches: ${viaProxy.status}`);
+
+  // 8. Экран обзора и разделы админки.
+  await checkPage(cookie, '/', 'Права пользователя', 'обзор');
+  await checkPage(cookie, '/branches', 'Новый филиал', 'филиалы');
+  await checkPage(cookie, '/groups', 'Новая группа', 'группы');
+  await checkPage(cookie, '/athletes', 'Новый спортсмен', 'спортсмены');
+  await checkPage(cookie, '/users', 'Пользователи', 'пользователи');
+
+  // 9. Карточка группы: филиалы, тренеры, состав.
+  const groups = await (
+    await fetch(`${base}/api/proxy/groups`, { headers: { cookie } })
+  ).json();
+  if (Array.isArray(groups) && groups.length > 0) {
+    const { html } = await fetchHtml(`/groups/${groups[0].id}`, cookie);
+    log(
+      9,
+      `карточка группы: филиалы ${html.includes('Филиалы')} | тренеры ${html.includes(
+        'Тренеры',
+      )} | состав ${html.includes('Состав')} | добавление участника ${html.includes(
+        'Добавить спортсмена',
+      )}`,
+    );
+  } else {
+    log(9, 'групп нет: карточку группы проверить нечем');
+  }
+
+  // 10. Карточка спортсмена: связи аккаунтов.
+  const athletes = await (
+    await fetch(`${base}/api/proxy/athletes`, { headers: { cookie } })
+  ).json();
+  if (Array.isArray(athletes) && athletes.length > 0) {
+    const { html } = await fetchHtml(`/athletes/${athletes[0].id}`, cookie);
+    log(
+      10,
+      `карточка спортсмена: связи аккаунтов ${html.includes(
+        'Связанные аккаунты',
+      )} | форма карточки ${html.includes('Карточка')} | архивирование ${html.includes(
+        'Архивировать спортсмена',
+      )}`,
+    );
+  } else {
+    log(10, 'спортсменов нет: карточку проверить нечем');
+  }
+
+  // 11. Права пользователя: ролевые и индивидуальные показаны раздельно.
+  const login = await (
+    await fetch(`${apiBase}/auth/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
+  ).json();
+
+  const me = await (
+    await fetch(`${apiBase}/me`, {
+      headers: { authorization: `Bearer ${login.accessToken}` },
+    })
+  ).json();
+
+  const usersCount = await (
+    await fetch(`${apiBase}/users?perPage=100`, {
+      headers: { authorization: `Bearer ${login.accessToken}` },
+    })
+  ).json();
+
+  const { html: permissionsHtml } = await fetchHtml(`/users/${me.id}/permissions`, cookie);
   log(
-    7,
-    `/ с сессией: ${dashboard.status} | права пользователя: ${dashboardHtml.includes(
-      'Права пользователя',
-    )}`,
+    11,
+    `права: ролевые ${permissionsHtml.includes('Права роли')} | личные ${permissionsHtml.includes(
+      'Выдано лично',
+    )} | итог ${permissionsHtml.includes('Итоговый набор прав')}`,
   );
-
-  // 8. Справочник филиалов отрисован на сервере.
-  const branches = await fetch(`${base}/branches`, { headers: { cookie: cookieHeader } });
-  const branchesHtml = await branches.text();
   log(
-    8,
-    `/branches: ${branches.status} | форма создания: ${branchesHtml.includes('Новый филиал')}`,
-  );
-
-  // 9. Прокси отдает данные backend от имени пользователя.
-  const viaProxy = await fetch(`${base}/api/proxy/branches`, {
-    headers: { cookie: cookieHeader },
-  });
-  const proxyBody = await viaProxy.text();
-  log(9, `/api/proxy/branches: ${viaProxy.status} | тело: ${proxyBody.slice(0, 90)}`);
-
-  // 10. Спортсмены и группы: страницы отдают данные.
-  const [athletes, groups] = await Promise.all([
-    fetch(`${base}/athletes`, { headers: { cookie: cookieHeader } }),
-    fetch(`${base}/groups`, { headers: { cookie: cookieHeader } }),
-  ]);
-  const athletesHtml = await athletes.text();
-  const groupsHtml = await groups.text();
-  log(
-    10,
-    `/athletes: ${athletes.status} (таблица: ${athletesHtml.includes('Дата рождения')}) | /groups: ${
-      groups.status
-    } (таблица: ${groupsHtml.includes('Основной филиал')})`,
+    12,
+    `/users как API: всего ${usersCount.meta?.total} | на странице ${usersCount.items?.length} | приватные поля: ${
+      usersCount.items?.[0]?.passwordHash === undefined ? 'не раскрыты' : 'УТЕЧКА'
+    }`,
   );
 }
 

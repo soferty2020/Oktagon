@@ -7,9 +7,10 @@ import { IdentityService } from './identity.service';
 import { PermissionGrantService } from './permission-grant.service';
 import { ResourceScopeService } from './resource-scope.service';
 import { UserPermissionsController } from './user-permissions.controller';
+import { UsersController } from './users.controller';
 
 /**
- * Модуль identity (issues B1, B5, B6).
+ * Модуль identity (issues B1, B5, B6, K2).
  *
  * Спецификация: docs/04-roles-permissions.md, docs/21-permission-matrix.md,
  * docs/22-erd.md (User, Permission, UserPermission, UserInvite),
@@ -20,7 +21,7 @@ import { UserPermissionsController } from './user-permissions.controller';
  * источником эффективных прав для guard-а.
  */
 @Module({
-  controllers: [IdentityController, UserPermissionsController],
+  controllers: [IdentityController, UserPermissionsController, UsersController],
   providers: [
     IdentityService,
     PermissionGrantService,

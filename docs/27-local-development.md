@@ -70,7 +70,12 @@ docker compose up -d postgres redis
 
 ```bash
 # initdb создает кластер в .tools/pgdata
-.tools/pgsql/bin/initdb -D .tools/pgdata -U octagon -A trust -E UTF8 --no-locale
+# Collation задается через ICU: при collation C регистронезависимый поиск
+# (ILIKE) не сворачивает регистр кириллицы, и поиск по ФИО молча не работает.
+# IPC-локаль не зависит от 8-битных кодировок ОС (Windows по умолчанию дает
+# Russian_Russia.1251) и совпадает с docker-compose.yml и CI.
+.tools/pgsql/bin/initdb -D .tools/pgdata -U octagon -A trust -E UTF8 \
+  --locale-provider=icu --icu-locale=en-US
 
 # запуск сервера на 5432 с timezone UTC
 node scripts/pg-start.mjs
@@ -80,6 +85,17 @@ node scripts/pg-start.mjs
   -c 'CREATE DATABASE octagon OWNER octagon' \
   -c 'CREATE DATABASE octagon_test OWNER octagon'
 ```
+
+Проверить collation текущего кластера:
+
+```sql
+SELECT datname, datcollate, datlocprovider FROM pg_database WHERE datname LIKE 'octagon%';
+SELECT 'Тренеров' ILIKE '%тренеров%' AS поиск_работает;
+```
+
+`datlocprovider = 'c'` вместе с `datcollate = 'C'` означает, что поиск по
+кириллице в нижнем регистре не найдет записи: кластер нужно пересоздать с
+ICU-локалью. Та же collation задана в `docker-compose.yml` и в CI.
 
 `scripts/pg-start.mjs` запускает `postgres.exe` напрямую с `stdio: inherit`:
 `pg_ctl start` в ограниченных средах не работает, потому что запускает сервер

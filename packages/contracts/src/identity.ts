@@ -196,6 +196,13 @@ export interface UserPermissionGrant {
 /** `GET /api/v1/users/{id}/permissions`. */
 export interface UserPermissionsView {
   userId: string;
+  /**
+   * Кто это. Нужно админке: экран прав открывается по идентификатору, а
+   * отдельного `GET /users/{id}` в контракте нет.
+   */
+  email: string;
+  firstName: string;
+  lastName: string;
   role: UserRole;
   scopeAllGroups: boolean;
   /** Права, которые дает роль (ADR-0006). */

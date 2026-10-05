@@ -17,8 +17,7 @@ async function forward(request: NextRequest, path: string[]): Promise<NextRespon
   const target = `${apiBaseUrl()}/${path.join('/')}${url.search}`;
 
   const method = request.method;
-  const body =
-    method === 'GET' || method === 'HEAD' ? undefined : await request.arrayBuffer();
+  const body = method === 'GET' || method === 'HEAD' ? undefined : await request.arrayBuffer();
 
   const callBackend = async (accessToken?: string): Promise<Response> =>
     fetch(target, {
@@ -32,7 +31,18 @@ async function forward(request: NextRequest, path: string[]): Promise<NextRespon
     });
 
   let { accessToken } = await readTokens();
-  let response = await callBackend(accessToken);
+  let response: Response;
+
+  try {
+    response = await callBackend(accessToken);
+  } catch {
+    // Backend недоступен: отвечаем 503, а не 500, чтобы интерфейс мог показать
+    // понятное «сервис недоступен» и не выглядел сломанным.
+    return NextResponse.json(
+      { code: 'SERVICE_UNAVAILABLE', message: 'Backend API недоступен. Проверьте, что он запущен.' },
+      { status: 503 },
+    );
+  }
 
   if (response.status === 401 && accessToken) {
     const renewed = await refreshAccessToken();
@@ -43,8 +53,19 @@ async function forward(request: NextRequest, path: string[]): Promise<NextRespon
         { status: 401 },
       );
     }
+
     accessToken = renewed;
-    response = await callBackend(accessToken);
+    try {
+      response = await callBackend(accessToken);
+    } catch {
+      return NextResponse.json(
+        {
+          code: 'SERVICE_UNAVAILABLE',
+          message: 'Backend API недоступен. Проверьте, что он запущен.',
+        },
+        { status: 503 },
+      );
+    }
   }
 
   // Тело пересылаем как есть: контракт API уже описывает формат ошибок.

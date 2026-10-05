@@ -1,4 +1,9 @@
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import type { NextConfig } from 'next';
+
+const currentDir = dirname(fileURLToPath(import.meta.url));
 
 /**
  * Конфигурация web-админки (docs/13-architecture.md: apps/admin — Next.js).
@@ -13,6 +18,22 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Workspace-пакеты содержат TypeScript-исходники, их нужно транспилировать.
   transpilePackages: ['@octagon/contracts'],
+  webpack: (config) => {
+    // На Windows пакеты pnpm подключены junction-ссылками, и сборщик не всегда
+    // проходит через них. Алиас на исходники делает резолв одинаковым на всех
+    // платформах; транспиляцию обеспечивает transpilePackages.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@octagon/contracts': join(currentDir, '..', '..', 'packages', 'contracts', 'src', 'index.ts'),
+    };
+    return config;
+  },
+  turbopack: {
+    resolveAlias: {
+      '@octagon/contracts': '../../packages/contracts/src/index.ts',
+    },
+  },
 };
 
 export default nextConfig;
+

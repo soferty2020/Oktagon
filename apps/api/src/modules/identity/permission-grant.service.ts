@@ -41,6 +41,9 @@ export class PermissionGrantService {
 
     return {
       userId: profile.id,
+      email: profile.email,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
       role: profile.role,
       scopeAllGroups: profile.scopeAllGroups,
       rolePermissions,

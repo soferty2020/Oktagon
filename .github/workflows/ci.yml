@@ -36,6 +36,9 @@ jobs:
           POSTGRES_PASSWORD: octagon
           POSTGRES_DB: octagon
           TZ: UTC
+          # Та же collation, что в docker-compose.yml: иначе регистронезависимый
+          # поиск по кириллице ведет себя по-разному на разных стендах.
+          POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale-provider=icu --icu-locale=en-US'
         ports:
           - 5432:5432
         options: >-
@@ -138,6 +141,11 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Build contracts
+        # Админка импортирует значения из @octagon/contracts, а пакет отдает
+        # только dist: без этой сборки next build не найдет модуль.
+        run: pnpm build:packages
 
       - name: Generate OpenAPI types
         # Типы админки выводятся из контракта: так расхождение с backend видно

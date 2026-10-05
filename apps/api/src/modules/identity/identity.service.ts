@@ -3,11 +3,16 @@ import {
   ApiErrorCode,
   AuditAction,
   AuditEntityType,
+  DEFAULT_PAGE_SIZE,
+  MAX_PAGE_SIZE,
   type LinkedAthlete,
+  type ListUsersQuery,
+  type PaginatedUsers,
   type PermissionCode,
   type ScopeDecision,
   type UserPermissions,
   type UserProfile,
+  type UserView,
   canAccessAthlete,
   resolvePermissions,
 } from '@octagon/contracts';
@@ -18,7 +23,7 @@ import { AuditService } from '../audit/audit.service';
 // Обычный импорт, не `import type`: IdentityRepository — DI-токен, его значение
 // должно попасть в метаданные конструктора (emitDecoratorMetadata).
 import { IdentityRepository } from './identity.repository';
-import type { LinkedAthleteRecord, UserProfileRecord } from './identity.repository';
+import type { LinkedAthleteRecord, UserListRecord, UserProfileRecord } from './identity.repository';
 
 /**
  * Слой identity (issue B1).
@@ -57,6 +62,32 @@ export class IdentityService {
   async getRolePermissions(userId: string): Promise<PermissionCode[]> {
     const record = await this.requireProfile(userId);
     return resolvePermissions({ role: record.role, grants: [] }).codes;
+  }
+
+  /**
+   * Список пользователей для админки.
+   *
+   * Нужен, чтобы выдать индивидуальное право или связать аккаунт со
+   * спортсменом: без него выбирать аккаунт не из чего. Доступ ограничен правом
+   * `users.manage` — отдельного права на просмотр в каталоге нет
+   * (docs/04-roles-permissions.md).
+   */
+  async listUsers(query: ListUsersQuery): Promise<PaginatedUsers> {
+    const page = Math.max(query.page ?? 1, 1);
+    const perPage = Math.min(Math.max(query.perPage ?? DEFAULT_PAGE_SIZE, 1), MAX_PAGE_SIZE);
+
+    const { items, total } = await this.repository.listUsers({
+      role: query.role,
+      status: query.status,
+      search: query.search,
+      skip: (page - 1) * perPage,
+      take: perPage,
+    });
+
+    return {
+      items: items.map(toUserView),
+      meta: { page, perPage, total, totalPages: Math.max(1, Math.ceil(total / perPage)) },
+    };
   }
 
   /**
@@ -172,5 +203,20 @@ export function toLinkedAthlete(record: LinkedAthleteRecord): LinkedAthlete {
     status: record.status,
     relation: record.relation,
     isPrimary: record.isPrimary,
+  };
+}
+
+/** Пользователь для списка админки: без прав и приватных полей. */
+export function toUserView(record: UserListRecord): UserView {  return {
+    id: record.id,
+    email: record.email,
+    firstName: record.firstName,
+    lastName: record.lastName,
+    middleName: record.middleName,
+    phone: record.phone,
+    role: record.role,
+    status: record.status,
+    scopeAllGroups: record.scopeAllGroups,
+    createdAt: record.createdAt.toISOString(),
   };
 }

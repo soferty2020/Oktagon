@@ -240,6 +240,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Список пользователей
+         * @description Нужен админке, чтобы выдать индивидуальное право или связать аккаунт со
+         *     спортсменом. Отдельного права на просмотр в каталоге нет, поэтому доступ
+         *     требует `users.manage`: список видят только те, кто и так управляет
+         *     пользователями.
+         *
+         *     Архивированные пользователи в выдачу не попадают.
+         */
+        get: operations["listUsers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/{userId}/permissions/{code}": {
         parameters: {
             query?: never;
@@ -917,6 +942,13 @@ export interface components {
         UserPermissionsView: {
             /** Format: uuid */
             userId: string;
+            /**
+             * Format: email
+             * @description Экран прав открывается по идентификатору, поэтому имя включено в ответ
+             */
+            email: string;
+            firstName: string;
+            lastName: string;
             role: components["schemas"]["UserRole"];
             scopeAllGroups: boolean;
             /** @description Права, которые дает роль */
@@ -1129,6 +1161,33 @@ export interface components {
             /** Format: date */
             joinedAt: string;
         } | null;
+        /** @description Пользователь в списке админки; пароль и токены не отдаются */
+        UserView: {
+            /** Format: uuid */
+            id: string;
+            /** Format: email */
+            email: string;
+            firstName: string;
+            lastName: string;
+            middleName?: string | null;
+            phone?: string | null;
+            role: components["schemas"]["UserRole"];
+            status: components["schemas"]["UserStatus"];
+            /** @description Доступ ко всем группам, а не только к назначенным */
+            scopeAllGroups: boolean;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        PaginatedUsers: {
+            items: components["schemas"]["UserView"][];
+            meta: components["schemas"]["PageMeta"];
+        };
+        PageMeta: {
+            page: number;
+            perPage: number;
+            total: number;
+            totalPages: number;
+        };
         CreateGroupRequest: {
             name: string;
             description?: string;
@@ -1655,6 +1714,43 @@ export interface operations {
             404: components["responses"]["NotFound"];
             /** @description Право уже предоставлено ролью (`PERMISSION_GRANTED_BY_ROLE`) */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listUsers: {
+        parameters: {
+            query?: {
+                role?: components["schemas"]["UserRole"];
+                status?: components["schemas"]["UserStatus"];
+                /** @description Поиск по email, фамилии или имени */
+                search?: string;
+                page?: number;
+                perPage?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Страница пользователей */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedUsers"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `users.manage` (`FORBIDDEN`) */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

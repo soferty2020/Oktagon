@@ -21,6 +21,12 @@ services:
       # Календарные периоды считаются в UTC (docs/08-database.md)
       TZ: UTC
       PGTZ: UTC
+      # Collation задается явно: от нее зависит регистронезависимый поиск
+      # (ILIKE) для кириллицы. При collation C (например, из-за --no-locale)
+      # 'Тренеров' ILIKE '%тренеров%' не совпадает, и поиск молча ломается.
+      # ICU выбран вместо локали ОС: он не зависит от 8-битных кодировок
+      # (Windows по умолчанию дает Russian_Russia.1251) и одинаков в CI.
+      POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale-provider=icu --icu-locale=en-US'
     ports:
       - '${POSTGRES_PORT:-5432}:5432'
     volumes:

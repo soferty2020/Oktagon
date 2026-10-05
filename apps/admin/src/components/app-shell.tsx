@@ -8,6 +8,7 @@ const NAVIGATION = [
   { href: '/branches', label: 'Филиалы' },
   { href: '/groups', label: 'Группы' },
   { href: '/athletes', label: 'Спортсмены' },
+  { href: '/users', label: 'Пользователи' },
 ] as const;
 
 /** Каркас страницы админки: шапка с пользователем и навигация по разделам. */

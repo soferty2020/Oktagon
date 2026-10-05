@@ -99,6 +99,7 @@ JavaScript страницы. Типы API генерируются из `openapi
 | `POST/DELETE /api/v1/groups/{id}/branches[/{branchId}]` | привязка филиалов к группе |
 | `POST/DELETE /api/v1/groups/{id}/trainers[/{trainerId}]` | назначение тренеров |
 | `POST/DELETE /api/v1/groups/{id}/members[/{athleteId}]` | состав группы и завершение членства |
+| `GET /api/v1/users` | список пользователей с фильтрами и пагинацией (право `users.manage`) |
 
 ## Проверки
 

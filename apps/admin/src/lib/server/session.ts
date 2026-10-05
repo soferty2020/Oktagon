@@ -72,12 +72,19 @@ export async function refreshAccessToken(): Promise<string | null> {
     return null;
   }
 
-  const response = await fetch(`${apiBaseUrl()}/auth/refresh`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ refreshToken }),
-    cache: 'no-store',
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${apiBaseUrl()}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+      cache: 'no-store',
+    });
+  } catch {
+    // Backend недоступен: это не отозванная сессия, поэтому cookie не трогаем —
+    // иначе кратковременный сбой API разлогинивал бы пользователя.
+    return null;
+  }
 
   if (!response.ok) {
     // Refresh-токен истек или отозван: продлевать нечего, сессия завершена.
@@ -106,10 +113,17 @@ export interface CurrentUser {
 
 /** Профиль текущего пользователя либо null, если сессии нет. */
 export async function fetchCurrentUser(accessToken: string): Promise<CurrentUser | null> {
-  const response = await fetch(`${apiBaseUrl()}/me`, {
-    headers: { authorization: `Bearer ${accessToken}` },
-    cache: 'no-store',
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${apiBaseUrl()}/me`, {
+      headers: { authorization: `Bearer ${accessToken}` },
+      cache: 'no-store',
+    });
+  } catch {
+    // Недоступный backend не должен превращаться в 500 на странице: считаем,
+    // что пользователь не подтвержден, и показываем экран входа.
+    return null;
+  }
 
   if (!response.ok) {
     return null;

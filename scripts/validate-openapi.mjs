@@ -145,6 +145,7 @@ const expectedRoutes = [
   ['delete', '/groups/{id}/trainers/{trainerId}'],
   ['post', '/groups/{id}/members'],
   ['delete', '/groups/{id}/members/{athleteId}'],
+  ['get', '/users'],
 ];
 
 for (const [method, route] of expectedRoutes) {
