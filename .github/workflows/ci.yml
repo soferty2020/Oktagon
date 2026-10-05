@@ -1,0 +1,111 @@
+name: CI
+
+# PR не должен мержиться при failed lint/test/build (docs/16-testing.md).
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  # Тестовый контур: значения не секреты, используются только в CI.
+  DATABASE_URL: postgresql://octagon:octagon@localhost:5432/octagon?schema=public
+  TEST_DATABASE_URL: postgresql://octagon:octagon@localhost:5432/octagon_test
+  REDIS_URL: redis://localhost:6379
+  TEST_REDIS_URL: redis://localhost:6379
+  JWT_ACCESS_SECRET: ci-access-secret-value-at-least-32-characters
+  JWT_REFRESH_SECRET: ci-refresh-secret-value-at-least-32-characters
+
+jobs:
+  verify:
+    name: lint, typecheck, tests, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        # Версия совпадает с docker-compose.yml и docs/14-infrastructure.md.
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: octagon
+          POSTGRES_PASSWORD: octagon
+          POSTGRES_DB: octagon
+          TZ: UTC
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U octagon -d octagon"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        # Redis нужен для rate limiting auth-эндпоинтов (docs/15-security.md).
+        # Локально допускается версия 5, в CI используется 7 как в compose.
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        # --ignore-scripts: Prisma Client генерируется отдельным шагом в
+        # apps/api/generated/prisma (см. docs/27-local-development.md).
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
+      - name: Prepare test database
+        # Схема тестовой БД создается теми же миграциями, что и рабочая:
+        # иначе e2e-тесты проверяли бы не то, что уедет в staging.
+        run: |
+          PGPASSWORD=octagon psql -h localhost -U octagon -d postgres \
+            -c "CREATE DATABASE octagon_test OWNER octagon"
+          DATABASE_URL="$TEST_DATABASE_URL" pnpm db:deploy:test
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: E2E tests
+        run: pnpm test:e2e
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: '**/coverage/**'
+          if-no-files-found: ignore
+          retention-days: 7

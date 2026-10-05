@@ -85,6 +85,35 @@ node scripts/pg-start.mjs
 `pg_ctl start` в ограниченных средах не работает, потому что запускает сервер
 через pipe.
 
+### Важно для ограниченных сред
+
+PostgreSQL должен запускаться **вне песочницы**, если среда запрещает процессам
+отправлять сигналы друг другу. Симптомы: `DROP DATABASE` падает с
+`could not signal for checkpoint: Operation not permitted`, после чего база
+попадает в состояние `invalid` и перестает принимать подключения; при старте
+сервера recovery завершается `could not signal for checkpoint` и сервер
+выключается.
+
+В таких средах запускайте сервер с длинным интервалом checkpoint'ов:
+
+```bash
+# PG_EXTRA_OPTS передается в postgres как дополнительные -c параметры
+PG_EXTRA_OPTS="-c checkpoint_timeout=86400 -c max_wal_size=32GB" node scripts/pg-start.mjs
+```
+
+Значение `checkpoint_timeout` ограничено диапазоном 30..86400 секунд, ноль
+недопустим. Это компромисс для локальной разработки: сервер запускается
+штатно, но checkpoint'ы почти не выполняются.
+
+Если база все же оказалась в состоянии `invalid` (сообщение
+`cannot connect to invalid database`), ее нужно удалить и создать заново:
+
+```bash
+.tools/pgsql/bin/psql -h 127.0.0.1 -U octagon -d postgres \
+  -c 'DROP DATABASE IF EXISTS octagon_test' \
+  -c 'CREATE DATABASE octagon_test OWNER octagon'
+```
+
 ## 3a. Redis
 
 Redis нужен для rate limiting auth-эндпоинтов (`docs/15-security.md`) и
@@ -165,12 +194,27 @@ node scripts/apply-migration.mjs apps/api/prisma/migrations/20260101000000_init
 ### Ограничения, не выражаемые в Prisma schema
 
 `docs/08-database.md` требует двух ограничений, которые Prisma не умеет
-описывать. Они лежат в
-`apps/api/prisma/migrations/20260101000000_init/extra_constraints.sql` и должны
-включаться в миграцию при ее применении:
+описывать:
 
 1. не более одной активной `GroupMembership` на спортсмена;
 2. не более одного открытого `FreezePeriod` на спортсмена.
+
+Они реализованы частичными уникальными индексами PostgreSQL и **включены в
+конец `migration.sql`**. Это принципиально: Prisma применяет только
+`migration.sql`, поэтому файл-сосед `extra_constraints.sql` штатными средствами
+(`prisma migrate deploy`) не выполнялся бы, и индексы не создались бы на staging
+и production.
+
+`extra_constraints.sql` остается в каталоге как копия для чтения. Если
+миграция пересоздается через `prisma migrate diff`, блок нужно вернуть в
+`migration.sql`:
+
+```bash
+node scripts/compose-migration.mjs 20260101000000_init
+```
+
+Скрипт сохраняет сгенерированный SQL в `migration.base.sql`, дописывает блок
+ограничений и проверяет, что он попал ровно один раз.
 
 ## 6. Запуск API
 
@@ -196,9 +240,12 @@ curl http://localhost:3000/api/v1/health/ready
 pnpm build       # packages + api
 pnpm typecheck
 pnpm test        # unit-тесты
-pnpm test:e2e    # e2e (нужна БД octagon_test)
+pnpm test:e2e    # e2e (нужны PostgreSQL и Redis)
 pnpm lint        # Biome
 ```
+
+На Linux/macOS те же шаги выполняет `bash scripts/ci-verify.sh` — он же
+используется как образец для CI.
 
 В средах, где вложенный `pnpm <script>` не может запустить дочерний процесс,
 используйте `scripts/verify.ps1` — он вызывает компилятор и раннеры напрямую:
@@ -207,7 +254,35 @@ pnpm lint        # Biome
 powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 ```
 
-## 8. Линтер и форматтер
+### Тестовая база данных
+
+e2e-тесты создают и удаляют свои данные, поэтому им нужна отдельная база
+(`octagon_test`). Адреса по умолчанию — в `apps/api/test/setup-env.ts`; их можно
+переопределить переменными `TEST_DATABASE_URL` и `TEST_REDIS_URL`.
+
+Схема тестовой базы создается теми же миграциями, что и рабочая:
+
+```bash
+psql -h localhost -U octagon -d postgres -c "CREATE DATABASE octagon_test OWNER octagon"
+DATABASE_URL="postgresql://octagon:octagon@localhost:5432/octagon_test" pnpm db:deploy:test
+```
+
+## 8. CI
+
+`.github/workflows/ci.yml` запускается на push и pull request. Поднимаются
+сервисы `postgres:16-alpine` и `redis:7-alpine`, затем выполняются: установка
+зависимостей, генерация Prisma Client, миграция тестовой базы, lint, typecheck,
+unit-тесты, сборка и e2e.
+
+Локально те же шаги выполняет `bash scripts/ci-verify.sh`.
+
+Ограничение: применение миграций в CI использует штатный `prisma migrate
+deploy` (schema-engine там доступен). В ограниченных средах, где запуск
+нативных бинарников запрещен, применяйте SQL через
+`node scripts/apply-migration.mjs <migrationDir>` (см. раздел 5). Поэтому
+важно, чтобы `migration.sql` был самодостаточным.
+
+## 9. Линтер и форматтер
 
 - **Biome** (`biome.json`) — линтер. Выбран вместо ESLint: ESLint 9.39 в
   pnpm-раскладке конфликтует с `ajv` (`Cannot set properties of undefined
@@ -215,7 +290,7 @@ powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 - **Prettier** (`.prettierrc.json`) — форматирование, отдельной командой
   `pnpm format`.
 
-## 9. Redis в коде
+## 10. Redis в коде
 
 - `RedisModule` (`apps/api/src/redis`) — глобальный модуль с единственным
   клиентом ioredis;

@@ -109,10 +109,26 @@ finance, freezes, news, chat, analytics, audit.
 - soft-delete/archive через `archived_at` / `deleted_at`.
 
 Два ограничения Postgres выражаются только частичными уникальными индексами и
-добавлены в миграцию вручную:
+включены в конец `migration.sql` (Prisma применяет только этот файл, поэтому
+отдельный файл-сосед не сработал бы):
 
 1. один открытый `FreezePeriod` на спортсмена;
 2. не более одной активной `GroupMembership` на спортсмена.
+
+## Непрерывная интеграция (A3)
+
+`.github/workflows/ci.yml` на push и pull request: сервисы `postgres:16-alpine`
+и `redis:7-alpine`, затем установка зависимостей, генерация Prisma Client,
+миграция тестовой базы, lint, typecheck, unit-тесты, сборка и e2e.
+
+Те же шаги на Linux/macOS выполняет `scripts/ci-verify.sh`; на Windows —
+`scripts/verify.ps1`.
+
+Проверено локально: миграции применяются к пустой базе, после чего e2e-тесты
+проходят на этой базе. Штатный `prisma migrate deploy` (как в CI) в этой
+рабочей среде недоступен — schema-engine запускается песочницей и падает с
+`spawn EPERM`, поэтому SQL применялся через `scripts/apply-migration.mjs`;
+схема при этом идентична.
 
 ## Архитектурные решения
 
@@ -187,13 +203,13 @@ finance, freezes, news, chat, analytics, audit.
 2. **C1..C8** — эпик Club structure: филиалы, залы, тренеры, спортсмены, группы.
 3. `apps/admin` — каркас Next.js + генерация клиента из `openapi.yaml`.
 4. `apps/mobile` — каркас Flutter (требует установленного Flutter SDK).
-5. **A3** — CI pipeline: typecheck, lint, тесты, сборка. Для тестов на БД
-   понадобятся сервисы postgres и redis.
-6. Обновить `docs/22-erd.md` под `GroupBranch` (см. ADR-0005).
-7. Наполнить `openapi.yaml` схемами auth/identity/invites (сейчас там только
+5. Обновить `docs/22-erd.md` под `GroupBranch` (см. ADR-0005).
+6. Наполнить `openapi.yaml` схемами auth/identity/invites (сейчас там только
    заготовка).
-8. Доставка приглашений письмом — когда будет выбран провайдер
+7. Доставка приглашений письмом — когда будет выбран провайдер
    (`docs/25-open-questions.md`). Контракт при этом не меняется.
+
+Закрыто: A3 (CI) — см. `.github/workflows/ci.yml`.
 
 ## Команды
 

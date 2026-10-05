@@ -1,5 +1,7 @@
 # OCTAGON Club System
 
+[![CI](https://github.com/soferty2020/Oktagon/actions/workflows/ci.yml/badge.svg)](https://github.com/soferty2020/Oktagon/actions/workflows/ci.yml)
+
 Единая система управления клубом карате OCTAGON: backend API, web-админка и
 мобильное приложение. Документация в `docs/` — источник истины (см. `AGENTS.md`).
 
@@ -78,10 +80,12 @@ pnpm build
 ```
 
 Если среда запрещает вложенный запуск pnpm-скриптов, используйте
-`scripts/verify.ps1` — он вызывает компилятор, тест-раннер и линтер напрямую и
-печатает сводку по шагам.
+`scripts/verify.ps1` (Windows) или `scripts/ci-verify.sh` (Linux/macOS) — они
+вызывают компилятор, тест-раннер и линтер напрямую и печатают сводку по шагам.
 
-PR не мержится при failed lint/test/build (`docs/16-testing.md`).
+PR не мержится при failed lint/test/build (`docs/16-testing.md`). Пайплайн —
+`.github/workflows/ci.yml`: на push и pull request поднимаются PostgreSQL и
+Redis, затем выполняются lint, typecheck, unit-тесты, сборка и e2e.
 
 ## Правила работы
 

@@ -3,6 +3,8 @@
  *
  * Используется там, где `prisma migrate deploy` недоступен (schema-engine
  * блокируется ограничениями среды, см. docs/27-local-development.md).
+ * Блок ограничений уже включен в конец migration.sql, поэтому отдельный
+ * extra_constraints.sql здесь не применяется.
  *
  * Запуск: node scripts/apply-migration.mjs <migrationDir>
  */
@@ -22,7 +24,6 @@ if (!migrationDirArg) {
 
 const migrationDir = resolve(repoRoot, migrationDirArg);
 const migrationSql = join(migrationDir, 'migration.sql');
-const extraSql = join(migrationDir, 'extra_constraints.sql');
 
 if (!existsSync(migrationSql)) {
   console.error(`Не найден ${migrationSql}`);
@@ -37,16 +38,11 @@ const databaseUrl = process.env.MIGRATION_DATABASE_URL ?? 'postgresql://octagon@
 const parsed = new URL(databaseUrl);
 const database = parsed.pathname.replace(/^\//, '');
 
-const parts = [readFileSync(migrationSql, 'utf8')];
-if (existsSync(extraSql)) {
-  parts.push(readFileSync(extraSql, 'utf8'));
-}
-
 // psql читает SQL из файла: stdin-pipe в ограниченных средах может быть запрещен.
 const combinedPath = join(repoRoot, '.tools', 'migration-combined.sql');
-writeFileSync(combinedPath, parts.join('\n\n'), 'utf8');
+writeFileSync(combinedPath, readFileSync(migrationSql, 'utf8'), 'utf8');
 
-console.log(`applying ${migrationSql}${existsSync(extraSql) ? ' + extra_constraints.sql' : ''}`);
+console.log(`applying ${migrationSql}`);
 console.log(`database: ${database} on ${parsed.hostname}:${parsed.port || 5432}`);
 
 const result = spawnSync(
