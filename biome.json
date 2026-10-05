@@ -10,12 +10,17 @@
       "apps/api/src/**/*.ts",
       "apps/api/test/**/*.ts",
       "apps/api/prisma/**/*.ts",
+      "apps/admin/src/**/*.ts",
+      "apps/admin/src/**/*.tsx",
+      "apps/admin/*.ts",
+      "apps/admin/*.mjs",
       "packages/*/src/**/*.ts",
       "!**/dist",
       "!**/coverage",
       "!**/node_modules",
       "!**/generated",
-      "!**/prisma/migrations"
+      "!**/prisma/migrations",
+      "!**/.next"
     ]
   },
   "formatter": {

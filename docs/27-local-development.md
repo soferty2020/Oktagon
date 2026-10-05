@@ -273,12 +273,61 @@ psql -h localhost -U octagon -d postgres -c "CREATE DATABASE octagon_test OWNER 
 DATABASE_URL="postgresql://octagon:octagon@localhost:5432/octagon_test" pnpm db:deploy:test
 ```
 
-## 8. CI
+## 8. Web-админка (`apps/admin`)
 
-`.github/workflows/ci.yml` запускается на push и pull request. Поднимаются
-сервисы `postgres:16-alpine` и `redis:7-alpine`, затем выполняются: установка
-зависимостей, генерация Prisma Client, миграция тестовой базы, lint, typecheck,
-unit-тесты, сборка и e2e.
+Next.js 16 (App Router) + React 19 + Tailwind CSS 4. Админка не обращается к
+backend напрямую из браузера: все запросы идут через route handler
+`/api/proxy/...`, который подставляет access-токен.
+
+### Почему через прокси
+
+Токены хранятся в `httpOnly`-cookie, поэтому JavaScript страницы их не видит, а
+backend не нужен CORS (docs/15-security.md). Если access-токен истек, прокси
+один раз обновляет его по refresh-токену и повторяет запрос: иначе
+пользователя выкидывало бы из системы каждые 15 минут.
+
+### Запуск
+
+```bash
+# backend должен быть запущен (раздел 6)
+cd apps/admin
+cp .env.example .env.local     # при необходимости измените API_BASE_URL
+pnpm dev                       # http://localhost:3001
+```
+
+`API_BASE_URL` (по умолчанию `http://localhost:3000/api/v1`) используется
+только серверной частью админки и в браузер не попадает.
+
+### Типы из контракта
+
+Типы API генерируются из `openapi.yaml`, поэтому расхождение с backend видно на
+сборке, а не в рантайме:
+
+```bash
+pnpm --filter @octagon/admin api:types   # → apps/admin/src/lib/api/schema.d.ts
+```
+
+Файл `schema.d.ts` коммитится: CI проверяет, что он не устарел относительно
+контракта. После изменения `openapi.yaml` команду нужно выполнить повторно.
+
+### Ограничение: сборка Next в изолированных средах
+
+`next build` и `next dev` запускают вспомогательный процесс с pipe. Там, где
+такой запуск запрещен, они падают с `spawn EPERM`. Запускайте их вне песочницы;
+`scripts/verify.ps1` по умолчанию выполняет только проверку типов админки, а
+сборку — с флагом `-IncludeAdminBuild`.
+
+## 9. CI
+
+`.github/workflows/ci.yml` запускается на push и pull request и состоит из двух
+job'ов:
+
+- **verify** — сервисы `postgres:16-alpine` и `redis:7-alpine`, затем установка
+  зависимостей, генерация Prisma Client, миграция тестовой базы, lint,
+  typecheck, unit-тесты, сборка API и e2e;
+- **admin** — установка зависимостей, генерация типов из контракта (с проверкой,
+  что `schema.d.ts` не устарел), lint, typecheck и сборка админки. Отдельный job
+  не требует БД и быстрее показывает, что именно сломалось.
 
 Локально те же шаги выполняет `bash scripts/ci-verify.sh`.
 
@@ -288,7 +337,7 @@ deploy` (schema-engine там доступен). В ограниченных с�
 `node scripts/apply-migration.mjs <migrationDir>` (см. раздел 5). Поэтому
 важно, чтобы `migration.sql` был самодостаточным.
 
-## 9. Линтер и форматтер
+## 10. Линтер и форматтер
 
 - **Biome** (`biome.json`) — линтер. Выбран вместо ESLint: ESLint 9.39 в
   pnpm-раскладке конфликтует с `ajv` (`Cannot set properties of undefined
@@ -296,7 +345,7 @@ deploy` (schema-engine там доступен). В ограниченных с�
 - **Prettier** (`.prettierrc.json`) — форматирование, отдельной командой
   `pnpm format`.
 
-## 10. Redis в коде
+## 11. Redis в коде
 
 - `RedisModule` (`apps/api/src/redis`) — глобальный модуль с единственным
   клиентом ioredis;

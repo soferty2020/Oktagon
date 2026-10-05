@@ -1,0 +1,10 @@
+@import 'tailwindcss';
+
+/**
+ * Тема админки. Tailwind v4 настраивается здесь, а не в tailwind.config.js.
+ * Палитра намеренно нейтральная: акцент — на данных, а не на оформлении
+ * (docs/12-ui-guidelines.md).
+ */
+@theme {
+  --color-brand: oklch(0.45 0.13 250);
+}

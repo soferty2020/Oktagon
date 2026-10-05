@@ -10,20 +10,28 @@
   На обычной машине эквивалент — `pnpm build`, `pnpm test` и т.д.
 
 .PARAMETER Step
-  all | packages | build | test | e2e | lint. По умолчанию all.
+  all | packages | build | test | e2e | lint | admin. По умолчанию all.
 
 .PARAMETER SkipInstall
   Не запускать pnpm install.
 
+.PARAMETER IncludeAdminBuild
+  Дополнительно собирать админку (`next build`). По умолчанию шаг пропускается:
+  сборка Next запускает отдельный процесс с pipe, что запрещено в ограниченных
+  средах (падает с spawn EPERM), а проверка типов админки выполняется всегда.
+  В CI сборка выполняется отдельным job.
+
 .EXAMPLE
   pwsh scripts/verify.ps1
   pwsh scripts/verify.ps1 -Step e2e
+  pwsh scripts/verify.ps1 -IncludeAdminBuild
 #>
 [CmdletBinding()]
 param(
-  [ValidateSet('all', 'packages', 'build', 'test', 'e2e', 'lint')]
+  [ValidateSet('all', 'packages', 'build', 'test', 'e2e', 'lint', 'admin')]
   [string]$Step = 'all',
-  [switch]$SkipInstall
+  [switch]$SkipInstall,
+  [switch]$IncludeAdminBuild
 )
 
 $ErrorActionPreference = 'Stop'
@@ -96,6 +104,7 @@ if (-not $SkipInstall) {
 $contracts = Join-Path $repoRoot 'packages\contracts'
 $config = Join-Path $repoRoot 'packages\config'
 $api = Join-Path $repoRoot 'apps\api'
+$admin = Join-Path $repoRoot 'apps\admin'
 
 if ($Step -in @('all', 'packages', 'build')) {
   $tsc = Resolve-Tool -Name 'tsc'
@@ -153,6 +162,27 @@ if ($Step -in @('all', 'lint')) {
   Invoke-Step 'контракт openapi.yaml' {
     Push-Location $repoRoot
     try { & node (Join-Path $repoRoot 'scripts\validate-openapi.mjs') } finally { Pop-Location }
+  }
+}
+
+if ($Step -in @('all', 'admin')) {
+  $tscAdmin = Resolve-Tool -Name 'tsc'
+  Invoke-Step 'typecheck @octagon/admin' {
+    Push-Location $admin
+    try { & $tscAdmin --noEmit -p (Join-Path $admin 'tsconfig.json') } finally { Pop-Location }
+  }
+
+  if ($IncludeAdminBuild) {
+    $next = Resolve-Tool -Name 'next'
+    Invoke-Step 'build @octagon/admin (next build)' {
+      # Телеметрия Next пишет в профиль пользователя: в ограниченных средах это
+      # лишний источник ошибок доступа.
+      $env:NEXT_TELEMETRY_DISABLED = '1'
+      Push-Location $admin
+      try { & $next build } finally { Pop-Location }
+    }
+  } else {
+    Write-Host 'Сборка админки пропущена: нужен флаг -IncludeAdminBuild (в CI шаг выполняется).' -ForegroundColor Yellow
   }
 }
 

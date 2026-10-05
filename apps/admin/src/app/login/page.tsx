@@ -1,0 +1,28 @@
+import { redirect } from 'next/navigation';
+
+import { getCurrentUser } from '@/lib/server/session';
+import { LoginForm } from './login-form';
+
+export const metadata = {
+  title: 'Вход — OCTAGON',
+};
+
+export default async function LoginPage() {
+  // Уже вошедшего пользователя отправляем на главную: экран входа ему не нужен.
+  const user = await getCurrentUser();
+  if (user) {
+    redirect('/');
+  }
+
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-slate-100 p-6">
+      <div className="flex w-full max-w-sm flex-col gap-6 rounded-xl bg-white p-8 shadow-sm">
+        <div>
+          <h1 className="text-xl font-semibold text-slate-900">OCTAGON</h1>
+          <p className="mt-1 text-sm text-slate-500">Вход в панель управления клубом</p>
+        </div>
+        <LoginForm />
+      </div>
+    </main>
+  );
+}

@@ -11,10 +11,10 @@
 
 | Путь | Стек | Состояние |
 | --- | --- | --- |
-| `apps/api` | NestJS + Prisma + PostgreSQL | скелет модулей, схема БД, health-check |
-| `apps/admin` | Next.js | не создан |
+| `apps/api` | NestJS + Prisma + PostgreSQL | auth, identity, RBAC, филиалы, залы, тренеры, спортсмены, группы |
+| `apps/admin` | Next.js 16 + React 19 + Tailwind 4 | вход, обзор, филиалы, группы, спортсмены |
 | `apps/mobile` | Flutter | не создан |
-| `packages/contracts` | TypeScript | доменные enum'ы, коды ошибок |
+| `packages/contracts` | TypeScript | доменные enum'ы, коды ошибок, контракты модулей |
 | `packages/config` | TypeScript | схемы конфигурации |
 
 План реализации и открытые решения: `docs/26-implementation-foundation.md`.
@@ -47,6 +47,19 @@ pnpm --filter @octagon/api start:dev
 
 API: `http://localhost:3000/api/v1`
 Swagger: `http://localhost:3000/api/v1/docs`
+
+### Web-админка
+
+```bash
+cd apps/admin
+cp .env.example .env.local   # API_BASE_URL указывает на backend
+pnpm dev                     # http://localhost:3001
+```
+
+Админка обращается к API через свой прокси-маршрут, а токены держит в
+`httpOnly`-cookie, поэтому backend не нужен CORS, а токен недоступен
+JavaScript страницы. Типы API генерируются из `openapi.yaml`:
+`pnpm --filter @octagon/admin api:types`.
 
 ### Health-check
 

@@ -113,3 +113,48 @@ jobs:
           path: '**/coverage/**'
           if-no-files-found: ignore
           retention-days: 7
+
+  admin:
+    # Админка собирается отдельным job: Next не нужны БД и Redis, а отдельный
+    # job быстрее показывает, что именно сломалось.
+    name: admin (lint, typecheck, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Generate OpenAPI types
+        # Типы админки выводятся из контракта: так расхождение с backend видно
+        # на сборке, а не в рантайме (docs/09-api.md, contracts-first).
+        # exec — потому что при hoisted-раскладке .bin есть только в корне.
+        run: |
+          pnpm --filter @octagon/admin exec openapi-typescript ../../openapi.yaml -o src/lib/api/schema.d.ts
+          git diff --exit-code apps/admin/src/lib/api/schema.d.ts \
+            || (echo "schema.d.ts устарел: выполните pnpm --filter @octagon/admin api:types" && exit 1)
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm --filter @octagon/admin exec tsc --noEmit -p tsconfig.json
+
+      - name: Build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: pnpm --filter @octagon/admin exec next build
