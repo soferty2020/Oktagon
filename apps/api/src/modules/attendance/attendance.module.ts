@@ -1,16 +1,33 @@
 import { Module } from '@nestjs/common';
 
+import { GroupsModule } from '../groups/groups.module';
+import { IdentityModule } from '../identity/identity.module';
+import {
+  AttendanceSummaryController,
+  SessionAttendanceController,
+} from './attendance.controller';
+import { AttendanceRepository, PrismaAttendanceRepository } from './attendance.repository';
 import { AttendanceService } from './attendance.service';
 
 /**
- * Модуль attendance.
+ * Посещаемость (эпик E).
  *
- * Спецификация: BR-008, docs/16-testing.md (attendance edit), docs/22-erd.md (Attendance, PlannedAbsence).
- * Публичный контракт и бизнес-логика добавляются отдельным issue
- * (docs/24-multi-agent-plan.md: contracts-first).
+ * Спецификация: BR-008 (родитель сообщает о планируемом отсутствии; итог
+ * подтверждает тренер), docs/22-erd.md (Attendance, PlannedAbsence),
+ * docs/01-mvp-scope.md.
+ *
+ * Зависимости: IdentityModule дает PermissionsGuard (`attendance.view`,
+ * `attendance.edit`) и ResourceScopeService; GroupsModule — состав группы на
+ * дату занятия, по которому строится журнал.
  */
 @Module({
-  providers: [AttendanceService],
+  imports: [IdentityModule, GroupsModule],
+  controllers: [SessionAttendanceController, AttendanceSummaryController],
+  providers: [
+    AttendanceService,
+    PrismaAttendanceRepository,
+    { provide: AttendanceRepository, useExisting: PrismaAttendanceRepository },
+  ],
   exports: [AttendanceService],
 })
 export class AttendanceModule {}

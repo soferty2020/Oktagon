@@ -159,6 +159,12 @@ const expectedRoutes = [
   ['get', '/training-sessions/{id}'],
   ['patch', '/training-sessions/{id}/move'],
   ['post', '/training-sessions/{id}/cancel'],
+  ['get', '/training-sessions/{id}/attendance'],
+  ['put', '/training-sessions/{id}/attendance'],
+  ['delete', '/training-sessions/{id}/attendance/{athleteId}'],
+  ['post', '/training-sessions/{id}/attendance/planned-absence'],
+  ['delete', '/training-sessions/{id}/attendance/planned-absence/{athleteId}'],
+  ['get', '/attendance/summary'],
 ];
 
 for (const [method, route] of expectedRoutes) {

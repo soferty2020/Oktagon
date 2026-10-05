@@ -10,3 +10,4 @@ export * from './athletes';
 export * from './groups';
 export * from './users';
 export * from './schedule';
+export * from './attendance';

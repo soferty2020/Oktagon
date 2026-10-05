@@ -237,7 +237,7 @@ describe('SchedulingService', () => {
           startTime: '19:00',
           endTime: '20:00',
         }),
-      ).rejects.toMatchObject({ code: 'SCHEDULE_SLOT_OVERLAPS' });
+      ).rejects.toMatchObject({ code: 'SLOT_OVERLAPS_TEMPLATE' });
       expect(repository.addSlot).not.toHaveBeenCalled();
     });
 
@@ -271,7 +271,7 @@ describe('SchedulingService', () => {
       repository.findSlot.mockResolvedValue(null);
 
       await expect(service.deleteSlot('admin-1', 'ghost')).rejects.toMatchObject({
-        code: 'SCHEDULE_SLOT_NOT_FOUND',
+        code: 'SCHEDULE_TEMPLATE_NOT_FOUND',
       });
     });
   });

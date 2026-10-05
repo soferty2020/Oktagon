@@ -2268,6 +2268,263 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
 
+  /training-sessions/{id}/attendance:
+    get:
+      tags: [attendance]
+      summary: Журнал занятия
+      description: |
+        Список строится по составу группы **на дату занятия**: спортсмен,
+        зачисленный позже, не числится отсутствующим на занятии, которого не было
+        в его расписании, а выбывший не получает отметок после ухода.
+
+        Для каждого спортсмена отдается подтвержденная отметка и предупреждение
+        родителя о планируемом отсутствии (BR-008).
+      operationId: getSessionAttendance
+      parameters:
+        - $ref: '#/components/parameters/TrainingSessionId'
+      responses:
+        '200':
+          description: Состав группы на дату занятия со статусами
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionAttendanceView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `attendance.view` или группа вне доступа (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Занятие не найдено (`TRAINING_SESSION_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    put:
+      tags: [attendance]
+      summary: Отметить посещаемость
+      description: |
+        Передаются только измененные спортсмены: тренер отмечает по ходу занятия,
+        а не заполняет весь список сразу. Повторная отметка обновляет статус, а не
+        создает вторую запись.
+
+        Отметить можно только тех, кто числился в группе на дату занятия.
+      operationId: saveAttendance
+      parameters:
+        - $ref: '#/components/parameters/TrainingSessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveAttendanceRequest'
+      responses:
+        '200':
+          description: Журнал занятия после сохранения
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionAttendanceView'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `attendance.edit` или группа вне доступа (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Занятие не найдено (`TRAINING_SESSION_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Спортсмен не числился в группе (`ATHLETE_NOT_IN_GROUP`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /training-sessions/{id}/attendance/{athleteId}:
+    delete:
+      tags: [attendance]
+      summary: Снять отметку спортсмена
+      description: |
+        Нужно, когда спортсмена отметили по ошибке: удалить запись честнее, чем
+        оставить неверный статус.
+      operationId: resetAttendance
+      parameters:
+        - $ref: '#/components/parameters/TrainingSessionId'
+        - name: athleteId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Журнал занятия после снятия отметки
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionAttendanceView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `attendance.edit` или группа вне доступа (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Отметка не найдена (`ATTENDANCE_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /training-sessions/{id}/attendance/planned-absence:
+    post:
+      tags: [attendance]
+      summary: Сообщить о планируемом отсутствии
+      description: |
+        BR-008: родитель предупреждает заранее, но это предварительная
+        информация — итоговую посещаемость подтверждает тренер. Предупреждение
+        не создает отметку посещаемости.
+
+        Родитель может сообщать только о связанных спортсменах, сотрудник — о тех,
+        кто в его зоне видимости.
+      operationId: reportPlannedAbsence
+      parameters:
+        - $ref: '#/components/parameters/TrainingSessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportPlannedAbsenceRequest'
+      responses:
+        '200':
+          description: Предупреждение сохранено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionAttendanceView'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: |
+            Нет права `attendance.view` или спортсмен вне зоны доступа
+            (`FORBIDDEN`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Занятие не найдено (`TRAINING_SESSION_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Спортсмен не числился в группе (`ATHLETE_NOT_IN_GROUP`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /training-sessions/{id}/attendance/planned-absence/{athleteId}:
+    delete:
+      tags: [attendance]
+      summary: Отменить предупреждение об отсутствии
+      description: 'Спортсмен придет: предупреждение снимается до отметки тренера.'
+      operationId: cancelPlannedAbsence
+      parameters:
+        - $ref: '#/components/parameters/TrainingSessionId'
+        - name: athleteId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Предупреждение снято
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionAttendanceView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: |
+            Нет права `attendance.view` или спортсмен вне зоны доступа
+            (`FORBIDDEN`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Предупреждения нет (`PLANNED_ABSENCE_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /attendance/summary:
+    get:
+      tags: [attendance]
+      summary: Сводка посещаемости группы за период
+      description: |
+        Знаменатель — занятия, на которых спортсмен числился в составе: иначе
+        процент посещаемости был бы занижен у тех, кто зачислен позже остальных.
+      operationId: getAttendanceSummary
+      parameters:
+        - name: groupId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          required: false
+          description: Начало периода, ISO-8601; по умолчанию 30 дней назад
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Посещения и пропуски по каждому спортсмену
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AthleteAttendanceSummary'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `attendance.view` или группа вне доступа (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -2451,8 +2708,7 @@ components:
         - SCHEDULE_TEMPLATE_ALREADY_PUBLISHED
         - SCHEDULE_TEMPLATE_PUBLISHED
         - SCHEDULE_TEMPLATE_EMPTY
-        - SCHEDULE_SLOT_NOT_FOUND
-        - SCHEDULE_SLOT_OVERLAPS
+        - SLOT_OVERLAPS_TEMPLATE
         - SCHEDULE_SLOT_INVALID_TIME
         - TRAINING_SESSION_NOT_FOUND
         - TRAINING_SESSION_CANCELLED
@@ -2460,6 +2716,11 @@ components:
         - TRAINER_BUSY
         - HALL_BUSY
         - SESSION_ALREADY_STARTED
+        - ATTENDANCE_ALREADY_RECORDED
+        - ATTENDANCE_NOT_FOUND
+        - ATHLETE_NOT_IN_GROUP
+        - PLANNED_ABSENCE_EXISTS
+        - PLANNED_ABSENCE_NOT_FOUND
 
     PermissionCode:
       type: string
@@ -3349,6 +3610,144 @@ components:
           type: integer
         totalPages:
           type: integer
+
+    AttendanceStatus:
+      type: string
+      description: Итоговая посещаемость, подтвержденная тренером
+      enum: [PRESENT, ABSENT, EXCUSED]
+
+    AttendanceMarkView:
+      type: object
+      required: [athleteId, status, markedAt]
+      properties:
+        athleteId:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/AttendanceStatus'
+        comment:
+          type: string
+          nullable: true
+        markedAt:
+          type: string
+          format: date-time
+        markedById:
+          type: string
+          format: uuid
+          nullable: true
+
+    SessionRosterEntry:
+      type: object
+      description: |
+        Спортсмен, числившийся в группе на дату занятия. Зачисленные позже и
+        выбывшие раньше в журнал не попадают.
+      required: [athleteId, firstName, lastName]
+      properties:
+        athleteId:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        attendance:
+          allOf:
+            - $ref: '#/components/schemas/AttendanceMarkView'
+          nullable: true
+        plannedAbsence:
+          type: object
+          nullable: true
+          description: Предупреждение родителя по BR-008; не заменяет отметку
+          required: [reason, reportedAt]
+          properties:
+            reason:
+              type: string
+              nullable: true
+            reportedAt:
+              type: string
+              format: date-time
+
+    SessionAttendanceView:
+      type: object
+      required: [sessionId, groupId, groupName, startsAt, endsAt, status, roster, markedCount]
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        groupId:
+          type: string
+          format: uuid
+        groupName:
+          type: string
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/TrainingSessionStatus'
+        roster:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessionRosterEntry'
+        markedCount:
+          type: integer
+          description: Сколько отметок уже подтверждено
+
+    SaveAttendanceRequest:
+      type: object
+      required: [marks]
+      properties:
+        marks:
+          type: array
+          maxItems: 200
+          items:
+            type: object
+            required: [athleteId, status]
+            properties:
+              athleteId:
+                type: string
+                format: uuid
+              status:
+                $ref: '#/components/schemas/AttendanceStatus'
+              comment:
+                type: string
+                maxLength: 500
+
+    ReportPlannedAbsenceRequest:
+      type: object
+      required: [athleteId]
+      properties:
+        athleteId:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          maxLength: 500
+          example: Поездка с семьей
+
+    AthleteAttendanceSummary:
+      type: object
+      description: |
+        `total` считается по занятиям, на которых спортсмен числился в составе:
+        зачисление в середине квартала не портит статистику задним числом.
+      required: [athleteId, total, present, absent, excused, unmarked]
+      properties:
+        athleteId:
+          type: string
+          format: uuid
+        total:
+          type: integer
+        present:
+          type: integer
+        absent:
+          type: integer
+        excused:
+          type: integer
+        unmarked:
+          type: integer
+          description: Занятия без подтвержденной отметки
 
     CreateGroupRequest:
       type: object

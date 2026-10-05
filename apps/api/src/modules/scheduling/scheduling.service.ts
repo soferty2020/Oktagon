@@ -244,7 +244,7 @@ export class SchedulingService {
   ): Promise<ScheduleTemplateView> {
     const existing = await this.schedule.findSlot(slotId);
     if (!existing) {
-      throw new ApiException('SCHEDULE_SLOT_NOT_FOUND' satisfies ApiErrorCode, 'Слот не найден');
+      throw new ApiException('SCHEDULE_TEMPLATE_NOT_FOUND' satisfies ApiErrorCode, 'Слот не найден');
     }
 
     const template = await this.requireTemplateForSlot(slotId);
@@ -276,7 +276,7 @@ export class SchedulingService {
   async deleteSlot(callerUserId: string, slotId: string): Promise<ScheduleTemplateView> {
     const existing = await this.schedule.findSlot(slotId);
     if (!existing) {
-      throw new ApiException('SCHEDULE_SLOT_NOT_FOUND' satisfies ApiErrorCode, 'Слот не найден');
+      throw new ApiException('SCHEDULE_TEMPLATE_NOT_FOUND' satisfies ApiErrorCode, 'Слот не найден');
     }
 
     const template = await this.requireTemplateForSlot(slotId);
@@ -570,7 +570,7 @@ export class SchedulingService {
 
       if (overlap) {
         throw new ApiException(
-          'SCHEDULE_SLOT_OVERLAPS' satisfies ApiErrorCode,
+          'SLOT_OVERLAPS_TEMPLATE' satisfies ApiErrorCode,
           `Время пересекается со слотом ${WEEKDAY_LABELS[slot.weekday]} ${slot.startTime}–${slot.endTime}`,
           { slotId: slot.id },
         );
@@ -701,7 +701,7 @@ export class SchedulingService {
   private async requireTemplateForSlot(slotId: string): Promise<ScheduleTemplateRecord> {
     const link = await this.schedule.findTemplateBySlot(slotId);
     if (!link) {
-      throw new ApiException('SCHEDULE_SLOT_NOT_FOUND' satisfies ApiErrorCode, 'Слот не найден');
+      throw new ApiException('SCHEDULE_TEMPLATE_NOT_FOUND' satisfies ApiErrorCode, 'Слот не найден');
     }
 
     const template = await this.schedule.findTemplate(link.templateId);

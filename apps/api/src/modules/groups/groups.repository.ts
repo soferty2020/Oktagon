@@ -57,6 +57,16 @@ export interface ActiveMembershipRecord {
   joinedAt: Date;
 }
 
+/** Спортсмен, числившийся в группе на конкретную дату. */
+export interface RosterEntryRecord {
+  athleteId: string;
+  firstName: string;
+  lastName: string;
+  status: AthleteStatus;
+  joinedAt: Date;
+  leftAt: Date | null;
+}
+
 /**
  * Доступ к группам и связям.
  *
@@ -99,6 +109,14 @@ export abstract class GroupsRepository {
   abstract trainerExists(trainerId: string): Promise<boolean>;
 
   abstract listMembers(groupId: string): Promise<GroupMemberRecord[]>;
+  /**
+   * Состав группы на дату.
+   *
+   * Нужен посещаемости: отмечать можно только тех, кто числился в группе на
+   * момент занятия. Иначе спортсмену, зачисленному позже, приписали бы
+   * отсутствие на занятии, которого не было в его расписании.
+   */
+  abstract listRosterAsOf(groupId: string, at: Date): Promise<RosterEntryRecord[]>;
   abstract addMember(input: {
     groupId: string;
     athleteId: string;
@@ -353,6 +371,35 @@ export class PrismaGroupsRepository extends GroupsRepository {
       lastName: membership.athlete.lastName,
       status: membership.athlete.status,
       joinedAt: membership.joinedAt,
+    }));
+  }
+
+  async listRosterAsOf(groupId: string, at: Date): Promise<RosterEntryRecord[]> {
+    // Членство действовало на дату, если спортсмен уже вступил и еще не вышел.
+    // Записи истории (state = ENDED) тоже подходят: важен период, а не текущий
+    // статус, иначе журнал прошлого занятия нельзя было бы восстановить.
+    const memberships = await this.prisma.db.groupMembership.findMany({
+      where: {
+        groupId,
+        joinedAt: { lte: at },
+        OR: [{ leftAt: null }, { leftAt: { gte: at } }],
+        athlete: { archivedAt: null },
+      },
+      orderBy: [{ athlete: { lastName: 'asc' } }, { athlete: { firstName: 'asc' } }],
+      select: {
+        joinedAt: true,
+        leftAt: true,
+        athlete: { select: { id: true, firstName: true, lastName: true, status: true } },
+      },
+    });
+
+    return memberships.map((membership) => ({
+      athleteId: membership.athlete.id,
+      firstName: membership.athlete.firstName,
+      lastName: membership.athlete.lastName,
+      status: membership.athlete.status,
+      joinedAt: membership.joinedAt,
+      leftAt: membership.leftAt,
     }));
   }
 

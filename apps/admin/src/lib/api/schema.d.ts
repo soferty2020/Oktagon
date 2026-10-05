@@ -926,6 +926,126 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/training-sessions/{id}/attendance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Журнал занятия
+         * @description Список строится по составу группы **на дату занятия**: спортсмен,
+         *     зачисленный позже, не числится отсутствующим на занятии, которого не было
+         *     в его расписании, а выбывший не получает отметок после ухода.
+         *
+         *     Для каждого спортсмена отдается подтвержденная отметка и предупреждение
+         *     родителя о планируемом отсутствии (BR-008).
+         */
+        get: operations["getSessionAttendance"];
+        /**
+         * Отметить посещаемость
+         * @description Передаются только измененные спортсмены: тренер отмечает по ходу занятия,
+         *     а не заполняет весь список сразу. Повторная отметка обновляет статус, а не
+         *     создает вторую запись.
+         *
+         *     Отметить можно только тех, кто числился в группе на дату занятия.
+         */
+        put: operations["saveAttendance"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/training-sessions/{id}/attendance/{athleteId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Снять отметку спортсмена
+         * @description Нужно, когда спортсмена отметили по ошибке: удалить запись честнее, чем
+         *     оставить неверный статус.
+         */
+        delete: operations["resetAttendance"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/training-sessions/{id}/attendance/planned-absence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Сообщить о планируемом отсутствии
+         * @description BR-008: родитель предупреждает заранее, но это предварительная
+         *     информация — итоговую посещаемость подтверждает тренер. Предупреждение
+         *     не создает отметку посещаемости.
+         *
+         *     Родитель может сообщать только о связанных спортсменах, сотрудник — о тех,
+         *     кто в его зоне видимости.
+         */
+        post: operations["reportPlannedAbsence"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/training-sessions/{id}/attendance/planned-absence/{athleteId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Отменить предупреждение об отсутствии
+         * @description Спортсмен придет: предупреждение снимается до отметки тренера.
+         */
+        delete: operations["cancelPlannedAbsence"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attendance/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Сводка посещаемости группы за период
+         * @description Знаменатель — занятия, на которых спортсмен числился в составе: иначе
+         *     процент посещаемости был бы занижен у тех, кто зачислен позже остальных.
+         */
+        get: operations["getAttendanceSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -964,7 +1084,7 @@ export interface components {
          *     он расширяется по мере реализации модулей.
          * @enum {string}
          */
-        ErrorCode: "VALIDATION_FAILED" | "UNAUTHENTICATED" | "INVALID_CREDENTIALS" | "TOKEN_EXPIRED" | "TOKEN_INVALID" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "INTERNAL_ERROR" | "EMAIL_ALREADY_EXISTS" | "INVITE_INVALID" | "INVITE_EXPIRED" | "INVITE_ALREADY_USED" | "INVITE_EMAIL_MISMATCH" | "USER_BLOCKED" | "PERMISSION_UNKNOWN" | "PERMISSION_GRANTED_BY_ROLE" | "PERMISSION_IS_ROLE_BASED" | "PERMISSION_NOT_GRANTED" | "PERMISSION_EXPIRES_IN_PAST" | "BRANCH_NOT_FOUND" | "BRANCH_ARCHIVED" | "HALL_NOT_FOUND" | "HALL_NOT_IN_BRANCH" | "TRAINER_NOT_FOUND" | "TRAINER_ALREADY_ASSIGNED" | "ATHLETE_NOT_FOUND" | "ATHLETE_ARCHIVED" | "ACCOUNT_ALREADY_LINKED" | "ACCOUNT_NOT_LINKED" | "ACTIVE_MEMBERSHIP_EXISTS" | "GROUP_NOT_FOUND" | "GROUP_ARCHIVED" | "GROUP_TRAINER_ALREADY_ASSIGNED" | "GROUP_TRAINER_NOT_ASSIGNED" | "GROUP_BRANCH_ALREADY_LINKED" | "GROUP_BRANCH_NOT_LINKED" | "ATHLETE_ALREADY_MEMBER" | "MEMBERSHIP_NOT_FOUND" | "SCHEDULE_TEMPLATE_NOT_FOUND" | "SCHEDULE_TEMPLATE_EXISTS" | "SCHEDULE_TEMPLATE_ALREADY_PUBLISHED" | "SCHEDULE_TEMPLATE_PUBLISHED" | "SCHEDULE_TEMPLATE_EMPTY" | "SCHEDULE_SLOT_NOT_FOUND" | "SCHEDULE_SLOT_OVERLAPS" | "SCHEDULE_SLOT_INVALID_TIME" | "TRAINING_SESSION_NOT_FOUND" | "TRAINING_SESSION_CANCELLED" | "TRAINING_SESSION_CONFLICT" | "TRAINER_BUSY" | "HALL_BUSY" | "SESSION_ALREADY_STARTED";
+        ErrorCode: "VALIDATION_FAILED" | "UNAUTHENTICATED" | "INVALID_CREDENTIALS" | "TOKEN_EXPIRED" | "TOKEN_INVALID" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "INTERNAL_ERROR" | "EMAIL_ALREADY_EXISTS" | "INVITE_INVALID" | "INVITE_EXPIRED" | "INVITE_ALREADY_USED" | "INVITE_EMAIL_MISMATCH" | "USER_BLOCKED" | "PERMISSION_UNKNOWN" | "PERMISSION_GRANTED_BY_ROLE" | "PERMISSION_IS_ROLE_BASED" | "PERMISSION_NOT_GRANTED" | "PERMISSION_EXPIRES_IN_PAST" | "BRANCH_NOT_FOUND" | "BRANCH_ARCHIVED" | "HALL_NOT_FOUND" | "HALL_NOT_IN_BRANCH" | "TRAINER_NOT_FOUND" | "TRAINER_ALREADY_ASSIGNED" | "ATHLETE_NOT_FOUND" | "ATHLETE_ARCHIVED" | "ACCOUNT_ALREADY_LINKED" | "ACCOUNT_NOT_LINKED" | "ACTIVE_MEMBERSHIP_EXISTS" | "GROUP_NOT_FOUND" | "GROUP_ARCHIVED" | "GROUP_TRAINER_ALREADY_ASSIGNED" | "GROUP_TRAINER_NOT_ASSIGNED" | "GROUP_BRANCH_ALREADY_LINKED" | "GROUP_BRANCH_NOT_LINKED" | "ATHLETE_ALREADY_MEMBER" | "MEMBERSHIP_NOT_FOUND" | "SCHEDULE_TEMPLATE_NOT_FOUND" | "SCHEDULE_TEMPLATE_EXISTS" | "SCHEDULE_TEMPLATE_ALREADY_PUBLISHED" | "SCHEDULE_TEMPLATE_PUBLISHED" | "SCHEDULE_TEMPLATE_EMPTY" | "SLOT_OVERLAPS_TEMPLATE" | "SCHEDULE_SLOT_INVALID_TIME" | "TRAINING_SESSION_NOT_FOUND" | "TRAINING_SESSION_CANCELLED" | "TRAINING_SESSION_CONFLICT" | "TRAINER_BUSY" | "HALL_BUSY" | "SESSION_ALREADY_STARTED" | "ATTENDANCE_ALREADY_RECORDED" | "ATTENDANCE_NOT_FOUND" | "ATHLETE_NOT_IN_GROUP" | "PLANNED_ABSENCE_EXISTS" | "PLANNED_ABSENCE_NOT_FOUND";
         /**
          * @description Право из каталога (`docs/04-roles-permissions.md`)
          * @enum {string}
@@ -1416,6 +1536,81 @@ export interface components {
             perPage: number;
             total: number;
             totalPages: number;
+        };
+        /**
+         * @description Итоговая посещаемость, подтвержденная тренером
+         * @enum {string}
+         */
+        AttendanceStatus: "PRESENT" | "ABSENT" | "EXCUSED";
+        AttendanceMarkView: {
+            /** Format: uuid */
+            athleteId: string;
+            status: components["schemas"]["AttendanceStatus"];
+            comment?: string | null;
+            /** Format: date-time */
+            markedAt: string;
+            /** Format: uuid */
+            markedById?: string | null;
+        };
+        /**
+         * @description Спортсмен, числившийся в группе на дату занятия. Зачисленные позже и
+         *     выбывшие раньше в журнал не попадают.
+         */
+        SessionRosterEntry: {
+            /** Format: uuid */
+            athleteId: string;
+            firstName: string;
+            lastName: string;
+            attendance?: components["schemas"]["AttendanceMarkView"] | null;
+            /** @description Предупреждение родителя по BR-008; не заменяет отметку */
+            plannedAbsence?: {
+                reason: string | null;
+                /** Format: date-time */
+                reportedAt: string;
+            } | null;
+        };
+        SessionAttendanceView: {
+            /** Format: uuid */
+            sessionId: string;
+            /** Format: uuid */
+            groupId: string;
+            groupName: string;
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            status: components["schemas"]["TrainingSessionStatus"];
+            roster: components["schemas"]["SessionRosterEntry"][];
+            /** @description Сколько отметок уже подтверждено */
+            markedCount: number;
+        };
+        SaveAttendanceRequest: {
+            marks: {
+                /** Format: uuid */
+                athleteId: string;
+                status: components["schemas"]["AttendanceStatus"];
+                comment?: string;
+            }[];
+        };
+        ReportPlannedAbsenceRequest: {
+            /** Format: uuid */
+            athleteId: string;
+            /** @example Поездка с семьей */
+            reason?: string;
+        };
+        /**
+         * @description `total` считается по занятиям, на которых спортсмен числился в составе:
+         *     зачисление в середине квартала не портит статистику задним числом.
+         */
+        AthleteAttendanceSummary: {
+            /** Format: uuid */
+            athleteId: string;
+            total: number;
+            present: number;
+            absent: number;
+            excused: number;
+            /** @description Занятия без подтвержденной отметки */
+            unmarked: number;
         };
         CreateGroupRequest: {
             name: string;
@@ -4309,6 +4504,287 @@ export interface operations {
              *     (`SESSION_ALREADY_STARTED`).
              */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getSessionAttendance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Идентификатор занятия */
+                id: components["parameters"]["TrainingSessionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Состав группы на дату занятия со статусами */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionAttendanceView"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `attendance.view` или группа вне доступа (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Занятие не найдено (`TRAINING_SESSION_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    saveAttendance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Идентификатор занятия */
+                id: components["parameters"]["TrainingSessionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveAttendanceRequest"];
+            };
+        };
+        responses: {
+            /** @description Журнал занятия после сохранения */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionAttendanceView"];
+                };
+            };
+            400: components["responses"]["ValidationFailed"];
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `attendance.edit` или группа вне доступа (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Занятие не найдено (`TRAINING_SESSION_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Спортсмен не числился в группе (`ATHLETE_NOT_IN_GROUP`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    resetAttendance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Идентификатор занятия */
+                id: components["parameters"]["TrainingSessionId"];
+                athleteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Журнал занятия после снятия отметки */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionAttendanceView"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `attendance.edit` или группа вне доступа (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Отметка не найдена (`ATTENDANCE_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    reportPlannedAbsence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Идентификатор занятия */
+                id: components["parameters"]["TrainingSessionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportPlannedAbsenceRequest"];
+            };
+        };
+        responses: {
+            /** @description Предупреждение сохранено */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionAttendanceView"];
+                };
+            };
+            400: components["responses"]["ValidationFailed"];
+            401: components["responses"]["Unauthenticated"];
+            /**
+             * @description Нет права `attendance.view` или спортсмен вне зоны доступа
+             *     (`FORBIDDEN`).
+             */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Занятие не найдено (`TRAINING_SESSION_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Спортсмен не числился в группе (`ATHLETE_NOT_IN_GROUP`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    cancelPlannedAbsence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Идентификатор занятия */
+                id: components["parameters"]["TrainingSessionId"];
+                athleteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Предупреждение снято */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionAttendanceView"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /**
+             * @description Нет права `attendance.view` или спортсмен вне зоны доступа
+             *     (`FORBIDDEN`).
+             */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Предупреждения нет (`PLANNED_ABSENCE_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getAttendanceSummary: {
+        parameters: {
+            query: {
+                groupId: string;
+                /** @description Начало периода, ISO-8601; по умолчанию 30 дней назад */
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Посещения и пропуски по каждому спортсмену */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AthleteAttendanceSummary"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `attendance.view` или группа вне доступа (`FORBIDDEN`) */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

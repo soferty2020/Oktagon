@@ -107,6 +107,10 @@ JavaScript страницы. Типы API генерируются из `openapi
 | `GET /api/v1/training-sessions` | занятия за период; список ограничен scope |
 | `PATCH /api/v1/training-sessions/{id}/move` | перенос занятия: шаблон не меняется (BR-009) |
 | `POST /api/v1/training-sessions/{id}/cancel` | отмена занятия с причиной (право `schedule.cancel`) |
+| `GET/PUT /api/v1/training-sessions/{id}/attendance` | журнал занятия: состав на дату и отметки |
+| `DELETE /api/v1/training-sessions/{id}/attendance/{athleteId}` | снять отметку |
+| `POST/DELETE /api/v1/training-sessions/{id}/attendance/planned-absence[/{athleteId}]` | предупреждение родителя об отсутствии (BR-008) |
+| `GET /api/v1/attendance/summary` | сводка посещаемости группы за период |
 
 ## Проверки
 
