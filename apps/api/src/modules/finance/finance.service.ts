@@ -143,6 +143,10 @@ export class FinanceService {
       marked ? callerUserId : null,
     );
 
+    // Пересчет обязателен: сама отметка меняет только поле отметки, а статус
+    // периода выводится из нее. Без пересчета период остался бы «не оплачен».
+    const recalculated = await this.recalculate(updated);
+
     await this.audit.recordSafely({
       action: marked
         ? AuditAction.PERIOD_MARKED_FULLY_PAID
@@ -153,7 +157,7 @@ export class FinanceService {
       after: { marked },
     });
 
-    return toPeriodView(updated);
+    return toPeriodView(recalculated);
   }
 
   // --- Оплаты --------------------------------------------------------------
@@ -332,7 +336,9 @@ export class FinanceService {
         // Условие 2: месяц отмечен как полностью оплаченный (BR-003).
         reason = DebtorExemption.MARKED_FULLY_PAID;
       } else if (frozen.has(athlete.athleteId)) {
-        // Условие 4: спортсмен в заморозке на соответствующую дату.
+        // Условие 4: спортсмен в заморозке на соответствующую дату. Проверяется
+        // раньше тренировок: заморозка — это решение клуба, и причина «нет
+        // занятий» вводила бы в заблуждение, если спортсмен на паузе.
         reason = DebtorExemption.FROZEN;
       } else if (!(await this.finance.hasGroupTrainingInMonth(athlete.athleteId, from, to))) {
         // Условие 3: в месяце еще не было ни одной тренировки группы.

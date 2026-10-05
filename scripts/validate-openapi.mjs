@@ -165,6 +165,17 @@ const expectedRoutes = [
   ['post', '/training-sessions/{id}/attendance/planned-absence'],
   ['delete', '/training-sessions/{id}/attendance/planned-absence/{athleteId}'],
   ['get', '/attendance/summary'],
+  ['get', '/athletes/{id}/membership-periods'],
+  ['get', '/athletes/{id}/membership-periods/{year}/{month}'],
+  ['patch', '/membership-periods/{periodId}'],
+  ['post', '/membership-periods/{periodId}/fully-paid'],
+  ['post', '/membership-periods/{periodId}/payments'],
+  ['patch', '/payments/{paymentId}'],
+  ['delete', '/payments/{paymentId}'],
+  ['get', '/debts'],
+  ['get', '/athletes/{id}/freezes'],
+  ['post', '/athletes/{id}/freezes'],
+  ['post', '/freezes/{freezeId}/close'],
 ];
 
 for (const [method, route] of expectedRoutes) {

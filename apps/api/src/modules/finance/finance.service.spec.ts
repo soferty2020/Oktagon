@@ -175,13 +175,16 @@ describe('FinanceService', () => {
     it('ставит отметку и статус независимо от суммы', async () => {
       repository.sumPayments.mockResolvedValue(0);
 
-      await service.setFullyPaid('admin-1', 'period-1', true);
+      const view = await service.setFullyPaid('admin-1', 'period-1', true);
 
       expect(repository.setFullyPaidMark).toHaveBeenCalledWith(
         'period-1',
         expect.any(Date),
         'admin-1',
       );
+      // Отметка меняет только свое поле, поэтому статус обязан пересчитаться:
+      // иначе период остался бы «не оплачен» при отметке «оплачен полностью».
+      expect(view.status).toBe('FULLY_PAID_MARKED');
       expect(audit.recordSafely).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'finance.period_marked_fully_paid' }),
       );

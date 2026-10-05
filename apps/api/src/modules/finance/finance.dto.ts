@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaymentMethod } from '@octagon/contracts';
 import { Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsEnum,
   IsInt,
   IsNumber,
@@ -60,9 +61,16 @@ export class UpdateMembershipPeriodDto {
   note?: string | null;
 }
 
-/** Ручная отметка «оплачен полностью» (BR-003). */
+/**
+ * Ручная отметка «оплачен полностью» (BR-003).
+ *
+ * Валидатор обязателен: ValidationPipe настроен с `whitelist`, поэтому поле без
+ * декоратора вырезается из тела, и запрос отклоняется как содержащий лишние
+ * свойства.
+ */
 export class MarkFullyPaidDto {
   @ApiProperty({ description: 'true — отметить месяц оплаченным, false — снять отметку' })
+  @IsBoolean()
   marked!: boolean;
 }
 

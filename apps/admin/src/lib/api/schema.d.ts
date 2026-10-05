@@ -1046,6 +1046,217 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/athletes/{id}/membership-periods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Расчетные периоды спортсмена за год
+         * @description Учет ведется по календарным месяцам (BR-001). Возвращаются только
+         *     существующие периоды: месяц заводится при обращении к нему.
+         */
+        get: operations["listMembershipPeriods"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/athletes/{id}/membership-periods/{year}/{month}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Расчетный период за месяц
+         * @description Период создается при первом обращении: иначе администратор не увидел бы,
+         *     что месяц не заведен, и не смог бы внести оплату. Статус периода
+         *     выводится из суммы оплат и ручной отметки, а не задается вручную.
+         */
+        get: operations["getMembershipPeriod"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/membership-periods/{periodId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Изменить ожидаемую сумму и заметку периода
+         * @description BR-002: сумма вводится вручную. Для нового спортсмена, пришедшего в
+         *     середине месяца, она может быть любой; `null` снимает ожидание.
+         */
+        patch: operations["updateMembershipPeriod"];
+        trace?: never;
+    };
+    "/membership-periods/{periodId}/fully-paid": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Отметить месяц оплаченным полностью
+         * @description BR-003: суперадминистратор может отметить месяц оплаченным независимо от
+         *     суммы — в клубе бывают расчеты вне системы. Отметка имеет приоритет над
+         *     суммой и снимается тем же запросом с `marked: false`.
+         */
+        post: operations["markPeriodFullyPaid"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/membership-periods/{periodId}/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Внести оплату
+         * @description Сумма произвольная (BR-002). При наличии `idempotencyKey` повторная
+         *     отправка возвращает текущее состояние периода, а не создает вторую
+         *     оплату.
+         */
+        post: operations["recordPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payments/{paymentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Отменить оплату
+         * @description Запись удаляется, период пересчитывается: ошибка ввода не должна
+         *     оставаться в истории как факт поступления денег.
+         */
+        delete: operations["voidPayment"];
+        options?: never;
+        head?: never;
+        /**
+         * Изменить оплату
+         * @description Изменение пересчитывает статус периода.
+         */
+        patch: operations["updatePayment"];
+        trace?: never;
+    };
+    "/debts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Список должников за месяц
+         * @description BR-004: спортсмен считается должником, если он активен; месяц не отмечен
+         *     как полностью оплаченный; в месяце уже была хотя бы одна тренировка его
+         *     группы; он не в заморозке.
+         *
+         *     Задолженность оценивается **на начало месяца**. Рассматриваются только
+         *     спортсмены с членством в этом месяце: иначе список заполнился бы всеми
+         *     спортсменами клуба.
+         *
+         *     Для не-должников возвращается причина освобождения: руководителю важно
+         *     отличать решение (заморозка, отметка об оплате) от отсутствия данных.
+         */
+        get: operations["listDebtors"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/athletes/{id}/freezes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Заморозки спортсмена
+         * @description История заморозок, новые сверху.
+         */
+        get: operations["listFreezes"];
+        put?: never;
+        /**
+         * Открыть заморозку
+         * @description BR-005: заморозка — открытый период приостановления; дату начала можно
+         *     внести задним числом. Второй открытый период отклоняется
+         *     (`FREEZE_ALREADY_OPEN`): иначе нельзя понять, когда приостановка
+         *     закончилась.
+         */
+        post: operations["openFreeze"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/freezes/{freezeId}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Завершить заморозку
+         * @description Дату окончания тоже можно внести задним числом: заморозку часто
+         *     закрывают постфактум, когда спортсмен вернулся. Дата раньше начала
+         *     отклоняется (`FREEZE_PERIOD_INVALID`).
+         */
+        post: operations["closeFreeze"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1084,7 +1295,7 @@ export interface components {
          *     он расширяется по мере реализации модулей.
          * @enum {string}
          */
-        ErrorCode: "VALIDATION_FAILED" | "UNAUTHENTICATED" | "INVALID_CREDENTIALS" | "TOKEN_EXPIRED" | "TOKEN_INVALID" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "INTERNAL_ERROR" | "EMAIL_ALREADY_EXISTS" | "INVITE_INVALID" | "INVITE_EXPIRED" | "INVITE_ALREADY_USED" | "INVITE_EMAIL_MISMATCH" | "USER_BLOCKED" | "PERMISSION_UNKNOWN" | "PERMISSION_GRANTED_BY_ROLE" | "PERMISSION_IS_ROLE_BASED" | "PERMISSION_NOT_GRANTED" | "PERMISSION_EXPIRES_IN_PAST" | "BRANCH_NOT_FOUND" | "BRANCH_ARCHIVED" | "HALL_NOT_FOUND" | "HALL_NOT_IN_BRANCH" | "TRAINER_NOT_FOUND" | "TRAINER_ALREADY_ASSIGNED" | "ATHLETE_NOT_FOUND" | "ATHLETE_ARCHIVED" | "ACCOUNT_ALREADY_LINKED" | "ACCOUNT_NOT_LINKED" | "ACTIVE_MEMBERSHIP_EXISTS" | "GROUP_NOT_FOUND" | "GROUP_ARCHIVED" | "GROUP_TRAINER_ALREADY_ASSIGNED" | "GROUP_TRAINER_NOT_ASSIGNED" | "GROUP_BRANCH_ALREADY_LINKED" | "GROUP_BRANCH_NOT_LINKED" | "ATHLETE_ALREADY_MEMBER" | "MEMBERSHIP_NOT_FOUND" | "SCHEDULE_TEMPLATE_NOT_FOUND" | "SCHEDULE_TEMPLATE_EXISTS" | "SCHEDULE_TEMPLATE_ALREADY_PUBLISHED" | "SCHEDULE_TEMPLATE_PUBLISHED" | "SCHEDULE_TEMPLATE_EMPTY" | "SLOT_OVERLAPS_TEMPLATE" | "SCHEDULE_SLOT_INVALID_TIME" | "TRAINING_SESSION_NOT_FOUND" | "TRAINING_SESSION_CANCELLED" | "TRAINING_SESSION_CONFLICT" | "TRAINER_BUSY" | "HALL_BUSY" | "SESSION_ALREADY_STARTED" | "ATTENDANCE_ALREADY_RECORDED" | "ATTENDANCE_NOT_FOUND" | "ATHLETE_NOT_IN_GROUP" | "PLANNED_ABSENCE_EXISTS" | "PLANNED_ABSENCE_NOT_FOUND";
+        ErrorCode: "VALIDATION_FAILED" | "UNAUTHENTICATED" | "INVALID_CREDENTIALS" | "TOKEN_EXPIRED" | "TOKEN_INVALID" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "INTERNAL_ERROR" | "EMAIL_ALREADY_EXISTS" | "INVITE_INVALID" | "INVITE_EXPIRED" | "INVITE_ALREADY_USED" | "INVITE_EMAIL_MISMATCH" | "USER_BLOCKED" | "PERMISSION_UNKNOWN" | "PERMISSION_GRANTED_BY_ROLE" | "PERMISSION_IS_ROLE_BASED" | "PERMISSION_NOT_GRANTED" | "PERMISSION_EXPIRES_IN_PAST" | "BRANCH_NOT_FOUND" | "BRANCH_ARCHIVED" | "HALL_NOT_FOUND" | "HALL_NOT_IN_BRANCH" | "TRAINER_NOT_FOUND" | "TRAINER_ALREADY_ASSIGNED" | "ATHLETE_NOT_FOUND" | "ATHLETE_ARCHIVED" | "ACCOUNT_ALREADY_LINKED" | "ACCOUNT_NOT_LINKED" | "ACTIVE_MEMBERSHIP_EXISTS" | "GROUP_NOT_FOUND" | "GROUP_ARCHIVED" | "GROUP_TRAINER_ALREADY_ASSIGNED" | "GROUP_TRAINER_NOT_ASSIGNED" | "GROUP_BRANCH_ALREADY_LINKED" | "GROUP_BRANCH_NOT_LINKED" | "ATHLETE_ALREADY_MEMBER" | "MEMBERSHIP_NOT_FOUND" | "SCHEDULE_TEMPLATE_NOT_FOUND" | "SCHEDULE_TEMPLATE_EXISTS" | "SCHEDULE_TEMPLATE_ALREADY_PUBLISHED" | "SCHEDULE_TEMPLATE_PUBLISHED" | "SCHEDULE_TEMPLATE_EMPTY" | "SLOT_OVERLAPS_TEMPLATE" | "SCHEDULE_SLOT_INVALID_TIME" | "TRAINING_SESSION_NOT_FOUND" | "TRAINING_SESSION_CANCELLED" | "TRAINING_SESSION_CONFLICT" | "TRAINER_BUSY" | "HALL_BUSY" | "SESSION_ALREADY_STARTED" | "ATTENDANCE_ALREADY_RECORDED" | "ATTENDANCE_NOT_FOUND" | "ATHLETE_NOT_IN_GROUP" | "PLANNED_ABSENCE_EXISTS" | "PLANNED_ABSENCE_NOT_FOUND" | "MEMBERSHIP_PERIOD_NOT_FOUND" | "PAYMENT_NOT_FOUND" | "PAYMENT_AMOUNT_INVALID" | "FREEZE_ALREADY_OPEN" | "FREEZE_PERIOD_INVALID" | "FREEZE_NOT_OPEN";
         /**
          * @description Право из каталога (`docs/04-roles-permissions.md`)
          * @enum {string}
@@ -1455,6 +1666,131 @@ export interface components {
             relation?: string;
             /** @description Основной аккаунт спортсмена; он может быть один */
             isPrimary?: boolean;
+        };
+        PaymentView: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * @description Сумма произвольная (BR-002)
+             * @example 25000
+             */
+            amount: number;
+            method: components["schemas"]["PaymentMethod"];
+            /** Format: date */
+            paidAt: string;
+            comment?: string | null;
+            /** Format: uuid */
+            createdById?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /**
+         * @description Расчетный период за календарный месяц. Статус выводится из суммы оплат и
+         *     ручной отметки, а не задается вручную.
+         */
+        MembershipPeriodView: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            athleteId: string;
+            year: number;
+            month: number;
+            /** @description Ожидаемая сумма; может быть не задана (BR-002) */
+            expectedAmount?: number | null;
+            paidAmount: number;
+            status: components["schemas"]["MembershipPeriodStatus"];
+            /**
+             * Format: date-time
+             * @description Ручная отметка «оплачен полностью» (BR-003)
+             */
+            fullyPaidMarkedAt?: string | null;
+            /** Format: uuid */
+            fullyPaidMarkedById?: string | null;
+            note?: string | null;
+            payments: components["schemas"]["PaymentView"][];
+        };
+        /**
+         * @description BR-001..BR-003 — статус расчетного периода
+         * @enum {string}
+         */
+        MembershipPeriodStatus: "UNPAID" | "PARTIALLY_PAID" | "PAID" | "FULLY_PAID_MARKED";
+        /** @enum {string} */
+        PaymentMethod: "CASH" | "CARD" | "TRANSFER" | "OTHER";
+        /**
+         * @description BR-004: `isDebtor` истинно, только если выполнены все четыре условия.
+         *     `reason` заполняется для не-должников: руководителю важно отличать
+         *     решение (заморозка, отметка об оплате) от отсутствия данных.
+         */
+        DebtorSummary: {
+            /** Format: uuid */
+            athleteId: string;
+            firstName: string;
+            lastName: string;
+            year: number;
+            month: number;
+            paidAmount: number;
+            expectedAmount?: number | null;
+            isDebtor: boolean;
+            /** @enum {string|null} */
+            reason?: "INACTIVE" | "MARKED_FULLY_PAID" | "NO_TRAININGS_YET" | "FROZEN" | null;
+        };
+        /** @description BR-005 — заморозка как открытый период приостановления */
+        FreezeView: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            athleteId: string;
+            athleteName: string;
+            /** Format: date */
+            startedOn: string;
+            /** Format: date */
+            endedOn?: string | null;
+            reason?: string | null;
+            isOpen: boolean;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        UpdateMembershipPeriodRequest: {
+            expectedAmount?: number | null;
+            note?: string | null;
+        };
+        MarkFullyPaidRequest: {
+            /** @description true — отметить месяц оплаченным, false — снять отметку */
+            marked: boolean;
+        };
+        RecordPaymentRequest: {
+            /** @example 25000 */
+            amount: number;
+            method?: components["schemas"]["PaymentMethod"];
+            /** Format: date */
+            paidAt?: string;
+            comment?: string;
+            /** @description Повторная отправка с тем же ключом не создаст вторую оплату */
+            idempotencyKey?: string;
+        };
+        UpdatePaymentRequest: {
+            amount?: number;
+            method?: components["schemas"]["PaymentMethod"];
+            /** Format: date */
+            paidAt?: string;
+            comment?: string;
+        };
+        CreateFreezeRequest: {
+            /**
+             * Format: date
+             * @description Дату можно внести задним числом (BR-005)
+             * @example 2026-10-01
+             */
+            startedOn: string;
+            reason?: string;
+        };
+        CloseFreezeRequest: {
+            /**
+             * Format: date
+             * @description Дату можно внести задним числом (BR-005)
+             * @example 2026-10-20
+             */
+            endedOn: string;
         };
         GroupView: {
             /** Format: uuid */
@@ -4785,6 +5121,510 @@ export interface operations {
             401: components["responses"]["Unauthenticated"];
             /** @description Нет права `attendance.view` или группа вне доступа (`FORBIDDEN`) */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listMembershipPeriods: {
+        parameters: {
+            query?: {
+                /** @description По умолчанию текущий год */
+                year?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Идентификатор спортсмена */
+                id: components["parameters"]["AthleteId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Периоды с оплатами */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipPeriodView"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /**
+             * @description Нет права `payments.view` или спортсмен вне зоны доступа
+             *     (`FORBIDDEN`). BR-010: ни одна роль, кроме суперадмина, этого права не
+             *     имеет.
+             */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getMembershipPeriod: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Идентификатор спортсмена */
+                id: components["parameters"]["AthleteId"];
+                year: number;
+                month: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Период с оплатами */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipPeriodView"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `payments.view` или спортсмен вне доступа (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Спортсмен не найден (`ATHLETE_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    updateMembershipPeriod: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                periodId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMembershipPeriodRequest"];
+            };
+        };
+        responses: {
+            /** @description Период обновлен и пересчитан */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipPeriodView"];
+                };
+            };
+            400: components["responses"]["ValidationFailed"];
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `payments.edit` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Период не найден (`MEMBERSHIP_PERIOD_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    markPeriodFullyPaid: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                periodId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkFullyPaidRequest"];
+            };
+        };
+        responses: {
+            /** @description Отметка поставлена или снята; статус пересчитан */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipPeriodView"];
+                };
+            };
+            400: components["responses"]["ValidationFailed"];
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `payments.edit` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Период не найден (`MEMBERSHIP_PERIOD_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    recordPayment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                periodId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordPaymentRequest"];
+            };
+        };
+        responses: {
+            /** @description Оплата внесена; период пересчитан */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipPeriodView"];
+                };
+            };
+            /**
+             * @description Ошибка валидации (`VALIDATION_FAILED`) или сумма не больше нуля
+             *     (`PAYMENT_AMOUNT_INVALID`).
+             */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `payments.edit` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Период не найден (`MEMBERSHIP_PERIOD_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    voidPayment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                paymentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Оплата удалена, период пересчитан */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipPeriodView"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `payments.edit` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Оплата не найдена (`PAYMENT_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    updatePayment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                paymentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePaymentRequest"];
+            };
+        };
+        responses: {
+            /** @description Период после пересчета */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipPeriodView"];
+                };
+            };
+            400: components["responses"]["ValidationFailed"];
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `payments.edit` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Оплата не найдена (`PAYMENT_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listDebtors: {
+        parameters: {
+            query: {
+                year: number;
+                month: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Должники сверху; для остальных указана причина */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DebtorSummary"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `payments.view` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listFreezes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Идентификатор спортсмена */
+                id: components["parameters"]["AthleteId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description История заморозок */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FreezeView"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `freezes.view` или спортсмен вне зоны доступа (`FORBIDDEN`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    openFreeze: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Идентификатор спортсмена */
+                id: components["parameters"]["AthleteId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateFreezeRequest"];
+            };
+        };
+        responses: {
+            /** @description Заморозка открыта */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FreezeView"];
+                };
+            };
+            /** @description Некорректная дата (`FREEZE_PERIOD_INVALID`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `freezes.edit` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Спортсмен не найден (`ATHLETE_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description У спортсмена уже есть открытая заморозка (`FREEZE_ALREADY_OPEN`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    closeFreeze: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                freezeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CloseFreezeRequest"];
+            };
+        };
+        responses: {
+            /** @description Заморозка закрыта */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FreezeView"];
+                };
+            };
+            /** @description Некорректный период (`FREEZE_PERIOD_INVALID`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `freezes.edit` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Заморозка уже завершена (`FREEZE_NOT_OPEN`) */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

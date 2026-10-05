@@ -2525,6 +2525,487 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
 
+  /athletes/{id}/membership-periods:
+    get:
+      tags: [finance]
+      summary: Расчетные периоды спортсмена за год
+      description: |
+        Учет ведется по календарным месяцам (BR-001). Возвращаются только
+        существующие периоды: месяц заводится при обращении к нему.
+      operationId: listMembershipPeriods
+      parameters:
+        - $ref: '#/components/parameters/AthleteId'
+        - name: year
+          in: query
+          required: false
+          description: По умолчанию текущий год
+          schema:
+            type: integer
+            minimum: 2020
+            maximum: 2100
+      responses:
+        '200':
+          description: Периоды с оплатами
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MembershipPeriodView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: |
+            Нет права `payments.view` или спортсмен вне зоны доступа
+            (`FORBIDDEN`). BR-010: ни одна роль, кроме суперадмина, этого права не
+            имеет.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /athletes/{id}/membership-periods/{year}/{month}:
+    get:
+      tags: [finance]
+      summary: Расчетный период за месяц
+      description: |
+        Период создается при первом обращении: иначе администратор не увидел бы,
+        что месяц не заведен, и не смог бы внести оплату. Статус периода
+        выводится из суммы оплат и ручной отметки, а не задается вручную.
+      operationId: getMembershipPeriod
+      parameters:
+        - $ref: '#/components/parameters/AthleteId'
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 2026
+        - name: month
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+      responses:
+        '200':
+          description: Период с оплатами
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipPeriodView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `payments.view` или спортсмен вне доступа (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Спортсмен не найден (`ATHLETE_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /membership-periods/{periodId}:
+    patch:
+      tags: [finance]
+      summary: Изменить ожидаемую сумму и заметку периода
+      description: |
+        BR-002: сумма вводится вручную. Для нового спортсмена, пришедшего в
+        середине месяца, она может быть любой; `null` снимает ожидание.
+      operationId: updateMembershipPeriod
+      parameters:
+        - name: periodId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMembershipPeriodRequest'
+      responses:
+        '200':
+          description: Период обновлен и пересчитан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipPeriodView'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `payments.edit` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Период не найден (`MEMBERSHIP_PERIOD_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /membership-periods/{periodId}/fully-paid:
+    post:
+      tags: [finance]
+      summary: Отметить месяц оплаченным полностью
+      description: |
+        BR-003: суперадминистратор может отметить месяц оплаченным независимо от
+        суммы — в клубе бывают расчеты вне системы. Отметка имеет приоритет над
+        суммой и снимается тем же запросом с `marked: false`.
+      operationId: markPeriodFullyPaid
+      parameters:
+        - name: periodId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarkFullyPaidRequest'
+      responses:
+        '200':
+          description: Отметка поставлена или снята; статус пересчитан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipPeriodView'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `payments.edit` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Период не найден (`MEMBERSHIP_PERIOD_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /membership-periods/{periodId}/payments:
+    post:
+      tags: [finance]
+      summary: Внести оплату
+      description: |
+        Сумма произвольная (BR-002). При наличии `idempotencyKey` повторная
+        отправка возвращает текущее состояние периода, а не создает вторую
+        оплату.
+      operationId: recordPayment
+      parameters:
+        - name: periodId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordPaymentRequest'
+      responses:
+        '201':
+          description: Оплата внесена; период пересчитан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipPeriodView'
+        '400':
+          description: |
+            Ошибка валидации (`VALIDATION_FAILED`) или сумма не больше нуля
+            (`PAYMENT_AMOUNT_INVALID`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `payments.edit` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Период не найден (`MEMBERSHIP_PERIOD_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /payments/{paymentId}:
+    patch:
+      tags: [finance]
+      summary: Изменить оплату
+      description: Изменение пересчитывает статус периода.
+      operationId: updatePayment
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePaymentRequest'
+      responses:
+        '200':
+          description: Период после пересчета
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipPeriodView'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `payments.edit` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Оплата не найдена (`PAYMENT_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    delete:
+      tags: [finance]
+      summary: Отменить оплату
+      description: |
+        Запись удаляется, период пересчитывается: ошибка ввода не должна
+        оставаться в истории как факт поступления денег.
+      operationId: voidPayment
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Оплата удалена, период пересчитан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipPeriodView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `payments.edit` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Оплата не найдена (`PAYMENT_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /debts:
+    get:
+      tags: [finance]
+      summary: Список должников за месяц
+      description: |
+        BR-004: спортсмен считается должником, если он активен; месяц не отмечен
+        как полностью оплаченный; в месяце уже была хотя бы одна тренировка его
+        группы; он не в заморозке.
+
+        Задолженность оценивается **на начало месяца**. Рассматриваются только
+        спортсмены с членством в этом месяце: иначе список заполнился бы всеми
+        спортсменами клуба.
+
+        Для не-должников возвращается причина освобождения: руководителю важно
+        отличать решение (заморозка, отметка об оплате) от отсутствия данных.
+      operationId: listDebtors
+      parameters:
+        - name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+            example: 2026
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+      responses:
+        '200':
+          description: Должники сверху; для остальных указана причина
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DebtorSummary'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `payments.view` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /athletes/{id}/freezes:
+    get:
+      tags: [freezes]
+      summary: Заморозки спортсмена
+      description: История заморозок, новые сверху.
+      operationId: listFreezes
+      parameters:
+        - $ref: '#/components/parameters/AthleteId'
+      responses:
+        '200':
+          description: История заморозок
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FreezeView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: |
+            Нет права `freezes.view` или спортсмен вне зоны доступа (`FORBIDDEN`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    post:
+      tags: [freezes]
+      summary: Открыть заморозку
+      description: |
+        BR-005: заморозка — открытый период приостановления; дату начала можно
+        внести задним числом. Второй открытый период отклоняется
+        (`FREEZE_ALREADY_OPEN`): иначе нельзя понять, когда приостановка
+        закончилась.
+      operationId: openFreeze
+      parameters:
+        - $ref: '#/components/parameters/AthleteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFreezeRequest'
+      responses:
+        '201':
+          description: Заморозка открыта
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FreezeView'
+        '400':
+          description: Некорректная дата (`FREEZE_PERIOD_INVALID`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `freezes.edit` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Спортсмен не найден (`ATHLETE_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: У спортсмена уже есть открытая заморозка (`FREEZE_ALREADY_OPEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /freezes/{freezeId}/close:
+    post:
+      tags: [freezes]
+      summary: Завершить заморозку
+      description: |
+        Дату окончания тоже можно внести задним числом: заморозку часто
+        закрывают постфактум, когда спортсмен вернулся. Дата раньше начала
+        отклоняется (`FREEZE_PERIOD_INVALID`).
+      operationId: closeFreeze
+      parameters:
+        - name: freezeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CloseFreezeRequest'
+      responses:
+        '200':
+          description: Заморозка закрыта
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FreezeView'
+        '400':
+          description: Некорректный период (`FREEZE_PERIOD_INVALID`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `freezes.edit` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Заморозка уже завершена (`FREEZE_NOT_OPEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -2721,6 +3202,12 @@ components:
         - ATHLETE_NOT_IN_GROUP
         - PLANNED_ABSENCE_EXISTS
         - PLANNED_ABSENCE_NOT_FOUND
+        - MEMBERSHIP_PERIOD_NOT_FOUND
+        - PAYMENT_NOT_FOUND
+        - PAYMENT_AMOUNT_INVALID
+        - FREEZE_ALREADY_OPEN
+        - FREEZE_PERIOD_INVALID
+        - FREEZE_NOT_OPEN
 
     PermissionCode:
       type: string
@@ -3446,6 +3933,225 @@ components:
         isPrimary:
           type: boolean
           description: Основной аккаунт спортсмена; он может быть один
+
+    PaymentView:
+      type: object
+      required: [id, amount, method, paidAt, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          description: Сумма произвольная (BR-002)
+          example: 25000
+        method:
+          $ref: '#/components/schemas/PaymentMethod'
+        paidAt:
+          type: string
+          format: date
+        comment:
+          type: string
+          nullable: true
+        createdById:
+          type: string
+          format: uuid
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    MembershipPeriodView:
+      type: object
+      description: |
+        Расчетный период за календарный месяц. Статус выводится из суммы оплат и
+        ручной отметки, а не задается вручную.
+      required: [id, athleteId, year, month, paidAmount, status, payments]
+      properties:
+        id:
+          type: string
+          format: uuid
+        athleteId:
+          type: string
+          format: uuid
+        year:
+          type: integer
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        expectedAmount:
+          type: number
+          nullable: true
+          description: Ожидаемая сумма; может быть не задана (BR-002)
+        paidAmount:
+          type: number
+        status:
+          $ref: '#/components/schemas/MembershipPeriodStatus'
+        fullyPaidMarkedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Ручная отметка «оплачен полностью» (BR-003)
+        fullyPaidMarkedById:
+          type: string
+          format: uuid
+          nullable: true
+        note:
+          type: string
+          nullable: true
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentView'
+
+    MembershipPeriodStatus:
+      type: string
+      description: BR-001..BR-003 — статус расчетного периода
+      enum: [UNPAID, PARTIALLY_PAID, PAID, FULLY_PAID_MARKED]
+
+    PaymentMethod:
+      type: string
+      enum: [CASH, CARD, TRANSFER, OTHER]
+
+    DebtorSummary:
+      type: object
+      description: |
+        BR-004: `isDebtor` истинно, только если выполнены все четыре условия.
+        `reason` заполняется для не-должников: руководителю важно отличать
+        решение (заморозка, отметка об оплате) от отсутствия данных.
+      required: [athleteId, firstName, lastName, year, month, paidAmount, isDebtor]
+      properties:
+        athleteId:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        year:
+          type: integer
+        month:
+          type: integer
+        paidAmount:
+          type: number
+        expectedAmount:
+          type: number
+          nullable: true
+        isDebtor:
+          type: boolean
+        reason:
+          type: string
+          nullable: true
+          enum: [INACTIVE, MARKED_FULLY_PAID, NO_TRAININGS_YET, FROZEN, null]
+
+    FreezeView:
+      type: object
+      description: BR-005 — заморозка как открытый период приостановления
+      required: [id, athleteId, athleteName, startedOn, isOpen, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        athleteId:
+          type: string
+          format: uuid
+        athleteName:
+          type: string
+        startedOn:
+          type: string
+          format: date
+        endedOn:
+          type: string
+          format: date
+          nullable: true
+        reason:
+          type: string
+          nullable: true
+        isOpen:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    UpdateMembershipPeriodRequest:
+      type: object
+      properties:
+        expectedAmount:
+          type: number
+          nullable: true
+          minimum: 0
+        note:
+          type: string
+          nullable: true
+          maxLength: 500
+
+    MarkFullyPaidRequest:
+      type: object
+      required: [marked]
+      properties:
+        marked:
+          type: boolean
+          description: true — отметить месяц оплаченным, false — снять отметку
+
+    RecordPaymentRequest:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          type: number
+          minimum: 0.01
+          example: 25000
+        method:
+          $ref: '#/components/schemas/PaymentMethod'
+        paidAt:
+          type: string
+          format: date
+        comment:
+          type: string
+          maxLength: 500
+        idempotencyKey:
+          type: string
+          maxLength: 100
+          description: Повторная отправка с тем же ключом не создаст вторую оплату
+
+    UpdatePaymentRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+          minimum: 0.01
+        method:
+          $ref: '#/components/schemas/PaymentMethod'
+        paidAt:
+          type: string
+          format: date
+        comment:
+          type: string
+          maxLength: 500
+
+    CreateFreezeRequest:
+      type: object
+      required: [startedOn]
+      properties:
+        startedOn:
+          type: string
+          format: date
+          description: Дату можно внести задним числом (BR-005)
+          example: '2026-10-01'
+        reason:
+          type: string
+          maxLength: 500
+
+    CloseFreezeRequest:
+      type: object
+      required: [endedOn]
+      properties:
+        endedOn:
+          type: string
+          format: date
+          description: Дату можно внести задним числом (BR-005)
+          example: '2026-10-20'
 
     GroupView:
       type: object

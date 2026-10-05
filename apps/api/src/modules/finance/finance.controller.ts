@@ -12,11 +12,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import {
-  PermissionCode,
-  type DebtorSummary,
-  type MembershipPeriodView,
-} from '@octagon/contracts';
+import { PermissionCode, type DebtorSummary, type MembershipPeriodView } from '@octagon/contracts';
 
 import { AuthGuard, CurrentUser, type AuthenticatedUser } from '../../shared/auth-stub';
 import { PermissionsGuard, RequirePermissions } from '../../shared/permissions.guard';
@@ -37,8 +33,10 @@ import { FinanceService } from './finance.service';
  * сумма), BR-003 (ручная отметка «оплачен полностью»), BR-010 (доступ только с
  * явным финансовым правом).
  *
- * BR-010: просмотр требует `payments.view`, изменения — `payments.edit`. Ни одна
- * роль, кроме суперадмина, этих прав не имеет: тренер не видит финансы.
+ * Маршруты разделены по ресурсам: период открывается по паре год/месяц, а
+ * изменения адресуются идентификатором периода. Иначе `PATCH
+ * /athletes/{id}/membership-periods/{periodId}` перехватывался бы маршрутом
+ * `GET .../{year}/{month}`, и валидация года давала бы 400 на верном запросе.
  */
 @ApiTags('finance')
 @ApiBearerAuth()
@@ -56,8 +54,7 @@ export class MembershipPeriodsController {
     @Param('athleteId') athleteId: string,
     @Query() query: YearQueryDto,
   ): Promise<MembershipPeriodView[]> {
-    const year = query.year ?? new Date().getFullYear();
-    return this.finance.listPeriods(user.id, athleteId, year);
+    return this.finance.listPeriods(user.id, athleteId, query.year ?? new Date().getFullYear());
   }
 
   @Get(':year/:month')
@@ -67,10 +64,20 @@ export class MembershipPeriodsController {
   get(
     @CurrentUser() user: AuthenticatedUser,
     @Param('athleteId') athleteId: string,
-    @Param() params: PeriodQueryDto,
+    @Param('year') year: string,
+    @Param('month') month: string,
   ): Promise<MembershipPeriodView> {
-    return this.finance.getPeriod(user.id, athleteId, params.year, params.month);
+    return this.finance.getPeriod(user.id, athleteId, Number(year), Number(month));
   }
+}
+
+/** Изменения расчетного периода: адресуются идентификатором периода. */
+@ApiTags('finance')
+@ApiBearerAuth()
+@UseGuards(AuthGuard, PermissionsGuard)
+@Controller('membership-periods')
+export class MembershipPeriodActionsController {
+  constructor(private readonly finance: FinanceService) {}
 
   @Patch(':periodId')
   @RequirePermissions(PermissionCode.PaymentsEdit)

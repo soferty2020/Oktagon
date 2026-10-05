@@ -4,6 +4,7 @@ import { FreezesModule } from '../freezes/freezes.module';
 import { IdentityModule } from '../identity/identity.module';
 import {
   DebtsController,
+  MembershipPeriodActionsController,
   MembershipPeriodsController,
   PaymentsController,
 } from './finance.controller';
@@ -23,7 +24,12 @@ import { FinanceService } from './finance.service';
  */
 @Module({
   imports: [IdentityModule, FreezesModule],
-  controllers: [MembershipPeriodsController, PaymentsController, DebtsController],
+  controllers: [
+    MembershipPeriodsController,
+    MembershipPeriodActionsController,
+    PaymentsController,
+    DebtsController,
+  ],
   providers: [
     FinanceService,
     PrismaFinanceRepository,

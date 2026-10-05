@@ -111,6 +111,14 @@ JavaScript страницы. Типы API генерируются из `openapi
 | `DELETE /api/v1/training-sessions/{id}/attendance/{athleteId}` | снять отметку |
 | `POST/DELETE /api/v1/training-sessions/{id}/attendance/planned-absence[/{athleteId}]` | предупреждение родителя об отсутствии (BR-008) |
 | `GET /api/v1/attendance/summary` | сводка посещаемости группы за период |
+| `GET /api/v1/athletes/{id}/membership-periods[/{year}/{month}]` | расчетные периоды и оплаты (право `payments.view`) |
+| `PATCH /api/v1/membership-periods/{periodId}` | ожидаемая сумма и заметка периода |
+| `POST /api/v1/membership-periods/{periodId}/fully-paid` | ручная отметка «оплачен полностью» (BR-003) |
+| `POST /api/v1/membership-periods/{periodId}/payments` | внести оплату произвольной суммы (BR-002) |
+| `PATCH/DELETE /api/v1/payments/{paymentId}` | изменить или отменить оплату |
+| `GET /api/v1/debts` | должники за месяц с причиной освобождения (BR-004) |
+| `GET/POST /api/v1/athletes/{id}/freezes` | заморозки спортсмена (BR-005) |
+| `POST /api/v1/freezes/{freezeId}/close` | завершить заморозку |
 
 ## Проверки
 
