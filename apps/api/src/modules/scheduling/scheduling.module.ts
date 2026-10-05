@@ -1,16 +1,33 @@
 import { Module } from '@nestjs/common';
 
+import { GroupsModule } from '../groups/groups.module';
+import { IdentityModule } from '../identity/identity.module';
+import { ScheduleTemplatesController, TrainingSessionsController } from './scheduling.controller';
+import { PrismaSchedulingRepository, SchedulingRepository } from './scheduling.repository';
 import { SchedulingService } from './scheduling.service';
 
 /**
- * Модуль scheduling.
+ * Расписание (эпик D): квартальные шаблоны, материализация занятий, точечные
+ * изменения.
  *
- * Спецификация: docs/01-mvp-scope.md (квартальное расписание, точечные переносы), BR-009, docs/22-erd.md (ScheduleTemplate, TrainingSession).
- * Публичный контракт и бизнес-логика добавляются отдельным issue
- * (docs/24-multi-agent-plan.md: contracts-first).
+ * Спецификация: docs/01-mvp-scope.md (квартальное расписание, точечные
+ * переносы), BR-009 (точечное изменение экземпляра не меняет шаблон),
+ * docs/22-erd.md (ScheduleTemplate, ScheduleTemplateSlot, TrainingSession),
+ * ADR-0009.
+ *
+ * Зависимости: IdentityModule дает PermissionsGuard (`schedule.view`,
+ * `schedule.edit`, `schedule.cancel`) и ResourceScopeService — список
+ * расписания ограничен зоной видимости. GroupsModule дает проверку
+ * существования группы и ее основной филиал, который наследуется занятием.
  */
 @Module({
-  providers: [SchedulingService],
+  imports: [IdentityModule, GroupsModule],
+  controllers: [ScheduleTemplatesController, TrainingSessionsController],
+  providers: [
+    SchedulingService,
+    PrismaSchedulingRepository,
+    { provide: SchedulingRepository, useExisting: PrismaSchedulingRepository },
+  ],
   exports: [SchedulingService],
 })
 export class SchedulingModule {}

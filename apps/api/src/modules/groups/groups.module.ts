@@ -23,6 +23,6 @@ import { GroupsService } from './groups.service';
     PrismaGroupsRepository,
     { provide: GroupsRepository, useExisting: PrismaGroupsRepository },
   ],
-  exports: [GroupsService],
+  exports: [GroupsService, GroupsRepository],
 })
 export class GroupsModule {}

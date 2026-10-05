@@ -110,6 +110,10 @@ export abstract class GroupsRepository {
   /** Завершает членство: state = ENDED и leftAt. */
   abstract endMembership(groupId: string, athleteId: string, leftAt: Date): Promise<boolean>;
   abstract athleteExists(athleteId: string): Promise<boolean>;
+  /** Есть ли активная группа: нужно модулю расписания для проверки ссылки. */
+  abstract exists(groupId: string): Promise<boolean>;
+  /** Основной филиал группы: занятие наследует его при материализации. */
+  abstract findPrimaryBranchId(groupId: string): Promise<string | null>;
 }
 
 const GROUP_SELECT = {
@@ -423,5 +427,21 @@ export class PrismaGroupsRepository extends GroupsRepository {
       select: { id: true },
     });
     return athlete !== null;
+  }
+
+  async exists(groupId: string): Promise<boolean> {
+    const group = await this.prisma.db.group.findFirst({
+      where: { id: groupId, archivedAt: null },
+      select: { id: true },
+    });
+    return group !== null;
+  }
+
+  async findPrimaryBranchId(groupId: string): Promise<string | null> {
+    const link = await this.prisma.db.groupBranch.findFirst({
+      where: { groupId, isPrimary: true, branch: { archivedAt: null } },
+      select: { branchId: true },
+    });
+    return link?.branchId ?? null;
   }
 }
