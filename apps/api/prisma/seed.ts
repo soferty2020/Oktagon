@@ -5,14 +5,9 @@
  * Запуск: pnpm --filter @octagon/api db:seed
  */
 import { PrismaClient, type UserRole } from '../generated/prisma';
-import { createHash, randomBytes, scrypt as scryptCallback } from 'node:crypto';
-import { promisify } from 'node:util';
+import { createHash } from 'node:crypto';
 
-const scrypt = promisify(scryptCallback) as (
-  password: string,
-  salt: string,
-  keylen: number,
-) => Promise<Buffer>;
+import { PasswordService } from '../src/modules/auth/password.service';
 
 const prisma = new PrismaClient();
 
@@ -51,14 +46,11 @@ const PERMISSIONS: Array<{ code: string; description: string; isFinancial: boole
 ];
 
 /**
- * Временный хеш пароля до реализации модуля auth.
- * Формат: scrypt$<salt-hex>$<hash-hex> (docs/09-api.md допускает bcrypt, итоговый
- * выбор и Argon2id фиксируются в модуле auth).
+ * Хеш пароля: Argon2id в PHC-формате (ADR-0004) — тот же алгоритм, что и в
+ * модуле auth, иначе созданный seed-ом суперадмин не смог бы войти.
  */
-export async function hashPassword(password: string): Promise<string> {
-  const salt = randomBytes(16).toString('hex');
-  const derived = await scrypt(password, salt, 64);
-  return `scrypt$${salt}$${derived.toString('hex')}`;
+export function hashPassword(password: string): Promise<string> {
+  return new PasswordService().hash(password);
 }
 
 /** Отпечаток для сверки, что пароль не попал в БД в открытом виде. */

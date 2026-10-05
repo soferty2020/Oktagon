@@ -7,38 +7,43 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 
+import { AccessTokenVerifier } from './access-token.verifier';
+
 /**
  * Аутентифицированный пользователь запроса.
  *
- * Пока модуль auth не реализован (issue B2), субъект берется из заголовка
- * `x-user-id`. Заголовок обрабатывается ТОЛЬКО при LOCAL_AUTH_STUB=true:
- * без явного включения все защищенные маршруты отвечают 401, поэтому
- * заглушка не может случайно попасть в staging или production.
- *
- * TODO(B2): заменить на проверку access-токена и удалить заглушку.
+ * `role` приходит из access-токена, но решения о доступе принимаются по
+ * эффективным правам из IdentityService (ADR-0006): токен используется только
+ * для идентификации.
  */
 export interface AuthenticatedUser {
   id: string;
+  email?: string;
+  role?: string;
 }
 
 type RequestWithUser = Request & { user?: AuthenticatedUser };
 
+/** Проверяет access-токен из заголовка `Authorization: Bearer <token>`. */
 @Injectable()
-export class StubAuthGuard implements CanActivate {
-  canActivate(context: ExecutionContext): boolean {
-    if (process.env.LOCAL_AUTH_STUB !== 'true') {
-      throw new UnauthorizedException('Аутентификация не реализована (issue B2)');
-    }
+export class AuthGuard implements CanActivate {
+  constructor(private readonly verifier: AccessTokenVerifier) {}
 
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<RequestWithUser>();
-    const header = request.headers['x-user-id'];
-    const userId = typeof header === 'string' ? header.trim() : '';
+    const header = request.headers.authorization;
 
-    if (!userId) {
-      throw new UnauthorizedException('Не указан заголовок x-user-id');
+    if (!header?.toLowerCase().startsWith('bearer ')) {
+      throw new UnauthorizedException('Требуется access-токен');
     }
 
-    request.user = { id: userId };
+    const token = header.slice('bearer '.length).trim();
+    const payload = await this.verifier.verify(token);
+    if (!payload) {
+      throw new UnauthorizedException('Access-токен недействителен или истек');
+    }
+
+    request.user = { id: payload.sub, email: payload.email, role: payload.role };
     return true;
   }
 }

@@ -14,6 +14,8 @@ export const AuditAction = {
   AUTH_LOGIN_FAILED: 'auth.login_failed',
   AUTH_LOGOUT: 'auth.logout',
   AUTH_TOKEN_REFRESHED: 'auth.token_refreshed',
+  /** Повторное использование отозванного refresh-токена: все токены отозваны. */
+  AUTH_TOKEN_REUSE_DETECTED: 'auth.token_reuse_detected',
   AUTH_INVITE_ACCEPTED: 'auth.invite_accepted',
 
   // Пользователи, приглашения, права доступа (BR-007: права доступа аудируемы)

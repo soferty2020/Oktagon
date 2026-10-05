@@ -1,20 +1,24 @@
 import { type INestApplication } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 
 import { AppModule } from '../src/app.module';
-import { ApiExceptionFilter } from '../src/shared';
+import { ApiExceptionFilter, RequestIdInterceptor } from '../src/shared';
 import { PrismaService } from '../src/prisma';
+import { RedisService } from '../src/redis';
+import { IdentityService } from '../src/modules/identity/identity.service';
 
 /**
- * Контракт заглушки аутентификации (issue B1).
+ * Доступ к защищенным маршрутам (docs/15-security.md, ADR-0007).
  *
- * Сама заглушка будет удалена в B2, но правило «без LOCAL_AUTH_STUB защищенные
- * маршруты закрыты» проверяем уже сейчас: оно гарантирует, что временный обход
- * не попадет в staging или production.
+ * После issue B2 маршруты защищены настоящим AuthGuard: без корректного
+ * access-токена доступа нет, поэтому временный обход из B1 больше невозможен.
  */
-describe('Identity auth stub (e2e)', () => {
+describe('Identity access (e2e, без БД)', () => {
   let app: INestApplication;
+  let accessToken: string;
+  const userId = 'user-1';
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
@@ -25,37 +29,80 @@ describe('Identity auth stub (e2e)', () => {
         isReachable: async () => true,
         db: {},
       })
+      .overrideProvider(RedisService)
+      .useValue({ isConfigured: false, isReachable: async () => true })
+      .overrideProvider(IdentityService)
+      .useValue({
+        getProfile: async (id: string) =>
+          id === userId
+            ? {
+                id,
+                email: 'parent@example.com',
+                firstName: 'Айгуль',
+                lastName: 'Серик',
+                middleName: null,
+                phone: null,
+                role: 'MEMBER',
+                status: 'ACTIVE',
+                scopeAllGroups: false,
+                permissions: { codes: [], grants: [] },
+              }
+            : Promise.reject(new Error('not found')),
+        listLinkedAthletes: async () => [],
+      })
       .compile();
 
     app = moduleRef.createNestApplication();
     app.useGlobalFilters(new ApiExceptionFilter());
+    app.useGlobalInterceptors(new RequestIdInterceptor());
     await app.init();
+
+    // Токен подписывается тем же секретом, что и в TokenService.
+    accessToken = await app.get(JwtService).signAsync(
+      { sub: userId, email: 'parent@example.com', role: 'MEMBER' },
+      { secret: process.env.JWT_ACCESS_SECRET, expiresIn: 900 },
+    );
   });
 
   afterAll(async () => {
     await app?.close();
-    delete process.env.LOCAL_AUTH_STUB;
   });
 
-  it('закрывает GET /me, когда заглушка выключена', async () => {
-    delete process.env.LOCAL_AUTH_STUB;
-
+  it('GET /me без токена отвечает 401', async () => {
     const response = await request(app.getHttpServer()).get('/me').expect(401);
 
     expect(response.body.code).toBe('UNAUTHENTICATED');
   });
 
-  it('закрывает GET /me/athletes, когда заглушка выключена', async () => {
-    delete process.env.LOCAL_AUTH_STUB;
-
+  it('GET /me/athletes без токена отвечает 401', async () => {
     await request(app.getHttpServer()).get('/me/athletes').expect(401);
   });
 
-  it('сообщает о включенной заглушке без заголовка x-user-id', async () => {
-    process.env.LOCAL_AUTH_STUB = 'true';
+  it('GET /me отклоняет мусорный токен', async () => {
+    await request(app.getHttpServer())
+      .get('/me')
+      .set('Authorization', 'Bearer not-a-jwt')
+      .expect(401);
+  });
 
-    const response = await request(app.getHttpServer()).get('/me').expect(401);
+  it('GET /me отклоняет токен, подписанный другим секретом', async () => {
+    const foreign = await app
+      .get(JwtService)
+      .signAsync({ sub: userId }, { secret: 'another-secret-value-32-characters-long', expiresIn: 900 });
 
-    expect(response.body.message).toContain('x-user-id');
+    await request(app.getHttpServer())
+      .get('/me')
+      .set('Authorization', `Bearer ${foreign}`)
+      .expect(401);
+  });
+
+  it('GET /me с корректным токеном отдает профиль', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/me')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(200);
+
+    expect(response.body).toMatchObject({ id: userId, email: 'parent@example.com' });
+    expect(response.body).not.toHaveProperty('passwordHash');
   });
 });

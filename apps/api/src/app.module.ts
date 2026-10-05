@@ -4,6 +4,7 @@ import { AppConfigModule } from './config/config.module';
 import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma';
 import { RedisModule } from './redis';
+import { TokenModule } from './shared/token.module';
 import { AnalyticsModule } from './modules/analytics';
 import { AthletesModule } from './modules/athletes';
 import { AttendanceModule } from './modules/attendance';
@@ -31,6 +32,7 @@ import { SchedulingModule } from './modules/scheduling';
     AppConfigModule,
     PrismaModule,
     RedisModule,
+    TokenModule,
     HealthModule,
     AuditModule,
 

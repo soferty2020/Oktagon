@@ -23,6 +23,9 @@
 - Node.js ≥ 22
 - pnpm 10 (`corepack enable pnpm`)
 - PostgreSQL 16 (локально либо через `docker compose up -d postgres redis`)
+- Redis (нужен для rate limiting auth-эндпоинтов)
+
+Подробности запуска, включая portable-сборки без Docker: `docs/27-local-development.md`.
 
 ## Быстрый старт
 
@@ -48,7 +51,17 @@ Swagger: `http://localhost:3000/api/v1/docs`
 | Endpoint | Назначение |
 | --- | --- |
 | `GET /api/v1/health` | liveness — процесс жив |
-| `GET /api/v1/health/ready` | readiness — проверка PostgreSQL (503 при недоступности) |
+| `GET /api/v1/health/ready` | readiness — проверка PostgreSQL и Redis (503 при недоступности) |
+
+### Аутентификация
+
+| Endpoint | Назначение |
+| --- | --- |
+| `POST /api/v1/auth/login` | вход по email и паролю; отдает access- и refresh-токены и профиль |
+| `POST /api/v1/auth/refresh` | обновление сессии с ротацией refresh-токена |
+| `POST /api/v1/auth/logout` | отзыв refresh-токена |
+| `GET /api/v1/me` | профиль и эффективные права (нужен `Authorization: Bearer <access>`) |
+| `GET /api/v1/me/athletes` | спортсмены, связанные с аккаунтом |
 
 ## Проверки
 

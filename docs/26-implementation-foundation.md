@@ -56,6 +56,25 @@ finance, freezes, news, chat, analytics, audit.
 - `StubAuthGuard` — временная заглушка аутентификации, включается только
   `LOCAL_AUTH_STUB=true`; без нее защищенные маршруты отвечают 401. Удаляется в B2.
 
+Реализовано (issue B2 — аутентификация):
+
+- `PasswordService` — Argon2id в PHC-формате (`@node-rs/argon2`, ADR-0004);
+  хеш чужого формата считается несовпадением, а не ошибкой сервера;
+- `TokenService` + `AccessTokenVerifier` + `AuthGuard` — access-токены (JWT,
+  HS256) и защита маршрутов через `Authorization: Bearer`;
+- `RefreshTokenService` — refresh-токены с ротацией: в БД хранится только
+  SHA-256-хеш; повторное использование отозванного токена отзывает все токены
+  пользователя;
+- `RateLimiterService` — фиксированное окно на Redis (`INCR` + `EXPIRE`),
+  лимиты по IP и по email отдельно;
+- `AuthService` и эндпоинты `POST /auth/login`, `POST /auth/refresh`,
+  `POST /auth/logout`;
+- `TokenModule` — глобальный модуль проверки токенов: guard нужен всем
+  доменным модулям, а зависимость от модуля auth создала бы цикл
+  auth -> identity -> auth;
+- `prisma/seed.ts` переведен на Argon2id: иначе созданный seed-ом суперадмин не
+  смог бы войти.
+
 Остальные модули — заготовки с указанием спецификации. Реализация ведется
 отдельными issue по merge order из `docs/24-multi-agent-plan.md`.
 
@@ -107,7 +126,7 @@ finance, freezes, news, chat, analytics, audit.
 - миграция применена к PostgreSQL 16.6 в `octagon` и `octagon_test`: по 28 таблиц,
   13 enum-типов и оба частичных уникальных индекса;
 - `pnpm db:seed` создает 26 permissions, суперадмина (пароль хранится как
-  scrypt-хеш) и филиал-заглушку с одним залом;
+  Argon2id-хеш, ADR-0004) и филиал-заглушку с одним залом;
 - запущенный API отвечает: `GET /api/v1/health` -> 200, `GET /api/v1/health/ready`
   -> 200 `{"checks":[{"name":"database","status":"up"}]}`,
   `GET /api/v1/openapi.json` -> описание с путями health;
@@ -122,24 +141,35 @@ finance, freezes, news, chat, analytics, audit.
   401 `UNAUTHENTICATED`;
 - readiness с живыми PostgreSQL и Redis: 200, проверки `database` и `redis`;
 - при остановленном Redis readiness отдает 503 `SERVICE_UNAVAILABLE` с
-  `checks: [{database: up}, {redis: down}]`.
+  `checks: [{database: up}, {redis: down}]`;
+- вход вживую на данных seed: `POST /auth/login` -> 200 с access- и
+  refresh-токенами и профилем (26 прав, `passwordHash` не раскрыт);
+- ротация: `POST /auth/refresh` -> 200 и новая пара токенов; повтор старого
+  токена -> 401, после чего все токены пользователя отозваны (следующий
+  refresh тоже 401);
+- `POST /auth/logout` -> 204, после него refresh отдает 401;
+- rate limiting вживую: 9-я и последующие попытки входа -> 429 `RATE_LIMITED`
+  (в окне расходуются квоты и по IP, и по email, поэтому порог наступает
+  раньше номинальных 10 — это ожидаемое поведение двойного лимита).
 
-Проверок всего: unit — 38 (11 contracts + 27 api), e2e — 7 без БД и 2 на БД.
+Проверок всего: unit — 71 (11 contracts + 60 api), e2e — 17 без БД и 8 на БД.
 
 Подробности запуска и обхода ограничений среды — `docs/27-local-development.md`.
 
 ## Следующие шаги
 
-1. **B2** — email/password auth: `POST /auth/login`, `POST /auth/refresh`,
-   `GET /me`, Argon2id (ADR-0004), ротация refresh-токенов, rate limiting
-   (`docs/15-security.md`). Удалить `StubAuthGuard`.
-2. **B3** — invite flow: `POST /auth/accept-invite` и приглашение администратором.
-3. **B5/B6** — guards для RBAC, permissions и resource scope поверх
-   `IdentityService` (`docs/21-permission-matrix.md`).
+1. **B3** — invite flow: `POST /auth/accept-invite` и приглашение
+   администратором (`UserInvite` уже в схеме). Приглашение должно использовать
+   тот же Argon2id и тот же лимитер.
+2. **B5/B6** — guards для RBAC, permissions и resource scope поверх
+   `IdentityService` и `resolvePermissions` (`docs/21-permission-matrix.md`).
+3. **C1..C8** — эпик Club structure: филиалы, залы, тренеры, спортсмены, группы.
 4. `apps/admin` — каркас Next.js + генерация клиента из `openapi.yaml`.
 5. `apps/mobile` — каркас Flutter (требует установленного Flutter SDK).
-6. **A3** — CI pipeline: typecheck, lint, тесты, сборка.
+6. **A3** — CI pipeline: typecheck, lint, тесты, сборка. Для тестов на БД
+   понадобятся сервисы postgres и redis.
 7. Обновить `docs/22-erd.md` под `GroupBranch` (см. ADR-0005).
+8. Наполнить `openapi.yaml` схемами auth/identity (сейчас там только заготовка).
 
 ## Команды
 

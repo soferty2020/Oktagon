@@ -3,3 +3,4 @@ export * from './errors';
 export * from './transport';
 export * from './audit';
 export * from './identity';
+export * from './auth';

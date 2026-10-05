@@ -12,3 +12,6 @@ process.env.JWT_ACCESS_SECRET = 'test-access-secret-value-32-characters-long';
 process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-value-32-characters-long';
 process.env.CLUB_TIMEZONE = process.env.CLUB_TIMEZONE ?? 'Asia/Almaty';
 process.env.LOG_LEVEL = 'error';
+
+// Redis не требуется для e2e-тестов: лимитер подменяется заглушкой.
+delete process.env.REDIS_URL;

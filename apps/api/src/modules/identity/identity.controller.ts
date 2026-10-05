@@ -2,7 +2,7 @@ import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { LinkedAthlete, UserProfile } from '@octagon/contracts';
 
-import { CurrentUser, StubAuthGuard, type AuthenticatedUser } from '../../shared/auth-stub';
+import { AuthGuard, CurrentUser, type AuthenticatedUser } from '../../shared/auth-stub';
 import { IdentityService } from './identity.service';
 
 /**
@@ -13,7 +13,7 @@ import { IdentityService } from './identity.service';
  */
 @ApiTags('identity')
 @ApiBearerAuth()
-@UseGuards(StubAuthGuard)
+@UseGuards(AuthGuard)
 @Controller()
 export class IdentityController {
   constructor(private readonly identity: IdentityService) {}
