@@ -24,8 +24,8 @@ describe('loadEnvironment', () => {
     } catch (error) {
       expect(error).toBeInstanceOf(EnvironmentValidationError);
       expect((error as EnvironmentValidationError).problems).toEqual([
-        'JWT_REFRESH_SECRET is required',
         'JWT_ACCESS_SECRET must be at least 32 characters',
+        'JWT_REFRESH_SECRET is required',
         'DATABASE_URL is required',
       ]);
     }
