@@ -11,3 +11,4 @@ export * from './groups';
 export * from './users';
 export * from './schedule';
 export * from './attendance';
+export * from './finance';

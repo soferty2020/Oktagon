@@ -1,16 +1,34 @@
 import { Module } from '@nestjs/common';
 
+import { FreezesModule } from '../freezes/freezes.module';
+import { IdentityModule } from '../identity/identity.module';
+import {
+  DebtsController,
+  MembershipPeriodsController,
+  PaymentsController,
+} from './finance.controller';
+import { FinanceRepository, PrismaFinanceRepository } from './finance.repository';
 import { FinanceService } from './finance.service';
 
 /**
- * Модуль finance.
+ * Финансы (эпик F, BR-001..BR-004, BR-010).
  *
- * Спецификация: BR-001..BR-004, BR-010, docs/22-erd.md (MembershipPeriod, PaymentTransaction).
- * Публичный контракт и бизнес-логика добавляются отдельным issue
- * (docs/24-multi-agent-plan.md: contracts-first).
+ * Спецификация: docs/22-erd.md (MembershipPeriod, PaymentTransaction),
+ * docs/04-roles-permissions.md, BR-010 (доступ только с явным правом).
+ *
+ * Заморозки (BR-005) живут в отдельном модуле `freezes`: это самостоятельный
+ * сценарий со своими правами. Но задолженность обязана их учитывать (BR-004,
+ * условие 4), поэтому FinanceModule получает FreezeRepository из FreezesModule —
+ * зависимость односторонняя, обратной нет.
  */
 @Module({
-  providers: [FinanceService],
+  imports: [IdentityModule, FreezesModule],
+  controllers: [MembershipPeriodsController, PaymentsController, DebtsController],
+  providers: [
+    FinanceService,
+    PrismaFinanceRepository,
+    { provide: FinanceRepository, useExisting: PrismaFinanceRepository },
+  ],
   exports: [FinanceService],
 })
 export class FinanceModule {}
