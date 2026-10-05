@@ -76,6 +76,7 @@ Swagger: `http://localhost:3000/api/v1/docs`
 ```bash
 pnpm lint        # Biome
 pnpm typecheck
+pnpm openapi:validate   # контракт не отстал от реализованных маршрутов
 pnpm format:check
 pnpm test        # unit-тесты
 pnpm test:e2e    # API e2e (нужна БД octagon_test)

@@ -150,6 +150,10 @@ if ($Step -in @('all', 'lint')) {
     Push-Location $repoRoot
     try { & $biome lint . } finally { Pop-Location }
   }
+  Invoke-Step 'контракт openapi.yaml' {
+    Push-Location $repoRoot
+    try { & node (Join-Path $repoRoot 'scripts\validate-openapi.mjs') } finally { Pop-Location }
+  }
 }
 
 Write-Host ''

@@ -92,6 +92,10 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Validate OpenAPI contract
+        # Контракт не должен отставать от реализованных маршрутов.
+        run: pnpm openapi:validate
+
       - name: Unit tests
         run: pnpm test
 

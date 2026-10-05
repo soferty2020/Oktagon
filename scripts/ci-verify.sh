@@ -33,6 +33,7 @@ echo "== build, typecheck, lint, unit tests, e2e =="
 pnpm build
 pnpm typecheck
 pnpm lint
+pnpm openapi:validate
 pnpm test
 pnpm test:e2e
 

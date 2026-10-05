@@ -13,6 +13,7 @@
     "test:e2e": "pnpm --filter @octagon/api test:e2e",
     "lint": "pnpm --filter @octagon/api lint",
     "typecheck": "pnpm --filter \"./packages/**\" typecheck && pnpm --filter @octagon/api typecheck",
+    "openapi:validate": "node scripts/validate-openapi.mjs",
     "format": "prettier --write \"**/*.{ts,js,json,md,yaml,yml}\"",
     "format:check": "prettier --check \"**/*.{ts,js,json,md,yaml,yml}\"",
     "db:generate": "pnpm --filter @octagon/api db:generate",

@@ -2,42 +2,963 @@ openapi: 3.0.3
 info:
   title: OCTAGON Club API
   version: 0.1.0
-  description: MVP contract skeleton. Endpoint schemas are refined contract-first per GitHub issue.
+  description: |
+    Контракт backend API клуба карате OCTAGON.
+
+    Источник истины: `docs/09-api.md` (стиль и формат ошибок),
+    `docs/23-api-contract-plan.md` (правила контракта), `docs/04-roles-permissions.md`
+    (permissions), ADR-0006 (модель прав), ADR-0007 (форма профиля).
+
+    Правила контракта:
+    - идентификаторы — UUID;
+    - timestamps — ISO-8601 в UTC;
+    - ошибки — единый формат `{ code, message, details?, requestId? }`
+      с машиночитаемым `code`;
+    - 401 означает «не аутентифицирован», 403 — «аутентифицирован, но нет прав»;
+    - финансовые поля не отдаются без права `payments.*` / `freezes.*` (BR-010).
+
+    Реализованные разделы: health, auth, identity, invites, permissions.
+    Остальные разделы (athletes, groups, schedule, attendance, finance, news,
+    chat, analytics) появятся по мере реализации эпиков из `docs/18-roadmap.md`.
 servers:
   - url: /api/v1
+    description: Текущий префикс API
+tags:
+  - name: health
+    description: Проверки живости и готовности
+  - name: auth
+    description: Вход, обновление сессии, выход, принятие приглашения
+  - name: identity
+    description: Текущий пользователь и связанные спортсмены
+  - name: users
+    description: Пользователи, приглашения и индивидуальные права
+
 paths:
+  /health:
+    get:
+      tags: [health]
+      summary: Liveness probe
+      description: Сообщает, что процесс API жив. Зависимости не проверяются.
+      security: []
+      operationId: getHealth
+      responses:
+        '200':
+          description: Процесс API жив
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LivenessReport'
+
+  /health/ready:
+    get:
+      tags: [health]
+      summary: Readiness probe
+      description: |
+        Проверяет зависимости: PostgreSQL всегда, Redis — если задан `REDIS_URL`.
+        Возвращает 503, если хотя бы одна зависимость недоступна.
+      security: []
+      operationId: getHealthReady
+      responses:
+        '200':
+          description: Все зависимости доступны
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessReport'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
   /auth/login:
     post:
-      summary: Login with email and password
+      tags: [auth]
+      summary: Вход по email и паролю
+      description: |
+        Возвращает access- и refresh-токены, а также профиль с эффективными
+        правами, чтобы клиенту не требовался отдельный запрос за правами.
+
+        Частота попыток ограничена отдельно по IP и по email
+        (`docs/15-security.md`). Неизвестный email и неверный пароль дают
+        одинаковый ответ, чтобы не раскрывать существование аккаунта.
+      security: []
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
       responses:
-        '200': { description: Authenticated }
-        '401': { description: Invalid credentials }
+        '200':
+          description: Сессия создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSession'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          description: |
+            Неверный email или пароль (`INVALID_CREDENTIALS`), приглашение не
+            принято (`INVITE_INVALID`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Учетная запись заблокирована (`USER_BLOCKED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /auth/refresh:
+    post:
+      tags: [auth]
+      summary: Обновление сессии с ротацией refresh-токена
+      description: |
+        Старый refresh-токен отзывается, выдается новая пара. Повторное
+        использование отозванного токена трактуется как компрометация: все
+        токены пользователя отзываются, следующее обновление также вернет 401.
+      security: []
+      operationId: refreshSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Новая пара токенов и профиль
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSession'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          description: |
+            Refresh-токен недействителен, истек, отозван или уже использован
+            (`UNAUTHENTICATED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Учетная запись заблокирована (`USER_BLOCKED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Выход из системы
+      description: Отзывает переданный refresh-токен. Без токена также отвечает 204.
+      security: []
+      operationId: logout
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+      responses:
+        '204':
+          description: Токен отозван (или отзывать было нечего)
+
+  /auth/accept-invite:
+    post:
+      tags: [auth]
+      summary: Принятие приглашения
+      description: |
+        Пользователь задает пароль и профиль. Доступен без аутентификации:
+        приглашенный еще не имеет пароля.
+
+        Проверяются срок действия токена, признак использования и совпадение
+        email с приглашением. Пароль хешируется Argon2id (ADR-0004). Попытки
+        подбора токена ограничены по IP.
+      security: []
+      operationId: acceptInvite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptInviteRequest'
+      responses:
+        '200':
+          description: Пользователь активирован; далее выполняется вход
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InviteAcceptance'
+        '400':
+          description: |
+            Ошибка валидации (`VALIDATION_FAILED`), приглашение не найдено
+            (`INVITE_INVALID`) или срок истек (`INVITE_EXPIRED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Приглашение выдано на другой email (`INVITE_EMAIL_MISMATCH`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Приглашение уже использовано (`INVITE_ALREADY_USED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
   /me:
     get:
-      summary: Current user, permissions and linked athletes
+      tags: [identity]
+      summary: Профиль текущего пользователя
+      description: |
+        Идентификация, роль, статус и эффективные права. Связанных спортсменов
+        здесь нет: их список растет, поэтому он вынесен в `/me/athletes`
+        (ADR-0007).
+      operationId: getMe
       responses:
-        '200': { description: Current identity }
-        '401': { description: Unauthorized }
-  /athletes:
+        '200':
+          description: Профиль пользователя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Учетная запись заблокирована (`USER_BLOCKED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /me/athletes:
     get:
-      summary: List athletes visible to caller
+      tags: [identity]
+      summary: Спортсмены, связанные с аккаунтом
+      description: |
+        Данные для переключателя спортсменов: по `docs/00-project-overview.md`
+        аккаунт не равен карточке спортсмена. Заметки клуба (`notes`) не
+        отдаются.
+      operationId: getMyAthletes
       responses:
-        '200': { description: Athlete collection }
-  /training-sessions:
+        '200':
+          description: Список связанных спортсменов (может быть пустым)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LinkedAthlete'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+
+  /users/invites:
     get:
-      summary: List visible training sessions
+      tags: [users]
+      summary: Действующие приглашения
+      description: Непринятые и неистекшие приглашения. Токен и его хеш не отдаются.
+      operationId: listInvites
+      parameters:
+        - name: email
+          in: query
+          required: false
+          description: Фильтр по адресу
+          schema:
+            type: string
+            format: email
       responses:
-        '200': { description: Training session collection }
-  /news:
+        '200':
+          description: Список приглашений
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserInviteView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `users.manage` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    post:
+      tags: [users]
+      summary: Пригласить пользователя
+      description: |
+        Саморегистрации в MVP нет (`docs/01-mvp-scope.md`): пользователя
+        приглашает администратор.
+
+        Провайдер доставки письма еще не выбран (`docs/25-open-questions.md`),
+        поэтому `token` возвращается только здесь и передается вручную.
+        Повторное приглашение на тот же адрес гасит предыдущие непринятые.
+      operationId: createInvite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInviteRequest'
+      responses:
+        '201':
+          description: Приглашение создано; `token` показывается только в этом ответе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInviteCreated'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `users.manage` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Пользователь с таким email уже существует (`EMAIL_ALREADY_EXISTS`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /users/{userId}/permissions:
     get:
-      summary: List club news
+      tags: [users]
+      summary: Права пользователя
+      description: |
+        Возвращает права раздельно: базовый набор роли, индивидуальные выдачи и
+        итоговый набор. Нужно для экрана управления правами в админке
+        (ADR-0006).
+      operationId: listUserPermissions
+      parameters:
+        - $ref: '#/components/parameters/UserId'
       responses:
-        '200': { description: News collection }
+        '200':
+          description: Состояние прав пользователя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPermissionsView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `permissions.manage` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags: [users]
+      summary: Выдать индивидуальное право
+      description: |
+        Выдача только добавляет право поверх роли. Право, которое уже
+        обеспечивает роль, выдать нельзя: это не изменило бы доступ, но
+        создало бы иллюзию управляемой выдачи.
+
+        Изменение попадает в audit log (BR-007).
+      operationId: grantUserPermission
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GrantPermissionRequest'
+      responses:
+        '201':
+          description: Право выдано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPermissionGrant'
+        '400':
+          description: |
+            Ошибка валидации (`VALIDATION_FAILED`), неизвестный код права
+            (`PERMISSION_UNKNOWN`) или срок в прошлом (`PERMISSION_EXPIRES_IN_PAST`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `permissions.manage` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Право уже предоставлено ролью (`PERMISSION_GRANTED_BY_ROLE`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /users/{userId}/permissions/{code}:
+    delete:
+      tags: [users]
+      summary: Отозвать индивидуальное право
+      description: |
+        Отзывает только индивидуальную выдачу. Право, пришедшее от роли,
+        отозвать нельзя (`PERMISSION_IS_ROLE_BASED`): роль должна оставаться
+        предсказуемой.
+
+        Изменение попадает в audit log (BR-007).
+      operationId: revokeUserPermission
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - name: code
+          in: path
+          required: true
+          description: Код права из каталога
+          schema:
+            $ref: '#/components/schemas/PermissionCode'
+      responses:
+        '204':
+          description: Право отозвано
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `permissions.manage` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: |
+            Пользователь не найден (`NOT_FOUND`) или право не выдавалось
+            (`PERMISSION_NOT_GRANTED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Право предоставлено ролью (`PERMISSION_IS_ROLE_BASED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: Access-токен из ответа `/auth/login` или `/auth/refresh`
+
+  parameters:
+    UserId:
+      name: userId
+      in: path
+      required: true
+      description: Идентификатор пользователя
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    ValidationFailed:
+      description: Ошибка валидации входных данных (`VALIDATION_FAILED`)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    Unauthenticated:
+      description: |
+        Требуется access-токен или он недействителен (`UNAUTHENTICATED`).
+        В заголовке `WWW-Authenticate` клиент получает требование Bearer.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    NotFound:
+      description: Ресурс не найден (`NOT_FOUND`)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    RateLimited:
+      description: Превышен лимит запросов (`RATE_LIMITED`)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    ServiceUnavailable:
+      description: Зависимость недоступна (`SERVICE_UNAVAILABLE`)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+  schemas:
+    ApiError:
+      type: object
+      description: Единый формат ошибки (`docs/09-api.md`)
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: Стабильный машиночитаемый код
+          example: SCHEDULE_CONFLICT
+        message:
+          type: string
+          description: Текст для человека
+          example: Занятие пересекается с другим в этом зале
+        details:
+          type: object
+          additionalProperties: true
+          description: Дополнительные сведения; состав зависит от кода
+          example:
+            missingPermissions: [payments.edit]
+        requestId:
+          type: string
+          description: Идентификатор запроса для сопоставления с логами
+          example: 6f1c2f0a-6f2e-4f4a-9d0e-3f1b2c3d4e5f
+
+    ErrorCode:
+      type: string
+      description: |
+        Реализованные коды ошибок. Список полный для текущих эндпоинтов;
+        он расширяется по мере реализации модулей.
+      enum:
+        - VALIDATION_FAILED
+        - UNAUTHENTICATED
+        - INVALID_CREDENTIALS
+        - TOKEN_EXPIRED
+        - TOKEN_INVALID
+        - FORBIDDEN
+        - NOT_FOUND
+        - CONFLICT
+        - RATE_LIMITED
+        - SERVICE_UNAVAILABLE
+        - INTERNAL_ERROR
+        - EMAIL_ALREADY_EXISTS
+        - INVITE_INVALID
+        - INVITE_EXPIRED
+        - INVITE_ALREADY_USED
+        - INVITE_EMAIL_MISMATCH
+        - USER_BLOCKED
+        - PERMISSION_UNKNOWN
+        - PERMISSION_GRANTED_BY_ROLE
+        - PERMISSION_IS_ROLE_BASED
+        - PERMISSION_NOT_GRANTED
+        - PERMISSION_EXPIRES_IN_PAST
+
+    PermissionCode:
+      type: string
+      description: Право из каталога (`docs/04-roles-permissions.md`)
+      enum:
+        - athletes.view
+        - athletes.edit
+        - athletes.contacts.view
+        - groups.view
+        - groups.edit
+        - attendance.view
+        - attendance.edit
+        - schedule.view
+        - schedule.edit
+        - schedule.cancel
+        - schedule.change_trainer
+        - schedule.change_location
+        - payments.view
+        - payments.edit
+        - freezes.view
+        - freezes.edit
+        - news.create
+        - news.edit
+        - news.delete
+        - news.moderate
+        - chat.use
+        - branches.view
+        - branches.manage
+        - users.manage
+        - permissions.manage
+        - analytics.view
+
+    UserRole:
+      type: string
+      description: Базовая роль (`docs/04-roles-permissions.md`)
+      enum: [MEMBER, STAFF, SUPERADMIN]
+
+    UserStatus:
+      type: string
+      enum: [INVITED, ACTIVE, BLOCKED]
+
+    AthleteStatus:
+      type: string
+      description: Статус карточки спортсмена (BR-006)
+      enum: [ACTIVE, FROZEN, ARCHIVED]
+
+    LivenessReport:
+      type: object
+      required: [status, service, environment, timestamp]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        service:
+          type: string
+          example: octagon-api
+        environment:
+          type: string
+          enum: [local, test, staging, production]
+        version:
+          type: string
+          example: 0.0.0
+        uptimeSeconds:
+          type: integer
+          example: 185
+        clubTimezone:
+          type: string
+          description: Локальная timezone клуба из конфигурации
+          example: Asia/Almaty
+        timestamp:
+          type: string
+          format: date-time
+
+    ReadinessReport:
+      type: object
+      required: [status, checks, timestamp]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        checks:
+          type: array
+          items:
+            type: object
+            required: [name, status]
+            properties:
+              name:
+                type: string
+                example: database
+              status:
+                type: string
+                enum: [up, down]
+        timestamp:
+          type: string
+          format: date-time
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+          minLength: 10
+
+    LogoutRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          description: Не задан — выход не меняет состояние
+
+    AuthTokens:
+      type: object
+      required: [accessToken, expiresIn, refreshToken, refreshExpiresAt]
+      properties:
+        accessToken:
+          type: string
+          description: Короткоживущий access-токен (JWT)
+        expiresIn:
+          type: integer
+          description: Время жизни access-токена в секундах
+          example: 900
+        refreshToken:
+          type: string
+          description: Refresh-токен; в БД хранится только его хеш
+        refreshExpiresAt:
+          type: string
+          format: date-time
+
+    AuthSession:
+      allOf:
+        - $ref: '#/components/schemas/AuthTokens'
+        - type: object
+          required: [user]
+          properties:
+            user:
+              $ref: '#/components/schemas/UserProfile'
+
+    UserPermissionGrant:
+      type: object
+      required: [code, description, isFinancial, grantedAt]
+      properties:
+        code:
+          $ref: '#/components/schemas/PermissionCode'
+        description:
+          type: string
+          example: Просмотр оплат
+        isFinancial:
+          type: boolean
+          description: Финансовое право — особо защищенное (BR-010)
+        grantedAt:
+          type: string
+          format: date-time
+        grantedById:
+          type: string
+          format: uuid
+          nullable: true
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Не задан — выдача бессрочная
+
+    UserPermissions:
+      type: object
+      required: [codes, grants]
+      properties:
+        codes:
+          type: array
+          description: Итоговый набор прав (роль плюс действующие выдачи)
+          items:
+            $ref: '#/components/schemas/PermissionCode'
+        grants:
+          type: array
+          description: Только выданные лично права
+          items:
+            type: object
+            required: [code, grantedAt]
+            properties:
+              code:
+                $ref: '#/components/schemas/PermissionCode'
+              grantedAt:
+                type: string
+                format: date-time
+
+    UserProfile:
+      type: object
+      description: 'Профиль из `GET /me` (ADR-0007). Секреты и внутренние поля не отдаются.'
+      required: [id, email, firstName, lastName, role, status, scopeAllGroups, permissions]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        middleName:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        role:
+          $ref: '#/components/schemas/UserRole'
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        scopeAllGroups:
+          type: boolean
+          description: |
+            true — сотрудник видит все группы, а не только свои (ADR-0006).
+        permissions:
+          $ref: '#/components/schemas/UserPermissions'
+
+    LinkedAthlete:
+      type: object
+      required: [id, firstName, lastName, status, relation, isPrimary]
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        middleName:
+          type: string
+          nullable: true
+        birthDate:
+          type: string
+          format: date
+          nullable: true
+          description: Календарная дата без времени
+        status:
+          $ref: '#/components/schemas/AthleteStatus'
+        relation:
+          type: string
+          description: Тип связи аккаунта со спортсменом
+          example: PARENT
+        isPrimary:
+          type: boolean
+
+    CreateInviteRequest:
+      type: object
+      required: [email, role]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        role:
+          $ref: '#/components/schemas/UserRole'
+
+    UserInviteView:
+      type: object
+      description: Приглашение без токена и его хеша
+      required: [id, email, role, expiresAt, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/UserRole'
+        expiresAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    UserInviteCreated:
+      allOf:
+        - $ref: '#/components/schemas/UserInviteView'
+        - type: object
+          required: [token]
+          properties:
+            token:
+              type: string
+              description: |
+                Токен приглашения. Возвращается только при создании; в БД
+                хранится его SHA-256-хеш. Передается пользователю вручную.
+              example: 9f8c1d2e3a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5
+
+    AcceptInviteRequest:
+      type: object
+      required: [email, password, firstName, lastName]
+      description: Нужно указать ровно одно из `token` или `inviteId`
+      properties:
+        token:
+          type: string
+          minLength: 16
+          description: Токен приглашения из ответа на создание
+        inviteId:
+          type: string
+          format: uuid
+          description: Идентификатор приглашения (альтернатива токену)
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: Должен совпадать с адресом приглашения
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        middleName:
+          type: string
+          maxLength: 100
+        phone:
+          type: string
+          maxLength: 32
+
+    InviteAcceptance:
+      type: object
+      required: [userId, email, role]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/UserRole'
+
+    GrantPermissionRequest:
+      type: object
+      required: [code]
+      properties:
+        code:
+          $ref: '#/components/schemas/PermissionCode'
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Не задан — выдача бессрочная; срок в прошлом отклоняется
+
+    UserPermissionsView:
+      type: object
+      description: |
+        Права раздельно: базовый набор роли, индивидуальные выдачи и итог.
+        Разделение нужно админке, чтобы показать, что выдано вручную.
+      required: [userId, role, scopeAllGroups, rolePermissions, grants, effective]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        role:
+          $ref: '#/components/schemas/UserRole'
+        scopeAllGroups:
+          type: boolean
+        rolePermissions:
+          type: array
+          description: Права, которые дает роль
+          items:
+            $ref: '#/components/schemas/PermissionCode'
+        grants:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserPermissionGrant'
+        effective:
+          type: array
+          description: Итоговый действующий набор прав
+          items:
+            $ref: '#/components/schemas/PermissionCode'
+
 security:
   - bearerAuth: []

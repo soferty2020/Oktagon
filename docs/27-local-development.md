@@ -227,6 +227,12 @@ pnpm --filter @octagon/api build && pnpm --filter @octagon/api start:prod
 - Swagger UI: `http://localhost:3000/api/v1/docs`
 - OpenAPI JSON: `http://localhost:3000/api/v1/openapi.json`
 
+Контракт для клиентов лежит в `openapi.yaml` в корне репозитория и
+проверяется командой `pnpm openapi:validate`. Swagger UI строится из
+декораторов и служит для ручных проб: схемы ответов там неполны, потому что
+контроллеры возвращают типы из `packages/contracts`. Источник истины для
+генерации клиентов — `openapi.yaml`.
+
 Проверка живости:
 
 ```bash
