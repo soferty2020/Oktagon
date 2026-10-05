@@ -1,0 +1,717 @@
+// OCTAGON Club System — Prisma schema.
+//
+// Источник истины по сущностям: docs/07-domain-model.md и docs/22-erd.md.
+// Ограничения: docs/08-database.md.
+// Бизнес-правила: docs/03-business-rules.md (BR-001..BR-012).
+//
+// Соглашения:
+// - все первичные ключи — UUID;
+// - timestamps хранятся в UTC (DateTime), календарные даты — @db.Date;
+// - расчетный период хранится отдельными year/month, не выводится из timestamp;
+// - бизнес-данные удаляются soft-delete/archive, а не физически.
+
+generator client {
+  provider = "prisma-client-js"
+  // Явный output: клиент генерируется внутри приложения и не зависит от
+  // postinstall-скрипта пакета @prisma/client (каталог .prisma в pnpm-сторе
+  // создается именно им и теряется при установке с --ignore-scripts).
+  //
+  // Каталог лежит на уровень выше src: относительный путь одинаков и для
+  // ts-node (src/prisma -> ../generated/prisma), и для собранного dist
+  // (dist/prisma -> ../generated/prisma).
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums (значения совпадают с packages/contracts/src/domain.ts)
+// ---------------------------------------------------------------------------
+
+/// docs/04-roles-permissions.md
+enum UserRole {
+  MEMBER
+  STAFF
+  SUPERADMIN
+}
+
+/// INVITED — аккаунт создан приглашением, пароль еще не задан.
+enum UserStatus {
+  INVITED
+  ACTIVE
+  BLOCKED
+}
+
+/// BR-006
+enum AthleteStatus {
+  ACTIVE
+  FROZEN
+  ARCHIVED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  UNSPECIFIED
+}
+
+enum MembershipState {
+  ACTIVE
+  ENDED
+}
+
+/// BR-001..BR-004: помесячный учет оплаты.
+enum MembershipPeriodStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  FULLY_PAID_MARKED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+  OTHER
+}
+
+/// BR-009: точечное изменение экземпляра занятия.
+enum TrainingSessionStatus {
+  SCHEDULED
+  CANCELLED
+  MOVED
+}
+
+/// BR-008: итоговую посещаемость подтверждает тренер.
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  EXCUSED
+}
+
+enum Weekday {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+/// BR-012
+enum ConversationType {
+  GROUP
+  DIRECT
+}
+
+enum ConversationMemberRole {
+  MEMBER
+  TRAINER
+}
+
+enum NewsStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
+model User {
+  id                 String     @id @default(uuid()) @db.Uuid
+  email              String     @unique
+  passwordHash       String?    @map("password_hash")
+  firstName          String     @map("first_name")
+  lastName           String     @map("last_name")
+  middleName         String?    @map("middle_name")
+  phone              String?
+  role               UserRole   @default(MEMBER)
+  status             UserStatus @default(INVITED)
+  /// STAFF по умолчанию ограничен своими группами (docs/04-roles-permissions.md).
+  scopeAllGroups     Boolean    @default(false) @map("scope_all_groups")
+  lastLoginAt        DateTime?  @map("last_login_at")
+  archivedAt         DateTime?  @map("archived_at")
+  createdAt          DateTime   @default(now()) @map("created_at")
+  updatedAt          DateTime   @updatedAt @map("updated_at")
+
+  athleteLinks       UserAthlete[]
+  trainerProfile     TrainerProfile?
+  permissions        UserPermission[]
+  refreshTokens      RefreshToken[]
+  createdInvites     UserInvite[]       @relation("InviteCreatedBy")
+  usedInvite         UserInvite?        @relation("InviteUsedBy")
+  attendanceMarked   Attendance[]       @relation("AttendanceMarkedBy")
+  sessionsCancelled  TrainingSession[]  @relation("SessionCancelledBy")
+  freezesCreated     FreezePeriod[]     @relation("FreezeCreatedBy")
+  freezesClosed      FreezePeriod[]     @relation("FreezeClosedBy")
+  paymentsCreated    PaymentTransaction[] @relation("PaymentCreatedBy")
+  newsPosts          NewsPost[]
+  newsComments       NewsComment[]
+  conversationMember ConversationMember[]
+  messages           Message[]
+  auditLogs          AuditLog[]
+
+  @@index([role, status])
+  @@index([archivedAt])
+  @@map("users")
+}
+
+/// Индивидуальные permissions поверх роли (docs/04-roles-permissions.md).
+model Permission {
+  code        String           @id
+  description String
+  /// Финансовые permission (BR-010): доступ к payments/freezes.
+  isFinancial Boolean          @default(false) @map("is_financial")
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  userPermissions UserPermission[]
+
+  @@map("permissions")
+}
+
+model UserPermission {
+  id           String     @id @default(uuid()) @db.Uuid
+  userId       String     @map("user_id") @db.Uuid
+  permissionId String     @map("permission_id")
+  grantedById  String?    @map("granted_by_id") @db.Uuid
+  grantedAt    DateTime   @default(now()) @map("granted_at")
+  expiresAt    DateTime?  @map("expires_at")
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [code])
+
+  @@unique([userId, permissionId])
+  @@index([permissionId])
+  @@map("user_permissions")
+}
+
+/// Приглашение пользователя администратором (MVP scope: без саморегистрации).
+model UserInvite {
+  id        String    @id @default(uuid()) @db.Uuid
+  email     String
+  role      UserRole  @default(MEMBER)
+  /// Хранится только хеш токена приглашения.
+  tokenHash String    @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdBy String    @map("created_by") @db.Uuid
+  usedBy    String?   @unique @map("used_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  creator User  @relation("InviteCreatedBy", fields: [createdBy], references: [id])
+  consumer User? @relation("InviteUsedBy", fields: [usedBy], references: [id])
+
+  @@index([email])
+  @@index([expiresAt])
+  @@map("user_invites")
+}
+
+/// Refresh token rotation (docs/15-security.md).
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@map("refresh_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// Athletes
+// ---------------------------------------------------------------------------
+
+model Athlete {
+  id          String        @id @default(uuid()) @db.Uuid
+  firstName   String        @map("first_name")
+  lastName    String        @map("last_name")
+  middleName  String?       @map("middle_name")
+  birthDate   DateTime?     @map("birth_date") @db.Date
+  gender      Gender        @default(UNSPECIFIED)
+  status      AthleteStatus @default(ACTIVE)
+  phone       String?
+  email       String?
+  notes       String?
+  archivedAt  DateTime?     @map("archived_at")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  userLinks         UserAthlete[]
+  memberships       GroupMembership[]
+  attendances       Attendance[]
+  plannedAbsences   PlannedAbsence[]
+  membershipPeriods MembershipPeriod[]
+  payments          PaymentTransaction[]
+  freezePeriods     FreezePeriod[]
+
+  @@index([status])
+  @@index([lastName, firstName])
+  @@map("athletes")
+}
+
+/// Аккаунт не равен карточке спортсмена: один аккаунт — несколько спортсменов.
+model UserAthlete {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  athleteId  String   @map("athlete_id") @db.Uuid
+  /// Например PARENT, GUARDIAN, SELF.
+  relation   String   @default("PARENT")
+  isPrimary  Boolean  @default(false) @map("is_primary")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  athlete Athlete @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, athleteId])
+  @@index([athleteId])
+  @@map("user_athletes")
+}
+
+// ---------------------------------------------------------------------------
+// Club structure
+// ---------------------------------------------------------------------------
+
+model Branch {
+  id         String    @id @default(uuid()) @db.Uuid
+  name       String
+  address    String?
+  phone      String?
+  isActive   Boolean   @default(true) @map("is_active")
+  archivedAt DateTime? @map("archived_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  halls            Hall[]
+  groupBranches    GroupBranch[]
+  trainingSessions TrainingSession[]
+
+  @@map("branches")
+}
+
+/// Branch и Hall разделены, хотя MVP использует связь 1:1 (docs/22-erd.md).
+model Hall {
+  id        String    @id @default(uuid()) @db.Uuid
+  branchId  String    @map("branch_id") @db.Uuid
+  name      String
+  capacity  Int?
+  isActive  Boolean   @default(true) @map("is_active")
+  archivedAt DateTime? @map("archived_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  branch           Branch            @relation(fields: [branchId], references: [id])
+  trainingSessions TrainingSession[]
+
+  @@unique([branchId, name])
+  @@index([branchId])
+  @@map("halls")
+}
+
+model TrainerProfile {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @unique @map("user_id") @db.Uuid
+  displayName String    @map("display_name")
+  phone       String?
+  bio         String?
+  isActive    Boolean   @default(true) @map("is_active")
+  archivedAt  DateTime? @map("archived_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groupTrainers    GroupTrainer[]
+  trainingSessions TrainingSession[]
+
+  @@map("trainer_profiles")
+}
+
+// ---------------------------------------------------------------------------
+// Groups
+// ---------------------------------------------------------------------------
+
+model Group {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  isActive    Boolean   @default(true) @map("is_active")
+  archivedAt  DateTime? @map("archived_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  branches         GroupBranch[]
+  trainers         GroupTrainer[]
+  memberships      GroupMembership[]
+  scheduleTemplates ScheduleTemplate[]
+  trainingSessions TrainingSession[]
+  conversations    Conversation[]
+
+  @@map("groups")
+}
+
+/// Группа может заниматься в нескольких филиалах (docs/00-project-overview.md).
+model GroupBranch {
+  id        String   @id @default(uuid()) @db.Uuid
+  groupId   String   @map("group_id") @db.Uuid
+  branchId  String   @map("branch_id") @db.Uuid
+  /// Основной филиал группы.
+  isPrimary Boolean  @default(false) @map("is_primary")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  group  Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  branch Branch @relation(fields: [branchId], references: [id])
+
+  @@unique([groupId, branchId])
+  @@index([branchId])
+  @@map("group_branches")
+}
+
+model GroupTrainer {
+  id               String    @id @default(uuid()) @db.Uuid
+  groupId          String    @map("group_id") @db.Uuid
+  trainerProfileId String    @map("trainer_profile_id") @db.Uuid
+  isPrimary        Boolean   @default(false) @map("is_primary")
+  assignedAt       DateTime  @default(now()) @map("assigned_at")
+  unassignedAt     DateTime? @map("unassigned_at")
+
+  group          Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  trainerProfile TrainerProfile @relation(fields: [trainerProfileId], references: [id])
+
+  @@index([trainerProfileId])
+  @@map("group_trainers")
+}
+
+/// История членства. Одновременно допускается одна активная запись на спортсмена
+/// (docs/08-database.md). Гарантируется частичным уникальным индексом в миграции.
+model GroupMembership {
+  id        String          @id @default(uuid()) @db.Uuid
+  groupId   String          @map("group_id") @db.Uuid
+  athleteId String          @map("athlete_id") @db.Uuid
+  state     MembershipState @default(ACTIVE)
+  joinedAt  DateTime        @default(now()) @map("joined_at") @db.Date
+  leftAt    DateTime?       @map("left_at") @db.Date
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+
+  group   Group   @relation(fields: [groupId], references: [id])
+  athlete Athlete @relation(fields: [athleteId], references: [id])
+
+  @@index([groupId, state])
+  @@index([athleteId, state])
+  @@map("group_memberships")
+}
+
+// ---------------------------------------------------------------------------
+// Scheduling
+// ---------------------------------------------------------------------------
+
+/// Квартальный регулярный шаблон расписания.
+model ScheduleTemplate {
+  id         String    @id @default(uuid()) @db.Uuid
+  groupId    String    @map("group_id") @db.Uuid
+  year       Int
+  /// 1..4
+  quarter    Int
+  validFrom  DateTime  @map("valid_from") @db.Date
+  validTo    DateTime  @map("valid_to") @db.Date
+  publishedAt DateTime? @map("published_at")
+  createdById String?  @map("created_by_id") @db.Uuid
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  group    Group                 @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  slots    ScheduleTemplateSlot[]
+  sessions TrainingSession[]
+
+  @@unique([groupId, year, quarter])
+  @@index([validFrom, validTo])
+  @@map("schedule_templates")
+}
+
+model ScheduleTemplateSlot {
+  id                 String  @id @default(uuid()) @db.Uuid
+  scheduleTemplateId String  @map("schedule_template_id") @db.Uuid
+  weekday            Weekday
+  startTime          DateTime @map("start_time") @db.Time(0)
+  endTime            DateTime @map("end_time") @db.Time(0)
+  hallId             String? @map("hall_id") @db.Uuid
+  trainerProfileId   String? @map("trainer_profile_id") @db.Uuid
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  scheduleTemplate ScheduleTemplate @relation(fields: [scheduleTemplateId], references: [id], onDelete: Cascade)
+
+  @@index([scheduleTemplateId, weekday])
+  @@map("schedule_template_slots")
+}
+
+/// Материализованный экземпляр занятия. Точечное изменение экземпляра не меняет
+/// шаблон (BR-009).
+model TrainingSession {
+  id                 String                @id @default(uuid()) @db.Uuid
+  groupId            String                @map("group_id") @db.Uuid
+  branchId           String?               @map("branch_id") @db.Uuid
+  hallId             String?               @map("hall_id") @db.Uuid
+  trainerProfileId   String?               @map("trainer_profile_id") @db.Uuid
+  scheduleTemplateId String?               @map("schedule_template_id") @db.Uuid
+  startsAt           DateTime              @map("starts_at")
+  endsAt             DateTime              @map("ends_at")
+  status             TrainingSessionStatus @default(SCHEDULED)
+  /// Причина переноса/отмены; заполняется при точечном изменении.
+  changeReason       String?               @map("change_reason")
+  cancelledAt        DateTime?             @map("cancelled_at")
+  cancelledById      String?               @map("cancelled_by_id") @db.Uuid
+  createdAt          DateTime              @default(now()) @map("created_at")
+  updatedAt          DateTime              @updatedAt @map("updated_at")
+
+  group            Group             @relation(fields: [groupId], references: [id])
+  branch           Branch?           @relation(fields: [branchId], references: [id])
+  hall             Hall?             @relation(fields: [hallId], references: [id])
+  trainerProfile   TrainerProfile?   @relation(fields: [trainerProfileId], references: [id])
+  scheduleTemplate ScheduleTemplate? @relation(fields: [scheduleTemplateId], references: [id])
+  cancelledBy      User?             @relation("SessionCancelledBy", fields: [cancelledById], references: [id])
+  attendances      Attendance[]
+  plannedAbsences  PlannedAbsence[]
+
+  @@unique([groupId, startsAt])
+  @@index([startsAt])
+  @@index([trainerProfileId, startsAt])
+  @@index([hallId, startsAt])
+  @@map("training_sessions")
+}
+
+/// BR-008: предварительное сообщение родителя о планируемом отсутствии.
+model PlannedAbsence {
+  id                String   @id @default(uuid()) @db.Uuid
+  trainingSessionId String   @map("training_session_id") @db.Uuid
+  athleteId         String   @map("athlete_id") @db.Uuid
+  reason            String?
+  reportedById      String?  @map("reported_by_id") @db.Uuid
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  trainingSession TrainingSession @relation(fields: [trainingSessionId], references: [id], onDelete: Cascade)
+  athlete         Athlete         @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+
+  @@unique([trainingSessionId, athleteId])
+  @@index([athleteId])
+  @@map("planned_absences")
+}
+
+/// Итоговая посещаемость, подтвержденная тренером/администратором.
+model Attendance {
+  id                String           @id @default(uuid()) @db.Uuid
+  trainingSessionId String           @map("training_session_id") @db.Uuid
+  athleteId         String           @map("athlete_id") @db.Uuid
+  status            AttendanceStatus
+  comment           String?
+  markedById        String?          @map("marked_by_id") @db.Uuid
+  markedAt          DateTime         @default(now()) @map("marked_at")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  trainingSession TrainingSession @relation(fields: [trainingSessionId], references: [id], onDelete: Cascade)
+  athlete         Athlete         @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  markedBy        User?           @relation("AttendanceMarkedBy", fields: [markedById], references: [id])
+
+  @@unique([trainingSessionId, athleteId])
+  @@index([athleteId])
+  @@map("attendances")
+}
+
+// ---------------------------------------------------------------------------
+// Finance
+// ---------------------------------------------------------------------------
+
+/// Расчетный период: уникален по athlete + year + month (BR-001).
+model MembershipPeriod {
+  id            String                 @id @default(uuid()) @db.Uuid
+  athleteId     String                 @map("athlete_id") @db.Uuid
+  year          Int
+  /// 1..12
+  month         Int
+  expectedAmount Decimal?              @map("expected_amount") @db.Decimal(12, 2)
+  paidAmount    Decimal                @default(0) @map("paid_amount") @db.Decimal(12, 2)
+  status        MembershipPeriodStatus @default(UNPAID)
+  /// BR-003: ручная отметка «оплачен полностью».
+  fullyPaidMarkedAt DateTime?          @map("fully_paid_marked_at")
+  fullyPaidMarkedById String?          @map("fully_paid_marked_by_id") @db.Uuid
+  note          String?
+  createdAt     DateTime               @default(now()) @map("created_at")
+  updatedAt     DateTime               @updatedAt @map("updated_at")
+
+  athlete    Athlete              @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  payments   PaymentTransaction[]
+
+  @@unique([athleteId, year, month])
+  @@index([year, month, status])
+  @@map("membership_periods")
+}
+
+model PaymentTransaction {
+  id                 String        @id @default(uuid()) @db.Uuid
+  membershipPeriodId String        @map("membership_period_id") @db.Uuid
+  athleteId          String        @map("athlete_id") @db.Uuid
+  amount             Decimal       @db.Decimal(12, 2)
+  method             PaymentMethod @default(CASH)
+  paidAt             DateTime      @map("paid_at") @db.Date
+  comment            String?
+  createdById        String?       @map("created_by_id") @db.Uuid
+  /// Ключ идемпотентности для мутаций оплаты (docs/23-api-contract-plan.md).
+  idempotencyKey     String?       @unique @map("idempotency_key")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+
+  membershipPeriod MembershipPeriod @relation(fields: [membershipPeriodId], references: [id], onDelete: Cascade)
+  athlete          Athlete          @relation(fields: [athleteId], references: [id])
+  createdBy        User?            @relation("PaymentCreatedBy", fields: [createdById], references: [id])
+
+  @@index([athleteId, paidAt])
+  @@map("payment_transactions")
+}
+
+/// BR-005: заморозка — открытый период приостановления; начало и завершение
+/// можно внести задним числом. Допускается один открытый период на спортсмена
+/// (docs/08-database.md), гарантируется частичным уникальным индексом.
+model FreezePeriod {
+  id            String    @id @default(uuid()) @db.Uuid
+  athleteId     String    @map("athlete_id") @db.Uuid
+  startedOn     DateTime  @map("started_on") @db.Date
+  endedOn       DateTime? @map("ended_on") @db.Date
+  reason        String?
+  createdById   String?   @map("created_by_id") @db.Uuid
+  closedById    String?   @map("closed_by_id") @db.Uuid
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  athlete   Athlete @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  createdBy User?   @relation("FreezeCreatedBy", fields: [createdById], references: [id])
+  closedBy  User?   @relation("FreezeClosedBy", fields: [closedById], references: [id])
+
+  @@index([athleteId, startedOn])
+  @@map("freeze_periods")
+}
+
+// ---------------------------------------------------------------------------
+// Communication
+// ---------------------------------------------------------------------------
+
+model NewsPost {
+  id          String     @id @default(uuid()) @db.Uuid
+  title       String
+  body        String
+  status      NewsStatus @default(DRAFT)
+  publishedAt DateTime?  @map("published_at")
+  authorId    String     @map("author_id") @db.Uuid
+  isPinned    Boolean    @default(false) @map("is_pinned")
+  archivedAt  DateTime?  @map("archived_at")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  author   User          @relation(fields: [authorId], references: [id])
+  comments NewsComment[]
+
+  @@index([status, publishedAt])
+  @@map("news_posts")
+}
+
+model NewsComment {
+  id         String    @id @default(uuid()) @db.Uuid
+  newsPostId String    @map("news_post_id") @db.Uuid
+  authorId   String    @map("author_id") @db.Uuid
+  body       String
+  deletedAt  DateTime? @map("deleted_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  newsPost NewsPost @relation(fields: [newsPostId], references: [id], onDelete: Cascade)
+  author   User     @relation(fields: [authorId], references: [id])
+
+  @@index([newsPostId, createdAt])
+  @@map("news_comments")
+}
+
+/// BR-012: групповые и личные текстовые диалоги (без вложений в MVP).
+model Conversation {
+  id        String           @id @default(uuid()) @db.Uuid
+  type      ConversationType
+  title     String?
+  groupId   String?          @map("group_id") @db.Uuid
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  group       Group?               @relation(fields: [groupId], references: [id])
+  members     ConversationMember[]
+  messages    Message[]
+
+  @@index([groupId])
+  @@map("conversations")
+}
+
+model ConversationMember {
+  id             String                 @id @default(uuid()) @db.Uuid
+  conversationId String                 @map("conversation_id") @db.Uuid
+  userId         String                 @map("user_id") @db.Uuid
+  role           ConversationMemberRole @default(MEMBER)
+  joinedAt       DateTime               @default(now()) @map("joined_at")
+  leftAt         DateTime?              @map("left_at")
+  lastReadAt     DateTime?              @map("last_read_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@map("conversation_members")
+}
+
+model Message {
+  id             String    @id @default(uuid()) @db.Uuid
+  conversationId String    @map("conversation_id") @db.Uuid
+  senderId       String    @map("sender_id") @db.Uuid
+  body           String
+  deletedAt      DateTime? @map("deleted_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id])
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
+
+// ---------------------------------------------------------------------------
+// Audit
+// ---------------------------------------------------------------------------
+
+/// BR-007: изменения оплат, заморозок, прав доступа и расписания аудируемы.
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorUserId String? @map("actor_user_id") @db.Uuid
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  beforeJson Json?    @map("before_json")
+  afterJson  Json?    @map("after_json")
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  requestId  String?  @map("request_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  actor User? @relation(fields: [actorUserId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([actorUserId, createdAt])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

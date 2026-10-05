@@ -1,0 +1,17 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": ".*\\.spec\\.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^@octagon/contracts$": "<rootDir>/../../packages/contracts/src/index.ts",
+    "^@octagon/config$": "<rootDir>/../../packages/config/src/index.ts"
+  },
+  "collectCoverageFrom": ["src/**/*.(t|j)s"],
+  "coverageDirectory": "./coverage",
+  "coveragePathIgnorePatterns": ["\\.module\\.ts$", "\\.spec\\.ts$"],
+  "clearMocks": true
+}

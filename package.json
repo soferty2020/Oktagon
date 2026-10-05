@@ -1,0 +1,33 @@
+{
+  "name": "octagon",
+  "version": "0.0.0",
+  "private": true,
+  "description": "OCTAGON Club System - monorepo (NestJS API, Next.js admin, Flutter mobile)",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build:packages": "pnpm --filter \"./packages/**\" build",
+    "build": "pnpm build:packages && pnpm --filter @octagon/api build",
+    "test": "pnpm --filter \"./packages/**\" test && pnpm --filter @octagon/api test",
+    "test:e2e": "pnpm --filter @octagon/api test:e2e",
+    "lint": "pnpm --filter @octagon/api lint",
+    "typecheck": "pnpm --filter \"./packages/**\" typecheck && pnpm --filter @octagon/api typecheck",
+    "format": "prettier --write \"**/*.{ts,js,json,md,yaml,yml}\"",
+    "format:check": "prettier --check \"**/*.{ts,js,json,md,yaml,yml}\"",
+    "db:generate": "pnpm --filter @octagon/api db:generate",
+    "db:migrate": "pnpm --filter @octagon/api db:migrate",
+    "db:deploy": "pnpm --filter @octagon/api db:deploy",
+    "db:seed": "pnpm --filter @octagon/api db:seed",
+    "db:studio": "pnpm --filter @octagon/api db:studio"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
+    "prettier": "^3.3.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "confbox": "^0.3.1"
+    }
+  }
+}

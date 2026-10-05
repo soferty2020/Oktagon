@@ -1,25 +1,76 @@
 # OCTAGON Club System
 
-Единая система управления клубом карате OCTAGON: мобильное приложение для родителей, взрослых спортсменов, тренеров и руководителя, web-админка и backend API.
+Единая система управления клубом карате OCTAGON: backend API, web-админка и
+мобильное приложение. Документация в `docs/` — источник истины (см. `AGENTS.md`).
 
-## Цели MVP
-- уйти от ручного учета;
-- централизованно вести спортсменов, группы и расписание;
-- видеть посещаемость и помесячные оплаты;
-- дать родителям удобный мобильный сервис;
-- обеспечить основу для дальнейших модулей: push, аттестации, соревнования, CRM, онлайн-оплата.
+## Структура монорепо
 
-## Технологический стек
-- Mobile: Flutter
-- Web Admin: Next.js
-- Backend: NestJS
-- Database: PostgreSQL
-- Cache/queues: Redis
-- Storage: S3-compatible
-- Infra: Docker + Nginx
+Каталоги соответствуют `docs/13-architecture.md`:
 
-## Структура документации
-См. `docs/` и `AGENTS.md`.
+| Путь | Стек | Состояние |
+| --- | --- | --- |
+| `apps/api` | NestJS + Prisma + PostgreSQL | скелет модулей, схема БД, health-check |
+| `apps/admin` | Next.js | не создан |
+| `apps/mobile` | Flutter | не создан |
+| `packages/contracts` | TypeScript | доменные enum'ы, коды ошибок |
+| `packages/config` | TypeScript | схемы конфигурации |
 
-## Статус
-Проектирование MVP v1.0.
+План реализации и открытые решения: `docs/26-implementation-foundation.md`.
+Запуск на локальной машине: `docs/27-local-development.md`.
+
+## Требования
+
+- Node.js ≥ 22
+- pnpm 10 (`corepack enable pnpm`)
+- PostgreSQL 16 (локально либо через `docker compose up -d postgres redis`)
+
+## Быстрый старт
+
+```bash
+pnpm install
+
+# окружение backend
+cp apps/api/.env.example apps/api/.env
+# замените JWT_* секреты (минимум 32 символа) и DATABASE_URL
+
+pnpm db:generate   # генерация Prisma Client
+pnpm db:migrate    # применение миграций
+pnpm db:seed       # permissions, первый суперадмин, филиал-заглушка
+
+pnpm --filter @octagon/api start:dev
+```
+
+API: `http://localhost:3000/api/v1`
+Swagger: `http://localhost:3000/api/v1/docs`
+
+### Health-check
+
+| Endpoint | Назначение |
+| --- | --- |
+| `GET /api/v1/health` | liveness — процесс жив |
+| `GET /api/v1/health/ready` | readiness — проверка PostgreSQL (503 при недоступности) |
+
+## Проверки
+
+```bash
+pnpm lint        # Biome
+pnpm typecheck
+pnpm format:check
+pnpm test        # unit-тесты
+pnpm test:e2e    # API e2e (нужна БД octagon_test)
+pnpm build
+```
+
+Если среда запрещает вложенный запуск pnpm-скриптов, используйте
+`scripts/verify.ps1` — он вызывает компилятор, тест-раннер и линтер напрямую и
+печатает сводку по шагам.
+
+PR не мержится при failed lint/test/build (`docs/16-testing.md`).
+
+## Правила работы
+
+- один issue = один логически завершенный результат;
+- ветки `feat/<issue>-short-name`, `fix/<issue>-short-name`, `docs/<issue>-short-name`;
+- изменения схемы БД — только миграциями;
+- бизнес-логика и scope MVP не меняются без ADR (`docs/decisions/`);
+- секреты не попадают в git.

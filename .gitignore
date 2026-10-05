@@ -1,0 +1,36 @@
+# dependencies / build output
+node_modules/
+dist/
+build/
+coverage/
+.turbo/
+.next/
+out/
+
+# local tooling (pnpm store, corepack home) - not part of the source tree
+.tools/
+
+# сгенерированный Prisma Client (артефакт сборки, создается `pnpm db:generate`)
+apps/api/generated/
+
+# secrets and local env (docs/15-security.md: no secrets in repository)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# editor / OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+
+# build info
+*.tsbuildinfo

@@ -1,0 +1,21 @@
+{
+  "name": "@octagon/config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared non-secret configuration schemas and environment loading",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "jest --config jest.config.json --runInBand"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,76 @@
+# OCTAGON Club System - локальная инфраструктура (docs/14-infrastructure.md).
+#
+# Для локальной разработки достаточно сервисов postgres и redis:
+#   docker compose up -d postgres redis
+#
+# Backend при этом запускается на хосте: pnpm --filter @octagon/api start:dev
+#
+# Полный стек (api + nginx) собирается профилем full:
+#   docker compose --profile full up -d
+name: octagon
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: octagon-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-octagon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-octagon}
+      POSTGRES_DB: ${POSTGRES_DB:-octagon}
+      # Календарные периоды считаются в UTC (docs/08-database.md)
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-octagon} -d ${POSTGRES_DB:-octagon}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: octagon-redis
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    profiles: ['full']
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: octagon-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-octagon}:${POSTGRES_PASSWORD:-octagon}@postgres:5432/${POSTGRES_DB:-octagon}?schema=public
+      REDIS_URL: redis://redis:6379
+      CLUB_TIMEZONE: ${CLUB_TIMEZONE:-Asia/Almaty}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET is required}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET is required}
+    ports:
+      - '${API_PORT:-3000}:3000'
+    command: ['sh', '-c', 'npx prisma migrate deploy && node dist/main.js']
+
+volumes:
+  postgres-data:
+  redis-data:
