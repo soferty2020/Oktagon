@@ -114,6 +114,30 @@ finance, freezes, news, chat, analytics, audit.
 - модуль identity экспортирует `ResourceScopeService`: доменные модули обязаны
   проверять scope отдельно от прав.
 
+Реализовано (эпик C, часть 1: C1–C5):
+
+- `ClubStructureService` — филиалы, залы, тренеры; изменения под правами
+  `branches.view` / `branches.manage`, аудит по BR-007, мягкое удаление через
+  `archivedAt` (docs/08-database.md);
+- вложенный маршрут `POST /branches/{id}/halls` использует отдельный DTO без
+  `branchId`: ValidationPipe настроен с `forbidNonWhitelisted`, и лишнее поле
+  из пути приводило бы к 400;
+- `AthletesService` — карточки спортсменов и связи аккаунтов (C4–C5). Здесь
+  scope не только проверяется, но и **влияет на выборку**: суперадмин и
+  сотрудник с `scopeAllGroups` видят всех, тренер — спортсменов своих групп,
+  участник — связанных (docs/21-permission-matrix.md, Enforcement);
+- контакты (`phone`, `email`) скрываются без права `athletes.contacts.view`
+  (docs/15-security.md, Privacy); заметки клуба не отдаются в `/me/athletes`;
+- «основной» аккаунт спортсмена один: при `isPrimary: true` признак снимается
+  с остальных связей.
+
+Миграция `20260102000000_trainer_profile_optional_user`: `TrainerProfile.userId`
+стал nullable. По `docs/04-roles-permissions.md` часть тренеров работает без
+входа в систему, и обязательная связь с `User` заставляла бы заводить аккаунт
+каждому. `@unique` сохранен: он означает «у одного аккаунта не более одного
+профиля тренера», а тренеров без аккаунта может быть сколько угодно —
+уникальный индекс Postgres считает NULL-значения различными.
+
 Остальные модули — заготовки с указанием спецификации. Реализация ведется
 отдельными issue по merge order из `docs/24-multi-agent-plan.md`.
 
@@ -255,20 +279,24 @@ Swagger удобен для ручных проб. При добавлении �
 
 ## Следующие шаги
 
-1. **C1..C8** — эпик Club structure: филиалы, залы, тренеры, спортсмены, группы.
-   Это первый эпик, который использует `ResourceScopeService` для фильтрации
-   списков, а не только проверок.
+1. **C6..C8** — группы: CRUD групп, привязка филиалов (`GroupBranch`), назначение
+   тренеров (`GroupTrainer`), членство спортсменов (`GroupMembership`) с
+   проверкой «одна активная запись на спортсмена».
 2. `apps/admin` — каркас Next.js + генерация клиента из `openapi.yaml`.
 3. `apps/mobile` — каркас Flutter (требует установленного Flutter SDK).
 4. Обновить `docs/22-erd.md` под `GroupBranch` (см. ADR-0005).
-5. Наполнить `openapi.yaml` схемами auth/identity/invites/permissions (сейчас
-   там только заготовка).
+5. Продолжать наполнять `openapi.yaml` вместе с новыми эндпоинтами: сейчас
+   документированы health, auth, identity, invites, permissions, branches,
+   halls, trainers, athletes (21 маршрут, 34 операции).
 6. Доставка приглашений письмом — когда будет выбран провайдер
-   (`docs/25-open-questions.md`). Контракт при этом не меняется.
+   (`docs/25-open-questions.md`).
 7. Scope по филиалам: сейчас `User.scopeAllGroups` — булев флаг. Отдельная
-   таблица scope потребует нового ADR (см. ADR-0006, раздел Consequences).
+   таблица scope потребует нового ADR (см. ADR-0006, Consequences).
+8. Отдельные права для тренеров и структуры клуба: сейчас изменение тренеров
+   опирается на `branches.manage`, потому что в `docs/04-roles-permissions.md`
+   нет подходящего права. Если появится роль администратора клуба — нужен ADR.
 
-Закрыто: A3 (CI), B1, B2, B3, B5, B6.
+Закрыто: A3 (CI), B1–B6, C1–C5.
 
 ## Команды
 

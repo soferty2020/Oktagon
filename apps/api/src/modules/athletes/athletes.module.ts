@@ -1,16 +1,27 @@
 import { Module } from '@nestjs/common';
 
+import { IdentityModule } from '../identity/identity.module';
+import { AthletesController } from './athletes.controller';
+import { AthletesRepository, PrismaAthletesRepository } from './athletes.repository';
 import { AthletesService } from './athletes.service';
 
 /**
- * Модуль athletes.
+ * Спортсмены и связи с аккаунтами (issues C4–C5).
  *
- * Спецификация: docs/07-domain-model.md, docs/22-erd.md (Athlete, UserAthlete), docs/00-project-overview.md (аккаунт != карточка спортсмена).
- * Публичный контракт и бизнес-логика добавляются отдельным issue
- * (docs/24-multi-agent-plan.md: contracts-first).
+ * Спецификация: docs/07-domain-model.md, docs/22-erd.md (Athlete, UserAthlete),
+ * docs/00-project-overview.md (аккаунт не равен карточке спортсмена).
+ *
+ * IdentityModule дает PermissionsGuard, ResourceScopeService (влияет на
+ * выборку) и PermissionResolver (видимость контактов).
  */
 @Module({
-  providers: [AthletesService],
+  imports: [IdentityModule],
+  controllers: [AthletesController],
+  providers: [
+    AthletesService,
+    PrismaAthletesRepository,
+    { provide: AthletesRepository, useExisting: PrismaAthletesRepository },
+  ],
   exports: [AthletesService],
 })
 export class AthletesModule {}

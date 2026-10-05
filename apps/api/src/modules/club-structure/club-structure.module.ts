@@ -1,16 +1,27 @@
 import { Module } from '@nestjs/common';
 
+import { IdentityModule } from '../identity/identity.module';
+import { BranchesController, HallsController, TrainersController } from './club-structure.controller';
+import { ClubStructureRepository, PrismaClubStructureRepository } from './club-structure.repository';
 import { ClubStructureService } from './club-structure.service';
 
 /**
- * Модуль club-structure.
+ * Структура клуба (issues C1–C3): филиалы, залы, тренеры.
  *
- * Спецификация: docs/00-project-overview.md (3 филиала, рост до 5+), docs/22-erd.md (Branch, Hall, TrainerProfile).
- * Публичный контракт и бизнес-логика добавляются отдельным issue
- * (docs/24-multi-agent-plan.md: contracts-first).
+ * Спецификация: docs/00-project-overview.md (три филиала, рост до 5+),
+ * docs/22-erd.md (Branch, Hall, TrainerProfile).
+ *
+ * IdentityModule нужен для PermissionsGuard (`branches.view`,
+ * `branches.manage`) и впоследствии для ResourceScopeService.
  */
 @Module({
-  providers: [ClubStructureService],
+  imports: [IdentityModule],
+  controllers: [BranchesController, HallsController, TrainersController],
+  providers: [
+    ClubStructureService,
+    PrismaClubStructureRepository,
+    { provide: ClubStructureRepository, useExisting: PrismaClubStructureRepository },
+  ],
   exports: [ClubStructureService],
 })
 export class ClubStructureModule {}

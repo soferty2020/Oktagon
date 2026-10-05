@@ -319,7 +319,13 @@ model Hall {
 
 model TrainerProfile {
   id          String    @id @default(uuid()) @db.Uuid
-  userId      String    @unique @map("user_id") @db.Uuid
+  /// Аккаунт тренера. Не обязателен: по docs/04-roles-permissions.md часть
+  /// тренеров работает без входа в систему, и заводить им User не нужно.
+  ///
+  /// @unique здесь означает «у одного аккаунта не более одного профиля
+  /// тренера». Несколько NULL допустимы: уникальный индекс Postgres считает
+  /// NULL-значения различными, поэтому тренеров без аккаунта может быть много.
+  userId      String?   @unique @map("user_id") @db.Uuid
   displayName String    @map("display_name")
   phone       String?
   bio         String?
@@ -328,7 +334,7 @@ model TrainerProfile {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
-  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
   groupTrainers    GroupTrainer[]
   trainingSessions TrainingSession[]
 

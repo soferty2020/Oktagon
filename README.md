@@ -70,6 +70,16 @@ Swagger: `http://localhost:3000/api/v1/docs`
 | `GET /api/v1/users/{id}/permissions` | права пользователя: ролевые, выданные лично, итоговые |
 | `POST /api/v1/users/{id}/permissions` | выдать индивидуальное право (право `permissions.manage`) |
 | `DELETE /api/v1/users/{id}/permissions/{code}` | отозвать индивидуальное право |
+| `GET/POST /api/v1/branches` | филиалы (права `branches.view` / `branches.manage`) |
+| `GET/PATCH/DELETE /api/v1/branches/{id}` | филиал, изменение, архивирование |
+| `GET/POST /api/v1/branches/{id}/halls` | залы филиала |
+| `PATCH/DELETE /api/v1/halls/{id}` | изменение и архивирование зала |
+| `GET/POST /api/v1/trainers` | тренеры; профиль может существовать без аккаунта |
+| `GET/PATCH/DELETE /api/v1/trainers/{id}` | профиль тренера |
+| `GET/POST /api/v1/athletes` | спортсмены: список ограничен scope, контакты — по праву |
+| `GET/PATCH/DELETE /api/v1/athletes/{id}` | карточка спортсмена |
+| `POST /api/v1/athletes/{id}/accounts` | связать аккаунт со спортсменом |
+| `DELETE /api/v1/athletes/{id}/accounts/{userId}` | снять связь аккаунта |
 
 ## Проверки
 

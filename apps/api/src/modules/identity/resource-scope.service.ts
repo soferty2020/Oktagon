@@ -96,6 +96,26 @@ export class ResourceScopeService {
     return this.repository.listStaffGroupIds(userId);
   }
 
+  /**
+   * Идентификаторы видимых спортсменов.
+   *
+   * null означает «ограничений нет»: суперадмин и сотрудник с scopeAllGroups
+   * видят всех, поэтому вызывающий код может не выгружать список целиком ради
+   * фильтрации. Участник видит только связанных спортсменов.
+   */
+  async visibleAthleteIds(userId: string): Promise<string[] | null> {
+    const record = await this.requireUser(userId);
+
+    if (record.role === 'SUPERADMIN' || record.scopeAllGroups) {
+      return null;
+    }
+    if (record.role === 'MEMBER') {
+      const linked = await this.repository.listLinkedAthletes(userId);
+      return linked.map((athlete) => athlete.athleteId);
+    }
+    return this.repository.listCoachedAthleteIds(userId);
+  }
+
   private async requireUser(userId: string): Promise<UserProfileRecord> {
     const record = await this.repository.findProfile(userId);
     if (!record) {

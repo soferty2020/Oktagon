@@ -462,6 +462,712 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
 
+  /branches:
+    get:
+      tags: [branches]
+      summary: Список филиалов
+      operationId: listBranches
+      parameters:
+        - name: isActive
+          in: query
+          required: false
+          description: Фильтр по активности
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Филиалы клуба
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BranchView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `branches.view` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    post:
+      tags: [branches]
+      summary: Создать филиал
+      description: Изменение структуры клуба попадает в audit log (BR-007).
+      operationId: createBranch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBranchRequest'
+      responses:
+        '201':
+          description: Филиал создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BranchView'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `branches.manage` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /branches/{id}:
+    get:
+      tags: [branches]
+      summary: Филиал с залами
+      operationId: getBranch
+      parameters:
+        - $ref: '#/components/parameters/BranchId'
+      responses:
+        '200':
+          description: Филиал и его залы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BranchDetails'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `branches.view` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Филиал не найден (`BRANCH_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    patch:
+      tags: [branches]
+      summary: Изменить филиал
+      description: |
+        Частичное обновление. `isActive: false` временно закрывает филиал,
+        не удаляя его.
+      operationId: updateBranch
+      parameters:
+        - $ref: '#/components/parameters/BranchId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBranchRequest'
+      responses:
+        '200':
+          description: Филиал обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BranchView'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `branches.manage` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Филиал не найден (`BRANCH_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    delete:
+      tags: [branches]
+      summary: Архивировать филиал
+      description: |
+        Мягкое удаление (`archivedAt`): филиал исчезает из справочников, но
+        история сохраняется (docs/08-database.md).
+      operationId: archiveBranch
+      parameters:
+        - $ref: '#/components/parameters/BranchId'
+      responses:
+        '204':
+          description: Филиал архивирован
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `branches.manage` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Филиал не найден (`BRANCH_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /branches/{id}/halls:
+    get:
+      tags: [halls]
+      summary: Залы филиала
+      operationId: listBranchHalls
+      parameters:
+        - $ref: '#/components/parameters/BranchId'
+      responses:
+        '200':
+          description: Список залов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HallView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `branches.view` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Филиал не найден (`BRANCH_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    post:
+      tags: [halls]
+      summary: Создать зал в филиале
+      description: В неактивном филиале зал создать нельзя (`BRANCH_ARCHIVED`).
+      operationId: createBranchHall
+      parameters:
+        - $ref: '#/components/parameters/BranchId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHallRequest'
+      responses:
+        '201':
+          description: Зал создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HallView'
+        '400':
+          description: |
+            Ошибка валидации (`VALIDATION_FAILED`) или неактивный филиал
+            (`BRANCH_ARCHIVED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `branches.manage` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Филиал не найден (`BRANCH_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /halls/{id}:
+    patch:
+      tags: [halls]
+      summary: Изменить зал
+      operationId: updateHall
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHallRequest'
+      responses:
+        '200':
+          description: Зал обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HallView'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `branches.manage` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Зал не найден (`HALL_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    delete:
+      tags: [halls]
+      summary: Архивировать зал
+      operationId: archiveHall
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Зал архивирован
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `branches.manage` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Зал не найден (`HALL_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /trainers:
+    get:
+      tags: [trainers]
+      summary: Список тренеров
+      operationId: listTrainers
+      parameters:
+        - name: isActive
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Тренеры клуба
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrainerView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `groups.view` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    post:
+      tags: [trainers]
+      summary: Создать профиль тренера
+      description: |
+        Аккаунт (`userId`) не обязателен: по docs/04-roles-permissions.md часть
+        тренеров работает без входа в систему. Если аккаунт указан, у него не
+        должно быть другого профиля тренера (`TRAINER_ALREADY_ASSIGNED`).
+      operationId: createTrainer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTrainerRequest'
+      responses:
+        '201':
+          description: Профиль создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainerView'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `branches.manage` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: У аккаунта уже есть профиль тренера (`TRAINER_ALREADY_ASSIGNED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /trainers/{id}:
+    get:
+      tags: [trainers]
+      summary: Профиль тренера
+      operationId: getTrainer
+      parameters:
+        - $ref: '#/components/parameters/TrainerId'
+      responses:
+        '200':
+          description: Профиль тренера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainerView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `groups.view` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Тренер не найден (`TRAINER_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    patch:
+      tags: [trainers]
+      summary: Изменить профиль тренера
+      operationId: updateTrainer
+      parameters:
+        - $ref: '#/components/parameters/TrainerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTrainerRequest'
+      responses:
+        '200':
+          description: Профиль обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainerView'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `branches.manage` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Тренер не найден (`TRAINER_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    delete:
+      tags: [trainers]
+      summary: Архивировать профиль тренера
+      operationId: archiveTrainer
+      parameters:
+        - $ref: '#/components/parameters/TrainerId'
+      responses:
+        '204':
+          description: Профиль архивирован
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `branches.manage` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Тренер не найден (`TRAINER_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /athletes:
+    get:
+      tags: [athletes]
+      summary: Спортсмены в зоне видимости вызывающего
+      description: |
+        Список ограничен ресурсным scope: суперадмин и сотрудник с
+        `scopeAllGroups` видят всех, тренер — спортсменов своих групп, участник —
+        связанных спортсменов (docs/21-permission-matrix.md).
+
+        Контакты (`phone`, `email`) отдаются только с правом
+        `athletes.contacts.view` (docs/15-security.md).
+      operationId: listAthletes
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/AthleteStatus'
+        - name: search
+          in: query
+          required: false
+          description: Поиск по фамилии, имени или отчеству
+          schema:
+            type: string
+            maxLength: 100
+      responses:
+        '200':
+          description: Список спортсменов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AthleteView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `athletes.view` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    post:
+      tags: [athletes]
+      summary: Создать карточку спортсмена
+      operationId: createAthlete
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAthleteRequest'
+      responses:
+        '201':
+          description: Карточка создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AthleteView'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `athletes.edit` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /athletes/{id}:
+    get:
+      tags: [athletes]
+      summary: Карточка спортсмена
+      description: |
+        Заметки клуба (`notes`) видны сотрудникам; родителю они не отдаются
+        (`/me/athletes` не содержит заметок).
+      operationId: getAthlete
+      parameters:
+        - $ref: '#/components/parameters/AthleteId'
+      responses:
+        '200':
+          description: Карточка с заметками и связанными аккаунтами
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AthleteDetails'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: |
+            Нет права `athletes.view` или спортсмен вне зоны доступа
+            (`FORBIDDEN`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Спортсмен не найден (`ATHLETE_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    patch:
+      tags: [athletes]
+      summary: Изменить карточку спортсмена
+      operationId: updateAthlete
+      parameters:
+        - $ref: '#/components/parameters/AthleteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAthleteRequest'
+      responses:
+        '200':
+          description: Карточка обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AthleteDetails'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: |
+            Нет права `athletes.edit` или спортсмен вне зоны доступа
+            (`FORBIDDEN`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Спортсмен не найден (`ATHLETE_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    delete:
+      tags: [athletes]
+      summary: Архивировать спортсмена
+      description: |
+        Мягкое удаление: у карточки проставляются `archivedAt` и статус
+        `ARCHIVED` (docs/08-database.md).
+      operationId: archiveAthlete
+      parameters:
+        - $ref: '#/components/parameters/AthleteId'
+      responses:
+        '204':
+          description: Карточка архивирована
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: |
+            Нет права `athletes.edit` или спортсмен вне зоны доступа
+            (`FORBIDDEN`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Спортсмен не найден (`ATHLETE_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /athletes/{id}/accounts:
+    post:
+      tags: [athletes]
+      summary: Связать аккаунт со спортсменом
+      description: |
+        Один аккаунт может быть связан с несколькими спортсменами
+        (docs/00-project-overview.md), а у спортсмена может быть несколько
+        аккаунтов. «Основным» (`isPrimary`) помечается только один: признак
+        снимается с остальных связей.
+      operationId: linkAthleteAccount
+      parameters:
+        - $ref: '#/components/parameters/AthleteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkAccountRequest'
+      responses:
+        '200':
+          description: Связь создана; карточка с обновленными связями
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AthleteDetails'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: |
+            Нет права `athletes.edit` или спортсмен вне зоны доступа
+            (`FORBIDDEN`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: |
+            Спортсмен (`ATHLETE_NOT_FOUND`) или пользователь (`NOT_FOUND`) не
+            найден.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Аккаунт уже связан с этим спортсменом (`ACCOUNT_ALREADY_LINKED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /athletes/{id}/accounts/{userId}:
+    delete:
+      tags: [athletes]
+      summary: Снять связь аккаунта со спортсменом
+      operationId: unlinkAthleteAccount
+      parameters:
+        - $ref: '#/components/parameters/AthleteId'
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Связь удалена; карточка с обновленными связями
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AthleteDetails'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: |
+            Нет права `athletes.edit` или спортсмен вне зоны доступа
+            (`FORBIDDEN`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Связи нет (`ACCOUNT_NOT_LINKED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+
 components:
   securitySchemes:
     bearerAuth:
@@ -476,6 +1182,33 @@ components:
       in: path
       required: true
       description: Идентификатор пользователя
+      schema:
+        type: string
+        format: uuid
+
+    BranchId:
+      name: id
+      in: path
+      required: true
+      description: Идентификатор филиала
+      schema:
+        type: string
+        format: uuid
+
+    TrainerId:
+      name: id
+      in: path
+      required: true
+      description: Идентификатор профиля тренера
+      schema:
+        type: string
+        format: uuid
+
+    AthleteId:
+      name: id
+      in: path
+      required: true
+      description: Идентификатор спортсмена
       schema:
         type: string
         format: uuid
@@ -567,6 +1300,17 @@ components:
         - PERMISSION_IS_ROLE_BASED
         - PERMISSION_NOT_GRANTED
         - PERMISSION_EXPIRES_IN_PAST
+        - BRANCH_NOT_FOUND
+        - BRANCH_ARCHIVED
+        - HALL_NOT_FOUND
+        - HALL_NOT_IN_BRANCH
+        - TRAINER_NOT_FOUND
+        - TRAINER_ALREADY_ASSIGNED
+        - ATHLETE_NOT_FOUND
+        - ATHLETE_ARCHIVED
+        - ACCOUNT_ALREADY_LINKED
+        - ACCOUNT_NOT_LINKED
+        - ACTIVE_MEMBERSHIP_EXISTS
 
     PermissionCode:
       type: string
@@ -612,6 +1356,10 @@ components:
       type: string
       description: Статус карточки спортсмена (BR-006)
       enum: [ACTIVE, FROZEN, ARCHIVED]
+
+    Gender:
+      type: string
+      enum: [MALE, FEMALE, UNSPECIFIED]
 
     LivenessReport:
       type: object
@@ -959,6 +1707,326 @@ components:
           description: Итоговый действующий набор прав
           items:
             $ref: '#/components/schemas/PermissionCode'
+
+    BranchView:
+      type: object
+      required: [id, name, isActive, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        address:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    BranchDetails:
+      allOf:
+        - $ref: '#/components/schemas/BranchView'
+        - type: object
+          required: [halls]
+          properties:
+            halls:
+              type: array
+              items:
+                $ref: '#/components/schemas/HallView'
+
+    HallView:
+      type: object
+      required: [id, branchId, name, isActive]
+      properties:
+        id:
+          type: string
+          format: uuid
+        branchId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        capacity:
+          type: integer
+          nullable: true
+        isActive:
+          type: boolean
+
+    TrainerView:
+      type: object
+      description: |
+        Профиль тренера. `userId` может быть null: часть тренеров работает без
+        входа в систему (docs/04-roles-permissions.md).
+      required: [id, displayName, isActive]
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+          nullable: true
+        displayName:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+
+    CreateBranchRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        address:
+          type: string
+          maxLength: 500
+        phone:
+          type: string
+          maxLength: 32
+
+    UpdateBranchRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        address:
+          type: string
+          maxLength: 500
+        phone:
+          type: string
+          maxLength: 32
+        isActive:
+          type: boolean
+
+    CreateHallRequest:
+      type: object
+      required: [branchId, name]
+      properties:
+        branchId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        capacity:
+          type: integer
+          minimum: 1
+          maximum: 1000
+
+    UpdateHallRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        capacity:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        isActive:
+          type: boolean
+
+    CreateTrainerRequest:
+      type: object
+      required: [displayName]
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        phone:
+          type: string
+          maxLength: 32
+        bio:
+          type: string
+          maxLength: 2000
+        userId:
+          type: string
+          format: uuid
+          description: Не обязателен; у аккаунта не должно быть другого профиля тренера
+
+    UpdateTrainerRequest:
+      type: object
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        phone:
+          type: string
+          maxLength: 32
+        bio:
+          type: string
+          maxLength: 2000
+        isActive:
+          type: boolean
+
+    AthleteView:
+      type: object
+      description: |
+        Карточка спортсмена. `phone` и `email` равны null, если у вызывающего
+        нет права `athletes.contacts.view`.
+      required: [id, firstName, lastName, gender, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        middleName:
+          type: string
+          nullable: true
+        birthDate:
+          type: string
+          format: date
+          nullable: true
+        gender:
+          $ref: '#/components/schemas/Gender'
+        status:
+          $ref: '#/components/schemas/AthleteStatus'
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AthleteDetails:
+      allOf:
+        - $ref: '#/components/schemas/AthleteView'
+        - type: object
+          properties:
+            notes:
+              type: string
+              nullable: true
+              description: Заметки клуба; в `/me/athletes` не отдаются
+            linkedAccounts:
+              type: array
+              items:
+                type: object
+                required: [userId, email, relation, isPrimary]
+                properties:
+                  userId:
+                    type: string
+                    format: uuid
+                  email:
+                    type: string
+                    format: email
+                  relation:
+                    type: string
+                    example: PARENT
+                  isPrimary:
+                    type: boolean
+
+    CreateAthleteRequest:
+      type: object
+      required: [firstName, lastName]
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        middleName:
+          type: string
+          maxLength: 100
+        birthDate:
+          type: string
+          format: date
+          example: '2015-09-01'
+        gender:
+          $ref: '#/components/schemas/Gender'
+        phone:
+          type: string
+          maxLength: 32
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        notes:
+          type: string
+          maxLength: 2000
+
+    UpdateAthleteRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        middleName:
+          type: string
+          maxLength: 100
+        birthDate:
+          type: string
+          format: date
+        gender:
+          $ref: '#/components/schemas/Gender'
+        phone:
+          type: string
+          maxLength: 32
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        notes:
+          type: string
+          maxLength: 2000
+        status:
+          $ref: '#/components/schemas/AthleteStatus'
+
+    LinkAccountRequest:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        relation:
+          type: string
+          maxLength: 32
+          example: PARENT
+          description: PARENT, GUARDIAN, SELF
+        isPrimary:
+          type: boolean
+          description: Основной аккаунт спортсмена; он может быть один
 
 security:
   - bearerAuth: []

@@ -94,6 +94,14 @@ export const AthleteStatus = {
 } as const;
 export type AthleteStatus = (typeof AthleteStatus)[keyof typeof AthleteStatus];
 
+/** Пол в карточке спортсмена. */
+export const Gender = {
+  MALE: 'MALE',
+  FEMALE: 'FEMALE',
+  UNSPECIFIED: 'UNSPECIFIED',
+} as const;
+export type Gender = (typeof Gender)[keyof typeof Gender];
+
 /** Статус пользователя (приглашённый аккаунт ещё не активирован). */
 export const UserStatus = {
   INVITED: 'INVITED',

@@ -5,3 +5,5 @@ export * from './audit';
 export * from './identity';
 export * from './auth';
 export * from './invite';
+export * from './club-structure';
+export * from './athletes';
