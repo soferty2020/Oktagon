@@ -59,6 +59,14 @@ export const AuditAction = {
   // Расписание (BR-007, BR-009: изменения расписания аудируемы)
   SCHEDULE_TEMPLATE_CREATED: 'schedule.template_created',
   SCHEDULE_TEMPLATE_UPDATED: 'schedule.template_updated',
+  /** Публикация шаблона: после нее слоты не меняются, иначе занятия разойдутся с шаблоном. */
+  SCHEDULE_TEMPLATE_PUBLISHED: 'schedule.template_published',
+  SCHEDULE_TEMPLATE_ARCHIVED: 'schedule.template_archived',
+  SCHEDULE_SLOT_ADDED: 'schedule.slot_added',
+  SCHEDULE_SLOT_UPDATED: 'schedule.slot_updated',
+  SCHEDULE_SLOT_REMOVED: 'schedule.slot_removed',
+  /** Материализация занятий из шаблона. */
+  SCHEDULE_SESSIONS_GENERATED: 'schedule.sessions_generated',
   SCHEDULE_SESSION_CREATED: 'schedule.session_created',
   SCHEDULE_SESSION_MOVED: 'schedule.session_moved',
   SCHEDULE_SESSION_CANCELLED: 'schedule.session_cancelled',

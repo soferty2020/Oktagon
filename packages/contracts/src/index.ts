@@ -9,3 +9,4 @@ export * from './club-structure';
 export * from './athletes';
 export * from './groups';
 export * from './users';
+export * from './schedule';
