@@ -5,6 +5,8 @@ import type { Request } from 'express';
 
 import { AuthService } from './auth.service';
 import { LoginDto, LogoutDto, RefreshDto } from './auth.dto';
+import { AcceptInviteDto } from './invite.dto';
+import { InviteService } from './invite.service';
 
 /**
  * Аутентификация (docs/09-api.md, docs/23-api-contract-plan.md).
@@ -15,7 +17,10 @@ import { LoginDto, LogoutDto, RefreshDto } from './auth.dto';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly auth: AuthService) {}
+  constructor(
+    private readonly auth: AuthService,
+    private readonly invites: InviteService,
+  ) {}
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
@@ -42,6 +47,28 @@ export class AuthController {
   @ApiOperation({ summary: 'Выход: отзыв refresh-токена' })
   logout(@Body() dto: LogoutDto): Promise<void> {
     return this.auth.logout(dto.refreshToken);
+  }
+
+  @Post('accept-invite')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Принятие приглашения: установка пароля и профиля' })
+  @ApiOkResponse({ description: 'Пользователь активирован; далее выполняется вход' })
+  async acceptInvite(
+    @Body() dto: AcceptInviteDto,
+    @Req() request: Request,
+  ): Promise<{ userId: string; email: string; role: string }> {
+    // Токен — секрет, поэтому попытки его подбора ограничиваются по IP.
+    await this.auth.enforceInviteRateLimit(clientIp(request));
+    return this.invites.accept({
+      token: dto.token,
+      inviteId: dto.inviteId,
+      email: dto.email,
+      password: dto.password,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      middleName: dto.middleName,
+      phone: dto.phone,
+    });
   }
 }
 

@@ -165,6 +165,32 @@ export class AuthService {
     });
   }
 
+  /**
+   * Лимит на попытки подбора токена приглашения.
+   *
+   * Считается только по IP: лимит по email здесь не нужен (приглашающий и
+   * принимающий — разные люди), а токен является секретом.
+   */
+  async enforceInviteRateLimit(ip: string | null): Promise<void> {
+    if (!ip) {
+      return;
+    }
+
+    const result = await this.rateLimiter.consume(
+      `invite-accept:ip:${ip}`,
+      Number(process.env.AUTH_RATE_LIMIT_MAX ?? 10),
+      Number(process.env.AUTH_RATE_LIMIT_TTL_SECONDS ?? 60),
+    );
+
+    if (!result.allowed) {
+      this.logger.warn(`Превышен лимит попыток принятия приглашения по IP ${ip}`);
+      throw new ApiException(
+        'RATE_LIMITED' satisfies ApiErrorCode,
+        'Слишком много попыток, попробуйте позже',
+      );
+    }
+  }
+
   private async issueSession(userId: string, email: string, role: UserRole): Promise<AuthSession> {
     const access = await this.tokens.issueAccessToken({ sub: userId, email, role });
     const refresh = await this.refreshTokens.issue(userId);

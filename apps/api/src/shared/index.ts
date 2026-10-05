@@ -4,4 +4,5 @@ export * from './request-id.interceptor';
 export * from './request-context.service';
 export * from './access-token.verifier';
 export * from './auth-stub';
+export * from './permissions.guard';
 export * from './token.module';

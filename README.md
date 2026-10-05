@@ -62,6 +62,9 @@ Swagger: `http://localhost:3000/api/v1/docs`
 | `POST /api/v1/auth/logout` | отзыв refresh-токена |
 | `GET /api/v1/me` | профиль и эффективные права (нужен `Authorization: Bearer <access>`) |
 | `GET /api/v1/me/athletes` | спортсмены, связанные с аккаунтом |
+| `POST /api/v1/users/invites` | пригласить пользователя (право `users.manage`); токен возвращается один раз |
+| `GET /api/v1/users/invites` | действующие приглашения (право `users.manage`) |
+| `POST /api/v1/auth/accept-invite` | принять приглашение: задать пароль и профиль |
 
 ## Проверки
 

@@ -11,6 +11,17 @@ export interface AuthUserRecord {
   status: UserStatus;
 }
 
+/** Данные, которые пользователь задает при принятии приглашения. */
+export interface ActivateFromInviteInput {
+  email: string;
+  passwordHash: string;
+  role: UserRole;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  phone?: string;
+}
+
 /**
  * Доступ к данным аутентификации.
  *
@@ -24,6 +35,13 @@ export abstract class AuthRepository {
   abstract findUserById(userId: string): Promise<AuthUserRecord | null>;
   /** Фиксирует время успешного входа. */
   abstract markLogin(userId: string): Promise<void>;
+  /**
+   * Активирует пользователя по приглашению: задает пароль, роль и профиль.
+   *
+   * Если запись уже создана приглашением (status INVITED), она активируется;
+   * иначе создается новая.
+   */
+  abstract activateFromInvite(input: ActivateFromInviteInput): Promise<AuthUserRecord>;
 }
 
 @Injectable()
@@ -51,5 +69,49 @@ export class PrismaAuthRepository extends AuthRepository {
       where: { id: userId },
       data: { lastLoginAt: new Date() },
     });
+  }
+
+  async activateFromInvite(input: ActivateFromInviteInput): Promise<AuthUserRecord> {
+    const email = input.email.trim().toLowerCase();
+    const profile = {
+      passwordHash: input.passwordHash,
+      role: input.role,
+      status: UserStatus.ACTIVE,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      middleName: input.middleName ?? null,
+      phone: input.phone ?? null,
+    };
+    const select = {
+      id: true,
+      email: true,
+      passwordHash: true,
+      role: true,
+      status: true,
+    };
+
+    const existing = await this.prisma.db.user.findFirst({
+      where: { email, archivedAt: null },
+      select: { id: true, status: true },
+    });
+
+    if (existing) {
+      // Роль не меняется: приглашение не должно повышать права уже
+      // существующего пользователя.
+      return this.prisma.db.user.update({
+        where: { id: existing.id },
+        data: {
+          passwordHash: profile.passwordHash,
+          status: profile.status,
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          middleName: profile.middleName,
+          phone: profile.phone,
+        },
+        select,
+      });
+    }
+
+    return this.prisma.db.user.create({ data: { email, ...profile }, select });
   }
 }

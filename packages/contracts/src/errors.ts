@@ -21,6 +21,8 @@ export const ApiErrorCode = {
   INVITE_INVALID: 'INVITE_INVALID',
   INVITE_EXPIRED: 'INVITE_EXPIRED',
   INVITE_ALREADY_USED: 'INVITE_ALREADY_USED',
+  /** Приглашение выдано на другой адрес: принимающий вошел под своим аккаунтом. */
+  INVITE_EMAIL_MISMATCH: 'INVITE_EMAIL_MISMATCH',
   USER_BLOCKED: 'USER_BLOCKED',
 
   // club structure / groups
@@ -83,6 +85,7 @@ export const API_ERROR_HTTP_STATUS: Readonly<Record<ApiErrorCode, number>> = {
   INVITE_INVALID: 400,
   INVITE_EXPIRED: 400,
   INVITE_ALREADY_USED: 409,
+  INVITE_EMAIL_MISMATCH: 403,
   USER_BLOCKED: 403,
 
   BRANCH_ARCHIVED: 409,

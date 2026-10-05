@@ -5,6 +5,7 @@ import {
   AuditEntityType,
   type LinkedAthlete,
   type PermissionCode,
+  type UserPermissions,
   type UserProfile,
   canAccessAthlete,
   resolvePermissions,
@@ -38,6 +39,17 @@ export class IdentityService {
   async getProfile(userId: string): Promise<UserProfile> {
     const record = await this.requireProfile(userId);
     return toProfile(record);
+  }
+
+  /**
+   * Эффективные права пользователя.
+   *
+   * Используется PermissionsGuard: права вычисляются на каждом запросе
+   * (ADR-0006), а не читаются из токена.
+   */
+  async getPermissions(userId: string): Promise<UserPermissions> {
+    const record = await this.requireProfile(userId);
+    return toProfile(record).permissions;
   }
 
   /**
