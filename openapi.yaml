@@ -1685,6 +1685,589 @@ paths:
 
 
 
+  /schedule-templates:
+    get:
+      tags: [schedule]
+      summary: Шаблоны расписания в зоне видимости вызывающего
+      description: |
+        Список ограничен ресурсным scope: тренер видит расписание только своих
+        групп (docs/21-permission-matrix.md).
+      operationId: listScheduleTemplates
+      parameters:
+        - name: groupId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 2020
+            maximum: 2100
+      responses:
+        '200':
+          description: Шаблоны со слотами
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ScheduleTemplateView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `schedule.view` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    post:
+      tags: [schedule]
+      summary: Создать шаблон расписания на квартал
+      description: |
+        Границы квартала вычисляются календарно. Повторный шаблон на тот же
+        квартал отклоняется (`SCHEDULE_TEMPLATE_EXISTS`): расписание группы на
+        квартал одно.
+      operationId: createScheduleTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateScheduleTemplateRequest'
+      responses:
+        '201':
+          description: Шаблон создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleTemplateView'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `schedule.edit` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Группа не найдена (`GROUP_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Шаблон на этот квартал уже есть (`SCHEDULE_TEMPLATE_EXISTS`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /schedule-templates/{id}:
+    get:
+      tags: [schedule]
+      summary: Шаблон расписания
+      operationId: getScheduleTemplate
+      parameters:
+        - $ref: '#/components/parameters/ScheduleTemplateId'
+      responses:
+        '200':
+          description: Шаблон со слотами
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleTemplateView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `schedule.view` или группа вне доступа (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Шаблон не найден (`SCHEDULE_TEMPLATE_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    delete:
+      tags: [schedule]
+      summary: Удалить неопубликованный шаблон
+      description: |
+        Опубликованное расписание удалить нельзя (`SCHEDULE_TEMPLATE_PUBLISHED`):
+        занятия уже созданы и показаны родителям, изменения вносятся точечно.
+      operationId: deleteScheduleTemplate
+      parameters:
+        - $ref: '#/components/parameters/ScheduleTemplateId'
+      responses:
+        '204':
+          description: Шаблон удален
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `schedule.edit` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Шаблон не найден (`SCHEDULE_TEMPLATE_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Шаблон опубликован (`SCHEDULE_TEMPLATE_PUBLISHED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /schedule-templates/{id}/publish:
+    post:
+      tags: [schedule]
+      summary: Опубликовать расписание
+      description: |
+        Публикация фиксирует шаблон: после нее слоты не меняются. Пустое
+        расписание опубликовать нельзя (`SCHEDULE_TEMPLATE_EMPTY`).
+      operationId: publishScheduleTemplate
+      parameters:
+        - $ref: '#/components/parameters/ScheduleTemplateId'
+      responses:
+        '200':
+          description: Шаблон опубликован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleTemplateView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `schedule.edit` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Шаблон не найден (`SCHEDULE_TEMPLATE_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: |
+            Расписание пустое (`SCHEDULE_TEMPLATE_EMPTY`) или уже опубликовано
+            (`SCHEDULE_TEMPLATE_ALREADY_PUBLISHED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /schedule-templates/{id}/generate:
+    post:
+      tags: [schedule]
+      summary: Материализовать занятия квартала из шаблона
+      description: |
+        Создает экземпляры занятий на будущие даты квартала. Повторный вызов
+        дублей не создает: уникальность `(groupId, startsAt)` и `skipDuplicates`.
+
+        При `regenerate` удаляются только занятия, которые еще не начались:
+        прошедшее занятие — факт истории, его пересоздание стерло бы
+        посещаемость.
+
+        Если тренер или зал заняты в это время в другой группе, генерация
+        отклоняется с перечнем конфликтов: иначе о накладке узнали бы родители.
+      operationId: generateTrainingSessions
+      parameters:
+        - $ref: '#/components/parameters/ScheduleTemplateId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateSessionsRequest'
+      responses:
+        '200':
+          description: Сколько занятий создано, пропущено и удалено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateSessionsResult'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `schedule.edit` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Шаблон не найден (`SCHEDULE_TEMPLATE_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: |
+            Расписание не опубликовано или пусто (`SCHEDULE_TEMPLATE_EMPTY`),
+            либо есть конфликты (`TRAINING_SESSION_CONFLICT`). В `details`
+            перечислены конфликтующие даты.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /schedule-templates/{id}/slots:
+    post:
+      tags: [schedule]
+      summary: Добавить слот в шаблон
+      description: |
+        Слот задает регулярность: день недели и локальное время клуба. Слоты
+        внутри одного шаблона не должны пересекаться по времени
+        (`SCHEDULE_SLOT_OVERLAPS`).
+
+        В опубликованный шаблон слот добавить нельзя
+        (`SCHEDULE_TEMPLATE_PUBLISHED`).
+      operationId: addScheduleSlot
+      parameters:
+        - $ref: '#/components/parameters/ScheduleTemplateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddScheduleSlotRequest'
+      responses:
+        '200':
+          description: Шаблон с обновленными слотами
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleTemplateView'
+        '400':
+          description: |
+            Ошибка валидации (`VALIDATION_FAILED`) или некорректный интервал
+            (`SCHEDULE_SLOT_INVALID_TIME`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `schedule.edit` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Шаблон не найден (`SCHEDULE_TEMPLATE_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: |
+            Слот пересекается с другим (`SCHEDULE_SLOT_OVERLAPS`) или шаблон
+            опубликован (`SCHEDULE_TEMPLATE_PUBLISHED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /schedule-templates/{id}/slots/{slotId}:
+    patch:
+      tags: [schedule]
+      summary: Изменить слот
+      description: Доступно только до публикации шаблона.
+      operationId: updateScheduleSlot
+      parameters:
+        - $ref: '#/components/parameters/ScheduleTemplateId'
+        - name: slotId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateScheduleSlotRequest'
+      responses:
+        '200':
+          description: Шаблон с обновленными слотами
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleTemplateView'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `schedule.edit` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Слот не найден (`SCHEDULE_SLOT_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: |
+            Слот пересекается с другим (`SCHEDULE_SLOT_OVERLAPS`) или шаблон
+            опубликован (`SCHEDULE_TEMPLATE_PUBLISHED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    delete:
+      tags: [schedule]
+      summary: Удалить слот
+      description: Доступно только до публикации шаблона.
+      operationId: deleteScheduleSlot
+      parameters:
+        - $ref: '#/components/parameters/ScheduleTemplateId'
+        - name: slotId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Шаблон с обновленными слотами
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleTemplateView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `schedule.edit` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Слот не найден (`SCHEDULE_SLOT_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Шаблон опубликован (`SCHEDULE_TEMPLATE_PUBLISHED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /training-sessions:
+    get:
+      tags: [schedule]
+      summary: Занятия за период
+      description: |
+        По умолчанию отдается неделя назад и месяц вперед. Период задается
+        `from` и `to`; список ограничен ресурсным scope.
+      operationId: listTrainingSessions
+      parameters:
+        - name: from
+          in: query
+          required: false
+          description: Начало периода, ISO-8601; включительно
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: false
+          description: Конец периода, ISO-8601; исключительно
+          schema:
+            type: string
+            format: date-time
+        - name: groupId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: trainerId
+          in: query
+          required: false
+          description: Идентификатор профиля тренера
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/TrainingSessionStatus'
+      responses:
+        '200':
+          description: Список занятий по возрастанию времени
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrainingSessionView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `schedule.view` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /training-sessions/{id}:
+    get:
+      tags: [schedule]
+      summary: Карточка занятия
+      operationId: getTrainingSession
+      parameters:
+        - $ref: '#/components/parameters/TrainingSessionId'
+      responses:
+        '200':
+          description: Занятие
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingSessionView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `schedule.view` или группа вне доступа (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Занятие не найдено (`TRAINING_SESSION_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /training-sessions/{id}/move:
+    patch:
+      tags: [schedule]
+      summary: Перенести занятие
+      description: |
+        BR-009: меняется только экземпляр, квартальный шаблон остается прежним.
+        Причина обязательна: родитель должен понимать, почему занятие переехало.
+
+        Прошедшее занятие перенести нельзя (`SESSION_ALREADY_STARTED`).
+      operationId: moveTrainingSession
+      parameters:
+        - $ref: '#/components/parameters/TrainingSessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveSessionRequest'
+      responses:
+        '200':
+          description: Занятие перенесено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingSessionView'
+        '400':
+          description: |
+            Ошибка валидации (`VALIDATION_FAILED`) или окончание раньше начала
+            (`SCHEDULE_SLOT_INVALID_TIME`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `schedule.edit` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Занятие не найдено (`TRAINING_SESSION_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: |
+            Тренер занят (`TRAINER_BUSY`), зал занят (`HALL_BUSY`), у группы уже
+            есть занятие (`TRAINING_SESSION_CONFLICT`) или занятие началось
+            (`SESSION_ALREADY_STARTED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /training-sessions/{id}/cancel:
+    post:
+      tags: [schedule]
+      summary: Отменить занятие
+      description: |
+        Занятие не удаляется: проставляются статус `CANCELLED`, причина, время и
+        автор отмены. Шаблон не меняется.
+      operationId: cancelTrainingSession
+      parameters:
+        - $ref: '#/components/parameters/TrainingSessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelSessionRequest'
+      responses:
+        '200':
+          description: Занятие отменено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingSessionView'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `schedule.cancel` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Занятие не найдено (`TRAINING_SESSION_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: |
+            Занятие уже отменено (`TRAINING_SESSION_CANCELLED`) или началось
+            (`SESSION_ALREADY_STARTED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1726,6 +2309,24 @@ components:
       in: path
       required: true
       description: Идентификатор спортсмена
+      schema:
+        type: string
+        format: uuid
+
+    ScheduleTemplateId:
+      name: id
+      in: path
+      required: true
+      description: Идентификатор шаблона расписания
+      schema:
+        type: string
+        format: uuid
+
+    TrainingSessionId:
+      name: id
+      in: path
+      required: true
+      description: Идентификатор занятия
       schema:
         type: string
         format: uuid
@@ -1845,6 +2446,20 @@ components:
         - GROUP_BRANCH_NOT_LINKED
         - ATHLETE_ALREADY_MEMBER
         - MEMBERSHIP_NOT_FOUND
+        - SCHEDULE_TEMPLATE_NOT_FOUND
+        - SCHEDULE_TEMPLATE_EXISTS
+        - SCHEDULE_TEMPLATE_ALREADY_PUBLISHED
+        - SCHEDULE_TEMPLATE_PUBLISHED
+        - SCHEDULE_TEMPLATE_EMPTY
+        - SCHEDULE_SLOT_NOT_FOUND
+        - SCHEDULE_SLOT_OVERLAPS
+        - SCHEDULE_SLOT_INVALID_TIME
+        - TRAINING_SESSION_NOT_FOUND
+        - TRAINING_SESSION_CANCELLED
+        - TRAINING_SESSION_CONFLICT
+        - TRAINER_BUSY
+        - HALL_BUSY
+        - SESSION_ALREADY_STARTED
 
     PermissionCode:
       type: string
@@ -2746,6 +3361,250 @@ components:
         description:
           type: string
           maxLength: 2000
+
+    ScheduleSlotView:
+      type: object
+      description: |
+        Регулярность группы: день недели и локальное время клуба. В БД время
+        хранится типом `time`, а UTC-моменты вычисляются при материализации.
+      required: [id, weekday, startTime, endTime]
+      properties:
+        id:
+          type: string
+          format: uuid
+        weekday:
+          $ref: '#/components/schemas/Weekday'
+        startTime:
+          type: string
+          description: Локальное время клуба, HH:mm
+          example: '18:00'
+        endTime:
+          type: string
+          example: '19:30'
+        hallId:
+          type: string
+          format: uuid
+          nullable: true
+        hallName:
+          type: string
+          nullable: true
+        trainerId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Идентификатор профиля тренера
+        trainerName:
+          type: string
+          nullable: true
+
+    ScheduleTemplateView:
+      type: object
+      required: [id, groupId, groupName, year, quarter, validFrom, validTo, slots]
+      properties:
+        id:
+          type: string
+          format: uuid
+        groupId:
+          type: string
+          format: uuid
+        groupName:
+          type: string
+        year:
+          type: integer
+        quarter:
+          type: integer
+          minimum: 1
+          maximum: 4
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: string
+          format: date
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: После публикации слоты не меняются
+        slots:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleSlotView'
+
+    TrainingSessionView:
+      type: object
+      description: |
+        Экземпляр занятия. Зал, тренер и филиал скопированы из шаблона при
+        материализации, поэтому смена тренера в шаблоне не переписывает уже
+        созданные занятия (BR-009).
+      required: [id, groupId, groupName, startsAt, endsAt, status, fromTemplate]
+      properties:
+        id:
+          type: string
+          format: uuid
+        groupId:
+          type: string
+          format: uuid
+        groupName:
+          type: string
+        branchId:
+          type: string
+          format: uuid
+          nullable: true
+        hallId:
+          type: string
+          format: uuid
+          nullable: true
+        hallName:
+          type: string
+          nullable: true
+        trainerId:
+          type: string
+          format: uuid
+          nullable: true
+        trainerName:
+          type: string
+          nullable: true
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/TrainingSessionStatus'
+        changeReason:
+          type: string
+          nullable: true
+          description: Причина переноса или отмены
+        cancelledAt:
+          type: string
+          format: date-time
+          nullable: true
+        fromTemplate:
+          type: boolean
+          description: Занятие создано материализацией, а не добавлено вручную
+
+    TrainingSessionStatus:
+      type: string
+      description: BR-009 — точечное изменение экземпляра занятия
+      enum: [SCHEDULED, CANCELLED, MOVED]
+
+    Weekday:
+      type: string
+      enum: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+
+    CreateScheduleTemplateRequest:
+      type: object
+      required: [groupId, year, quarter]
+      properties:
+        groupId:
+          type: string
+          format: uuid
+        year:
+          type: integer
+          minimum: 2020
+          maximum: 2100
+        quarter:
+          type: integer
+          minimum: 1
+          maximum: 4
+
+    AddScheduleSlotRequest:
+      type: object
+      required: [weekday, startTime, endTime]
+      properties:
+        weekday:
+          $ref: '#/components/schemas/Weekday'
+        startTime:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+          example: '18:00'
+        endTime:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+          example: '19:30'
+        hallId:
+          type: string
+          format: uuid
+        trainerId:
+          type: string
+          format: uuid
+          description: Идентификатор профиля тренера, а не аккаунта
+
+    UpdateScheduleSlotRequest:
+      type: object
+      properties:
+        weekday:
+          $ref: '#/components/schemas/Weekday'
+        startTime:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+        endTime:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+        hallId:
+          type: string
+          format: uuid
+          nullable: true
+        trainerId:
+          type: string
+          format: uuid
+          nullable: true
+
+    GenerateSessionsRequest:
+      type: object
+      properties:
+        regenerate:
+          type: boolean
+          description: |
+            Пересоздать занятия: удаляются только те, что еще не начались.
+            Отмененные вручную занятия сохраняются.
+
+    GenerateSessionsResult:
+      type: object
+      required: [created, skipped, removed]
+      properties:
+        created:
+          type: integer
+        skipped:
+          type: integer
+          description: Уже существовавшие занятия (уникальность groupId + startsAt)
+        removed:
+          type: integer
+          description: Удалено при пересоздании
+
+    MoveSessionRequest:
+      type: object
+      required: [startsAt, endsAt, reason]
+      properties:
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        hallId:
+          type: string
+          format: uuid
+          nullable: true
+        trainerId:
+          type: string
+          format: uuid
+          nullable: true
+        reason:
+          type: string
+          maxLength: 500
+          example: Карантин в школе
+
+    CancelSessionRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          maxLength: 500
+          example: Низкая температура в зале
     UpdateGroupRequest:
       type: object
       properties:

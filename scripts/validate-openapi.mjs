@@ -146,6 +146,19 @@ const expectedRoutes = [
   ['post', '/groups/{id}/members'],
   ['delete', '/groups/{id}/members/{athleteId}'],
   ['get', '/users'],
+  ['get', '/schedule-templates'],
+  ['post', '/schedule-templates'],
+  ['get', '/schedule-templates/{id}'],
+  ['delete', '/schedule-templates/{id}'],
+  ['post', '/schedule-templates/{id}/publish'],
+  ['post', '/schedule-templates/{id}/generate'],
+  ['post', '/schedule-templates/{id}/slots'],
+  ['patch', '/schedule-templates/{id}/slots/{slotId}'],
+  ['delete', '/schedule-templates/{id}/slots/{slotId}'],
+  ['get', '/training-sessions'],
+  ['get', '/training-sessions/{id}'],
+  ['patch', '/training-sessions/{id}/move'],
+  ['post', '/training-sessions/{id}/cancel'],
 ];
 
 for (const [method, route] of expectedRoutes) {

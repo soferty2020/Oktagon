@@ -100,6 +100,13 @@ JavaScript страницы. Типы API генерируются из `openapi
 | `POST/DELETE /api/v1/groups/{id}/trainers[/{trainerId}]` | назначение тренеров |
 | `POST/DELETE /api/v1/groups/{id}/members[/{athleteId}]` | состав группы и завершение членства |
 | `GET /api/v1/users` | список пользователей с фильтрами и пагинацией (право `users.manage`) |
+| `GET/POST /api/v1/schedule-templates` | квартальные шаблоны расписания (право `schedule.view` / `schedule.edit`) |
+| `POST /api/v1/schedule-templates/{id}/publish` | публикация: фиксирует слоты расписания |
+| `POST /api/v1/schedule-templates/{id}/generate` | материализация занятий квартала (идемпотентно) |
+| `POST/PATCH/DELETE /api/v1/schedule-templates/{id}/slots[/{slotId}]` | слоты: день недели, время, зал, тренер |
+| `GET /api/v1/training-sessions` | занятия за период; список ограничен scope |
+| `PATCH /api/v1/training-sessions/{id}/move` | перенос занятия: шаблон не меняется (BR-009) |
+| `POST /api/v1/training-sessions/{id}/cancel` | отмена занятия с причиной (право `schedule.cancel`) |
 
 ## Проверки
 
