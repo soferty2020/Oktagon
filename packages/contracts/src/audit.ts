@@ -42,6 +42,8 @@ export const AuditAction = {
   ATHLETE_ARCHIVED: 'athlete.archived',
   ATHLETE_ACCOUNT_LINKED: 'athlete.account_linked',
   ATHLETE_ACCOUNT_UNLINKED: 'athlete.account_unlinked',
+  /** Обращение к списку связанных спортсменов: контактные данные (docs/15-security.md). */
+  ATHLETE_LINKS_VIEWED: 'athlete.links_viewed',
   GROUP_CREATED: 'group.created',
   GROUP_UPDATED: 'group.updated',
   GROUP_ARCHIVED: 'group.archived',

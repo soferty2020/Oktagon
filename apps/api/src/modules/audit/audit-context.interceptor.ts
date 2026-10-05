@@ -38,7 +38,10 @@ export class AuditContextInterceptor implements NestInterceptor {
 function clientIp(request: Request): string | null {
   const forwarded = request.headers['x-forwarded-for'];
   if (typeof forwarded === 'string' && forwarded.trim() !== '') {
-    return forwarded.split(',')[0]!.trim();
+    const [first] = forwarded.split(',');
+    if (first) {
+      return first.trim();
+    }
   }
   return request.ip ?? request.socket?.remoteAddress ?? null;
 }

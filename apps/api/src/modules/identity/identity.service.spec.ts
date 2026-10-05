@@ -1,0 +1,225 @@
+import { AuditAction, ApiErrorCode } from '@octagon/contracts';
+import { UserRole as PrismaUserRole, UserStatus as PrismaUserStatus } from '../../../generated/prisma';
+import { ApiException } from '../../shared/api-exception';
+import { AuditService } from '../audit/audit.service';
+import type {
+  IdentityRepository,
+  LinkedAthleteRecord,
+  UserProfileRecord,
+} from './identity.repository';
+import { IdentityService, toLinkedAthlete, toProfile } from './identity.service';
+
+const baseRecord: UserProfileRecord = {
+  id: 'user-1',
+  email: 'parent@example.com',
+  firstName: 'Айгуль',
+  lastName: 'Серик',
+  middleName: null,
+  phone: '+7 700 000 00 00',
+  role: PrismaUserRole.MEMBER,
+  status: PrismaUserStatus.ACTIVE,
+  scopeAllGroups: false,
+  grants: [],
+};
+
+describe('toProfile', () => {
+  it('не раскрывает приватные поля и отдает права роли', () => {
+    const profile = toProfile({
+      ...baseRecord,
+      role: PrismaUserRole.STAFF,
+      grants: [{ code: 'payments.view', grantedAt: new Date('2026-02-01T10:00:00.000Z') }],
+    });
+
+    expect(profile).toMatchObject({
+      id: 'user-1',
+      email: 'parent@example.com',
+      role: 'STAFF',
+      status: 'ACTIVE',
+      scopeAllGroups: false,
+    });
+    // пароль, токены и внутренние идентификаторы не попадают в контракт
+    expect(profile).not.toHaveProperty('passwordHash');
+    expect(profile).not.toHaveProperty('grants');
+    expect(profile.permissions.codes).toContain('attendance.view');
+    expect(profile.permissions.codes).toContain('payments.view');
+    expect(profile.permissions.grants).toEqual([
+      { code: 'payments.view', grantedAt: '2026-02-01T10:00:00.000Z' },
+    ]);
+  });
+
+  it('для MEMBER не выдает прав: доступ ограничен ресурсом (ADR-0006)', () => {
+    const profile = toProfile(baseRecord);
+
+    expect(profile.permissions.codes).toEqual([]);
+    expect(profile.permissions.grants).toEqual([]);
+  });
+});
+
+describe('toLinkedAthlete', () => {
+  it('сериализует дату рождения в календарную дату без времени', () => {
+    const record: LinkedAthleteRecord = {
+      athleteId: 'athlete-1',
+      firstName: 'Али',
+      lastName: 'Серик',
+      middleName: 'Ерланович',
+      birthDate: new Date('2015-09-01T00:00:00.000Z'),
+      status: 'ACTIVE',
+      relation: 'PARENT',
+      isPrimary: true,
+    };
+
+    expect(toLinkedAthlete(record)).toEqual({
+      id: 'athlete-1',
+      firstName: 'Али',
+      lastName: 'Серик',
+      middleName: 'Ерланович',
+      birthDate: '2015-09-01',
+      status: 'ACTIVE',
+      relation: 'PARENT',
+      isPrimary: true,
+    });
+  });
+
+  it('не включает заметки клуба', () => {
+    const record: LinkedAthleteRecord = {
+      athleteId: 'athlete-2',
+      firstName: 'Али',
+      lastName: 'Серик',
+      middleName: null,
+      birthDate: null,
+      status: 'ACTIVE',
+      relation: 'SELF',
+      isPrimary: false,
+    };
+
+    const athlete = toLinkedAthlete(record);
+    expect(athlete).not.toHaveProperty('notes');
+    expect(athlete.birthDate).toBeNull();
+  });
+});
+
+describe('IdentityService', () => {
+  let repository: jest.Mocked<IdentityRepository>;
+  let audit: { recordSafely: jest.Mock };
+  let service: IdentityService;
+
+  beforeEach(() => {
+    repository = {
+      findProfile: jest.fn(),
+      listLinkedAthletes: jest.fn(),
+      listCoachedAthleteIds: jest.fn(),
+    } as unknown as jest.Mocked<IdentityRepository>;
+    audit = { recordSafely: jest.fn().mockResolvedValue(null) };
+    service = new IdentityService(repository, audit as unknown as AuditService);
+  });
+
+  it('отдает профиль по идентификатору пользователя', async () => {
+    repository.findProfile.mockResolvedValue(baseRecord);
+
+    const profile = await service.getProfile('user-1');
+
+    expect(profile.id).toBe('user-1');
+    expect(repository.findProfile).toHaveBeenCalledWith('user-1');
+  });
+
+  it('отдает 404, если пользователь не найден или архивирован', async () => {
+    repository.findProfile.mockResolvedValue(null);
+
+    await expect(service.getProfile('missing')).rejects.toBeInstanceOf(ApiException);
+    await expect(service.getProfile('missing')).rejects.toMatchObject({
+      code: 'NOT_FOUND' satisfies ApiErrorCode,
+    });
+  });
+
+  it('отдает 403 для заблокированного пользователя', async () => {
+    repository.findProfile.mockResolvedValue({ ...baseRecord, status: PrismaUserStatus.BLOCKED });
+
+    await expect(service.getProfile('user-1')).rejects.toMatchObject({ code: 'USER_BLOCKED' });
+  });
+
+  it('возвращает связанных спортсменов и фиксирует обращение в аудите', async () => {
+    repository.listLinkedAthletes.mockResolvedValue([
+      {
+        athleteId: 'athlete-1',
+        firstName: 'Али',
+        lastName: 'Серик',
+        middleName: null,
+        birthDate: null,
+        status: 'ACTIVE',
+        relation: 'PARENT',
+        isPrimary: true,
+      },
+    ]);
+
+    const athletes = await service.listLinkedAthletes('user-1');
+
+    expect(athletes).toHaveLength(1);
+    expect(audit.recordSafely).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: AuditAction.ATHLETE_LINKS_VIEWED,
+        entityId: 'user-1',
+      }),
+    );
+  });
+
+  it('не пишет аудит, если связанных спортсменов нет', async () => {
+    repository.listLinkedAthletes.mockResolvedValue([]);
+
+    await service.listLinkedAthletes('user-1');
+
+    expect(audit.recordSafely).not.toHaveBeenCalled();
+  });
+
+  it('MEMBER получает доступ только к своим спортсменам', async () => {
+    repository.findProfile.mockResolvedValue(baseRecord);
+    repository.listLinkedAthletes.mockResolvedValue([
+      {
+        athleteId: 'athlete-1',
+        firstName: 'Али',
+        lastName: 'Серик',
+        middleName: null,
+        birthDate: null,
+        status: 'ACTIVE',
+        relation: 'PARENT',
+        isPrimary: true,
+      },
+    ]);
+
+    await expect(service.canAccessAthlete('user-1', 'athlete-1')).resolves.toBe(true);
+    await expect(service.canAccessAthlete('user-1', 'athlete-2')).resolves.toBe(false);
+  });
+
+  it('STAFF без scopeAllGroups получает доступ только к спортсменам своих групп', async () => {
+    repository.findProfile.mockResolvedValue({
+      ...baseRecord,
+      role: PrismaUserRole.STAFF,
+      scopeAllGroups: false,
+    });
+    repository.listCoachedAthleteIds.mockResolvedValue(['athlete-1']);
+
+    await expect(service.canAccessAthlete('user-1', 'athlete-1')).resolves.toBe(true);
+    await expect(service.canAccessAthlete('user-1', 'athlete-9')).resolves.toBe(false);
+  });
+
+  it('STAFF с scopeAllGroups получает доступ ко всем спортсменам', async () => {
+    repository.findProfile.mockResolvedValue({
+      ...baseRecord,
+      role: PrismaUserRole.STAFF,
+      scopeAllGroups: true,
+    });
+    repository.listCoachedAthleteIds.mockResolvedValue([]);
+
+    await expect(service.canAccessAthlete('user-1', 'athlete-9')).resolves.toBe(true);
+  });
+
+  it('SUPERADMIN получает доступ к любому спортсмену без запросов к группам', async () => {
+    repository.findProfile.mockResolvedValue({
+      ...baseRecord,
+      role: PrismaUserRole.SUPERADMIN,
+      scopeAllGroups: true,
+    });
+
+    await expect(service.canAccessAthlete('user-1', 'athlete-9')).resolves.toBe(true);
+    expect(repository.listCoachedAthleteIds).not.toHaveBeenCalled();
+  });
+});

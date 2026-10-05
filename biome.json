@@ -11,11 +11,11 @@
       "apps/api/test/**/*.ts",
       "apps/api/prisma/**/*.ts",
       "packages/*/src/**/*.ts",
-      "!**/dist/**",
-      "!**/coverage/**",
-      "!**/node_modules/**",
-      "!**/generated/**",
-      "!**/prisma/migrations/**"
+      "!**/dist",
+      "!**/coverage",
+      "!**/node_modules",
+      "!**/generated",
+      "!**/prisma/migrations"
     ]
   },
   "formatter": {
@@ -24,29 +24,28 @@
   "assist": {
     "enabled": false
   },
+  "javascript": {
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
+    }
+  },
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "correctness": {
         "noUnusedVariables": "error",
-        "noUnusedImports": "error"
+        "noUnusedImports": "error",
+        "noUnusedFunctionParameters": "off",
+        "noUnusedPrivateClassMembers": "off"
+      },
+      "suspicious": {
+        "noConsole": "off"
       },
       "style": {
-        "noNonNullAssertion": "warn"
+        "noNonNullAssertion": "warn",
+        "useImportType": "off"
       }
     }
-  },
-  "overrides": [
-    {
-      "includes": ["apps/api/prisma/**/*.ts"],
-      "linter": {
-        "rules": {
-          "suspicious": {
-            "noConsole": "off"
-          }
-        }
-      }
-    }
-  ]
+  }
 }

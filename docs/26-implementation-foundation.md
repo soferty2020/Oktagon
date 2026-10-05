@@ -41,6 +41,19 @@ finance, freezes, news, chat, analytics, audit.
 - словарь `AuditAction` и `AuditEntityType` в `packages/contracts` — общий
   контракт backend и админки.
 
+Реализовано (issue B1 — слой identity):
+
+- `IdentityRepository` (абстрактный класс как DI-токен) + `PrismaIdentityRepository`
+  — доступ к `User`, `UserPermission`, `UserAthlete`, `GroupMembership`;
+- `IdentityService` — профиль, связанные спортсмены, проверка ресурсного scope
+  (`canAccessAthlete`);
+- `GET /api/v1/me` — профиль и эффективные права; `GET /api/v1/me/athletes` —
+  связанные спортсмены (ADR-0007);
+- `resolvePermissions` и `canAccessAthlete` — чистые функции в
+  `packages/contracts/src/identity.ts`, общие для backend и тестов;
+- `StubAuthGuard` — временная заглушка аутентификации, включается только
+  `LOCAL_AUTH_STUB=true`; без нее защищенные маршруты отвечают 401. Удаляется в B2.
+
 Остальные модули — заготовки с указанием спецификации. Реализация ведется
 отдельными issue по merge order из `docs/24-multi-agent-plan.md`.
 
@@ -76,12 +89,11 @@ finance, freezes, news, chat, analytics, audit.
   роли в коде (MEMBER без permissions, доступ по scope), каталог и
   индивидуальные выдачи в БД, scope отдельным измерением, финансы через
   `isFinancial`.
+- `docs/decisions/ADR-0007-identity-profile-contract.md` — форма `GET /me`:
+  профиль без связанных спортсменов, права как `codes` + `grants`, scope явным
+  полем, чистые функции вычисления прав и проверки доступа к спортсмену.
 
-Открытые вопросы для ADR:
-
-1. **Граница identity-профиля** — форма `GET /me` и прав-ответа для клиентов.
-   Публичный контракт для `apps/mobile` и `apps/admin`, фиксируется в рамках B1
-   до того, как клиенты начнут его использовать.
+Открытые вопросы для ADR: нет.
 
 Осознанно не оформляется ADR: выбор Biome вместо ESLint (инструмент, не
 архитектура; причина описана в `docs/27-local-development.md`).
@@ -101,25 +113,28 @@ finance, freezes, news, chat, analytics, audit.
   `{"code":"NOT_FOUND","message":"...","details":{}}`;
 - заголовок `x-request-id` проставляется и возвращается клиенту;
 - аудит: запись сохраняется в БД с JSON-снимками, `requestId`, IP и user-agent
-  (проверено e2e на реальной БД).
+  (проверено e2e на реальной БД);
+- `GET /api/v1/me` на реальных данных seed: 200, роль `SUPERADMIN`, 26 прав,
+  поля `passwordHash` и `athletes` в ответе отсутствуют (ADR-0007);
+- `GET /api/v1/me` без заголовка `x-user-id` или при выключенной заглушке —
+  401 `UNAUTHENTICATED`.
+
+Проверок всего: unit — 38 (11 contracts + 27 api), e2e — 7 без БД и 2 на БД.
 
 Подробности запуска и обхода ограничений среды — `docs/27-local-development.md`.
 
 ## Следующие шаги
 
-1. **B1** — слой identity: репозитории и сервис поверх `User`, `Permission`,
-   `UserPermission`, `UserInvite`, `RefreshToken`; сервис эффективных прав
-   (роль + индивидуальные permissions по ADR-0006); ADR по границе профиля.
-2. **B2** — email/password auth: `POST /auth/login`, `POST /auth/refresh`,
+1. **B2** — email/password auth: `POST /auth/login`, `POST /auth/refresh`,
    `GET /me`, Argon2id (ADR-0004), ротация refresh-токенов, rate limiting
-   (`docs/15-security.md`).
-3. **B3** — invite flow: `POST /auth/accept-invite` и приглашение администратором.
-4. **B5/B6** — guards для RBAC, permissions и resource scope
-   (`docs/21-permission-matrix.md`).
-5. `apps/admin` — каркас Next.js + генерация клиента из `openapi.yaml`.
-6. `apps/mobile` — каркас Flutter (требует установленного Flutter SDK).
-7. **A3** — CI pipeline: typecheck, lint, тесты, сборка.
-8. Обновить `docs/22-erd.md` под `GroupBranch` (см. ADR-0005).
+   (`docs/15-security.md`). Удалить `StubAuthGuard`.
+2. **B3** — invite flow: `POST /auth/accept-invite` и приглашение администратором.
+3. **B5/B6** — guards для RBAC, permissions и resource scope поверх
+   `IdentityService` (`docs/21-permission-matrix.md`).
+4. `apps/admin` — каркас Next.js + генерация клиента из `openapi.yaml`.
+5. `apps/mobile` — каркас Flutter (требует установленного Flutter SDK).
+6. **A3** — CI pipeline: typecheck, lint, тесты, сборка.
+7. Обновить `docs/22-erd.md` под `GroupBranch` (см. ADR-0005).
 
 ## Команды
 
