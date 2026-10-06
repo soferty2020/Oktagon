@@ -136,6 +136,22 @@ pnpm build
 `scripts/verify.ps1` (Windows) или `scripts/ci-verify.sh` (Linux/macOS) — они
 вызывают компилятор, тест-раннер и линтер напрямую и печатают сводку по шагам.
 
+### Проверки на живом стенде
+
+Требуют запущенного API (и, где указано, админки):
+
+```bash
+node scripts/check-acceptance.mjs http://127.0.0.1:3000/api/v1   # все 18 пунктов приемки
+node scripts/check-admin.mjs                                     # экраны админки
+node scripts/check-finance.mjs http://127.0.0.1:3000/api/v1      # финансы
+node scripts/check-chats.mjs                                     # чаты
+node scripts/check-backup.mjs                                    # восстановление из бэкапа
+node scripts/backup-db.mjs                                       # снять дамп
+```
+
+Проверки входа в API ограничены по частоте (10 попыток в минуту на IP), поэтому
+запускать их подряд не стоит: сработает защита от перебора, и вы получите 429.
+
 PR не мержится при failed lint/test/build (`docs/16-testing.md`). Пайплайн —
 `.github/workflows/ci.yml`: на push и pull request поднимаются PostgreSQL и
 Redis, затем выполняются lint, typecheck, unit-тесты, сборка и e2e.
