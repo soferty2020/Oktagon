@@ -104,7 +104,7 @@ JavaScript страницы. Типы API генерируются из `openapi
 | `POST /api/v1/schedule-templates/{id}/publish` | публикация: фиксирует слоты расписания |
 | `POST /api/v1/schedule-templates/{id}/generate` | материализация занятий квартала (идемпотентно) |
 | `POST/PATCH/DELETE /api/v1/schedule-templates/{id}/slots[/{slotId}]` | слоты: день недели, время, зал, тренер |
-| `GET /api/v1/training-sessions` | занятия за период; список ограничен scope |
+| `GET/POST /api/v1/training-sessions` | занятия за период; добавление вручную, в том числе задним числом |
 | `PATCH /api/v1/training-sessions/{id}/move` | перенос занятия: шаблон не меняется (BR-009) |
 | `POST /api/v1/training-sessions/{id}/cancel` | отмена занятия с причиной (право `schedule.cancel`) |
 | `GET/PUT /api/v1/training-sessions/{id}/attendance` | журнал занятия: состав на дату и отметки |
