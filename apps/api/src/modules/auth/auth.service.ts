@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   ApiErrorCode,
   AuditAction,
@@ -7,6 +8,7 @@ import {
   type UserRole,
   type UserStatus,
 } from '@octagon/contracts';
+import type { AppEnvironment } from '@octagon/config';
 
 import { ApiException } from '../../shared/api-exception';
 import { AuditService } from '../audit/audit.service';
@@ -36,6 +38,7 @@ export class AuthService {
     private readonly rateLimiter: RateLimiterService,
     private readonly identity: IdentityService,
     private readonly audit: AuditService,
+    private readonly config: ConfigService<AppEnvironment, true>,
   ) {}
 
   /**
@@ -111,8 +114,14 @@ export class AuthService {
    * Недействительный или уже использованный токен трактуется как возможная
    * компрометация: RefreshTokenService отзывает все токены пользователя,
    * событие попадает в аудит.
+   *
+   * Попытки ограничиваются по IP: refresh-токен — секрет, и без лимита его можно
+   * перебирать, а каждая попытка еще и отзывает токены владельца при совпадении
+   * (docs/15-security.md: rate limiting auth endpoints).
    */
-  async refresh(refreshToken: string): Promise<AuthSession> {
+  async refresh(refreshToken: string, ip: string | null = null): Promise<AuthSession> {
+    await this.enforceRefreshRateLimit(ip);
+
     let rotated: Awaited<ReturnType<RefreshTokenService['rotate']>>;
     try {
       rotated = await this.refreshTokens.rotate(refreshToken);
@@ -180,22 +189,46 @@ export class AuthService {
    * принимающий — разные люди), а токен является секретом.
    */
   async enforceInviteRateLimit(ip: string | null): Promise<void> {
+    await this.enforceRateLimit(`invite-accept:ip:${ip ?? 'unknown'}`, ip, {
+      // Приглашение принимает другой человек, поэтому сообщение нейтральное.
+      log: `Превышен лимит попыток принятия приглашения по IP ${ip}`,
+      message: 'Слишком много попыток, попробуйте позже',
+    });
+  }
+
+  /** Ограничивает перебор refresh-токенов по IP. */
+  private async enforceRefreshRateLimit(ip: string | null): Promise<void> {
+    await this.enforceRateLimit(`auth:refresh:ip:${ip ?? 'unknown'}`, ip, {
+      log: `Превышен лимит обновлений сессии по IP ${ip}`,
+      message: 'Слишком много попыток обновления сессии, попробуйте позже',
+    });
+  }
+
+  /**
+   * Общий механизм лимитов auth-эндпоинтов.
+   *
+   * Лимиты берутся из валидированного конфига, а не из `process.env`: значение
+   * должно быть проверено при старте, иначе опечатка в переменной молча
+   * превращалась бы в `NaN` и снимала защиту.
+   */
+  private async enforceRateLimit(
+    key: string,
+    ip: string | null,
+    messages: { log: string; message: string },
+  ): Promise<void> {
     if (!ip) {
       return;
     }
 
     const result = await this.rateLimiter.consume(
-      `invite-accept:ip:${ip}`,
-      Number(process.env.AUTH_RATE_LIMIT_MAX ?? 10),
-      Number(process.env.AUTH_RATE_LIMIT_TTL_SECONDS ?? 60),
+      key,
+      this.config.get('AUTH_RATE_LIMIT_MAX', { infer: true }),
+      this.config.get('AUTH_RATE_LIMIT_TTL_SECONDS', { infer: true }),
     );
 
     if (!result.allowed) {
-      this.logger.warn(`Превышен лимит попыток принятия приглашения по IP ${ip}`);
-      throw new ApiException(
-        'RATE_LIMITED' satisfies ApiErrorCode,
-        'Слишком много попыток, попробуйте позже',
-      );
+      this.logger.warn(messages.log);
+      throw new ApiException('RATE_LIMITED' satisfies ApiErrorCode, messages.message);
     }
   }
 
@@ -212,9 +245,16 @@ export class AuthService {
     };
   }
 
+  /**
+   * Ограничивает попытки входа: по IP и по email отдельно.
+   *
+   * Два ключа, потому что перебор с одного адреса и перебор одного аккаунта с
+   * разных адресов — разные атаки. Лимиты берутся из валидированного конфига:
+   * иначе опечатка в переменной окружения молча сняла бы защиту (`NaN`).
+   */
   private async enforceLimits(email: string, ip: string | null): Promise<void> {
-    const max = Number(process.env.AUTH_RATE_LIMIT_MAX ?? 10);
-    const windowSeconds = Number(process.env.AUTH_RATE_LIMIT_TTL_SECONDS ?? 60);
+    const max = this.config.get('AUTH_RATE_LIMIT_MAX', { infer: true });
+    const windowSeconds = this.config.get('AUTH_RATE_LIMIT_TTL_SECONDS', { infer: true });
 
     if (ip) {
       const byIp = await this.rateLimiter.consume(`auth:ip:${ip}`, max, windowSeconds);

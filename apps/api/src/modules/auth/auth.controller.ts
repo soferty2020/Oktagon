@@ -38,8 +38,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Обновление сессии с ротацией refresh-токена' })
   @ApiOkResponse({ description: 'Новая пара токенов и профиль пользователя' })
-  refresh(@Body() dto: RefreshDto): Promise<AuthSession> {
-    return this.auth.refresh(dto.refreshToken);
+  refresh(@Body() dto: RefreshDto, @Req() request: Request): Promise<AuthSession> {
+    // IP передается для ограничения перебора refresh-токенов: сам токен —
+    // секрет, и попытки его подбора нужно считать (docs/15-security.md).
+    return this.auth.refresh(dto.refreshToken, clientIp(request));
   }
 
   @Post('logout')

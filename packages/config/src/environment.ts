@@ -23,6 +23,15 @@ export interface AppEnvironment {
   CLUB_TIMEZONE: string;
   DATABASE_URL: string;
   /**
+   * Разрешенные источники запросов (CORS), через запятую.
+   *
+   * `credentials: true` означает, что браузер шлет cookie админки. Принимать при
+   * этом `Origin` от кого угодно нельзя: любой сторонний сайт смог бы обращаться
+   * к API от имени вошедшего пользователя. Поэтому список явный, а в
+   * `production` он обязателен — см. `resolveCorsOrigins`.
+   */
+  CORS_ORIGINS?: string;
+  /**
    * Redis: rate limiting auth-эндпоинтов (docs/15-security.md) и кэш/очереди.
    * Не задан — readiness не проверяет Redis (docs/14-infrastructure.md).
    */
@@ -119,12 +128,24 @@ export function loadEnvironment(raw: RawEnvironment = process.env): AppEnvironme
     problems.push(`CLUB_TIMEZONE is not a valid IANA time zone, got "${clubTimezone}"`);
   }
 
+  const corsOrigins = raw.CORS_ORIGINS?.trim();
+  if ((nodeEnvRaw === NodeEnv.PRODUCTION || nodeEnvRaw === NodeEnv.STAGING) && !corsOrigins) {
+    // В staging и production источник обязан быть задан явно. Разрешить все
+    // источники с cookie — это CSRF-подобная дыра: сторонний сайт обращался бы к
+    // API от имени вошедшего пользователя. Лучше не стартовать, чем стартовать
+    // так. Staging не исключение: на нем те же данные и тот же API.
+    problems.push(
+      'CORS_ORIGINS is required outside local: перечислите домены админки через запятую',
+    );
+  }
+
   const env: AppEnvironment = {
     NODE_ENV: nodeEnvRaw as NodeEnv,
     PORT: parsePositiveInt(raw.PORT, ENVIRONMENT_DEFAULTS.PORT, 'PORT', problems),
     API_PREFIX: raw.API_PREFIX ?? ENVIRONMENT_DEFAULTS.API_PREFIX,
     CLUB_TIMEZONE: clubTimezone,
     DATABASE_URL: requireString(raw.DATABASE_URL, 'DATABASE_URL', problems),
+    CORS_ORIGINS: corsOrigins,
     REDIS_URL: raw.REDIS_URL,
     JWT_ACCESS_SECRET: jwtAccessSecret,
     JWT_ACCESS_TTL_SECONDS: parsePositiveInt(
@@ -175,4 +196,29 @@ function isValidTimeZone(timeZone: string): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Источники, которым разрешено обращаться к API из браузера.
+ *
+ * `true` означает «принимать любой источник» и допустимо **только** в local и
+ * test: там админка ходит с разных портов и хостов (`localhost` и `127.0.0.1` для
+ * браузера — разные источники), и требовать список было бы неудобно.
+ *
+ * В staging и production возвращается явный список. Пустой список означает, что
+ * cross-origin запросов не будет вовсе: это безопаснее, чем принять чужой
+ * источник с cookie (docs/15-security.md, «HTTPS only in production»).
+ */
+export function resolveCorsOrigins(
+  env: Pick<AppEnvironment, 'NODE_ENV' | 'CORS_ORIGINS'>,
+): true | string[] {
+  const isLocal = env.NODE_ENV === NodeEnv.LOCAL || env.NODE_ENV === NodeEnv.TEST;
+  if (isLocal && !env.CORS_ORIGINS) {
+    return true;
+  }
+
+  return (env.CORS_ORIGINS ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter((origin) => origin !== '');
 }

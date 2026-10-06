@@ -2,10 +2,10 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import type { AppEnvironment } from '@octagon/config';
+import { NodeEnv, resolveCorsOrigins, type AppEnvironment } from '@octagon/config';
 
 import { AppModule } from './app.module';
-import { ApiExceptionFilter } from './shared';
+import { ApiExceptionFilter, SecurityHeadersMiddleware } from './shared';
 
 async function bootstrap(): Promise<void> {
   const logger = new Logger('Bootstrap');
@@ -27,7 +27,23 @@ async function bootstrap(): Promise<void> {
   app.useGlobalFilters(new ApiExceptionFilter());
   // Интерсепторы зарегистрированы в AppModule через APP_INTERCEPTOR: контексту
   // запроса нужен DI. Порядок — requestId, затем контекст аудита.
-  app.enableCors({ origin: true, credentials: true });
+  //
+  // CORS: список источников приходит из конфигурации. `origin: true` вместе с
+  // `credentials: true` означало бы, что любой сторонний сайт обращается к API с
+  // cookie админки (docs/15-security.md). В production список обязателен, это
+  // проверяет валидация окружения при старте.
+  app.enableCors({
+    origin: resolveCorsOrigins({
+      NODE_ENV: config.get('NODE_ENV', { infer: true }),
+      CORS_ORIGINS: config.get('CORS_ORIGINS', { infer: true }),
+    }),
+    credentials: true,
+  });
+  // Заголовки безопасности на все ответы. HSTS включается только в production:
+  // в local и staging браузер работает по HTTP, и заголовок лишь мешал бы.
+  const isProduction = config.get('NODE_ENV', { infer: true }) === NodeEnv.PRODUCTION;
+  const securityHeaders = new SecurityHeadersMiddleware(isProduction);
+  app.use(securityHeaders.use.bind(securityHeaders));
   app.enableShutdownHooks();
 
   const swaggerConfig = new DocumentBuilder()

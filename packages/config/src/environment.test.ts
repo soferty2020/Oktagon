@@ -1,6 +1,13 @@
-import { EnvironmentValidationError, loadEnvironment } from './environment';
+import { EnvironmentValidationError, loadEnvironment, resolveCorsOrigins } from './environment';
 
 const VALID_SECRET = 'a'.repeat(40);
+
+/** Минимум, чтобы окружение прошло валидацию. */
+const validEnv = {
+  DATABASE_URL: 'postgresql://octagon:octagon@localhost:5432/octagon',
+  JWT_ACCESS_SECRET: VALID_SECRET,
+  JWT_REFRESH_SECRET: VALID_SECRET,
+};
 
 describe('loadEnvironment', () => {
   it('fills defaults for a minimal valid environment', () => {
@@ -51,5 +58,62 @@ describe('loadEnvironment', () => {
         PORT: '0',
       }),
     ).toThrow(EnvironmentValidationError);
+  });
+
+  it('требует явный список источников вне local', () => {
+    // CORS с cookie и «любым» источником означал бы, что сторонний сайт
+    // обращается к API от имени вошедшего пользователя (docs/15-security.md).
+    // Поэтому staging и production без списка не поднимаются вовсе.
+    expect(() => loadEnvironment({ ...validEnv, NODE_ENV: 'production' })).toThrow(
+      EnvironmentValidationError,
+    );
+    expect(() => loadEnvironment({ ...validEnv, NODE_ENV: 'staging' })).toThrow(
+      EnvironmentValidationError,
+    );
+
+    const env = loadEnvironment({
+      ...validEnv,
+      NODE_ENV: 'production',
+      CORS_ORIGINS: 'https://admin.octagon.kz',
+    });
+    expect(env.NODE_ENV).toBe('production');
+  });
+
+  it('локально список не обязателен', () => {
+    const env = loadEnvironment(validEnv);
+
+    expect(env.NODE_ENV).toBe('local');
+    expect(env.CORS_ORIGINS).toBeUndefined();
+  });
+});
+
+describe('resolveCorsOrigins', () => {
+  it('локально разрешает любой источник: админка ходит с разных портов', () => {
+    // localhost:3001 и 127.0.0.1:3001 для браузера — разные источники, и
+    // требовать список на машине разработчика было бы неудобно.
+    expect(resolveCorsOrigins({ NODE_ENV: 'local' })).toBe(true);
+    expect(resolveCorsOrigins({ NODE_ENV: 'test' })).toBe(true);
+  });
+
+  it('разбирает список источников', () => {
+    expect(
+      resolveCorsOrigins({
+        NODE_ENV: 'production',
+        CORS_ORIGINS: 'https://admin.octagon.kz, https://octagon.kz',
+      }),
+    ).toEqual(['https://admin.octagon.kz', 'https://octagon.kz']);
+  });
+
+  it('без списка в production не разрешает никого', () => {
+    // Пустой список безопаснее «любого источника»: cross-origin запросов не
+    // будет, и API останется доступен только своим же origin.
+    expect(resolveCorsOrigins({ NODE_ENV: 'production' })).toEqual([]);
+    expect(resolveCorsOrigins({ NODE_ENV: 'production', CORS_ORIGINS: '  ,  ' })).toEqual([]);
+  });
+
+  it('заданный список действует и локально', () => {
+    expect(
+      resolveCorsOrigins({ NODE_ENV: 'local', CORS_ORIGINS: 'http://localhost:3001' }),
+    ).toEqual(['http://localhost:3001']);
   });
 });

@@ -1,3 +1,5 @@
+import { ConfigService } from '@nestjs/config';
+
 import { ApiException } from '../../shared/api-exception';
 import { AuditService } from '../audit/audit.service';
 import { IdentityService } from '../identity/identity.service';
@@ -29,6 +31,7 @@ describe('AuthService', () => {
   let tokens: { issueAccessToken: jest.Mock; verifyAccessToken: jest.Mock };
   let refreshTokens: { issue: jest.Mock; rotate: jest.Mock; revoke: jest.Mock };
   let rateLimiter: { consume: jest.Mock };
+  let config: { get: (key: string) => unknown };
   let identity: { getProfile: jest.Mock };
   let audit: { recordSafely: jest.Mock };
   let service: AuthService;
@@ -47,13 +50,30 @@ describe('AuthService', () => {
     refreshTokens = {
       issue: jest
         .fn()
-        .mockResolvedValue({ token: 'refresh-token', expiresAt: new Date('2026-03-01T00:00:00.000Z') }),
+        .mockResolvedValue({
+          token: 'refresh-token',
+          expiresAt: new Date('2026-03-01T00:00:00.000Z'),
+        }),
       rotate: jest.fn(),
       revoke: jest.fn().mockResolvedValue(undefined),
     };
-    rateLimiter = { consume: jest.fn().mockResolvedValue({ allowed: true, remaining: 9, retryAfterSeconds: 60 }) };
+    rateLimiter = {
+      consume: jest.fn().mockResolvedValue({ allowed: true, remaining: 9, retryAfterSeconds: 60 }),
+    };
     identity = { getProfile: jest.fn().mockResolvedValue(profile) };
     audit = { recordSafely: jest.fn().mockResolvedValue(null) };
+    // Лимиты берутся из конфига, а не из process.env: значение должно быть
+    // проверено при старте, иначе опечатка молча снимала бы защиту.
+    config = {
+      get: (key: string) =>
+        key === 'AUTH_RATE_LIMIT_MAX'
+          ? 10
+          : key === 'AUTH_RATE_LIMIT_TTL_SECONDS'
+            ? 60
+            : key === 'INVITE_TTL_HOURS'
+              ? 72
+              : undefined,
+    };
 
     service = new AuthService(
       repository,
@@ -63,6 +83,7 @@ describe('AuthService', () => {
       rateLimiter as unknown as RateLimiterService,
       identity as unknown as IdentityService,
       audit as unknown as AuditService,
+      config as unknown as ConfigService<never, true>,
     );
   });
 
@@ -88,9 +109,9 @@ describe('AuthService', () => {
   it('отклоняет неверный пароль без раскрытия существования аккаунта', async () => {
     passwords.verify.mockResolvedValue(false);
 
-    await expect(service.login({ email: 'parent@example.com', password: 'bad' })).rejects.toMatchObject(
-      { code: 'INVALID_CREDENTIALS' },
-    );
+    await expect(
+      service.login({ email: 'parent@example.com', password: 'bad' }),
+    ).rejects.toMatchObject({ code: 'INVALID_CREDENTIALS' });
     expect(audit.recordSafely).toHaveBeenCalledWith(
       expect.objectContaining({
         action: 'auth.login_failed',
@@ -102,9 +123,9 @@ describe('AuthService', () => {
   it('отдает ту же ошибку для неизвестного email', async () => {
     repository.findUserForAuth.mockResolvedValue(null);
 
-    await expect(service.login({ email: 'nobody@example.com', password: 'bad' })).rejects.toMatchObject(
-      { code: 'INVALID_CREDENTIALS' },
-    );
+    await expect(
+      service.login({ email: 'nobody@example.com', password: 'bad' }),
+    ).rejects.toMatchObject({ code: 'INVALID_CREDENTIALS' });
     expect(audit.recordSafely).toHaveBeenCalledWith(
       expect.objectContaining({ after: expect.objectContaining({ reason: 'unknown_user' }) }),
     );
@@ -131,8 +152,16 @@ describe('AuthService', () => {
   });
 
   it('ограничивает частоту попыток по email', async () => {
-    rateLimiter.consume.mockResolvedValueOnce({ allowed: true, remaining: 0, retryAfterSeconds: 60 });
-    rateLimiter.consume.mockResolvedValueOnce({ allowed: false, remaining: 0, retryAfterSeconds: 42 });
+    rateLimiter.consume.mockResolvedValueOnce({
+      allowed: true,
+      remaining: 0,
+      retryAfterSeconds: 60,
+    });
+    rateLimiter.consume.mockResolvedValueOnce({
+      allowed: false,
+      remaining: 0,
+      retryAfterSeconds: 42,
+    });
 
     await expect(
       service.login({ email: 'parent@example.com', password: 'x', ip: '10.0.0.1' }),
@@ -143,7 +172,11 @@ describe('AuthService', () => {
   });
 
   it('ограничивает частоту попыток по IP', async () => {
-    rateLimiter.consume.mockResolvedValueOnce({ allowed: false, remaining: 0, retryAfterSeconds: 30 });
+    rateLimiter.consume.mockResolvedValueOnce({
+      allowed: false,
+      remaining: 0,
+      retryAfterSeconds: 30,
+    });
 
     await expect(
       service.login({ email: 'parent@example.com', password: 'x', ip: '10.0.0.1' }),
@@ -184,6 +217,37 @@ describe('AuthService', () => {
 
     expect(repository.findUserById).toHaveBeenCalledWith('user-1');
     expect(repository.findUserForAuth).not.toHaveBeenCalled();
+  });
+
+  it('ограничивает перебор refresh-токенов по IP', async () => {
+    // Refresh-токен — секрет: без лимита его можно перебирать, а каждая попытка
+    // еще и отзывает токены владельца при совпадении.
+    rateLimiter.consume.mockResolvedValue({ allowed: false, remaining: 0, retryAfterSeconds: 60 });
+
+    await expect(service.refresh('refresh-1', '10.0.0.1')).rejects.toMatchObject({
+      code: 'RATE_LIMITED',
+    });
+    expect(refreshTokens.rotate).not.toHaveBeenCalled();
+
+    // Ключ отдельный от входа: иначе вход и обновление сессии делили бы один
+    // счетчик, и обычная работа выбивала бы пользователя из системы.
+    expect(rateLimiter.consume).toHaveBeenCalledWith(
+      'auth:refresh:ip:10.0.0.1',
+      expect.any(Number),
+      expect.any(Number),
+    );
+  });
+
+  it('без IP обновление не блокируется: лимит считается по адресу', async () => {
+    refreshTokens.rotate.mockResolvedValue({
+      userId: 'user-1',
+      refresh: { token: 'refresh-2', expiresAt: new Date() },
+    });
+
+    await service.refresh('refresh-1');
+
+    expect(rateLimiter.consume).not.toHaveBeenCalled();
+    expect(refreshTokens.rotate).toHaveBeenCalled();
   });
 
   it('сообщает о повторном использовании refresh-токена', async () => {
