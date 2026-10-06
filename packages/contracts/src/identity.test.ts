@@ -59,19 +59,21 @@ describe('resolvePermissions', () => {
 describe('canAccessAthlete', () => {
   const athleteId = 'athlete-1';
 
+  // Решение возвращается с причиной (слой B5/B6, ADR-0007): причину видно в
+  // логах и проверяют тесты, поэтому проверяется и allowed, и reason.
   it('суперадмин имеет доступ к любому спортсмену', () => {
     expect(
       canAccessAthlete({ role: UserRole.SUPERADMIN, linkedAthleteIds: [] }, athleteId),
-    ).toBe(true);
+    ).toEqual({ allowed: true, reason: 'role_superadmin' });
   });
 
   it('родитель имеет доступ только к связанным спортсменам', () => {
     expect(
       canAccessAthlete({ role: UserRole.MEMBER, linkedAthleteIds: [athleteId] }, athleteId),
-    ).toBe(true);
+    ).toEqual({ allowed: true, reason: 'linked_member' });
     expect(
       canAccessAthlete({ role: UserRole.MEMBER, linkedAthleteIds: ['athlete-2'] }, athleteId),
-    ).toBe(false);
+    ).toEqual({ allowed: false, reason: 'denied_no_relation' });
   });
 
   it('тренер без расширенного scope видит только своих спортсменов', () => {
@@ -80,13 +82,13 @@ describe('canAccessAthlete', () => {
         { role: UserRole.STAFF, linkedAthleteIds: [], coachedAthleteIds: [athleteId] },
         athleteId,
       ),
-    ).toBe(true);
+    ).toEqual({ allowed: true, reason: 'staff_coached_group' });
     expect(
       canAccessAthlete(
         { role: UserRole.STAFF, linkedAthleteIds: [], coachedAthleteIds: [] },
         athleteId,
       ),
-    ).toBe(false);
+    ).toEqual({ allowed: false, reason: 'denied_out_of_scope' });
   });
 
   it('тренер с scopeAllGroups видит всех', () => {
@@ -95,7 +97,7 @@ describe('canAccessAthlete', () => {
         { role: UserRole.STAFF, linkedAthleteIds: [], scopeAllGroups: true },
         athleteId,
       ),
-    ).toBe(true);
+    ).toEqual({ allowed: true, reason: 'staff_all_groups' });
   });
 });
 
