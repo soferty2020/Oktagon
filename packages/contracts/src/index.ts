@@ -13,3 +13,4 @@ export * from './schedule';
 export * from './attendance';
 export * from './finance';
 export * from './news';
+export * from './chat';

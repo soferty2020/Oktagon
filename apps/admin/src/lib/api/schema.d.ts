@@ -1479,6 +1479,129 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Диалоги пользователя
+         * @description BR-012: групповые чаты своих групп и личные переписки.
+         *
+         *     **Права на доступ не требуются**: матрица прав описывает чат как ресурс
+         *     («own conversations» для MEMBER, «assigned conversations» для STAFF), а не
+         *     как capability. Доступ определяется участием в диалоге. Требование
+         *     `chat.use` здесь противоречило бы матрице: у MEMBER базовых прав нет, и
+         *     родитель не смог бы написать тренеру, хотя BR-012 это разрешает.
+         *
+         *     **Групповые чаты появляются лениво** (ADR-0012): чат группы создается в
+         *     момент первого обращения участника, а состав участников пересчитывается по
+         *     группе и дописывается. Поэтому пустой чат не виден никому, а новый
+         *     спортсмен группы получает доступ без действий администратора.
+         */
+        get: operations["listConversations"];
+        put?: never;
+        /**
+         * Открыть диалог
+         * @description Ровно одно из двух: `groupId` для чата группы или `participantIds` для
+         *     личного диалога с одним собеседником (BR-012, ADR-0012).
+         *
+         *     Повторный запрос возвращает существующий диалог, а не создает второй:
+         *     иначе у пары копились бы параллельные переписки с одинаковым составом.
+         *
+         *     Групповой чат доступен только тренерам группы и представителям ее
+         *     спортсменов: посторонний не должен получить переписку по идентификатору
+         *     группы.
+         */
+        post: operations["createConversation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * История диалога
+         * @description Сообщения от старых к новым. **Чтение сдвигает `lastReadAt`**: после этого
+         *     диалог не числится непрочитанным.
+         *
+         *     Страница ограничена 50 сообщениями; `olderCursor` отдается, только если
+         *     страница заполнена целиком, — иначе клиент делал бы лишний запрос за
+         *     пустой страницей.
+         *
+         *     Диалог, в котором вызывающий не участвует, отдает 404, а не 403: по коду
+         *     ответа нельзя выяснить, существует ли чужая переписка.
+         */
+        get: operations["getConversation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Отправить сообщение
+         * @description Только участник диалога, и проверка выполняется на каждом запросе: состав
+         *     группы может измениться между открытием списка и отправкой (ADR-0012).
+         *
+         *     Отправка не пишется в аудит: BR-007 перечисляет оплаты, заморозки, права и
+         *     расписание, а переписка — не тот случай, когда нужен след в аудите.
+         */
+        post: operations["sendMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/messages/{messageId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Удалить свое сообщение
+         * @description Удаляет только отправитель: модерации чужих сообщений в MVP нет, для нее
+         *     понадобилось бы отдельное право, которого нет в каталоге (ADR-0012).
+         *
+         *     Удаление мягкое: `deletedAt` сохраняется, текст больше не отдается, а в
+         *     переписке остается след, что сообщение было. Иначе ответы на него теряли
+         *     бы смысл.
+         *
+         *     Отдельный маршрут, а не `DELETE /conversations/messages/{id}`: вложенный
+         *     путь перехватывался бы `GET /conversations/{id}`.
+         */
+        delete: operations["deleteMessage"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/athletes/{id}/freezes": {
         parameters: {
             query?: never;
@@ -2105,6 +2228,88 @@ export interface components {
          * @enum {string}
          */
         NewsStatus: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+        /**
+         * @description BR-012 — чат группы или личная переписка
+         * @enum {string}
+         */
+        ConversationType: "GROUP" | "DIRECT";
+        /**
+         * @description Роль участника в диалоге. Отдается в интерфейс, потому что для родителя
+         *     важно, отвечает ли ему тренер или другой родитель.
+         * @enum {string}
+         */
+        ConversationMemberRole: "MEMBER" | "TRAINER";
+        ConversationMemberView: {
+            /** Format: uuid */
+            userId: string;
+            firstName: string;
+            lastName: string;
+            role: components["schemas"]["ConversationMemberRole"];
+        };
+        /**
+         * @description Сообщение диалога. Удаление мягкое: `isDeleted: true` означает, что в
+         *     переписке остался след, а `body` приходит пустым.
+         */
+        MessageView: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            conversationId: string;
+            sender: components["schemas"]["ConversationMemberView"];
+            body: string;
+            isDeleted: boolean;
+            /** @description Удалить может только отправитель (ADR-0012) */
+            canDelete: boolean;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        ConversationView: {
+            /** Format: uuid */
+            id: string;
+            type: components["schemas"]["ConversationType"];
+            /**
+             * @description У группового чата — имя группы, у личного — имя собеседника: у личной
+             *     переписки нет названия, которое можно было бы хранить.
+             */
+            title: string;
+            /** Format: uuid */
+            groupId?: string | null;
+            participants: components["schemas"]["ConversationMemberView"][];
+            lastMessage?: components["schemas"]["MessageView"] | null;
+            /**
+             * @description Сообщения после `lastReadAt`, отправленные не текущим пользователем:
+             *     считать «прочитано при отправке» нельзя (ADR-0012).
+             */
+            unreadCount: number;
+            /** Format: date-time */
+            lastMessageAt?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        ConversationDetails: components["schemas"]["ConversationView"] & {
+            /** @description Сообщения от старых к новым */
+            messages: components["schemas"]["MessageView"][];
+            /**
+             * Format: date-time
+             * @description Курсор для загрузки более старых сообщений; `null` — история
+             *     исчерпана.
+             */
+            olderCursor: string | null;
+        };
+        /** @description Ровно одно из двух: `groupId` или `participantIds` (ADR-0012). */
+        CreateConversationRequest: {
+            /** Format: uuid */
+            groupId?: string;
+            /**
+             * @description Собеседники личного диалога: ровно один, без текущего пользователя.
+             *     Число собеседников проверяет сервис и отвечает
+             *     `CONVERSATION_PARTICIPANTS_INVALID`.
+             */
+            participantIds?: string[];
+        };
+        SendMessageRequest: {
+            body: string;
+        };
         /** @description Автор новости или комментария; интерфейсу достаточно имени */
         NewsAuthorView: {
             /** Format: uuid */
@@ -6563,6 +6768,203 @@ export interface operations {
                 };
             };
             /** @description Комментарий не найден или уже удален (`NEWS_COMMENT_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listConversations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Диалоги: свежие сверху, с числом непрочитанных */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationView"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+        };
+    };
+    createConversation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateConversationRequest"];
+            };
+        };
+        responses: {
+            /** @description Диалог открыт (существующий или только что созданный) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationView"];
+                };
+            };
+            /**
+             * @description Указано и `groupId`, и `participantIds` (`CONVERSATION_TYPE_INVALID`)
+             *     или собеседников не один (`CONVERSATION_PARTICIPANTS_INVALID`).
+             */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Чат группы недоступен вызывающему (`CONVERSATION_ACCESS_DENIED`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Группа не найдена (`CONVERSATION_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getConversation: {
+        parameters: {
+            query?: {
+                /** @description Курсор — отдать сообщения старше этой даты (ISO 8601) */
+                olderThan?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Диалог с историей сообщений */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationDetails"];
+                };
+            };
+            400: components["responses"]["ValidationFailed"];
+            401: components["responses"]["Unauthenticated"];
+            /** @description Диалог не найден или недоступен (`CONVERSATION_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    sendMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendMessageRequest"];
+            };
+        };
+        responses: {
+            /** @description Сообщение отправлено */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageView"];
+                };
+            };
+            400: components["responses"]["ValidationFailed"];
+            401: components["responses"]["Unauthenticated"];
+            /** @description Диалог не найден или недоступен (`CONVERSATION_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    deleteMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Сообщение помечено удаленным */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        isDeleted: boolean;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Это чужое сообщение (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /**
+             * @description Сообщение не найдено, уже удалено (`MESSAGE_NOT_FOUND`) или его диалог
+             *     недоступен (`CONVERSATION_NOT_FOUND`).
+             */
             404: {
                 headers: {
                     [name: string]: unknown;

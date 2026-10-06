@@ -23,6 +23,9 @@ const NAVIGATION: readonly {
   // Новости без `requiredPermissions`: BR-011 — новости и комментарии видны всем
   // пользователям клуба, поэтому раздел не скрывается ни от кого (ADR-0011).
   { href: '/news', label: 'Новости' },
+  // Чаты требуют `chat.use`: это разрешение на функцию. Конкретная переписка
+  // доступна только участникам, и решает это backend (ADR-0011).
+  { href: '/chats', label: 'Чаты', requiredPermissions: ['chat.use'] },
   {
     href: '/finance',
     label: 'Финансы',

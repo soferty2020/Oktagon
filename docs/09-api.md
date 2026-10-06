@@ -24,7 +24,7 @@ REST JSON API, versioned prefix: `/api/v1`.
 - /freezes
 - /news (чтение без прав: BR-011)
 - /news-comments
-- /conversations
+- /conversations (доступ по участию, не по правам: BR-012)
 - /messages
 - /analytics
 

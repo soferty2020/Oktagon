@@ -45,10 +45,14 @@ export class PermissionsGuard implements CanActivate {
   constructor(private readonly resolver: PermissionResolver) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const required = Reflect.getMetadata(
-      REQUIRED_PERMISSIONS,
-      context.getHandler(),
-    ) as PermissionCode[] | undefined;
+    // Права ищутся на методе, затем на классе контроллера. Без второго шага
+    // `@RequirePermissions` на классе молча ничего не делал бы: маршрут
+    // считался бы открытым, и это не заметно ни в тестах, ни в типах.
+    const required =
+      (Reflect.getMetadata(REQUIRED_PERMISSIONS, context.getHandler()) as
+        PermissionCode[] | undefined) ??
+      (Reflect.getMetadata(REQUIRED_PERMISSIONS, context.getClass()) as
+        PermissionCode[] | undefined);
 
     // Маршрут без требования прав пропускается: guard можно вешать на весь
     // контроллер, а не на каждый метод.

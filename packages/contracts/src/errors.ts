@@ -146,6 +146,19 @@ export const ApiErrorCode = {
    * здесь — попытка править архивную запись или опубликовать ее повторно.
    */
   NEWS_POST_STATE_INVALID: 'NEWS_POST_STATE_INVALID',
+  /** Диалог не найден (в том числе если он невидим вызывающему). */
+  CONVERSATION_NOT_FOUND: 'CONVERSATION_NOT_FOUND',
+  /** Сообщение не найдено или уже удалено. */
+  MESSAGE_NOT_FOUND: 'MESSAGE_NOT_FOUND',
+  /**
+   * Диалог не той природы, чем требует запрос.
+   *
+   * Например, попытка прочитать состав группового чата у личного диалога или
+   * создать групповой чат без группы.
+   */
+  CONVERSATION_TYPE_INVALID: 'CONVERSATION_TYPE_INVALID',
+  /** Личный диалог требует ровно одного собеседника. */
+  CONVERSATION_PARTICIPANTS_INVALID: 'CONVERSATION_PARTICIPANTS_INVALID',
 } as const;
 export type ApiErrorCode = (typeof ApiErrorCode)[keyof typeof ApiErrorCode];
 
@@ -246,4 +259,8 @@ export const API_ERROR_HTTP_STATUS: Readonly<Record<ApiErrorCode, number>> = {
   NEWS_POST_NOT_FOUND: 404,
   NEWS_COMMENT_NOT_FOUND: 404,
   NEWS_POST_STATE_INVALID: 409,
+  CONVERSATION_NOT_FOUND: 404,
+  MESSAGE_NOT_FOUND: 404,
+  CONVERSATION_TYPE_INVALID: 400,
+  CONVERSATION_PARTICIPANTS_INVALID: 400,
 };

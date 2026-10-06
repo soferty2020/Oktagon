@@ -3484,6 +3484,227 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
 
+  /conversations:
+    get:
+      tags: [chat]
+      summary: Диалоги пользователя
+      description: |
+        BR-012: групповые чаты своих групп и личные переписки.
+
+        **Права на доступ не требуются**: матрица прав описывает чат как ресурс
+        («own conversations» для MEMBER, «assigned conversations» для STAFF), а не
+        как capability. Доступ определяется участием в диалоге. Требование
+        `chat.use` здесь противоречило бы матрице: у MEMBER базовых прав нет, и
+        родитель не смог бы написать тренеру, хотя BR-012 это разрешает.
+
+        **Групповые чаты появляются лениво** (ADR-0012): чат группы создается в
+        момент первого обращения участника, а состав участников пересчитывается по
+        группе и дописывается. Поэтому пустой чат не виден никому, а новый
+        спортсмен группы получает доступ без действий администратора.
+      operationId: listConversations
+      responses:
+        '200':
+          description: 'Диалоги: свежие сверху, с числом непрочитанных'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConversationView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+    post:
+      tags: [chat]
+      summary: Открыть диалог
+      description: |
+        Ровно одно из двух: `groupId` для чата группы или `participantIds` для
+        личного диалога с одним собеседником (BR-012, ADR-0012).
+
+        Повторный запрос возвращает существующий диалог, а не создает второй:
+        иначе у пары копились бы параллельные переписки с одинаковым составом.
+
+        Групповой чат доступен только тренерам группы и представителям ее
+        спортсменов: посторонний не должен получить переписку по идентификатору
+        группы.
+      operationId: createConversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConversationRequest'
+      responses:
+        '201':
+          description: Диалог открыт (существующий или только что созданный)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationView'
+        '400':
+          description: |
+            Указано и `groupId`, и `participantIds` (`CONVERSATION_TYPE_INVALID`)
+            или собеседников не один (`CONVERSATION_PARTICIPANTS_INVALID`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Чат группы недоступен вызывающему (`CONVERSATION_ACCESS_DENIED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Группа не найдена (`CONVERSATION_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /conversations/{id}:
+    get:
+      tags: [chat]
+      summary: История диалога
+      description: |
+        Сообщения от старых к новым. **Чтение сдвигает `lastReadAt`**: после этого
+        диалог не числится непрочитанным.
+
+        Страница ограничена 50 сообщениями; `olderCursor` отдается, только если
+        страница заполнена целиком, — иначе клиент делал бы лишний запрос за
+        пустой страницей.
+
+        Диалог, в котором вызывающий не участвует, отдает 404, а не 403: по коду
+        ответа нельзя выяснить, существует ли чужая переписка.
+      operationId: getConversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: olderThan
+          in: query
+          required: false
+          description: Курсор — отдать сообщения старше этой даты (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Диалог с историей сообщений
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationDetails'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          description: Диалог не найден или недоступен (`CONVERSATION_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /conversations/{id}/messages:
+    post:
+      tags: [chat]
+      summary: Отправить сообщение
+      description: |
+        Только участник диалога, и проверка выполняется на каждом запросе: состав
+        группы может измениться между открытием списка и отправкой (ADR-0012).
+
+        Отправка не пишется в аудит: BR-007 перечисляет оплаты, заморозки, права и
+        расписание, а переписка — не тот случай, когда нужен след в аудите.
+      operationId: sendMessage
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendMessageRequest'
+      responses:
+        '201':
+          description: Сообщение отправлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageView'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          description: Диалог не найден или недоступен (`CONVERSATION_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /messages/{messageId}:
+    delete:
+      tags: [chat]
+      summary: Удалить свое сообщение
+      description: |
+        Удаляет только отправитель: модерации чужих сообщений в MVP нет, для нее
+        понадобилось бы отдельное право, которого нет в каталоге (ADR-0012).
+
+        Удаление мягкое: `deletedAt` сохраняется, текст больше не отдается, а в
+        переписке остается след, что сообщение было. Иначе ответы на него теряли
+        бы смысл.
+
+        Отдельный маршрут, а не `DELETE /conversations/messages/{id}`: вложенный
+        путь перехватывался бы `GET /conversations/{id}`.
+      operationId: deleteMessage
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Сообщение помечено удаленным
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, isDeleted]
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  isDeleted:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Это чужое сообщение (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: |
+            Сообщение не найдено, уже удалено (`MESSAGE_NOT_FOUND`) или его диалог
+            недоступен (`CONVERSATION_NOT_FOUND`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
   /athletes/{id}/freezes:
     get:
       tags: [freezes]
@@ -4783,6 +5004,149 @@ components:
       type: string
       description: BR-011 — статус новости; черновик виден автору и модератору
       enum: [DRAFT, PUBLISHED, ARCHIVED]
+
+    ConversationType:
+      type: string
+      description: BR-012 — чат группы или личная переписка
+      enum: [GROUP, DIRECT]
+
+    ConversationMemberRole:
+      type: string
+      description: |
+        Роль участника в диалоге. Отдается в интерфейс, потому что для родителя
+        важно, отвечает ли ему тренер или другой родитель.
+      enum: [MEMBER, TRAINER]
+
+    ConversationMemberView:
+      type: object
+      required: [userId, firstName, lastName, role]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          $ref: '#/components/schemas/ConversationMemberRole'
+
+    MessageView:
+      type: object
+      description: |
+        Сообщение диалога. Удаление мягкое: `isDeleted: true` означает, что в
+        переписке остался след, а `body` приходит пустым.
+      required: [id, conversationId, sender, body, isDeleted, canDelete, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        conversationId:
+          type: string
+          format: uuid
+        sender:
+          $ref: '#/components/schemas/ConversationMemberView'
+        body:
+          type: string
+        isDeleted:
+          type: boolean
+        canDelete:
+          type: boolean
+          description: Удалить может только отправитель (ADR-0012)
+        createdAt:
+          type: string
+          format: date-time
+
+    ConversationView:
+      type: object
+      required:
+        - id
+        - type
+        - title
+        - participants
+        - unreadCount
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/ConversationType'
+        title:
+          type: string
+          description: |
+            У группового чата — имя группы, у личного — имя собеседника: у личной
+            переписки нет названия, которое можно было бы хранить.
+        groupId:
+          type: string
+          format: uuid
+          nullable: true
+        participants:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConversationMemberView'
+        lastMessage:
+          allOf:
+            - $ref: '#/components/schemas/MessageView'
+          nullable: true
+        unreadCount:
+          type: integer
+          description: |
+            Сообщения после `lastReadAt`, отправленные не текущим пользователем:
+            считать «прочитано при отправке» нельзя (ADR-0012).
+        lastMessageAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    ConversationDetails:
+      allOf:
+        - $ref: '#/components/schemas/ConversationView'
+        - type: object
+          required: [messages, olderCursor]
+          properties:
+            messages:
+              type: array
+              description: Сообщения от старых к новым
+              items:
+                $ref: '#/components/schemas/MessageView'
+            olderCursor:
+              type: string
+              format: date-time
+              nullable: true
+              description: |
+                Курсор для загрузки более старых сообщений; `null` — история
+                исчерпана.
+
+    CreateConversationRequest:
+      type: object
+      description: |
+        Ровно одно из двух: `groupId` или `participantIds` (ADR-0012).
+      properties:
+        groupId:
+          type: string
+          format: uuid
+        participantIds:
+          type: array
+          description: |
+            Собеседники личного диалога: ровно один, без текущего пользователя.
+            Число собеседников проверяет сервис и отвечает
+            `CONVERSATION_PARTICIPANTS_INVALID`.
+          items:
+            type: string
+            format: uuid
+
+    SendMessageRequest:
+      type: object
+      required: [body]
+      properties:
+        body:
+          type: string
+          minLength: 1
+          maxLength: 4000
 
     NewsAuthorView:
       type: object

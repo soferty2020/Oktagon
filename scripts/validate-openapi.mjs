@@ -189,6 +189,11 @@ const expectedRoutes = [
   ['post', '/news/{id}/publish'],
   ['post', '/news/{id}/comments'],
   ['delete', '/news-comments/{commentId}'],
+  ['get', '/conversations'],
+  ['post', '/conversations'],
+  ['get', '/conversations/{id}'],
+  ['post', '/conversations/{id}/messages'],
+  ['delete', '/messages/{messageId}'],
 ];
 
 for (const [method, route] of expectedRoutes) {
