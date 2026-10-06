@@ -2133,6 +2133,62 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError'
+    post:
+      tags: [schedule]
+      summary: Добавить занятие вручную
+      description: |
+        Два сценария: занести занятие задним числом (клуб начал работать раньше,
+        чем появилась система) и добавить разовое занятие вне квартального
+        расписания.
+
+        Время задается локальным временем клуба, а не UTC. Занятие не связано с
+        шаблоном (`fromTemplate` = false), поэтому пересоздание расписания его не
+        затрагивает.
+
+        Накладка проверяется только для занятия в будущем: в прошлом расписание
+        часто велось иначе, и запрет мешал бы занести историю.
+      operationId: createTrainingSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionRequest'
+      responses:
+        '201':
+          description: Занятие создано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingSessionView'
+        '400':
+          description: |
+            Ошибка валидации (`VALIDATION_FAILED`) или некорректные дата и время
+            (`SCHEDULE_SLOT_INVALID_TIME`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `schedule.edit` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Группа не найдена (`GROUP_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Накладка в будущем (`TRAINING_SESSION_CONFLICT`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
 
   /training-sessions/{id}:
     get:
@@ -4665,6 +4721,43 @@ components:
           description: |
             Пересоздать занятия: удаляются только те, что еще не начались.
             Отмененные вручную занятия сохраняются.
+
+    CreateSessionRequest:
+      type: object
+      description: |
+        Занятие, добавленное вручную: задним числом или разово вне расписания.
+        Время задается локальным временем клуба, а не UTC. Занятие не связано с
+        шаблоном, поэтому пересоздание расписания его не затрагивает.
+      required: [groupId, date, startTime, endTime, reason]
+      properties:
+        groupId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+          example: '2026-10-07'
+        startTime:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+          example: '18:00'
+        endTime:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+          description: Допускается переход через полночь
+          example: '19:30'
+        hallId:
+          type: string
+          format: uuid
+        trainerId:
+          type: string
+          format: uuid
+          description: Идентификатор профиля тренера, не аккаунта
+        reason:
+          type: string
+          maxLength: 500
+          description: Причина попадает в карточку занятия
+          example: Занесение занятий за прошлый месяц
 
     GenerateSessionsResult:
       type: object

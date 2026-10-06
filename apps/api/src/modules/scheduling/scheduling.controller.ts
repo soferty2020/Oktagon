@@ -32,6 +32,7 @@ import {
   AddScheduleSlotDto,
   CancelSessionDto,
   CreateScheduleTemplateDto,
+  CreateSessionDto,
   GenerateSessionsDto,
   ListSessionsQueryDto,
   ListTemplatesQueryDto,
@@ -195,6 +196,22 @@ export class TrainingSessionsController {
       groupId: query.groupId,
       trainerId: query.trainerId,
       status: query.status,
+    });
+  }
+
+  @Post()
+  @RequirePermissions(PermissionCode.ScheduleEdit)
+  @ApiOperation({ summary: 'Добавить занятие вручную' })
+  @ApiCreatedResponse({ description: 'Занятие создано' })
+  create(@Body() dto: CreateSessionDto): Promise<TrainingSessionView> {
+    return this.schedule.createSession({
+      groupId: dto.groupId,
+      date: dto.date,
+      startTime: dto.startTime,
+      endTime: dto.endTime,
+      hallId: dto.hallId ?? null,
+      trainerId: dto.trainerId ?? null,
+      reason: dto.reason,
     });
   }
 

@@ -76,6 +76,8 @@ export interface CreateSessionsInput {
   scheduleTemplateId: string | null;
   startsAt: Date;
   endsAt: Date;
+  /** Причина для занятия, добавленного вручную. */
+  changeReason?: string | null;
 }
 
 export interface SessionRangeFilter {
@@ -151,6 +153,8 @@ export abstract class SchedulingRepository {
   abstract countStartedSessions(templateId: string, now: Date): Promise<number>;
   abstract deleteFutureSessions(templateId: string, now: Date): Promise<number>;
   abstract createSessions(input: CreateSessionsInput[]): Promise<number>;
+  /** Создает одно занятие вручную, без шаблона (backfill или разовое занятие). */
+  abstract createSession(input: CreateSessionsInput): Promise<TrainingSessionRecord>;
   abstract updateSession(id: string, input: UpdateSessionInput): Promise<TrainingSessionRecord>;
   /** Обновляет занятие, только если оно еще не началось. */
   abstract updateFutureSession(
@@ -453,11 +457,37 @@ export class PrismaSchedulingRepository extends SchedulingRepository {
         scheduleTemplateId: session.scheduleTemplateId,
         startsAt: session.startsAt,
         endsAt: session.endsAt,
+        ...(session.changeReason ? { changeReason: session.changeReason } : {}),
       })),
       skipDuplicates: true,
     });
 
     return result.count;
+  }
+
+  /**
+   * Создает одно занятие вручную.
+   *
+   * Отдельный метод, а не `createSessions`: занятие возвращается целиком, потому
+   * что его сразу показывают в интерфейсе, и оно не связано с шаблоном.
+   */
+  async createSession(input: CreateSessionsInput): Promise<TrainingSessionRecord> {
+    const session = await this.prisma.db.trainingSession.create({
+      data: {
+        groupId: input.groupId,
+        branchId: input.branchId,
+        hallId: input.hallId,
+        trainerProfileId: input.trainerId,
+        scheduleTemplateId: input.scheduleTemplateId,
+        startsAt: input.startsAt,
+        endsAt: input.endsAt,
+        ...(input.changeReason ? { changeReason: input.changeReason } : {}),
+      },
+      select: SESSION_SELECT,
+    });
+
+    const [enriched] = await this.enrich([session]);
+    return enriched as TrainingSessionRecord;
   }
 
   async updateSession(id: string, input: UpdateSessionInput): Promise<TrainingSessionRecord> {

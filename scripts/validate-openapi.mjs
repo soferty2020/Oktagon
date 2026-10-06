@@ -156,6 +156,7 @@ const expectedRoutes = [
   ['patch', '/schedule-templates/{id}/slots/{slotId}'],
   ['delete', '/schedule-templates/{id}/slots/{slotId}'],
   ['get', '/training-sessions'],
+  ['post', '/training-sessions'],
   ['get', '/training-sessions/{id}'],
   ['patch', '/training-sessions/{id}/move'],
   ['post', '/training-sessions/{id}/cancel'],

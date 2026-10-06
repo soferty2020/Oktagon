@@ -8,6 +8,7 @@ import {
   type AddScheduleSlotInput,
   type CancelSessionInput,
   type CreateScheduleTemplateInput,
+  type CreateSessionInput,
   type GenerateSessionsInput,
   type GenerateSessionsResult,
   type ListSessionsQuery,
@@ -27,6 +28,9 @@ import { GroupsRepository } from '../groups/groups.repository';
 import { ResourceScopeService } from '../identity/resource-scope.service';
 import {
   intervalsOverlap,
+  localToUtc,
+  parseCalendarDate,
+  parseTime,
   quarterRange,
   slotOccurrences,
   timeToMinutes,
@@ -403,6 +407,165 @@ export class SchedulingService {
   }
 
   // --- Занятия -------------------------------------------------------------
+
+  /**
+   * Добавляет занятие вручную.
+   *
+   * Два сценария: занести занятие задним числом (клуб начал работать раньше, чем
+   * появилась система) и добавить разовое занятие вне квартального расписания.
+   * Такое занятие не связано с шаблоном, поэтому пересоздание расписания его не
+   * затрагивает.
+   *
+   * Время приходит локальным временем клуба и переводится в UTC здесь: иначе
+   * администратору пришлось бы самому считать смещение, и он бы ошибался.
+   */
+  async createSession(input: CreateSessionInput): Promise<TrainingSessionView> {
+    if (!(await this.groups.exists(input.groupId))) {
+      throw new ApiException('GROUP_NOT_FOUND' satisfies ApiErrorCode, 'Группа не найдена', {
+        groupId: input.groupId,
+      });
+    }
+
+    const { startsAt, endsAt } = this.resolveLocalRange(input.date, input.startTime, input.endTime);
+
+    if (endsAt <= startsAt) {
+      throw new ApiException(
+        'SCHEDULE_SLOT_INVALID_TIME' satisfies ApiErrorCode,
+        'Окончание занятия должно быть позже начала',
+      );
+    }
+
+    // Занятие задним числом может пересекаться с уже созданными: в прошлом
+    // расписание часто велось иначе. Накладку в будущем не допускаем.
+    if (startsAt.getTime() > Date.now()) {
+      const neighbour = await this.findOverlappingSession({
+        groupId: input.groupId,
+        startsAt,
+        endsAt,
+        hallId: input.hallId ?? null,
+        trainerId: input.trainerId ?? null,
+      });
+      if (neighbour) {
+        throw new ApiException(
+          'TRAINING_SESSION_CONFLICT' satisfies ApiErrorCode,
+          `В это время уже есть занятие группы «${neighbour.groupName}»`,
+          { sessionId: neighbour.id },
+        );
+      }
+    }
+
+    const branchId = await this.groups.findPrimaryBranchId(input.groupId);
+    const session = await this.schedule.createSession({
+      groupId: input.groupId,
+      branchId,
+      hallId: input.hallId ?? null,
+      trainerId: input.trainerId ?? null,
+      scheduleTemplateId: null,
+      startsAt,
+      endsAt,
+      changeReason: input.reason,
+    });
+
+    await this.audit.recordSafely({
+      action: AuditAction.SCHEDULE_SESSION_CREATED,
+      entityType: AuditEntityType.TRAINING_SESSION,
+      entityId: session.id,
+      after: {
+        groupId: input.groupId,
+        startsAt: startsAt.toISOString(),
+        localDate: input.date,
+        localTime: input.startTime,
+        manual: true,
+        reason: input.reason,
+      },
+    });
+
+    this.logger.log(
+      `Занятие добавлено вручную: ${input.date} ${input.startTime} (группа ${input.groupId})`,
+    );
+
+    return this.toSessionView(session);
+  }
+
+  /** Локальные дату и время клуба превращает в UTC-интервал. */
+  private resolveLocalRange(
+    date: string,
+    startTime: string,
+    endTime: string,
+  ): { startsAt: Date; endsAt: Date } {
+    let parsed: { year: number; month: number; day: number };
+    let start: { hour: number; minute: number };
+    let end: { hour: number; minute: number };
+
+    try {
+      parsed = parseCalendarDate(date);
+      start = parseTime(startTime);
+      end = parseTime(endTime);
+    } catch (error) {
+      throw new ApiException(
+        'SCHEDULE_SLOT_INVALID_TIME' satisfies ApiErrorCode,
+        error instanceof Error ? error.message : 'Некорректная дата или время',
+      );
+    }
+
+    const startsAt = localToUtc(
+      {
+        year: parsed.year,
+        month: parsed.month,
+        day: parsed.day,
+        hour: start.hour,
+        minute: start.minute,
+      },
+      this.timeZone,
+    );
+
+    const startMinutes = start.hour * 60 + start.minute;
+    const endMinutes = end.hour * 60 + end.minute;
+    // Окончание раньше начала означает занятие через полночь.
+    const duration =
+      endMinutes > startMinutes ? endMinutes - startMinutes : 24 * 60 - startMinutes + endMinutes;
+
+    return { startsAt, endsAt: new Date(startsAt.getTime() + duration * 60_000) };
+  }
+
+  /** Ищет занятие, пересекающееся по времени в той же группе, зале или у тренера. */
+  private async findOverlappingSession(candidate: {
+    groupId: string;
+    startsAt: Date;
+    endsAt: Date;
+    hallId: string | null;
+    trainerId: string | null;
+  }): Promise<TrainingSessionRecord | null> {
+    const neighbours = await this.schedule.listSessions({
+      from: new Date(candidate.startsAt.getTime() - 12 * 3_600_000),
+      to: new Date(candidate.endsAt.getTime() + 12 * 3_600_000),
+    });
+
+    for (const neighbour of neighbours) {
+      if (neighbour.status === PrismaSessionStatus.CANCELLED) {
+        continue;
+      }
+      const overlap = intervalsOverlap(
+        { start: candidate.startsAt.getTime(), end: candidate.endsAt.getTime() },
+        { start: neighbour.startsAt.getTime(), end: neighbour.endsAt.getTime() },
+      );
+      if (!overlap) {
+        continue;
+      }
+
+      if (neighbour.groupId === candidate.groupId) {
+        return neighbour;
+      }
+      if (candidate.trainerId && neighbour.trainerId === candidate.trainerId) {
+        return neighbour;
+      }
+      if (candidate.hallId && neighbour.hallId === candidate.hallId) {
+        return neighbour;
+      }
+    }
+
+    return null;
+  }
 
   async listSessions(
     callerUserId: string,

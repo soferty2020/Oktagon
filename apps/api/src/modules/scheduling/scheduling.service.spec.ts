@@ -85,6 +85,7 @@ describe('SchedulingService', () => {
       countStartedSessions: jest.fn().mockResolvedValue(0),
       deleteFutureSessions: jest.fn().mockResolvedValue(0),
       createSessions: jest.fn().mockImplementation((input: unknown[]) => input.length),
+      createSession: jest.fn().mockResolvedValue(session),
       updateSession: jest.fn().mockResolvedValue(session),
       updateFutureSession: jest.fn().mockResolvedValue(session),
     } as unknown as jest.Mocked<SchedulingRepository>;
@@ -437,6 +438,145 @@ describe('SchedulingService', () => {
       await service.generateSessions('admin-1', { templateId: 'template-1' });
 
       expect(repository.deleteFutureSessions).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('занятие, добавленное вручную (backfill)', () => {
+    /** Дата в прошлом: занятия задним числом не проверяются на накладки. */
+    const PAST_DATE = '2026-02-11';
+    /** Дата в будущем: накладку в будущем допускать нельзя. */
+    const futureDate = (() => {
+      const date = new Date(Date.now() + 10 * 86_400_000);
+      const pad = (value: number) => String(value).padStart(2, '0');
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    })();
+
+    it('заносит занятие задним числом и переводит локальное время в UTC', async () => {
+      await service.createSession({
+        groupId: 'group-1',
+        date: PAST_DATE,
+        startTime: '18:00',
+        endTime: '19:30',
+        reason: 'Занесение за прошлый месяц',
+      });
+
+      expect(repository.createSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          groupId: 'group-1',
+          // 18:00 Алматы = 13:00 UTC.
+          startsAt: new Date('2026-02-11T13:00:00.000Z'),
+          endsAt: new Date('2026-02-11T14:30:00.000Z'),
+          // Занятие вручную не связано с шаблоном: пересоздание его не тронет.
+          scheduleTemplateId: null,
+          changeReason: 'Занесение за прошлый месяц',
+        }),
+      );
+      expect(audit.recordSafely).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'schedule.session_created' }),
+      );
+    });
+
+    it('поддерживает занятие через полночь', async () => {
+      await service.createSession({
+        groupId: 'group-1',
+        date: PAST_DATE,
+        startTime: '22:00',
+        endTime: '00:30',
+        reason: 'Вечерняя тренировка',
+      });
+
+      const [input] = repository.createSession.mock.calls[0] as [{ startsAt: Date; endsAt: Date }];
+      expect(input.startsAt.toISOString()).toBe('2026-02-11T17:00:00.000Z');
+      expect(input.endsAt.toISOString()).toBe('2026-02-11T19:30:00.000Z');
+    });
+
+    it('наследует основной филиал группы', async () => {
+      await service.createSession({
+        groupId: 'group-1',
+        date: PAST_DATE,
+        startTime: '18:00',
+        endTime: '19:30',
+        reason: 'Занесение',
+      });
+
+      expect(groups.findPrimaryBranchId).toHaveBeenCalledWith('group-1');
+      expect(repository.createSession).toHaveBeenCalledWith(
+        expect.objectContaining({ branchId: 'branch-1' }),
+      );
+    });
+
+    it('не проверяет накладки для занятия задним числом', async () => {
+      // В прошлом расписание часто велось иначе: накладка не должна мешать.
+      repository.listSessions.mockResolvedValue([
+        {
+          ...session,
+          groupId: 'group-1',
+          startsAt: new Date('2026-02-11T13:00:00.000Z'),
+          endsAt: new Date('2026-02-11T14:30:00.000Z'),
+        },
+      ]);
+
+      await service.createSession({
+        groupId: 'group-1',
+        date: PAST_DATE,
+        startTime: '18:00',
+        endTime: '19:30',
+        reason: 'Занесение',
+      });
+
+      expect(repository.createSession).toHaveBeenCalled();
+    });
+
+    it('отклоняет накладку для занятия в будущем', async () => {
+      repository.listSessions.mockResolvedValue([
+        {
+          ...session,
+          id: 'session-other',
+          groupId: 'group-2',
+          groupName: 'Другая группа',
+          hallId: 'hall-1',
+          startsAt: new Date(`${futureDate}T13:00:00.000Z`),
+          endsAt: new Date(`${futureDate}T14:30:00.000Z`),
+        },
+      ]);
+
+      await expect(
+        service.createSession({
+          groupId: 'group-1',
+          date: futureDate,
+          startTime: '18:00',
+          endTime: '19:30',
+          hallId: 'hall-1',
+          reason: 'Разовое занятие',
+        }),
+      ).rejects.toMatchObject({ code: 'TRAINING_SESSION_CONFLICT' });
+      expect(repository.createSession).not.toHaveBeenCalled();
+    });
+
+    it('отклоняет некорректную дату', async () => {
+      await expect(
+        service.createSession({
+          groupId: 'group-1',
+          date: '11.02.2026',
+          startTime: '18:00',
+          endTime: '19:30',
+          reason: 'Занесение',
+        }),
+      ).rejects.toMatchObject({ code: 'SCHEDULE_SLOT_INVALID_TIME' });
+    });
+
+    it('отклоняет занятие неизвестной группы', async () => {
+      groups.exists.mockResolvedValue(false);
+
+      await expect(
+        service.createSession({
+          groupId: 'ghost',
+          date: PAST_DATE,
+          startTime: '18:00',
+          endTime: '19:30',
+          reason: 'Занесение',
+        }),
+      ).rejects.toMatchObject({ code: 'GROUP_NOT_FOUND' });
     });
   });
 

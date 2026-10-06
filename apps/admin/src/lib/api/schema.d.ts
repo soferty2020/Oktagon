@@ -858,7 +858,20 @@ export interface paths {
          */
         get: operations["listTrainingSessions"];
         put?: never;
-        post?: never;
+        /**
+         * Добавить занятие вручную
+         * @description Два сценария: занести занятие задним числом (клуб начал работать раньше,
+         *     чем появилась система) и добавить разовое занятие вне квартального
+         *     расписания.
+         *
+         *     Время задается локальным временем клуба, а не UTC. Занятие не связано с
+         *     шаблоном (`fromTemplate` = false), поэтому пересоздание расписания его не
+         *     затрагивает.
+         *
+         *     Накладка проверяется только для занятия в будущем: в прошлом расписание
+         *     часто велось иначе, и запрет мешал бы занести историю.
+         */
+        post: operations["createTrainingSession"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2069,6 +2082,39 @@ export interface components {
              *     Отмененные вручную занятия сохраняются.
              */
             regenerate?: boolean;
+        };
+        /**
+         * @description Занятие, добавленное вручную: задним числом или разово вне расписания.
+         *     Время задается локальным временем клуба, а не UTC. Занятие не связано с
+         *     шаблоном, поэтому пересоздание расписания его не затрагивает.
+         */
+        CreateSessionRequest: {
+            /** Format: uuid */
+            groupId: string;
+            /**
+             * Format: date
+             * @example 2026-10-07
+             */
+            date: string;
+            /** @example 18:00 */
+            startTime: string;
+            /**
+             * @description Допускается переход через полночь
+             * @example 19:30
+             */
+            endTime: string;
+            /** Format: uuid */
+            hallId?: string;
+            /**
+             * Format: uuid
+             * @description Идентификатор профиля тренера, не аккаунта
+             */
+            trainerId?: string;
+            /**
+             * @description Причина попадает в карточку занятия
+             * @example Занесение занятий за прошлый месяц
+             */
+            reason: string;
         };
         GenerateSessionsResult: {
             created: number;
@@ -4668,6 +4714,70 @@ export interface operations {
             401: components["responses"]["Unauthenticated"];
             /** @description Нет права `schedule.view` (`FORBIDDEN`) */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    createTrainingSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description Занятие создано */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingSessionView"];
+                };
+            };
+            /**
+             * @description Ошибка валидации (`VALIDATION_FAILED`) или некорректные дата и время
+             *     (`SCHEDULE_SLOT_INVALID_TIME`).
+             */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `schedule.edit` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Группа не найдена (`GROUP_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Накладка в будущем (`TRAINING_SESSION_CONFLICT`) */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

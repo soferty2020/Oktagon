@@ -144,6 +144,49 @@ export class ListSessionsQueryDto {
   status?: TrainingSessionStatus;
 }
 
+/**
+ * Занятие, добавленное вручную.
+ *
+ * Время задается локальным временем клуба: администратор вводит «7 октября
+ * 18:00», а не UTC. Нужно для занятий задним числом (клуб начал работать
+ * раньше, чем появилась система) и для разовых занятий вне расписания.
+ */
+export class CreateSessionDto {
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID()
+  groupId!: string;
+
+  @ApiProperty({ description: 'Календарная дата, YYYY-MM-DD', example: '2026-10-07' })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'date должен быть датой в формате YYYY-MM-DD' })
+  date!: string;
+
+  @ApiProperty({ example: '18:00' })
+  @Matches(TIME_PATTERN, { message: TIME_MESSAGE })
+  startTime!: string;
+
+  @ApiProperty({ example: '19:30', description: 'Допускается переход через полночь' })
+  @Matches(TIME_PATTERN, { message: TIME_MESSAGE })
+  endTime!: string;
+
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  hallId?: string;
+
+  @ApiPropertyOptional({ format: 'uuid', description: 'Профиль тренера, не аккаунт' })
+  @IsOptional()
+  @IsUUID()
+  trainerId?: string;
+
+  @ApiProperty({
+    description: 'Зачем добавлено занятие: попадает в карточку занятия',
+    example: 'Занесение занятий за прошлый месяц',
+  })
+  @IsString()
+  @MaxLength(500)
+  reason!: string;
+}
+
 /** Точечный перенос занятия (BR-009). */
 export class MoveSessionDto {
   @ApiProperty({ description: 'Новое начало, ISO-8601 (UTC)' })
