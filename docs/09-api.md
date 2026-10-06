@@ -20,6 +20,7 @@ REST JSON API, versioned prefix: `/api/v1`.
 - /membership-periods
 - /payments
 - /refunds
+- /finance (сводка за месяц)
 - /freezes
 - /news
 - /conversations

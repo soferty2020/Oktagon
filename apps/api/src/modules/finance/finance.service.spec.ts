@@ -103,6 +103,9 @@ describe('FinanceService', () => {
           { athleteId: 'athlete-1', joinedAt: new Date('2026-09-01'), leftAt: null },
         ]),
       hasGroupTrainingInMonth: jest.fn().mockResolvedValue(true),
+      listMovementsInRange: jest.fn().mockResolvedValue([]),
+      branchesForAthletes: jest.fn().mockResolvedValue(new Map()),
+      listBranches: jest.fn().mockResolvedValue([]),
     } as unknown as jest.Mocked<FinanceRepository>;
 
     freezes = { listFrozenAthleteIds: jest.fn().mockResolvedValue([]) };
@@ -530,6 +533,123 @@ describe('FinanceService', () => {
 
       expect(debtors[0]?.athleteId).toBe('athlete-1');
       expect(debtors[0]?.isDebtor).toBe(true);
+    });
+  });
+
+  describe('сводка за месяц (F8)', () => {
+    it('выручка считается по датам движений, возвраты вычитаются', async () => {
+      repository.listMovementsInRange.mockResolvedValue([
+        { kind: 'PAYMENT', amount: 25000, branchId: null },
+        { kind: 'PAYMENT', amount: 10000, branchId: null },
+        { kind: 'REFUND', amount: 5000, branchId: null },
+      ]);
+
+      const summary = await service.summary('admin-1', 2026, 10);
+
+      expect(summary.totals).toEqual({ received: 35000, refunded: 5000, revenue: 30000 });
+    });
+
+    it('считает задолженность и ожидания по должникам', async () => {
+      repository.listPeriodsForMonth.mockResolvedValue([
+        { ...period, expectedAmount: 25000, paidAmount: 10000 },
+      ]);
+
+      const summary = await service.summary('admin-1', 2026, 10);
+
+      expect(summary.debtors).toBe(1);
+      expect(summary.debt).toBe(15000);
+      expect(summary.expected).toBe(25000);
+      expect(summary.debtorsWithoutExpected).toBe(0);
+    });
+
+    it('выделяет должников без заданной ожидаемой суммы', async () => {
+      // Ожидание не задано: долг посчитать нельзя, и «нет долга» здесь означает
+      // незаполненное ожидание, а не оплату.
+      repository.listPeriodsForMonth.mockResolvedValue([]);
+
+      const summary = await service.summary('admin-1', 2026, 10);
+
+      expect(summary.debtors).toBe(1);
+      expect(summary.debtorsWithoutExpected).toBe(1);
+      expect(summary.debt).toBe(0);
+    });
+
+    it('раскладывает выручку и долг по филиалам', async () => {
+      repository.listBranches.mockResolvedValue([
+        { id: 'branch-1', name: 'Центр' },
+        { id: 'branch-2', name: 'Север' },
+      ]);
+      repository.listMovementsInRange.mockResolvedValue([
+        { kind: 'PAYMENT', amount: 20000, branchId: 'branch-1' },
+        { kind: 'PAYMENT', amount: 5000, branchId: 'branch-2' },
+      ]);
+      repository.listPeriodsForMonth.mockResolvedValue([
+        { ...period, expectedAmount: 25000, paidAmount: 0 },
+      ]);
+      repository.branchesForAthletes.mockResolvedValue(
+        new Map([['athlete-1', { branchId: 'branch-1', branchName: 'Центр' }]]),
+      );
+
+      const summary = await service.summary('admin-1', 2026, 10);
+      const center = summary.branches.find((branch) => branch.branchId === 'branch-1');
+      const north = summary.branches.find((branch) => branch.branchId === 'branch-2');
+
+      expect(center).toMatchObject({ received: 20000, debtors: 1, debt: 25000 });
+      expect(north).toMatchObject({ received: 5000, debtors: 0, debt: 0 });
+      // Филиал с движением, но без должников, остается в сводке: иначе
+      // сравнение филиалов было бы неполным.
+      expect(summary.branches).toHaveLength(2);
+      expect(summary.branches[0]?.branchId).toBe('branch-1');
+    });
+
+    it('спортсмен без филиала попадает в отдельную строку', async () => {
+      repository.listPeriodsForMonth.mockResolvedValue([
+        { ...period, expectedAmount: 25000, paidAmount: 0 },
+      ]);
+      repository.branchesForAthletes.mockResolvedValue(new Map());
+
+      const summary = await service.summary('admin-1', 2026, 10);
+
+      expect(summary.branches).toHaveLength(1);
+      expect(summary.branches[0]).toMatchObject({
+        branchId: null,
+        branchName: 'Филиал не назначен',
+        debtors: 1,
+      });
+    });
+
+    it('филиал без движения и долгов в сводку не попадает', async () => {
+      repository.listBranches.mockResolvedValue([
+        { id: 'branch-1', name: 'Центр' },
+        { id: 'branch-2', name: 'Пустой' },
+      ]);
+      // Должников нет: месяц отмечен оплаченным, поэтому строк филиалов быть не
+      // должно — пустые строки мешали бы сравнивать филиалы между собой.
+      repository.listPeriodsForMonth.mockResolvedValue([
+        { ...period, fullyPaidMarkedAt: new Date('2026-10-01') },
+      ]);
+
+      const summary = await service.summary('admin-1', 2026, 10);
+
+      expect(summary.debtors).toBe(0);
+      expect(summary.branches).toEqual([]);
+    });
+
+    it('считает активных спортсменов', async () => {
+      repository.listActiveAthletes.mockResolvedValue([
+        { athleteId: 'athlete-1', firstName: 'Али', lastName: 'Серик', status: 'ACTIVE' },
+        { athleteId: 'athlete-2', firstName: 'Берик', lastName: 'Абрамов', status: 'ARCHIVED' },
+      ]);
+
+      const summary = await service.summary('admin-1', 2026, 10);
+
+      expect(summary.activeAthletes).toBe(1);
+    });
+
+    it('отклоняет некорректный месяц', async () => {
+      await expect(service.summary('admin-1', 2026, 0)).rejects.toMatchObject({
+        code: 'VALIDATION_FAILED',
+      });
     });
   });
 });

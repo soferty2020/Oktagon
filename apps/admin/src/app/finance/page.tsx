@@ -20,26 +20,43 @@ interface DebtorSummary {
   year: number;
   month: number;
   paidAmount: number;
+  refundedAmount: number;
   expectedAmount: number | null;
   isDebtor: boolean;
   reason: string | null;
 }
 
-interface AthleteView {
-  id: string;
-  status: string;
+interface FinanceSummary {
+  year: number;
+  month: number;
+  totals: { received: number; refunded: number; revenue: number };
+  expected: number;
+  debtors: number;
+  debtorsWithoutExpected: number;
+  debt: number;
+  activeAthletes: number;
+  branches: {
+    branchId: string | null;
+    branchName: string;
+    received: number;
+    refunded: number;
+    revenue: number;
+    debtors: number;
+    debt: number;
+  }[];
 }
 
 /**
- * Финансы: сводка месяца и переходы в рабочие экраны (эпик F).
+ * Финансы: сводка месяца, сравнение филиалов и должники (эпик F, F8).
  *
- * Спецификация: BR-001 (учет по календарным месяцам), BR-004 (признаки
- * должника и причины освобождения), BR-010 (финансы видит только пользователь
- * с явным правом — ни одна роль, кроме суперадмина, его не имеет).
+ * Спецификация: BR-001 (учет по календарным месяцам), BR-004 (признаки должника
+ * и причины освобождения), BR-010 (финансы видит только пользователь с явным
+ * правом — ни одна роль, кроме суперадмина, его не имеет).
  *
- * Здесь нет таблицы периодов: месяца без оплат в ней просто не существует,
- * поэтому сводка считается по должникам, а работа с периодом ведется в карточке
- * спортсмена.
+ * В сводке два разных знаменателя, и в интерфейсе они подписаны явно:
+ * **выручка** — по датам движений («сколько денег прошло в этом месяце»),
+ * **задолженность** — по расчетному месяцу (BR-004). Смешивать их нельзя: иначе
+ * руководитель увидел бы «выручку», которой в кассе не было.
  */
 export default async function FinancePage({
   searchParams,
@@ -62,12 +79,10 @@ export default async function FinancePage({
   const canView = user.permissions.includes('payments.view');
   const canEdit = user.permissions.includes('payments.edit');
 
-  const [debts, athletes] = canView
+  const [summary, debts] = canView
     ? await Promise.all([
+        apiFetch<FinanceSummary>(`/finance/summary?${monthQuery(year, month)}`, { accessToken }),
         apiFetch<DebtorSummary[]>(`/debts?${monthQuery(year, month)}`, { accessToken }),
-        apiFetch<AthleteView[] | { items?: AthleteView[] }>('/athletes?status=ACTIVE', {
-          accessToken,
-        }),
       ])
     : [null, null];
 
@@ -85,20 +100,20 @@ export default async function FinancePage({
 
   const rows = debts?.ok ? debts.data : [];
   const debtors = rows.filter((row) => row.isDebtor);
-  const expectedTotal = debtors.reduce((sum, row) => sum + (row.expectedAmount ?? 0), 0);
-  const paidTotal = debtors.reduce((sum, row) => sum + row.paidAmount, 0);
-  const missingPeriods = debtors.filter((row) => row.expectedAmount === null).length;
-  const activeAthletes = athletes?.ok
-    ? Array.isArray(athletes.data)
-      ? athletes.data.length
-      : (athletes.data.items ?? []).length
-    : null;
+  const data = summary?.ok ? summary.data : null;
+  const branchRows = data?.branches ?? [];
+  // Масштаб для полосок сравнения: самый крупный филиал задает ширину.
+  const maxBranchRevenue = branchRows.reduce(
+    (max, branch) => Math.max(max, Math.abs(branch.revenue)),
+    0,
+  );
+  const maxBranchDebt = branchRows.reduce((max, branch) => Math.max(max, branch.debt), 0);
 
   return (
     <AppShell user={user}>
       <PageHeader
         title="Финансы"
-        description={`Расчетный месяц: ${formatMonth(year, month)}. Учет ведется по календарным месяцам (BR-001).`}
+        description={`Месяц: ${formatMonth(year, month)}. Выручка — по датам движений, задолженность — по расчетному месяцу (BR-004).`}
         actions={
           <Link
             href={`/finance/debtors?${monthQuery(year, month)}`}
@@ -121,6 +136,11 @@ export default async function FinancePage({
         </div>
       </div>
 
+      {summary && !summary.ok ? (
+        <div className="mt-4">
+          <Notice tone="error">{describeError(summary.error)}</Notice>
+        </div>
+      ) : null}
       {debts && !debts.ok ? (
         <div className="mt-4">
           <Notice tone="error">{describeError(debts.error)}</Notice>
@@ -129,28 +149,109 @@ export default async function FinancePage({
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryCard
-          title="Должников"
-          value={String(debtors.length)}
-          note={`с членством в месяце: ${rows.length}`}
-        />
-        <SummaryCard
-          title="Ожидается к оплате"
-          value={formatAmount(expectedTotal)}
+          title="Выручка за месяц"
+          value={formatAmount(data?.totals.revenue ?? 0)}
           note={
-            missingPeriods > 0 ? `без заданной суммы: ${missingPeriods}` : 'ожидание задано у всех'
+            data && data.totals.refunded > 0
+              ? `поступления ${formatAmount(data.totals.received)}, возвраты ${formatAmount(data.totals.refunded)}`
+              : 'поступления минус возвраты'
           }
         />
         <SummaryCard
-          title="Внесено должниками"
-          value={formatAmount(paidTotal)}
-          note="частичные оплаты учтены"
+          title="Задолженность"
+          value={formatAmount(data?.debt ?? 0)}
+          note={
+            data && data.debtorsWithoutExpected > 0
+              ? `без заданной суммы: ${data.debtorsWithoutExpected}`
+              : `ожидается за месяц: ${formatAmount(data?.expected ?? 0)}`
+          }
+          tone={data && data.debt > 0 ? 'alert' : 'default'}
+        />
+        <SummaryCard
+          title="Должников"
+          value={String(data?.debtors ?? debtors.length)}
+          note={`с членством в месяце: ${rows.length}`}
+          tone={data && data.debtors > 0 ? 'alert' : 'default'}
         />
         <SummaryCard
           title="Активных спортсменов"
-          value={activeAthletes === null ? '—' : String(activeAthletes)}
+          value={data === null ? '—' : String(data.activeAthletes)}
           note="по карточкам со статусом ACTIVE"
         />
       </div>
+
+      <section className="mt-8 rounded-xl border border-slate-200 bg-white">
+        <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200 px-4 py-3">
+          <h2 className="text-sm font-semibold text-slate-900">Сравнение филиалов</h2>
+          <p className="text-xs text-slate-500">
+            Выручка — по филиалу группы спортсмена; задолженность — по должникам филиала
+          </p>
+        </div>
+
+        {branchRows.length === 0 ? (
+          <p className="px-4 py-5 text-sm text-slate-500">
+            За {formatMonth(year, month)} нет ни движений средств, ни должников: сравнивать филиалы
+            не по чему.
+          </p>
+        ) : (
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+              <tr>
+                <th className="px-4 py-3">Филиал</th>
+                <th className="px-4 py-3">Выручка</th>
+                <th className="px-4 py-3">Поступления</th>
+                <th className="px-4 py-3">Возвраты</th>
+                <th className="px-4 py-3">Должников</th>
+                <th className="px-4 py-3">Задолженность</th>
+              </tr>
+            </thead>
+            <tbody>
+              {branchRows.map((branch) => (
+                <tr
+                  key={branch.branchId ?? 'no-branch'}
+                  className="border-b border-slate-100 last:border-0"
+                >
+                  <td className="px-4 py-3">
+                    <span className="font-medium text-slate-900">{branch.branchName}</span>
+                    {branch.branchId === null ? (
+                      <span className="mt-1 block text-xs text-slate-500">
+                        филиал не назначен — суммы не отнесены к филиалам
+                      </span>
+                    ) : null}
+                  </td>
+                  <td className="px-4 py-3 font-medium text-slate-900">
+                    {formatAmount(branch.revenue)}
+                    <ScaleBar
+                      value={branch.revenue}
+                      max={maxBranchRevenue}
+                      color={branch.revenue < 0 ? 'bg-red-400' : 'bg-emerald-500'}
+                    />
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">{formatAmount(branch.received)}</td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {branch.refunded > 0 ? (
+                      <span className="text-amber-700">{formatAmount(branch.refunded)}</span>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">{branch.debtors}</td>
+                  <td className="px-4 py-3">
+                    {branch.debt > 0 ? (
+                      <>
+                        <span className="text-red-700">{formatAmount(branch.debt)}</span>
+                        <ScaleBar value={branch.debt} max={maxBranchDebt} color="bg-red-400" />
+                      </>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
 
       <section className="mt-8 rounded-xl border border-slate-200 bg-white">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
@@ -171,7 +272,8 @@ export default async function FinancePage({
             <tr>
               <th className="px-4 py-3">Спортсмен</th>
               <th className="px-4 py-3">Ожидается</th>
-              <th className="px-4 py-3">Внесено</th>
+              <th className="px-4 py-3">Зачтено</th>
+              <th className="px-4 py-3">Возвращено</th>
               <th className="px-4 py-3">Состояние</th>
               <th className="px-4 py-3" />
             </tr>
@@ -179,7 +281,7 @@ export default async function FinancePage({
           <tbody>
             {debtors.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-6">
+                <td colSpan={6} className="px-4 py-6">
                   <Notice>
                     Должников за {formatMonth(year, month)} нет. Это может означать, что оплаты
                     внесены, месяцы отмечены оплаченными, спортсмены в заморозке или занятий в
@@ -198,8 +300,21 @@ export default async function FinancePage({
                       {row.lastName} {row.firstName}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{formatAmount(row.expectedAmount)}</td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {row.expectedAmount === null ? (
+                      <span className="text-amber-700">не задана</span>
+                    ) : (
+                      formatAmount(row.expectedAmount)
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-slate-600">{formatAmount(row.paidAmount)}</td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {row.refundedAmount > 0 ? (
+                      <span className="text-amber-700">{formatAmount(row.refundedAmount)}</span>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     {row.paidAmount > 0 ? (
                       <PeriodStatusBadge status="PARTIALLY_PAID" />
@@ -239,12 +354,54 @@ export default async function FinancePage({
 }
 
 /** Карточка сводки: одно число и короткое пояснение к нему. */
-function SummaryCard({ title, value, note }: { title: string; value: string; note: string }) {
+function SummaryCard({
+  title,
+  value,
+  note,
+  tone = 'default',
+}: {
+  title: string;
+  value: string;
+  note: string;
+  tone?: 'default' | 'alert';
+}) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5">
       <p className="text-sm text-slate-500">{title}</p>
-      <p className="mt-2 text-2xl font-semibold text-slate-900">{value}</p>
+      <p
+        className={
+          tone === 'alert'
+            ? 'mt-2 text-2xl font-semibold text-red-700'
+            : 'mt-2 text-2xl font-semibold text-slate-900'
+        }
+      >
+        {value}
+      </p>
       <p className="mt-1 text-xs text-slate-500">{note}</p>
     </div>
+  );
+}
+
+/**
+ * Полоска масштаба рядом с суммой.
+ *
+ * Сравнивать филиалы числами в столбце неудобно: разницу видно только при
+ * чтении. Полоска показывает долю от самого крупного филиала, а знак сохраняется
+ * — отрицательная выручка (возвратов больше, чем поступлений) остается заметной.
+ */
+function ScaleBar({ value, max, color }: { value: number; max: number; color: string }) {
+  if (max <= 0 || value === 0) {
+    return null;
+  }
+
+  const share = Math.min(Math.abs(value) / max, 1);
+
+  return (
+    <span className="mt-2 block h-1.5 w-full rounded-full bg-slate-100">
+      <span
+        className={`block h-1.5 rounded-full ${color}`}
+        style={{ width: `${Math.round(share * 100)}%` }}
+      />
+    </span>
   );
 }

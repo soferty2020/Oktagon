@@ -112,6 +112,50 @@ async function main() {
     'разделы доступны суперадмину',
   );
 
+  // Сводка F8: выручка, сравнение филиалов и разные знаменатели у выручки и долга.
+  check(
+    finance.html.includes('Выручка за месяц') && finance.html.includes('Задолженность'),
+    'сводка показывает выручку и задолженность',
+  );
+  check(
+    finance.html.includes('Сравнение филиалов') &&
+      finance.html.includes('Выручка — по филиалу группы спортсмена'),
+    'на экране есть сравнение филиалов с пояснением, откуда берется филиал',
+  );
+  check(
+    finance.html.includes('Выручка — по датам движений, задолженность — по расчетному месяцу'),
+    'экран объясняет, что выручка и задолженность считаются по разным знаменателям',
+  );
+  check(
+    finance.html.includes('СРАВНЕНИЕ ФИЛИАЛОВ') ||
+      finance.html.includes('Сравнение филиалов') ||
+      finance.html.includes('нет ни движений средств'),
+    'таблица филиалов отдается или объясняет пустоту',
+  );
+
+  const summaryViaApi = await apiCall(
+    api,
+    token,
+    'GET',
+    `/finance/summary?year=${year}&month=${month}`,
+  );
+  check(
+    summaryViaApi.status === 200 &&
+      summaryViaApi.body?.totals?.revenue ===
+        summaryViaApi.body?.totals?.received - summaryViaApi.body?.totals?.refunded,
+    `сводка как API: выручка ${summaryViaApi.body?.totals?.revenue}, должников ${summaryViaApi.body?.debtors}`,
+  );
+
+  const overview = await fetchHtml(admin, '/', cookie);
+  check(
+    overview.html.includes('Финансы за') && overview.html.includes('Выручка за месяц'),
+    'обзор админки показывает выручку месяца из сводки',
+  );
+  check(
+    overview.html.includes('задолженность — по расчетному месяцу'),
+    'обзор объясняет, что долг не исчезает от оплаты в другом месяце',
+  );
+
   // --- Список должников: причины освобождения (BR-004) ----------------------
   const debtors = await fetchHtml(admin, `/finance/debtors?year=${year}&month=${month}`, cookie);
   check(debtors.status === 200, `список должников отдается: ${debtors.status}`);

@@ -155,6 +155,32 @@ export abstract class FinanceRepository {
   ): Promise<{ athleteId: string; joinedAt: Date; leftAt: Date | null }[]>;
   /** Есть ли занятия группы спортсмена в месяце (BR-004, условие 3). */
   abstract hasGroupTrainingInMonth(athleteId: string, from: Date, to: Date): Promise<boolean>;
+
+  // --- Сводка (F8) ----------------------------------------------------------
+
+  /**
+   * Движения средств, dated в диапазоне, с филиалом получателя.
+   *
+   * Отбор идет по дате движения (`paidAt`), а не по расчетному периоду: сводка
+   * отвечает на вопрос «сколько денег прошло в этом месяце», а не «сколько
+   * начислено за этот месяц». Филлиал определяется основным филиалом группы
+   * спортсмена на момент запроса.
+   */
+  abstract listMovementsInRange(
+    from: Date,
+    to: Date,
+  ): Promise<{ kind: PaymentKind; amount: number; branchId: string | null }[]>;
+  /**
+   * Основной филиал каждого спортсмена: `null` — филиал не назначен.
+   *
+   * Возвращается словарем: сводка раскладывает должников по филиалам, а
+   * спортсмен без филиала должен попасть в отдельную строку, а не исчезнуть.
+   */
+  abstract branchesForAthletes(
+    athleteIds: string[],
+  ): Promise<Map<string, { branchId: string; branchName: string }>>;
+  /** Названия филиалов: нужны, чтобы показать движение без должников. */
+  abstract listBranches(): Promise<{ id: string; name: string }[]>;
 }
 
 const PAYMENT_SELECT = {
@@ -485,6 +511,91 @@ export class PrismaFinanceRepository extends FinanceRepository {
     });
 
     return session !== null;
+  }
+
+  async listMovementsInRange(
+    from: Date,
+    to: Date,
+  ): Promise<{ kind: PaymentKind; amount: number; branchId: string | null }[]> {
+    const movements = await this.prisma.db.paymentTransaction.findMany({
+      where: { paidAt: { gte: from, lt: to } },
+      select: {
+        kind: true,
+        amount: true,
+        athlete: {
+          select: {
+            memberships: {
+              where: { state: 'ACTIVE' },
+              orderBy: { joinedAt: 'desc' },
+              take: 1,
+              select: {
+                group: {
+                  select: {
+                    branches: {
+                      // Основной филиал группы; если он не отмечен, берется
+                      // первый по порядку — иначе оплата выпала бы из разбивки.
+                      orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
+                      take: 1,
+                      select: { branchId: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return movements.map((movement) => ({
+      kind: movement.kind,
+      amount: Number(movement.amount),
+      branchId: movement.athlete.memberships[0]?.group.branches[0]?.branchId ?? null,
+    }));
+  }
+
+  async branchesForAthletes(
+    athleteIds: string[],
+  ): Promise<Map<string, { branchId: string; branchName: string }>> {
+    if (athleteIds.length === 0) {
+      return new Map();
+    }
+
+    const memberships = await this.prisma.db.groupMembership.findMany({
+      where: { athleteId: { in: athleteIds }, state: 'ACTIVE' },
+      orderBy: { joinedAt: 'desc' },
+      select: {
+        athleteId: true,
+        group: {
+          select: {
+            branches: {
+              orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
+              take: 1,
+              select: { branch: { select: { id: true, name: true } } },
+            },
+          },
+        },
+      },
+    });
+
+    const result = new Map<string, { branchId: string; branchName: string }>();
+    for (const membership of memberships) {
+      // Первое членство для каждого спортсмена: выборка отсортирована по дате
+      // вступления, поэтому более позднее членство перекрывает раннее.
+      const branch = membership.group.branches[0]?.branch;
+      if (branch && !result.has(membership.athleteId)) {
+        result.set(membership.athleteId, { branchId: branch.id, branchName: branch.name });
+      }
+    }
+    return result;
+  }
+
+  async listBranches(): Promise<{ id: string; name: string }[]> {
+    return this.prisma.db.branch.findMany({
+      where: { archivedAt: null },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true },
+    });
   }
 }
 

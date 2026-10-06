@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
 import { apiFetch, describeError } from '@/lib/api/client';
-import { formatAmount } from '@/lib/money';
+import { formatAmount, MONTH_NAMES } from '@/lib/money';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
 
 export const metadata = {
@@ -12,10 +12,11 @@ export const metadata = {
 
 type Collection = { meta?: { total?: number } };
 
-interface DebtorSummary {
-  isDebtor: boolean;
-  paidAmount: number;
-  expectedAmount: number | null;
+interface FinanceSummary {
+  totals: { received: number; refunded: number; revenue: number };
+  debtors: number;
+  debt: number;
+  activeAthletes: number;
 }
 
 /**
@@ -40,12 +41,12 @@ export default async function DashboardPage() {
   const year = now.getUTCFullYear();
   const month = now.getUTCMonth() + 1;
 
-  const [branches, groups, athletes, debts] = await Promise.all([
+  const [branches, groups, athletes, finance] = await Promise.all([
     apiFetch<Collection>('/branches', { accessToken }),
     apiFetch<Collection>('/groups', { accessToken }),
     apiFetch<Collection>('/athletes', { accessToken }),
     canViewFinance
-      ? apiFetch<DebtorSummary[]>(`/debts?year=${year}&month=${month}`, { accessToken })
+      ? apiFetch<FinanceSummary>(`/finance/summary?year=${year}&month=${month}`, { accessToken })
       : Promise.resolve(null),
   ]);
 
@@ -55,11 +56,7 @@ export default async function DashboardPage() {
     { title: 'Спортсмены', href: '/athletes', result: athletes },
   ];
 
-  const debtors = (debts?.ok ? debts.data : []).filter((row) => row.isDebtor);
-  const debtTotal = debtors.reduce(
-    (sum, row) => sum + Math.max((row.expectedAmount ?? 0) - row.paidAmount, 0),
-    0,
-  );
+  const financeData = finance?.ok ? finance.data : null;
 
   return (
     <AppShell user={user}>
@@ -86,27 +83,57 @@ export default async function DashboardPage() {
       {canViewFinance ? (
         <section className="mt-8 rounded-xl border border-slate-200 bg-white p-5">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-sm font-semibold text-slate-900">Финансы текущего месяца</h2>
+            <h2 className="text-sm font-semibold text-slate-900">
+              Финансы за {MONTH_NAMES[month - 1]} {year}
+            </h2>
             <Link href="/finance" className="text-sm text-slate-500 underline hover:text-slate-900">
               Открыть финансы →
             </Link>
           </div>
 
-          {debts && !debts.ok ? (
-            <p className="mt-2 text-sm text-red-600">{describeError(debts.error)}</p>
+          {finance && !finance.ok ? (
+            <p className="mt-2 text-sm text-red-600">{describeError(finance.error)}</p>
           ) : (
-            <div className="mt-3 flex flex-wrap gap-8">
-              <div>
-                <p className="text-sm text-slate-500">Должников</p>
-                <p className="mt-1 text-2xl font-semibold text-slate-900">{debtors.length}</p>
+            <>
+              <div className="mt-3 flex flex-wrap gap-8">
+                <div>
+                  <p className="text-sm text-slate-500">Выручка за месяц</p>
+                  <p className="mt-1 text-2xl font-semibold text-slate-900">
+                    {formatAmount(financeData?.totals.revenue ?? 0)}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {financeData && financeData.totals.refunded > 0
+                      ? `возвраты ${formatAmount(financeData.totals.refunded)} учтены`
+                      : 'поступления минус возвраты'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Должников</p>
+                  <p className="mt-1 text-2xl font-semibold text-slate-900">
+                    {financeData?.debtors ?? 0}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    активных спортсменов: {financeData?.activeAthletes ?? 0}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Недостает по ожидаемым суммам</p>
+                  <p
+                    className={
+                      financeData && financeData.debt > 0
+                        ? 'mt-1 text-2xl font-semibold text-red-700'
+                        : 'mt-1 text-2xl font-semibold text-slate-900'
+                    }
+                  >
+                    {formatAmount(financeData?.debt ?? 0)}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-slate-500">Недостает по ожидаемым суммам</p>
-                <p className="mt-1 text-2xl font-semibold text-slate-900">
-                  {formatAmount(debtTotal)}
-                </p>
-              </div>
-            </div>
+              <p className="mt-3 text-xs text-slate-500">
+                Выручка считается по датам движений, задолженность — по расчетному месяцу (BR-004):
+                долг за прошлый месяц не исчезает от того, что его закрыли в этом.
+              </p>
+            </>
           )}
         </section>
       ) : null}

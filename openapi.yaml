@@ -3051,6 +3051,57 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
 
+  /finance/summary:
+    get:
+      tags: [finance]
+      summary: Сводка финансов за месяц
+      description: |
+        Основа dashboard руководителя (F8). Два разных знаменателя считаются
+        осознанно:
+
+        - **выручка — по датам движений**: это отчет о том, сколько денег прошло
+          в этом месяце, включая оплаты за прошлые периоды. Начисление за месяц и
+          деньги, полученные в месяце, — разные вопросы;
+        - **задолженность — по расчетному месяцу** (BR-004): долг за сентябрь
+          остается сентябрьским, даже если его закрыли в октябре.
+
+        Филиал берется у группы спортсмена. Спортсмен без группы или без
+        филиала попадает в отдельную строку «Филиал не назначен»: приписать его
+        суммы первому филиалу значило бы показать чужие деньги как свои.
+        Филиалы без движения и без должников не возвращаются.
+      operationId: getFinanceSummary
+      parameters:
+        - name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+            example: 2026
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+      responses:
+        '200':
+          description: Сводка с разбивкой по филиалам
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceSummary'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: |
+            Нет права `payments.view` (`FORBIDDEN`). BR-010: в сводке суммы
+            выручки и задолженности, поэтому `analytics.view` недостаточно.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
   /athletes/{id}/freezes:
     get:
       tags: [freezes]
@@ -4209,6 +4260,90 @@ components:
       type: string
       description: ADR-0010 — направление движения средств
       enum: [PAYMENT, REFUND]
+
+    FinanceTotals:
+      type: object
+      description: |
+        Денежные итоги за период по датам движений. Начисление за месяц и
+        деньги, полученные в месяце, — разные вопросы, поэтому выручка не
+        смешивается с ожидаемыми суммами.
+      required: [received, refunded, revenue]
+      properties:
+        received:
+          type: number
+          description: Поступления за период
+        refunded:
+          type: number
+          description: Возвраты за период (ADR-0010)
+        revenue:
+          type: number
+          description: Выручка = поступления − возвраты
+
+    BranchFinanceSummary:
+      type: object
+      description: Денежные итоги филиала — для сравнения филиалов между собой
+      required: [branchId, branchName, received, refunded, revenue, debtors, debt]
+      properties:
+        branchId:
+          type: string
+          format: uuid
+          nullable: true
+          description: |
+            Основной филиал группы спортсмена. null — филиал не назначен: такие
+            суммы сведены в отдельную строку, чтобы их не приняли за деньги
+            конкретного филиала.
+        branchName:
+          type: string
+        received:
+          type: number
+        refunded:
+          type: number
+        revenue:
+          type: number
+        debtors:
+          type: number
+          description: Должников среди спортсменов филиала
+        debt:
+          type: number
+          description: Сколько недостает по ожидаемым суммам
+
+    FinanceSummary:
+      type: object
+      description: |
+        Сводка финансов за месяц (F8). Выручка считается по датам движений,
+        задолженность — по расчетному месяцу (BR-004).
+      required: [year, month, totals, expected, debtors, debtorsWithoutExpected, debt, activeAthletes, branches]
+      properties:
+        year:
+          type: integer
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        totals:
+          $ref: '#/components/schemas/FinanceTotals'
+        expected:
+          type: number
+          description: Ожидается к оплате по расчетному месяцу
+        debtors:
+          type: number
+        debtorsWithoutExpected:
+          type: number
+          description: |
+            Должники без заданной ожидаемой суммы: им долг посчитать нельзя, и
+            «нет долга» здесь означает не оплату, а незаполненное ожидание
+        debt:
+          type: number
+          description: Недостает по ожидаемым суммам у должников
+        activeAthletes:
+          type: number
+        branches:
+          type: array
+          description: |
+            Разбивка по филиалам; филиалы без движения и без должников не
+            возвращаются, чтобы пустые строки не мешали сравнению
+          items:
+            $ref: '#/components/schemas/BranchFinanceSummary'
 
     DebtorSummary:
       type: object

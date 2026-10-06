@@ -4,6 +4,7 @@ import { FreezesModule } from '../freezes/freezes.module';
 import { IdentityModule } from '../identity/identity.module';
 import {
   DebtsController,
+  FinanceSummaryController,
   MembershipPeriodActionsController,
   MembershipPeriodsController,
   PaymentsController,
@@ -31,6 +32,7 @@ import { FinanceService } from './finance.service';
     PaymentsController,
     RefundsController,
     DebtsController,
+    FinanceSummaryController,
   ],
   providers: [
     FinanceService,

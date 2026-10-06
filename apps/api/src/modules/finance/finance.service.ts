@@ -5,7 +5,10 @@ import {
   AuditEntityType,
   DebtorExemption,
   PaymentKind,
+  type BranchFinanceSummary,
   type DebtorSummary,
+  type FinanceSummary,
+  type FinanceTotals,
   type MembershipPeriodView,
   type PaymentMethod,
   type PaymentView,
@@ -557,6 +560,132 @@ export class FinanceService {
     );
   }
 
+  // --- Сводка за месяц (F8) -------------------------------------------------
+
+  /**
+   * Сводка финансов за месяц: деньги, задолженность и разбивка по филиалам.
+   *
+   * Два разных знаменателя считаются осознанно:
+   *
+   * - **выручка — по датам движений**: отчет о том, сколько денег прошло в этом
+   *   месяце, включая оплаты за прошлые периоды. Начисление за месяц и деньги,
+   *   полученные в месяце, — разные вопросы, и смешивать их нельзя: иначе
+   *   руководитель видел бы «выручку», которой в кассе не было;
+   * - **задолженность — по расчетному месяцу**: долг за сентябрь остается
+   *   сентябрьским, даже если его закрыли в октябре. Это решение BR-004, и
+   *   переносить его в отчет о движении денег не следует.
+   *
+   * Филиал берется у группы спортсмена. Спортсмен без группы или без филиала
+   * попадает в отдельную строку «Филиал не назначен»: приписать его суммы
+   * первому филиалу значило бы показать чужие деньги как свои.
+   */
+  async summary(callerUserId: string, year: number, month: number): Promise<FinanceSummary> {
+    this.assertMonth(month);
+
+    const from = new Date(Date.UTC(year, month - 1, 1));
+    const to = new Date(Date.UTC(year, month, 1));
+
+    const [debtors, movements, athletes, branches] = await Promise.all([
+      this.listDebtors(callerUserId, year, month),
+      this.finance.listMovementsInRange(from, to),
+      this.finance.listActiveAthletes(),
+      this.finance.listBranches(),
+    ]);
+
+    const totals = movements.reduce<FinanceTotals>(
+      (acc, movement) => {
+        if (movement.kind === PaymentKind.REFUND) {
+          acc.refunded += movement.amount;
+        } else {
+          acc.received += movement.amount;
+        }
+        acc.revenue = acc.received - acc.refunded;
+        return acc;
+      },
+      { received: 0, refunded: 0, revenue: 0 },
+    );
+
+    // Расходы на филиалы: выручка по филиалу движения, задолженность — по
+    // филиалу спортсмена. Спортсмены без филиала сведены в одну строку.
+    const debtorsOnly = debtors.filter((row) => row.isDebtor);
+    const branchByAthlete = await this.finance.branchesForAthletes(
+      debtorsOnly.map((row) => row.athleteId),
+    );
+
+    const byBranch = new Map<string, BranchFinanceSummary>();
+    const ensureBranch = (branchId: string | null, branchName: string): BranchFinanceSummary => {
+      const key = branchId ?? NO_BRANCH_KEY;
+      const existing = byBranch.get(key);
+      if (existing) {
+        return existing;
+      }
+
+      const created: BranchFinanceSummary = {
+        branchId,
+        branchName,
+        received: 0,
+        refunded: 0,
+        revenue: 0,
+        debtors: 0,
+        debt: 0,
+      };
+      byBranch.set(key, created);
+      return created;
+    };
+
+    // Филиалы заводятся заранее: движение по филиалу без должников тоже должно
+    // попасть в сводку, иначе сравнение филиалов было бы неполным.
+    for (const branch of branches) {
+      ensureBranch(branch.id, branch.name);
+    }
+
+    const branchNameById = new Map(branches.map((branch) => [branch.id, branch.name]));
+
+    for (const movement of movements) {
+      const branchId = movement.branchId;
+      const row = ensureBranch(
+        branchId,
+        branchId ? (branchNameById.get(branchId) ?? 'Филиал удален') : NO_BRANCH_NAME,
+      );
+      if (movement.kind === PaymentKind.REFUND) {
+        row.refunded += movement.amount;
+      } else {
+        row.received += movement.amount;
+      }
+      row.revenue = row.received - row.refunded;
+    }
+
+    for (const debtor of debtorsOnly) {
+      const branch = branchByAthlete.get(debtor.athleteId) ?? null;
+      const row = ensureBranch(branch?.branchId ?? null, branch?.branchName ?? NO_BRANCH_NAME);
+      row.debtors += 1;
+      row.debt += Math.max((debtor.expectedAmount ?? 0) - debtor.paidAmount, 0);
+    }
+
+    const expected = debtorsOnly.reduce((sum, row) => sum + (row.expectedAmount ?? 0), 0);
+    const debt = debtorsOnly.reduce(
+      (sum, row) => sum + Math.max((row.expectedAmount ?? 0) - row.paidAmount, 0),
+      0,
+    );
+
+    return {
+      year,
+      month,
+      totals,
+      expected,
+      debtors: debtorsOnly.length,
+      debtorsWithoutExpected: debtorsOnly.filter((row) => row.expectedAmount === null).length,
+      debt,
+      activeAthletes: athletes.filter((athlete) => athlete.status === PrismaAthleteStatus.ACTIVE)
+        .length,
+      // Филиал без движения и без должников не показывается: пустые строки
+      // мешали бы сравнивать филиалы между собой.
+      branches: [...byBranch.values()]
+        .filter((row) => row.received > 0 || row.refunded > 0 || row.debtors > 0)
+        .sort((a, b) => b.revenue - a.revenue || a.branchName.localeCompare(b.branchName)),
+    };
+  }
+
   // --- Вспомогательное -----------------------------------------------------
 
   private async ensurePeriod(
@@ -663,7 +792,15 @@ export class FinanceService {
 }
 
 /**
- * Статус периода выводится из движений и ручной отметки, а не вводится руками.
+ * Филиалы в сводке: у спортсмена без группы или без филиала своя строка.
+ *
+ * Ключ не пересекается с UUID филиалов, поэтому «без филиала» не может слиться с
+ * настоящим филиалом.
+ */
+const NO_BRANCH_KEY = '__no_branch__';
+const NO_BRANCH_NAME = 'Филиал не назначен';
+
+/** Статус периода выводится из движений и ручной отметки, а не вводится руками.
  *
  * ADR-0010: `paidAmount` здесь — уже нетто (поступления минус возвраты), поэтому
  * полный возврат возвращает период в `UNPAID`, а не оставляет его оплаченным.

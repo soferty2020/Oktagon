@@ -176,6 +176,7 @@ const expectedRoutes = [
   ['delete', '/payments/{paymentId}'],
   ['delete', '/refunds/{refundId}'],
   ['get', '/debts'],
+  ['get', '/finance/summary'],
   ['get', '/athletes/{id}/freezes'],
   ['post', '/athletes/{id}/freezes'],
   ['post', '/freezes/{freezeId}/close'],
@@ -183,7 +184,9 @@ const expectedRoutes = [
 
 for (const [method, route] of expectedRoutes) {
   if (!paths[route]?.[method]) {
-    problems.push(`в контракте отсутствует реализованный маршрут: ${method.toUpperCase()} ${route}`);
+    problems.push(
+      `в контракте отсутствует реализованный маршрут: ${method.toUpperCase()} ${route}`,
+    );
   }
 }
 

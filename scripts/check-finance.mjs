@@ -421,7 +421,99 @@ async function main() {
     `возврат по оплате другого периода отклонен: ${foreignRefund.status} ${foreignRefund.body?.code}`,
   );
 
+  // --- Сводка за месяц (F8) ---------------------------------------------
+  // Выручка считается по датам движений, задолженность — по расчетному месяцу.
+  // Проверка идет на отдельном спортсмене в группе, привязанной к филиалу:
+  // иначе выручку не к чему относить и разбивка по филиалам не проверяется.
+  const branches = await call('GET', '/branches');
+  const branchId = branches.body?.items?.[0]?.id ?? branches.body?.[0]?.id;
+  check(Boolean(branchId), `филиал для проверки найден: ${branchId}`);
+
+  const branchGroup = await call('POST', '/groups', {
+    name: `Группа филиала ${stamp}`,
+  });
+  await call('POST', `/groups/${branchGroup.body.id}/branches`, {
+    branchId,
+    isPrimary: true,
+  });
+  const branchAthlete = await call('POST', '/athletes', {
+    firstName: 'Филиальный',
+    lastName: `Финансов ${stamp}`,
+  });
+  await call('POST', `/groups/${branchGroup.body.id}/members`, {
+    athleteId: branchAthlete.body.id,
+    joinedAt: calendar(joinDate),
+  });
+  await call('POST', '/training-sessions', {
+    groupId: branchGroup.body.id,
+    date: calendar(sessionDate),
+    startTime: '20:00',
+    endTime: '21:00',
+    reason: `Проверка сводки ${stamp}`,
+  });
+
+  const branchPeriod = await call(
+    'GET',
+    `/athletes/${branchAthlete.body.id}/membership-periods/${year}/${month}`,
+  );
+  const branchPayment = await call(
+    'POST',
+    `/membership-periods/${branchPeriod.body?.id}/payments`,
+    {
+      amount: 30000,
+      method: 'TRANSFER',
+    },
+  );
+  check(
+    branchPayment.status === 201 && branchPayment.body?.status === 'PAID',
+    `оплата в группе филиала внесена: ${branchPayment.body?.status}`,
+  );
+
+  const summary = await call('GET', `/finance/summary?year=${year}&month=${month}`);
+  check(summary.status === 200, `сводка за месяц получена: ${summary.status}`);
+  check(
+    typeof summary.body?.totals?.revenue === 'number' &&
+      summary.body?.totals?.revenue === summary.body.totals.received - summary.body.totals.refunded,
+    `выручка = поступления − возвраты: ${summary.body?.totals?.received} − ${summary.body?.totals?.refunded} = ${summary.body?.totals?.revenue}`,
+  );
+  check(
+    (summary.body?.totals?.received ?? 0) >= 30000,
+    `поступления месяца включают проверочные оплаты: ${summary.body?.totals?.received}`,
+  );
+  check(
+    (summary.body?.totals?.refunded ?? 0) >= 10000,
+    `возвраты месяца учтены в сводке: ${summary.body?.totals?.refunded}`,
+  );
+
+  const branchRow = (summary.body?.branches ?? []).find((row) => row.branchId === branchId);
+  check(
+    Boolean(branchRow) && branchRow.received >= 30000,
+    `выручка отнесена к филиалу группы: ${branchRow?.branchName} — ${branchRow?.received}`,
+  );
+  check(
+    Array.isArray(summary.body?.branches) &&
+      summary.body.branches.every((row) => row.received > 0 || row.refunded > 0 || row.debtors > 0),
+    'пустые филиалы в сводку не попадают',
+  );
+  check(
+    (summary.body?.branches ?? []).every((row) => row.revenue === row.received - row.refunded),
+    'выручка каждого филиала равна поступлениям минус возвраты',
+  );
+  check(
+    (summary.body?.activeAthletes ?? 0) >= 2,
+    `активные спортсмены посчитаны: ${summary.body?.activeAthletes}`,
+  );
+
+  // Спортсмен без филиала попадает в отдельную строку, а не растворяется в
+  // первом филиале: иначе руководитель увидел бы чужие деньги как свои.
+  const noBranchRow = (summary.body?.branches ?? []).find((row) => row.branchId === null);
+  check(
+    noBranchRow === undefined || noBranchRow.branchName === 'Филиал не назначен',
+    `спортсмены без филиала отделены: «${noBranchRow?.branchName ?? 'нет таких'}»`,
+  );
+
   // --- Очистка ----------------------------------------------------------
+  await call('DELETE', `/groups/${branchGroup.body.id}`);
   await call('DELETE', `/groups/${group.body.id}`);
   await call('DELETE', `/groups/${lonelyGroup.body.id}`);
   console.log(

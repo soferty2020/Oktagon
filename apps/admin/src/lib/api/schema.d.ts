@@ -1279,6 +1279,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/finance/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Сводка финансов за месяц
+         * @description Основа dashboard руководителя (F8). Два разных знаменателя считаются
+         *     осознанно:
+         *
+         *     - **выручка — по датам движений**: это отчет о том, сколько денег прошло
+         *       в этом месяце, включая оплаты за прошлые периоды. Начисление за месяц и
+         *       деньги, полученные в месяце, — разные вопросы;
+         *     - **задолженность — по расчетному месяцу** (BR-004): долг за сентябрь
+         *       остается сентябрьским, даже если его закрыли в октябре.
+         *
+         *     Филиал берется у группы спортсмена. Спортсмен без группы или без
+         *     филиала попадает в отдельную строку «Филиал не назначен»: приписать его
+         *     суммы первому филиалу значило бы показать чужие деньги как свои.
+         *     Филиалы без движения и без должников не возвращаются.
+         */
+        get: operations["getFinanceSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/athletes/{id}/freezes": {
         parameters: {
             query?: never;
@@ -1809,6 +1841,57 @@ export interface components {
          * @enum {string}
          */
         PaymentKind: "PAYMENT" | "REFUND";
+        /**
+         * @description Денежные итоги за период по датам движений. Начисление за месяц и
+         *     деньги, полученные в месяце, — разные вопросы, поэтому выручка не
+         *     смешивается с ожидаемыми суммами.
+         */
+        FinanceTotals: {
+            /** @description Поступления за период */
+            received: number;
+            /** @description Возвраты за период (ADR-0010) */
+            refunded: number;
+            /** @description Выручка = поступления − возвраты */
+            revenue: number;
+        };
+        /** @description Денежные итоги филиала — для сравнения филиалов между собой */
+        BranchFinanceSummary: {
+            /**
+             * Format: uuid
+             * @description Основной филиал группы спортсмена. null — филиал не назначен: такие
+             *     суммы сведены в отдельную строку, чтобы их не приняли за деньги
+             *     конкретного филиала.
+             */
+            branchId: string | null;
+            branchName: string;
+            received: number;
+            refunded: number;
+            revenue: number;
+            /** @description Должников среди спортсменов филиала */
+            debtors: number;
+            /** @description Сколько недостает по ожидаемым суммам */
+            debt: number;
+        };
+        /**
+         * @description Сводка финансов за месяц (F8). Выручка считается по датам движений,
+         *     задолженность — по расчетному месяцу (BR-004).
+         */
+        FinanceSummary: {
+            year: number;
+            month: number;
+            totals: components["schemas"]["FinanceTotals"];
+            /** @description Ожидается к оплате по расчетному месяцу */
+            expected: number;
+            debtors: number;
+            /** @description Недостает по ожидаемым суммам у должников */
+            debt: number;
+            activeAthletes: number;
+            /**
+             * @description Разбивка по филиалам; филиалы без движения и без должников не
+             *     возвращаются, чтобы пустые строки не мешали сравнению
+             */
+            branches: components["schemas"]["BranchFinanceSummary"][];
+        };
         /**
          * @description BR-004: `isDebtor` истинно, только если выполнены все четыре условия.
          *     `reason` заполняется для не-должников: руководителю важно отличать
@@ -5812,6 +5895,42 @@ export interface operations {
             };
             401: components["responses"]["Unauthenticated"];
             /** @description Нет права `payments.view` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getFinanceSummary: {
+        parameters: {
+            query: {
+                year: number;
+                month: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Сводка с разбивкой по филиалам */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceSummary"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /**
+             * @description Нет права `payments.view` (`FORBIDDEN`). BR-010: в сводке суммы
+             *     выручки и задолженности, поэтому `analytics.view` недостаточно.
+             */
             403: {
                 headers: {
                     [name: string]: unknown;

@@ -309,7 +309,9 @@ async function main() {
   );
   log(
     13,
-    `сводка финансов: долги ${financeHtml.html.includes('Ожидается к оплате')} | правила BR-004 ${financeHtml.html.includes(
+    `сводка финансов: выручка ${financeHtml.html.includes('Выручка за месяц')} | филиалы ${financeHtml.html.includes(
+      'Сравнение филиалов',
+    )} | правила BR-004 ${financeHtml.html.includes(
       'Как считается задолженность',
     )} | месяц в адресе ${financeHtml.html.includes(String(financeYear))}`,
   );

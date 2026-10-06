@@ -12,7 +12,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { PermissionCode, type DebtorSummary, type MembershipPeriodView } from '@octagon/contracts';
+import {
+  PermissionCode,
+  type DebtorSummary,
+  type FinanceSummary,
+  type MembershipPeriodView,
+} from '@octagon/contracts';
 
 import { AuthGuard, CurrentUser, type AuthenticatedUser } from '../../shared/auth-stub';
 import { PermissionsGuard, RequirePermissions } from '../../shared/permissions.guard';
@@ -222,5 +227,33 @@ export class DebtsController {
     @Query() query: PeriodQueryDto,
   ): Promise<DebtorSummary[]> {
     return this.finance.listDebtors(user.id, query.year, query.month);
+  }
+}
+
+/**
+ * Сводка финансов за месяц (F8).
+ *
+ * Право то же, что и у остальных финансовых данных: `payments.view` (BR-010).
+ * Отдельного `analytics.view` здесь недостаточно: в сводке суммы выручки и
+ * задолженности, а не обезличенные счетчики.
+ */
+@ApiTags('finance')
+@ApiBearerAuth()
+@UseGuards(AuthGuard, PermissionsGuard)
+@Controller('finance')
+export class FinanceSummaryController {
+  constructor(private readonly finance: FinanceService) {}
+
+  @Get('summary')
+  @RequirePermissions(PermissionCode.PaymentsView)
+  @ApiOperation({ summary: 'Сводка финансов за месяц с разбивкой по филиалам' })
+  @ApiOkResponse({
+    description: 'Выручка по датам движений, задолженность по расчетному месяцу',
+  })
+  summary(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: PeriodQueryDto,
+  ): Promise<FinanceSummary> {
+    return this.finance.summary(user.id, query.year, query.month);
   }
 }
