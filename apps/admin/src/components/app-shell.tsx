@@ -20,6 +20,9 @@ const NAVIGATION: readonly {
   { href: '/groups', label: 'Группы' },
   { href: '/athletes', label: 'Спортсмены' },
   { href: '/schedule', label: 'Расписание' },
+  // Новости без `requiredPermissions`: BR-011 — новости и комментарии видны всем
+  // пользователям клуба, поэтому раздел не скрывается ни от кого (ADR-0011).
+  { href: '/news', label: 'Новости' },
   {
     href: '/finance',
     label: 'Финансы',

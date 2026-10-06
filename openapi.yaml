@@ -3141,6 +3141,349 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
 
+  /news:
+    get:
+      tags: [news]
+      summary: Список новостей клуба
+      description: |
+        BR-011: новости и комментарии видны всем пользователям клуба, поэтому
+        **права на чтение нет** — список доступен любому аутентифицированному
+        пользователю (ADR-0011).
+
+        Черновики видит только автор и те, у кого есть `news.edit` или
+        `news.moderate`. Фильтр применяется в запросе к БД, а не после выборки,
+        иначе черновик попадал бы в ответ и оставался только «не показанным».
+
+        Архивные записи не возвращаются без `includeArchived`: архив — это
+        «убрать из ленты», а не «удалить из истории».
+      operationId: listNews
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/NewsStatus'
+        - name: search
+          in: query
+          required: false
+          description: Поиск по заголовку и тексту
+          schema:
+            type: string
+            maxLength: 100
+        - name: includeArchived
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: 'Новости: закрепленные и свежие сверху'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NewsPostView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+    post:
+      tags: [news]
+      summary: Создать новость или черновик
+      description: |
+        Требует `news.create`: по роли это право не выдается, публикация —
+        индивидуальная выдача (docs/05-user-stories.md: «тренер **с правом**
+        публикует новости»). Без `publish: true` новость остается черновиком и
+        видна только автору.
+      operationId: createNewsPost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNewsPostRequest'
+      responses:
+        '201':
+          description: Новость создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewsPostView'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `news.create` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /news/{id}:
+    get:
+      tags: [news]
+      summary: Новость с комментариями
+      description: |
+        Чужой черновик отдает 404, а не 403: иначе по коду ответа можно было бы
+        узнать, что неопубликованная новость существует.
+      operationId: getNewsPost
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Карточка новости с комментариями
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewsPostDetails'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          description: Новость не найдена или это чужой черновик (`NEWS_POST_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    patch:
+      tags: [news]
+      summary: Изменить новость
+      description: |
+        Автор правит свою новость; чужую — только с `news.edit`. Архивную новость
+        править нельзя (`NEWS_POST_STATE_INVALID`): архив — история, а правка
+        изменила бы то, что уже прочитали.
+      operationId: updateNewsPost
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNewsPostRequest'
+      responses:
+        '200':
+          description: Новость обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewsPostView'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Это чужая новость и нет права `news.edit` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Новость не найдена (`NEWS_POST_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Новость в архиве (`NEWS_POST_STATE_INVALID`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    delete:
+      tags: [news]
+      summary: Архивировать новость
+      description: |
+        Требует `news.delete`. Новость убирается из ленты, но остается в истории:
+        архив — не удаление. Повторное архивирование отклоняется
+        (`NEWS_POST_STATE_INVALID`).
+      operationId: archiveNewsPost
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Новость в архиве
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewsPostView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `news.delete` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Новость не найдена (`NEWS_POST_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Новость уже в архиве (`NEWS_POST_STATE_INVALID`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /news/{id}/publish:
+    post:
+      tags: [news]
+      summary: Опубликовать новость
+      description: |
+        Автор публикует свою новость, чужую — только с `news.edit`. Повторная
+        публикация не «омолаживает» новость: сохраняется дата первой публикации.
+      operationId: publishNewsPost
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Новость опубликована
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewsPostView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Это чужая новость и нет права `news.edit` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Новость не найдена (`NEWS_POST_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Новость в архиве (`NEWS_POST_STATE_INVALID`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /news/{id}/comments:
+    post:
+      tags: [news]
+      summary: Прокомментировать новость
+      description: |
+        Комментировать может любой аутентифицированный пользователь: BR-011
+        объединяет новости и комментарии, и если бы комментарии были доступны
+        только части ролей, обсуждение распалось бы на две аудитории.
+
+        Комментировать можно только опубликованное (`NEWS_NOT_PUBLISHED`):
+        у черновика нет аудитории, а архивная новость — история.
+      operationId: addNewsComment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNewsCommentRequest'
+      responses:
+        '201':
+          description: Комментарий добавлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewsCommentView'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          description: Новость не найдена или это чужой черновик (`NEWS_POST_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Новость не опубликована (`NEWS_NOT_PUBLISHED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /news-comments/{commentId}:
+    delete:
+      tags: [news]
+      summary: Удалить комментарий
+      description: |
+        Свой комментарий удаляет автор, любой — пользователь с `news.moderate`.
+        Иначе пришлось бы либо запретить автору исправлять сказанное, либо
+        разрешить стирать чужие слова любому.
+
+        Удаление мягкое: в ветке остается след, что комментарий был, иначе ответы
+        на него теряют смысл. Отдельный маршрут, а не `DELETE /news/comments/{id}`:
+        вложенный путь перехватывался бы `GET /news/{id}`.
+      operationId: deleteNewsComment
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Комментарий удален
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, isDeleted]
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  isDeleted:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Чужой комментарий без права `news.moderate` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Комментарий не найден или уже удален (`NEWS_COMMENT_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
   /athletes/{id}/freezes:
     get:
       tags: [freezes]
@@ -4435,6 +4778,153 @@ components:
           type: string
           nullable: true
           enum: [INACTIVE, MARKED_FULLY_PAID, NO_TRAININGS_YET, FROZEN, null]
+
+    NewsStatus:
+      type: string
+      description: BR-011 — статус новости; черновик виден автору и модератору
+      enum: [DRAFT, PUBLISHED, ARCHIVED]
+
+    NewsAuthorView:
+      type: object
+      description: Автор новости или комментария; интерфейсу достаточно имени
+      required: [id, firstName, lastName]
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+
+    NewsPostView:
+      type: object
+      required:
+        - id
+        - title
+        - body
+        - status
+        - author
+        - isPinned
+        - createdAt
+        - updatedAt
+        - commentsCount
+        - canEdit
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        body:
+          type: string
+        status:
+          $ref: '#/components/schemas/NewsStatus'
+        author:
+          $ref: '#/components/schemas/NewsAuthorView'
+        isPinned:
+          type: boolean
+          description: Закрепленная новость идет первой в ленте
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        archivedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        commentsCount:
+          type: integer
+          description: Число неудаленных комментариев
+        canEdit:
+          type: boolean
+          description: Может ли текущий пользователь править, публиковать или архивировать
+
+    NewsCommentView:
+      type: object
+      description: |
+        Комментарий к новости. Удаление мягкое: `isDeleted: true` означает, что в
+        ветке остался след, а `body` приходит пустым.
+      required: [id, newsPostId, author, body, isDeleted, canDelete, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        newsPostId:
+          type: string
+          format: uuid
+        author:
+          $ref: '#/components/schemas/NewsAuthorView'
+        body:
+          type: string
+        isDeleted:
+          type: boolean
+        canDelete:
+          type: boolean
+          description: Свой комментарий — автор, любой — с правом `news.moderate`
+        createdAt:
+          type: string
+          format: date-time
+
+    NewsPostDetails:
+      allOf:
+        - $ref: '#/components/schemas/NewsPostView'
+        - type: object
+          required: [comments]
+          properties:
+            comments:
+              type: array
+              items:
+                $ref: '#/components/schemas/NewsCommentView'
+
+    CreateNewsPostRequest:
+      type: object
+      required: [title, body]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        body:
+          type: string
+          minLength: 1
+          maxLength: 10000
+        publish:
+          type: boolean
+          default: false
+          description: true — опубликовать сразу; иначе новость останется черновиком
+        isPinned:
+          type: boolean
+          default: false
+
+    UpdateNewsPostRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        body:
+          type: string
+          minLength: 1
+          maxLength: 10000
+        isPinned:
+          type: boolean
+
+    CreateNewsCommentRequest:
+      type: object
+      required: [body]
+      properties:
+        body:
+          type: string
+          minLength: 1
+          maxLength: 2000
 
     FreezeView:
       type: object

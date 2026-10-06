@@ -429,6 +429,176 @@ async function main() {
       `повторное приглашение занятого адреса отклонено: ${secondInvite.status} ${secondInvite.body?.code ?? ''}`,
     );
   }
+
+  // 15. Новости: черновик, публикация, комментарии и модерация (BR-011, ADR-0011).
+  //
+  // Ключевое, что проверяется здесь, — что чтение не требует прав, а действия их
+  // требуют. Для этого используется пользователь без единого права (MEMBER):
+  // ему доступна лента, но не создание новостей.
+  const newsStamp = Date.now();
+
+  const memberEmail = `news-reader-${newsStamp}@octagon.local`;
+  const memberPassword = 'News-Reader-2026!';
+  const memberInvite = await apiCall(apiBase, token, 'POST', '/users/invites', {
+    email: memberEmail,
+    role: 'MEMBER',
+  });
+  const memberAccept = await apiCall(apiBase, '', 'POST', '/auth/accept-invite', {
+    token: memberInvite.body?.token,
+    email: memberEmail,
+    password: memberPassword,
+    firstName: 'Читатель',
+    lastName: `Новостей ${newsStamp}`,
+  });
+  const memberLogin = await apiCall(apiBase, '', 'POST', '/auth/login', {
+    email: memberEmail,
+    password: memberPassword,
+  });
+  const memberToken = memberLogin.body?.accessToken ?? '';
+  log(
+    15,
+    `читатель без прав подготовлен: ${memberAccept.status} | прав ${
+      memberLogin.body?.user?.permissions?.codes?.length ?? '—'
+    }`,
+  );
+
+  const draft = await apiCall(apiBase, token, 'POST', '/news', {
+    title: `Черновик ${newsStamp}`,
+    body: 'Текст черновика',
+  });
+  log(
+    '15б',
+    `черновик создан: ${draft.status} | статус ${draft.body?.status} | publishedAt ${
+      draft.body?.publishedAt ?? 'нет'
+    }`,
+  );
+
+  const memberSeesDraft = await apiCall(apiBase, memberToken, 'GET', '/news');
+  log(
+    '15в',
+    `читатель не видит черновик в ленте: ${
+      (memberSeesDraft.body ?? []).some((item) => item.id === draft.body?.id) ? 'ВИДИТ' : 'не видит'
+    }`,
+  );
+
+  const memberCreates = await apiCall(apiBase, memberToken, 'POST', '/news', {
+    title: 'Попытка',
+    body: 'Текст',
+  });
+  log(
+    '15г',
+    `создание без права news.create отклонено: ${memberCreates.status} ${memberCreates.body?.code ?? ''}`,
+  );
+
+  const foreignDraft = await apiCall(apiBase, memberToken, 'GET', `/news/${draft.body?.id}`);
+  log(
+    '15д',
+    `чужой черновик отдает ${foreignDraft.status} (не 403: существование не раскрывается)`,
+  );
+
+  const commentOnDraft = await apiCall(apiBase, token, 'POST', `/news/${draft.body?.id}/comments`, {
+    body: 'Комментарий к черновику',
+  });
+  log(
+    '15е',
+    `комментарий к черновику отклонен: ${commentOnDraft.status} ${commentOnDraft.body?.code ?? ''}`,
+  );
+
+  const published = await apiCall(apiBase, token, 'POST', `/news/${draft.body?.id}/publish`);
+  log('15ж', `черновик опубликован: ${published.status} | статус ${published.body?.status}`);
+
+  const memberSeesPublished = await apiCall(apiBase, memberToken, 'GET', `/news/${draft.body?.id}`);
+  log(
+    '15з',
+    `опубликованная новость видна без прав: ${memberSeesPublished.status} | комментариев ${
+      memberSeesPublished.body?.comments?.length ?? '—'
+    }`,
+  );
+
+  const memberComment = await apiCall(
+    apiBase,
+    memberToken,
+    'POST',
+    `/news/${draft.body?.id}/comments`,
+    { body: 'Комментарий читателя' },
+  );
+  log(
+    '15и',
+    `читатель комментирует без прав (BR-011): ${memberComment.status} | canDelete ${
+      memberComment.body?.canDelete
+    }`,
+  );
+
+  const authorComment = await apiCall(apiBase, token, 'POST', `/news/${draft.body?.id}/comments`, {
+    body: 'Комментарий администратора',
+  });
+
+  const memberDeletesForeign = await apiCall(
+    apiBase,
+    memberToken,
+    'DELETE',
+    `/news-comments/${authorComment.body?.id}`,
+  );
+  log(
+    '15к',
+    `чужой комментарий без news.moderate не удаляется: ${memberDeletesForeign.status} ${
+      memberDeletesForeign.body?.code ?? ''
+    }`,
+  );
+
+  const moderatorDeletes = await apiCall(
+    apiBase,
+    token,
+    'DELETE',
+    `/news-comments/${authorComment.body?.id}`,
+  );
+  log(
+    '15л',
+    `модератор удаляет чужой комментарий: ${moderatorDeletes.status} | isDeleted ${
+      moderatorDeletes.body?.isDeleted
+    }`,
+  );
+
+  const afterDelete = await apiCall(apiBase, memberToken, 'GET', `/news/${draft.body?.id}`);
+  const deletedComment = (afterDelete.body?.comments ?? []).find(
+    (item) => item.id === authorComment.body?.id,
+  );
+  log(
+    '15м',
+    `удаленный комментарий остается следом: isDeleted ${deletedComment?.isDeleted} | текст ${
+      deletedComment?.body === '' ? 'скрыт' : 'РАСКРЫТ'
+    }`,
+  );
+
+  const archived = await apiCall(apiBase, token, 'DELETE', `/news/${draft.body?.id}`);
+  log(
+    '15н',
+    `архивирование: ${archived.status} | статус ${archived.body?.status} | из ленты ${
+      (
+        (await apiCall(apiBase, memberToken, 'GET', '/news')).body ?? []
+      ).some((item) => item.id === draft.body?.id)
+        ? 'ОСТАЛАСЬ'
+        : 'убрана'
+    }`,
+  );
+
+  const editArchived = await apiCall(apiBase, token, 'PATCH', `/news/${draft.body?.id}`, {
+    title: 'Правка архива',
+  });
+  log(
+    '15о',
+    `правка архивной новости отклонена: ${editArchived.status} ${editArchived.body?.code ?? ''}`,
+  );
+
+  const { html: newsHtml } = await fetchHtml(base, '/news', cookie);
+  const memberSession = await loginCookies({ base, email: memberEmail, password: memberPassword });
+  const { html: memberNewsHtml } = await fetchHtml(base, '/news', memberSession.cookie);
+  log(
+    '15п',
+    `экран новостей: лента ${newsHtml.includes('Новая публикация')} | у читателя без прав формы нет ${
+      memberNewsHtml.includes('Новая публикация') ? 'ЕСТЬ' : 'нет'
+    }`,
+  );
 }
 
 main().catch((error) => {

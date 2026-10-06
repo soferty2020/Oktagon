@@ -22,7 +22,8 @@ REST JSON API, versioned prefix: `/api/v1`.
 - /refunds
 - /finance (сводка за месяц)
 - /freezes
-- /news
+- /news (чтение без прав: BR-011)
+- /news-comments
 - /conversations
 - /messages
 - /analytics

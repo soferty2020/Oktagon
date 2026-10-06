@@ -181,6 +181,14 @@ const expectedRoutes = [
   ['get', '/athletes/{id}/freezes'],
   ['post', '/athletes/{id}/freezes'],
   ['post', '/freezes/{freezeId}/close'],
+  ['get', '/news'],
+  ['post', '/news'],
+  ['get', '/news/{id}'],
+  ['patch', '/news/{id}'],
+  ['delete', '/news/{id}'],
+  ['post', '/news/{id}/publish'],
+  ['post', '/news/{id}/comments'],
+  ['delete', '/news-comments/{commentId}'],
 ];
 
 for (const [method, route] of expectedRoutes) {

@@ -1338,6 +1338,147 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/news": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Список новостей клуба
+         * @description BR-011: новости и комментарии видны всем пользователям клуба, поэтому
+         *     **права на чтение нет** — список доступен любому аутентифицированному
+         *     пользователю (ADR-0011).
+         *
+         *     Черновики видит только автор и те, у кого есть `news.edit` или
+         *     `news.moderate`. Фильтр применяется в запросе к БД, а не после выборки,
+         *     иначе черновик попадал бы в ответ и оставался только «не показанным».
+         *
+         *     Архивные записи не возвращаются без `includeArchived`: архив — это
+         *     «убрать из ленты», а не «удалить из истории».
+         */
+        get: operations["listNews"];
+        put?: never;
+        /**
+         * Создать новость или черновик
+         * @description Требует `news.create`: по роли это право не выдается, публикация —
+         *     индивидуальная выдача (docs/05-user-stories.md: «тренер **с правом**
+         *     публикует новости»). Без `publish: true` новость остается черновиком и
+         *     видна только автору.
+         */
+        post: operations["createNewsPost"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/news/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Новость с комментариями
+         * @description Чужой черновик отдает 404, а не 403: иначе по коду ответа можно было бы
+         *     узнать, что неопубликованная новость существует.
+         */
+        get: operations["getNewsPost"];
+        put?: never;
+        post?: never;
+        /**
+         * Архивировать новость
+         * @description Требует `news.delete`. Новость убирается из ленты, но остается в истории:
+         *     архив — не удаление. Повторное архивирование отклоняется
+         *     (`NEWS_POST_STATE_INVALID`).
+         */
+        delete: operations["archiveNewsPost"];
+        options?: never;
+        head?: never;
+        /**
+         * Изменить новость
+         * @description Автор правит свою новость; чужую — только с `news.edit`. Архивную новость
+         *     править нельзя (`NEWS_POST_STATE_INVALID`): архив — история, а правка
+         *     изменила бы то, что уже прочитали.
+         */
+        patch: operations["updateNewsPost"];
+        trace?: never;
+    };
+    "/news/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Опубликовать новость
+         * @description Автор публикует свою новость, чужую — только с `news.edit`. Повторная
+         *     публикация не «омолаживает» новость: сохраняется дата первой публикации.
+         */
+        post: operations["publishNewsPost"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/news/{id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Прокомментировать новость
+         * @description Комментировать может любой аутентифицированный пользователь: BR-011
+         *     объединяет новости и комментарии, и если бы комментарии были доступны
+         *     только части ролей, обсуждение распалось бы на две аудитории.
+         *
+         *     Комментировать можно только опубликованное (`NEWS_NOT_PUBLISHED`):
+         *     у черновика нет аудитории, а архивная новость — история.
+         */
+        post: operations["addNewsComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/news-comments/{commentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Удалить комментарий
+         * @description Свой комментарий удаляет автор, любой — пользователь с `news.moderate`.
+         *     Иначе пришлось бы либо запретить автору исправлять сказанное, либо
+         *     разрешить стирать чужие слова любому.
+         *
+         *     Удаление мягкое: в ветке остается след, что комментарий был, иначе ответы
+         *     на него теряют смысл. Отдельный маршрут, а не `DELETE /news/comments/{id}`:
+         *     вложенный путь перехватывался бы `GET /news/{id}`.
+         */
+        delete: operations["deleteNewsComment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/athletes/{id}/freezes": {
         parameters: {
             query?: never;
@@ -1958,6 +2099,79 @@ export interface components {
             isDebtor: boolean;
             /** @enum {string|null} */
             reason?: "INACTIVE" | "MARKED_FULLY_PAID" | "NO_TRAININGS_YET" | "FROZEN" | null;
+        };
+        /**
+         * @description BR-011 — статус новости; черновик виден автору и модератору
+         * @enum {string}
+         */
+        NewsStatus: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+        /** @description Автор новости или комментария; интерфейсу достаточно имени */
+        NewsAuthorView: {
+            /** Format: uuid */
+            id: string;
+            firstName: string;
+            lastName: string;
+        };
+        NewsPostView: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            body: string;
+            status: components["schemas"]["NewsStatus"];
+            author: components["schemas"]["NewsAuthorView"];
+            /** @description Закрепленная новость идет первой в ленте */
+            isPinned: boolean;
+            /** Format: date-time */
+            publishedAt?: string | null;
+            /** Format: date-time */
+            archivedAt?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** @description Число неудаленных комментариев */
+            commentsCount: number;
+            /** @description Может ли текущий пользователь править, публиковать или архивировать */
+            canEdit: boolean;
+        };
+        /**
+         * @description Комментарий к новости. Удаление мягкое: `isDeleted: true` означает, что в
+         *     ветке остался след, а `body` приходит пустым.
+         */
+        NewsCommentView: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            newsPostId: string;
+            author: components["schemas"]["NewsAuthorView"];
+            body: string;
+            isDeleted: boolean;
+            /** @description Свой комментарий — автор, любой — с правом `news.moderate` */
+            canDelete: boolean;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        NewsPostDetails: components["schemas"]["NewsPostView"] & {
+            comments: components["schemas"]["NewsCommentView"][];
+        };
+        CreateNewsPostRequest: {
+            title: string;
+            body: string;
+            /**
+             * @description true — опубликовать сразу; иначе новость останется черновиком
+             * @default false
+             */
+            publish: boolean;
+            /** @default false */
+            isPinned: boolean;
+        };
+        UpdateNewsPostRequest: {
+            title?: string;
+            body?: string;
+            isPinned?: boolean;
+        };
+        CreateNewsCommentRequest: {
+            body: string;
         };
         /** @description BR-005 — заморозка как открытый период приостановления */
         FreezeView: {
@@ -6011,6 +6225,345 @@ export interface operations {
              *     выручки и задолженности, поэтому `analytics.view` недостаточно.
              */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listNews: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["NewsStatus"];
+                /** @description Поиск по заголовку и тексту */
+                search?: string;
+                includeArchived?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Новости: закрепленные и свежие сверху */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NewsPostView"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+        };
+    };
+    createNewsPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateNewsPostRequest"];
+            };
+        };
+        responses: {
+            /** @description Новость создана */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NewsPostView"];
+                };
+            };
+            400: components["responses"]["ValidationFailed"];
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `news.create` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getNewsPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Карточка новости с комментариями */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NewsPostDetails"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Новость не найдена или это чужой черновик (`NEWS_POST_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    archiveNewsPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Новость в архиве */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NewsPostView"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `news.delete` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Новость не найдена (`NEWS_POST_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Новость уже в архиве (`NEWS_POST_STATE_INVALID`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    updateNewsPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateNewsPostRequest"];
+            };
+        };
+        responses: {
+            /** @description Новость обновлена */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NewsPostView"];
+                };
+            };
+            400: components["responses"]["ValidationFailed"];
+            401: components["responses"]["Unauthenticated"];
+            /** @description Это чужая новость и нет права `news.edit` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Новость не найдена (`NEWS_POST_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Новость в архиве (`NEWS_POST_STATE_INVALID`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    publishNewsPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Новость опубликована */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NewsPostView"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Это чужая новость и нет права `news.edit` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Новость не найдена (`NEWS_POST_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Новость в архиве (`NEWS_POST_STATE_INVALID`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    addNewsComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateNewsCommentRequest"];
+            };
+        };
+        responses: {
+            /** @description Комментарий добавлен */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NewsCommentView"];
+                };
+            };
+            400: components["responses"]["ValidationFailed"];
+            401: components["responses"]["Unauthenticated"];
+            /** @description Новость не найдена или это чужой черновик (`NEWS_POST_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Новость не опубликована (`NEWS_NOT_PUBLISHED`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    deleteNewsComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                commentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Комментарий удален */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        isDeleted: boolean;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Чужой комментарий без права `news.moderate` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Комментарий не найден или уже удален (`NEWS_COMMENT_NOT_FOUND`) */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

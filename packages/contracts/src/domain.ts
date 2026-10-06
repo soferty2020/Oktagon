@@ -126,13 +126,20 @@ export const SessionStatus = {
 } as const;
 export type SessionStatus = (typeof SessionStatus)[keyof typeof SessionStatus];
 
+/** BR-011: статус новости. Черновик виден только автору и модератору. */
+export const NewsStatus = {
+  DRAFT: 'DRAFT',
+  PUBLISHED: 'PUBLISHED',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+export type NewsStatus = (typeof NewsStatus)[keyof typeof NewsStatus];
+
 /** Тип диалога (BR-012). */
 export const ConversationType = {
   GROUP: 'GROUP',
   DIRECT: 'DIRECT',
 } as const;
 export type ConversationType = (typeof ConversationType)[keyof typeof ConversationType];
-
 /** Тип подписки участника диалога. */
 export const ConversationMemberRole = {
   MEMBER: 'MEMBER',

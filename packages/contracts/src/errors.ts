@@ -135,6 +135,17 @@ export const ApiErrorCode = {
   // communication
   CONVERSATION_ACCESS_DENIED: 'CONVERSATION_ACCESS_DENIED',
   NEWS_NOT_PUBLISHED: 'NEWS_NOT_PUBLISHED',
+  /** Новость не найдена (в том числе если это чужой черновик). */
+  NEWS_POST_NOT_FOUND: 'NEWS_POST_NOT_FOUND',
+  /** Комментарий не найден или уже удален. */
+  NEWS_COMMENT_NOT_FOUND: 'NEWS_COMMENT_NOT_FOUND',
+  /**
+   * Новость нельзя изменить в этом состоянии.
+   *
+   * Отдельно от `NEWS_NOT_PUBLISHED`: там попытка прокомментировать черновик,
+   * здесь — попытка править архивную запись или опубликовать ее повторно.
+   */
+  NEWS_POST_STATE_INVALID: 'NEWS_POST_STATE_INVALID',
 } as const;
 export type ApiErrorCode = (typeof ApiErrorCode)[keyof typeof ApiErrorCode];
 
@@ -232,4 +243,7 @@ export const API_ERROR_HTTP_STATUS: Readonly<Record<ApiErrorCode, number>> = {
 
   CONVERSATION_ACCESS_DENIED: 403,
   NEWS_NOT_PUBLISHED: 409,
+  NEWS_POST_NOT_FOUND: 404,
+  NEWS_COMMENT_NOT_FOUND: 404,
+  NEWS_POST_STATE_INVALID: 409,
 };

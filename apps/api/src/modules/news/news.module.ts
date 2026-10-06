@@ -1,16 +1,28 @@
 import { Module } from '@nestjs/common';
 
+import { IdentityModule } from '../identity/identity.module';
+import { NewsCommentsController, NewsController } from './news.controller';
+import { NewsRepository, PrismaNewsRepository } from './news.repository';
 import { NewsService } from './news.service';
 
 /**
- * Модуль news.
+ * Новости клуба и комментарии (эпик G, BR-011, ADR-0011).
  *
- * Спецификация: BR-011, docs/22-erd.md (NewsPost, NewsComment).
- * Публичный контракт и бизнес-логика добавляются отдельным issue
- * (docs/24-multi-agent-plan.md: contracts-first).
+ * Спецификация: docs/22-erd.md (NewsPost, NewsComment),
+ * docs/04-roles-permissions.md (`news.create/edit/delete/moderate`).
+ *
+ * `IdentityModule` нужен, чтобы узнать эффективные права вызывающего: видимость
+ * чужого черновика зависит от `news.edit` и `news.moderate`, а права
+ * вычисляются на каждом запросе (ADR-0006), а не читаются из токена.
  */
 @Module({
-  providers: [NewsService],
+  imports: [IdentityModule],
+  controllers: [NewsController, NewsCommentsController],
+  providers: [
+    NewsService,
+    PrismaNewsRepository,
+    { provide: NewsRepository, useExisting: PrismaNewsRepository },
+  ],
   exports: [NewsService],
 })
 export class NewsModule {}
