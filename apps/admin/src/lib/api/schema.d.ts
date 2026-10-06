@@ -1883,6 +1883,11 @@ export interface components {
             /** @description Ожидается к оплате по расчетному месяцу */
             expected: number;
             debtors: number;
+            /**
+             * @description Должники без заданной ожидаемой суммы: им долг посчитать нельзя, и
+             *     «нет долга» здесь означает не оплату, а незаполненное ожидание
+             */
+            debtorsWithoutExpected: number;
             /** @description Недостает по ожидаемым суммам у должников */
             debt: number;
             activeAthletes: number;
