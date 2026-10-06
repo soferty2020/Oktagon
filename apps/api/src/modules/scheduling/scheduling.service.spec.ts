@@ -553,6 +553,38 @@ describe('SchedulingService', () => {
       expect(repository.createSession).not.toHaveBeenCalled();
     });
 
+    it('отклоняет повторное создание того же занятия понятным отказом', async () => {
+      // В базе занятие группы уникально по времени начала; администратор мог
+      // просто дважды нажать кнопку, поэтому это 409, а не 500.
+      repository.createSession.mockRejectedValue(
+        Object.assign(new Error('Unique constraint failed'), { code: 'P2002' }),
+      );
+
+      await expect(
+        service.createSession({
+          groupId: 'group-1',
+          date: PAST_DATE,
+          startTime: '18:00',
+          endTime: '19:30',
+          reason: 'Повторное занесение',
+        }),
+      ).rejects.toMatchObject({ code: 'TRAINING_SESSION_DUPLICATE' });
+    });
+
+    it('пробрасывает прочие ошибки базы как есть', async () => {
+      repository.createSession.mockRejectedValue(new Error('соединение потеряно'));
+
+      await expect(
+        service.createSession({
+          groupId: 'group-1',
+          date: PAST_DATE,
+          startTime: '18:00',
+          endTime: '19:30',
+          reason: 'Занесение',
+        }),
+      ).rejects.toThrow('соединение потеряно');
+    });
+
     it('отклоняет некорректную дату', async () => {
       await expect(
         service.createSession({

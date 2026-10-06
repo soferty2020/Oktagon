@@ -4776,7 +4776,10 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description Накладка в будущем (`TRAINING_SESSION_CONFLICT`) */
+            /**
+             * @description Накладка в будущем (`TRAINING_SESSION_CONFLICT`) или занятие этой
+             *     группы на это время уже есть (`TRAINING_SESSION_DUPLICATE`).
+             */
             409: {
                 headers: {
                     [name: string]: unknown;

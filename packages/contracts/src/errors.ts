@@ -67,6 +67,14 @@ export const ApiErrorCode = {
   ATHLETE_ALREADY_MEMBER: 'ATHLETE_ALREADY_MEMBER',
   /** Членство спортсмена в группе не найдено. */
   MEMBERSHIP_NOT_FOUND: 'MEMBERSHIP_NOT_FOUND',
+  /**
+   * Занятие этой группы на это время уже есть.
+   *
+   * Отдельно от `TRAINING_SESSION_CONFLICT`: там накладка с чужим занятием
+   * (зал или тренер), здесь — повторное создание того же самого. Для
+   * администратора это разные ситуации, и подсказки должны быть разными.
+   */
+  TRAINING_SESSION_DUPLICATE: 'TRAINING_SESSION_DUPLICATE',
 
   // schedule
   SCHEDULE_TEMPLATE_NOT_FOUND: 'SCHEDULE_TEMPLATE_NOT_FOUND',
@@ -184,6 +192,7 @@ export const API_ERROR_HTTP_STATUS: Readonly<Record<ApiErrorCode, number>> = {
   TRAINING_SESSION_NOT_FOUND: 404,
   TRAINING_SESSION_CANCELLED: 409,
   TRAINING_SESSION_CONFLICT: 409,
+  TRAINING_SESSION_DUPLICATE: 409,
   TRAINER_BUSY: 409,
   HALL_BUSY: 409,
   SESSION_ALREADY_STARTED: 409,

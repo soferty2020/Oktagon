@@ -21,8 +21,7 @@ import {
   type Weekday,
 } from '@octagon/contracts';
 
-import { TrainingSessionStatus as PrismaSessionStatus } from '../../../generated/prisma';
-import { ApiException } from '../../shared/api-exception';
+import { TrainingSessionStatus as PrismaSessionStatus } from '../../../generated/prisma';import { ApiException } from '../../shared/api-exception';
 import { AuditService } from '../audit/audit.service';
 import { GroupsRepository } from '../groups/groups.repository';
 import { ResourceScopeService } from '../identity/resource-scope.service';
@@ -455,16 +454,32 @@ export class SchedulingService {
     }
 
     const branchId = await this.groups.findPrimaryBranchId(input.groupId);
-    const session = await this.schedule.createSession({
-      groupId: input.groupId,
-      branchId,
-      hallId: input.hallId ?? null,
-      trainerId: input.trainerId ?? null,
-      scheduleTemplateId: null,
-      startsAt,
-      endsAt,
-      changeReason: input.reason,
-    });
+
+    let session: TrainingSessionRecord;
+    try {
+      session = await this.schedule.createSession({
+        groupId: input.groupId,
+        branchId,
+        hallId: input.hallId ?? null,
+        trainerId: input.trainerId ?? null,
+        scheduleTemplateId: null,
+        startsAt,
+        endsAt,
+        changeReason: input.reason,
+      });
+    } catch (error) {
+      // В базе занятие группы уникально по времени начала. Повторная попытка
+      // занести то же занятие — не ошибка сервера: администратор просто дважды
+      // нажал кнопку или заносит историю повторно.
+      if (isUniqueViolation(error)) {
+        throw new ApiException(
+          'TRAINING_SESSION_DUPLICATE' satisfies ApiErrorCode,
+          'Занятие этой группы на это время уже есть',
+          { groupId: input.groupId, startsAt: startsAt.toISOString() },
+        );
+      }
+      throw error;
+    }
 
     await this.audit.recordSafely({
       action: AuditAction.SCHEDULE_SESSION_CREATED,
@@ -938,4 +953,19 @@ function toSlotView(slot: ScheduleSlotRecord): ScheduleSlotView {
     trainerId: slot.trainerId,
     trainerName: slot.trainerName,
   };
+}
+
+/**
+ * Нарушение уникального ограничения.
+ *
+ * Проверяется по коду и имени, а не через `instanceof PrismaClientKnownRequestError`:
+ * класс приходит из сгенерированного клиента, и при его пересборке `instanceof`
+ * может перестать совпадать, а код ошибки остается стабильным.
+ */
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    (error as { code?: unknown }).code === 'P2002'
+  );
 }
