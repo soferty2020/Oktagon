@@ -7,12 +7,13 @@ import {
   MembershipPeriodActionsController,
   MembershipPeriodsController,
   PaymentsController,
+  RefundsController,
 } from './finance.controller';
 import { FinanceRepository, PrismaFinanceRepository } from './finance.repository';
 import { FinanceService } from './finance.service';
 
 /**
- * Финансы (эпик F, BR-001..BR-004, BR-010).
+ * Финансы (эпик F, BR-001..BR-004, BR-010, ADR-0010).
  *
  * Спецификация: docs/22-erd.md (MembershipPeriod, PaymentTransaction),
  * docs/04-roles-permissions.md, BR-010 (доступ только с явным правом).
@@ -28,6 +29,7 @@ import { FinanceService } from './finance.service';
     MembershipPeriodsController,
     MembershipPeriodActionsController,
     PaymentsController,
+    RefundsController,
     DebtsController,
   ],
   providers: [

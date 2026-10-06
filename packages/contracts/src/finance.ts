@@ -12,22 +12,37 @@
  * имеет: тренер не видит финансы (docs/04-roles-permissions.md, BR-010).
  */
 
-import type { MembershipPeriodStatus, PaymentMethod } from './domain';
+import type { MembershipPeriodStatus, PaymentKind, PaymentMethod } from './domain';
 
 /** Способ оплаты, зафиксированный вручную. */
 export type { PaymentMethod };
 
+/** Направление движения средств: поступление или возврат (ADR-0010). */
+export type { PaymentKind };
+
 /** Статус расчетного периода (BR-001..BR-003). */
 export type { MembershipPeriodStatus };
 
-/** Оплата в периоде. */
+/**
+ * Транзакция по расчетному периоду: поступление или возврат (ADR-0010).
+ *
+ * Сумма всегда положительна, направление задает `kind`. Оба движения живут в
+ * одной ленте, потому что история периода читается подряд: «внес 25 000, вернул
+ * 10 000» — это две записи одного списка.
+ */
 export interface PaymentView {
   id: string;
+  kind: PaymentKind;
   amount: number;
   method: PaymentMethod;
-  /** Календарная дата оплаты, YYYY-MM-DD. */
+  /** Календарная дата движения, YYYY-MM-DD. */
   paidAt: string;
   comment: string | null;
+  /**
+   * Поступление, к которому привязан возврат (только для `kind = REFUND`).
+   * null — корректировка периода без привязки к конкретному поступлению.
+   */
+  refundedPaymentId: string | null;
   createdById: string | null;
   createdAt: string;
 }
@@ -41,12 +56,21 @@ export interface MembershipPeriodView {
   month: number;
   /** Сколько ожидается к оплате; может быть не задано (BR-002). */
   expectedAmount: number | null;
+  /**
+   * Зачтено: поступления минус возвраты (ADR-0010).
+   *
+   * Именно эта сумма участвует в статусе периода и в задолженности:
+   * возвращенные деньги не считаются оплатой, иначе долг был бы завышен.
+   */
   paidAmount: number;
+  /** Сколько всего возвращено по периоду (ADR-0010). */
+  refundedAmount: number;
   status: MembershipPeriodStatus;
   /** Ручная отметка «оплачен полностью» (BR-003). */
   fullyPaidMarkedAt: string | null;
   fullyPaidMarkedById: string | null;
   note: string | null;
+  /** Лента движений периода: поступления и возвраты (ADR-0010). */
   payments: PaymentView[];
 }
 
@@ -57,7 +81,10 @@ export interface DebtorSummary {
   lastName: string;
   year: number;
   month: number;
+  /** Зачтено: поступления минус возвраты (ADR-0010). */
   paidAmount: number;
+  /** Сколько возвращено по периоду (ADR-0010). */
+  refundedAmount: number;
   expectedAmount: number | null;
   /** Задолженность по BR-004 (все четыре условия выполнены). */
   isDebtor: boolean;
@@ -108,6 +135,25 @@ export interface UpdatePaymentInput {
   method?: PaymentMethod;
   paidAt?: string;
   comment?: string | null;
+}
+
+/**
+ * Возврат денег по расчетному периоду (ADR-0010).
+ *
+ * Возврат — отдельное движение средств: сумма всегда положительна, а зачтенная
+ * сумма периода уменьшается. Привязка к поступлению необязательна, но если она
+ * есть, проверяется, что возвратов по этому поступлению не больше его суммы.
+ */
+export interface RefundPaymentInput {
+  amount: number;
+  /** Календарная дата возврата; по умолчанию сегодня. */
+  refundedAt?: string;
+  /** Причина возврата: руководителю нужен повод, а не только сумма. */
+  reason?: string | null;
+  /** Поступление, к которому относится возврат (ADR-0010). */
+  paymentId?: string | null;
+  method?: PaymentMethod;
+  idempotencyKey?: string;
 }
 
 /** Заморозка: открытый период приостановления (BR-005). */

@@ -2,7 +2,13 @@
 
 import { useActionState, useEffect, useId, useState } from 'react';
 
-import { recordPaymentAction, updatePaymentAction, voidPaymentAction } from '@/app/finance/actions';
+import {
+  recordPaymentAction,
+  refundPaymentAction,
+  updatePaymentAction,
+  voidPaymentAction,
+  voidRefundAction,
+} from '@/app/finance/actions';
 import {
   DateInput,
   StateMessages,
@@ -197,6 +203,115 @@ export function VoidPaymentForm({
       <input type="hidden" name="athleteId" value={athleteId} />
       <button type="submit" className="text-xs text-slate-500 underline hover:text-red-700">
         Отменить оплату
+      </button>
+    </form>
+  );
+}
+
+/**
+ * Возврат денег по поступлению (ADR-0010).
+ *
+ * Возврат не удаляет поступление: он фиксирует, что деньги были получены и
+ * возвращены. Поэтому форма открывается из строки конкретного поступления, а
+ * сумма ограничена его остатком — вернуть больше, чем получено по этой оплате,
+ * нельзя.
+ */
+export function RefundPaymentForm({
+  periodId,
+  athleteId,
+  paymentId,
+  paymentAmount,
+  alreadyRefunded,
+}: {
+  periodId: string;
+  athleteId: string;
+  paymentId: string;
+  paymentAmount: number;
+  alreadyRefunded: number;
+}) {
+  const [state, formAction, pending] = useActionState(refundPaymentAction, initialState);
+  const [idempotencyKey, setIdempotencyKey] = useState('');
+  const refundedAtId = useId();
+
+  useEffect(() => {
+    setIdempotencyKey((current) => (current === '' ? newIdempotencyKey() : current));
+  }, []);
+
+  const available = Math.max(paymentAmount - alreadyRefunded, 0);
+
+  if (available <= 0) {
+    return (
+      <p className="text-xs text-slate-500">
+        По этой оплате возвращено все: оформить новый возврат нельзя.
+      </p>
+    );
+  }
+
+  return (
+    <form action={formAction} className="flex flex-col gap-2">
+      <input type="hidden" name="periodId" value={periodId} />
+      <input type="hidden" name="athleteId" value={athleteId} />
+      <input type="hidden" name="paymentId" value={paymentId} />
+      <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
+
+      <div className="flex flex-wrap items-end gap-2">
+        <label className={labelClass}>
+          Сумма возврата
+          <input
+            name="amount"
+            required
+            inputMode="decimal"
+            placeholder={String(available)}
+            className={`${smallInputClass} w-28`}
+          />
+        </label>
+        <label className={labelClass} htmlFor={refundedAtId}>
+          Дата
+          <DateInput
+            id={refundedAtId}
+            name="refundedAt"
+            initialValue={calendarValue()}
+            className={smallInputClass}
+          />
+        </label>
+        <label className={`${labelClass} flex-1`}>
+          Причина
+          <input
+            name="reason"
+            maxLength={500}
+            placeholder="спортсмен ушел из клуба"
+            className={smallInputClass}
+          />
+        </label>
+        <button type="submit" disabled={pending} className={smallButtonClass}>
+          {pending ? '…' : 'Оформить возврат'}
+        </button>
+      </div>
+
+      <p className="text-xs text-slate-500">
+        Доступно к возврату: {formatMoney(available)}. Зачтенная сумма периода уменьшится.
+      </p>
+
+      <StateMessages state={state} />
+    </form>
+  );
+}
+
+/** Отмена ошибочно оформленного возврата. */
+export function VoidRefundForm({ refundId, athleteId }: { refundId: string; athleteId: string }) {
+  return (
+    <form
+      action={voidRefundAction}
+      onSubmit={(event) => {
+        if (!confirm('Отменить возврат? Запись будет удалена, зачтенная сумма вернется.')) {
+          event.preventDefault();
+        }
+      }}
+    >
+      <input type="hidden" name="refundId" value={refundId} />
+      <input type="hidden" name="athleteId" value={athleteId} />
+      <button type="submit" className="text-xs text-slate-500 underline hover:text-red-700">
+        Отменить возврат
       </button>
     </form>
   );

@@ -25,7 +25,13 @@ const PASSWORD = process.env.ADMIN_PASSWORD ?? 'ChangeMe-Octagon-2026!';
 
 let token = '';
 const stamp = Date.now();
-const check = (ok, message) => console.log(`${ok ? '✔' : '✕'} ${message}`);
+let failures = 0;
+const check = (ok, message) => {
+  if (!ok) {
+    failures += 1;
+  }
+  console.log(`${ok ? '✔' : '✕'} ${message}`);
+};
 
 async function call(method, path, body) {
   const response = await fetch(`${api}${path}`, {
@@ -107,7 +113,10 @@ async function main() {
     expectedAmount: 25000,
     note: 'Проверка ожидаемой суммы',
   });
-  check(expected.body?.expectedAmount === 25000, `ожидаемая сумма: ${expected.body?.expectedAmount}`);
+  check(
+    expected.body?.expectedAmount === 25000,
+    `ожидаемая сумма: ${expected.body?.expectedAmount}`,
+  );
 
   // --- Задолженность: все четыре условия выполнены ----------------------
   const debts = await call('GET', `/debts?year=${year}&month=${month}`);
@@ -291,6 +300,127 @@ async function main() {
     `завершение раньше начала отклонено: ${invalidClose.status} ${invalidClose.body?.code}`,
   );
 
+  // --- Возвраты (ADR-0010) ----------------------------------------------
+  // Возврат — не отмена оплаты: поступление остается в истории, а зачтенная
+  // сумма периода становится нетто (поступления минус возвраты).
+  await call('POST', `/freezes/${invalidRange.body?.id}/close`, { endedOn: calendar(now) });
+
+  // Соседний месяц нужен для проверок на пустом периоде: на текущем лимит
+  // возврата израсходован частичным возвратом.
+  const nextMonthDate = new Date(Date.UTC(year, month, 1));
+  const nextYear = nextMonthDate.getUTCFullYear();
+  const nextMonth = nextMonthDate.getUTCMonth() + 1;
+
+  const paid = await call('POST', `/membership-periods/${periodId}/payments`, {
+    amount: 25000,
+    method: 'CARD',
+  });
+  check(paid.body?.status === 'PAID', `перед возвратом период оплачен: ${paid.body?.status}`);
+  const sourcePayment = (paid.body?.payments ?? []).find((item) => item.kind === 'PAYMENT');
+  check(sourcePayment?.kind === 'PAYMENT', `оплата помечена направлением: ${sourcePayment?.kind}`);
+
+  const partialRefund = await call('POST', `/membership-periods/${periodId}/refunds`, {
+    amount: 10000,
+    reason: 'Проверка частичного возврата',
+    paymentId: sourcePayment?.id,
+    idempotencyKey: `check-refund-${stamp}`,
+  });
+  check(partialRefund.status === 201, `возврат оформлен: ${partialRefund.status}`);
+  check(
+    partialRefund.body?.refundedAmount === 10000 && partialRefund.body?.paidAmount === 15000,
+    `зачтено нетто: внесено ${partialRefund.body?.paidAmount}, возвращено ${partialRefund.body?.refundedAmount}`,
+  );
+  check(
+    partialRefund.body?.status === 'PARTIALLY_PAID',
+    `статус после частичного возврата: ${partialRefund.body?.status}`,
+  );
+  check(
+    partialRefund.body?.payments?.length === 2 &&
+      (partialRefund.body?.payments ?? []).some((item) => item.kind === 'REFUND'),
+    'поступление осталось в истории вместе с возвратом',
+  );
+
+  // Повторная отправка с тем же ключом: возврат уже учтен в сумме периода,
+  // поэтому проверка лимита не должна перехватывать ее раньше идемпотентности.
+  const repeatedRefund = await call('POST', `/membership-periods/${periodId}/refunds`, {
+    amount: 10000,
+    paymentId: sourcePayment?.id,
+    idempotencyKey: `check-refund-${stamp}`,
+  });
+  check(
+    repeatedRefund.status === 201 && repeatedRefund.body?.refundedAmount === 10000,
+    `повтор с тем же ключом не создал второй возврат: возвращено ${repeatedRefund.body?.refundedAmount}`,
+  );
+
+  const blockedVoid = await call('DELETE', `/payments/${sourcePayment?.id}`);
+  check(
+    blockedVoid.status === 409 && blockedVoid.body?.code === 'PAYMENT_HAS_REFUNDS',
+    `оплата с возвратом не удаляется: ${blockedVoid.status} ${blockedVoid.body?.code}`,
+  );
+
+  // Второго возврата на остаток достаточно, чтобы закрыть поступление целиком:
+  // возвращать больше оплаты после этого нечем.
+  const fullRefund = await call('POST', `/membership-periods/${periodId}/refunds`, {
+    amount: 15000,
+    reason: 'Проверка полного возврата',
+  });
+  check(
+    fullRefund.status === 201 &&
+      fullRefund.body?.paidAmount === 0 &&
+      fullRefund.body?.status === 'UNPAID',
+    `полный возврат вернул период в ${fullRefund.body?.status}, зачтено ${fullRefund.body?.paidAmount}`,
+  );
+
+  const overRefund = await call('POST', `/membership-periods/${periodId}/refunds`, { amount: 1 });
+  check(
+    overRefund.status === 400 && overRefund.body?.code === 'REFUND_EXCEEDS_PAYMENT',
+    `возврат больше поступлений периода отклонен: ${overRefund.status} ${overRefund.body?.code}`,
+  );
+
+  const refundedEntry = (await call('GET', `/debts?year=${year}&month=${month}`)).body ?? [];
+  const refundedDebtor = refundedEntry.find((item) => item.athleteId === athleteId);
+  check(
+    refundedDebtor?.isDebtor === true,
+    `после полного возврата спортсмен снова должник: ${refundedDebtor?.isDebtor}`,
+  );
+
+  const refundToVoid = (fullRefund.body?.payments ?? []).find(
+    (item) => item.kind === 'REFUND' && item.refundedPaymentId === null,
+  );
+  const voidedRefund = await call('DELETE', `/refunds/${refundToVoid?.id}`);
+  check(
+    voidedRefund.status === 200 && voidedRefund.body?.paidAmount === 15000,
+    `отмена возврата вернула зачтенную сумму: ${voidedRefund.body?.paidAmount}`,
+  );
+
+  const unknownRefund = await call('DELETE', `/refunds/${sourcePayment?.id}`);
+  check(
+    unknownRefund.status === 404,
+    `отмена по идентификатору оплаты отклонена: ${unknownRefund.status}`,
+  );
+
+  // Возврат больше полученного проверяется на отдельном периоде: на первом
+  // лимит уже израсходован частичным возвратом до нуля.
+  const emptyPeriod = (
+    await call('GET', `/athletes/${athleteId}/membership-periods/${nextYear}/${nextMonth}`)
+  ).body;
+  const refundFromNothing = await call('POST', `/membership-periods/${emptyPeriod?.id}/refunds`, {
+    amount: 1000,
+  });
+  check(
+    refundFromNothing.status === 400 && refundFromNothing.body?.code === 'REFUND_EXCEEDS_PAYMENT',
+    `возврат по периоду без поступлений отклонен: ${refundFromNothing.status} ${refundFromNothing.body?.code}`,
+  );
+
+  const foreignRefund = await call('POST', `/membership-periods/${emptyPeriod?.id}/refunds`, {
+    amount: 100,
+    paymentId: sourcePayment?.id,
+  });
+  check(
+    foreignRefund.status === 400 && foreignRefund.body?.code === 'REFUND_PAYMENT_MISMATCH',
+    `возврат по оплате другого периода отклонен: ${foreignRefund.status} ${foreignRefund.body?.code}`,
+  );
+
   // --- Очистка ----------------------------------------------------------
   await call('DELETE', `/groups/${group.body.id}`);
   await call('DELETE', `/groups/${lonelyGroup.body.id}`);
@@ -299,7 +429,14 @@ async function main() {
   );
 }
 
-main().catch((error) => {
-  console.log('ERR', error.message);
-  process.exitCode = 1;
-});
+main()
+  .then(() => {
+    if (failures > 0) {
+      console.log(`\nПровалено утверждений: ${failures}`);
+      process.exitCode = 1;
+    }
+  })
+  .catch((error) => {
+    console.log('ERR', error.message);
+    process.exitCode = 1;
+  });

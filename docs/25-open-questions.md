@@ -8,7 +8,11 @@ These items must not block MVP unless explicitly promoted.
 - email delivery provider for invites/password reset;
 - object storage provider;
 - standard monthly price model (MVP permits arbitrary amount);
-- rules for unused payments/refunds beyond recording transaction;
+- rules for unused payments/refunds beyond recording transaction: **запись
+  возврата сделана** (ADR-0010: возврат — отдельное движение средств, зачтено =
+  поступления − возвраты). Открытым остается **зачет** неиспользованной оплаты в
+  следующие периоды и пропорциональный пересчет при заморозке внутри месяца: это
+  изменение денежной логики, а не запись факта;
 - post-MVP grading eligibility rules;
 - push provider/configuration;
 - competition workflow;

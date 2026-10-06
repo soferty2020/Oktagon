@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   AthleteStatus,
   MembershipPeriodStatus,
+  PaymentKind,
   PaymentMethod,
   TrainingSessionStatus,
 } from '../../../generated/prisma';
@@ -9,12 +10,16 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 export interface PaymentRecord {
   id: string;
-  /** Период, к которому относится оплата. */
+  /** Период, к которому относится транзакция. */
   periodId: string;
+  /** ADR-0010: PAYMENT — поступление, REFUND — возврат. */
+  kind: PaymentKind;
   amount: number;
   method: PaymentMethod;
   paidAt: Date;
   comment: string | null;
+  /** ADR-0010: поступление, к которому привязан возврат. */
+  refundedPaymentId: string | null;
   createdById: string | null;
   createdAt: Date;
 }
@@ -25,7 +30,10 @@ export interface MembershipPeriodRecord {
   year: number;
   month: number;
   expectedAmount: number | null;
+  /** Зачтено: поступления минус возвраты (ADR-0010). */
   paidAmount: number;
+  /** Сколько всего возвращено по периоду (ADR-0010). */
+  refundedAmount: number;
   status: MembershipPeriodStatus;
   fullyPaidMarkedAt: Date | null;
   fullyPaidMarkedById: string | null;
@@ -40,7 +48,6 @@ export interface BillingAthleteRecord {
   lastName: string;
   status: AthleteStatus;
 }
-
 
 /**
  * Доступ к финансам.
@@ -60,10 +67,16 @@ export abstract class FinanceRepository {
     year: number;
     month: number;
   }): Promise<MembershipPeriodRecord>;
-  /** Пересчитывает статус и сумму по фактическим оплатам. */
+  /**
+   * Пересчитывает зачтенную сумму и статус по фактическим движениям.
+   *
+   * ADR-0010: обе величины (`paidAmount` — нетто и `refundedAmount`) пишутся
+   * вместе, поэтому разойтись не могут.
+   */
   abstract refreshPeriodTotals(
     periodId: string,
     paidAmount: number,
+    refundedAmount: number,
     status: MembershipPeriodStatus,
   ): Promise<MembershipPeriodRecord>;
   abstract updatePeriod(
@@ -77,10 +90,7 @@ export abstract class FinanceRepository {
     markedById: string | null,
   ): Promise<MembershipPeriodRecord>;
   /** Периоды за месяц: нужны списку должников. */
-  abstract listPeriodsForMonth(
-    year: number,
-    month: number,
-  ): Promise<MembershipPeriodRecord[]>;
+  abstract listPeriodsForMonth(year: number, month: number): Promise<MembershipPeriodRecord[]>;
 
   abstract createPayment(input: {
     periodId: string;
@@ -104,8 +114,35 @@ export abstract class FinanceRepository {
     },
   ): Promise<PaymentRecord>;
   abstract deletePayment(id: string): Promise<boolean>;
-  /** Сумма проведенных оплат периода. */
+  /** Сумма поступлений периода (kind = PAYMENT), без вычета возвратов. */
   abstract sumPayments(periodId: string): Promise<number>;
+  /** Сумма возвратов периода (kind = REFUND). */
+  abstract sumRefunds(periodId: string): Promise<number>;
+
+  // --- Возвраты (ADR-0010) --------------------------------------------------
+
+  abstract createRefund(input: {
+    periodId: string;
+    athleteId: string;
+    amount: number;
+    method: PaymentMethod;
+    refundedAt: Date;
+    comment: string | null;
+    refundedPaymentId: string | null;
+    createdById: string;
+    idempotencyKey: string | null;
+  }): Promise<PaymentRecord>;
+  /**
+   * Удаляет возврат, только если это действительно возврат.
+   *
+   * Отдельно от `deletePayment`: отмена возврата и отмена ошибочного
+   * поступления — разные операции, и случайно удалить поступление этим методом
+   * нельзя (ADR-0010).
+   */
+  abstract deleteRefund(id: string): Promise<boolean>;
+  /** Возвраты, привязанные к поступлению: нужны для проверки лимита. */
+  abstract findRefundsByPayment(paymentId: string): Promise<PaymentRecord[]>;
+  abstract countRefundsByPayment(paymentId: string): Promise<number>;
 
   abstract findAthlete(
     athleteId: string,
@@ -123,12 +160,30 @@ export abstract class FinanceRepository {
 const PAYMENT_SELECT = {
   id: true,
   membershipPeriodId: true,
+  kind: true,
   amount: true,
   method: true,
   paidAt: true,
   comment: true,
+  refundedPaymentId: true,
   createdById: true,
   createdAt: true,
+} as const;
+
+/** Поля периода: `payments` — лента движений, включая возвраты (ADR-0010). */
+const PERIOD_SELECT = {
+  id: true,
+  athleteId: true,
+  year: true,
+  month: true,
+  expectedAmount: true,
+  paidAmount: true,
+  refundedAmount: true,
+  status: true,
+  fullyPaidMarkedAt: true,
+  fullyPaidMarkedById: true,
+  note: true,
+  payments: { select: PAYMENT_SELECT, orderBy: { createdAt: 'asc' } },
 } as const;
 
 @Injectable()
@@ -144,19 +199,7 @@ export class PrismaFinanceRepository extends FinanceRepository {
   ): Promise<MembershipPeriodRecord | null> {
     const period = await this.prisma.db.membershipPeriod.findUnique({
       where: { athleteId_year_month: { athleteId, year, month } },
-      select: {
-        id: true,
-        athleteId: true,
-        year: true,
-        month: true,
-        expectedAmount: true,
-        paidAmount: true,
-        status: true,
-        fullyPaidMarkedAt: true,
-        fullyPaidMarkedById: true,
-        note: true,
-        payments: { select: PAYMENT_SELECT, orderBy: { paidAt: 'asc' } },
-      },
+      select: PERIOD_SELECT,
     });
 
     return period ? toPeriodRecord(period) : null;
@@ -165,19 +208,7 @@ export class PrismaFinanceRepository extends FinanceRepository {
   async findPeriodById(id: string): Promise<MembershipPeriodRecord | null> {
     const period = await this.prisma.db.membershipPeriod.findUnique({
       where: { id },
-      select: {
-        id: true,
-        athleteId: true,
-        year: true,
-        month: true,
-        expectedAmount: true,
-        paidAmount: true,
-        status: true,
-        fullyPaidMarkedAt: true,
-        fullyPaidMarkedById: true,
-        note: true,
-        payments: { select: PAYMENT_SELECT, orderBy: { paidAt: 'asc' } },
-      },
+      select: PERIOD_SELECT,
     });
 
     return period ? toPeriodRecord(period) : null;
@@ -190,19 +221,7 @@ export class PrismaFinanceRepository extends FinanceRepository {
   }): Promise<MembershipPeriodRecord> {
     const period = await this.prisma.db.membershipPeriod.create({
       data: { athleteId: input.athleteId, year: input.year, month: input.month },
-      select: {
-        id: true,
-        athleteId: true,
-        year: true,
-        month: true,
-        expectedAmount: true,
-        paidAmount: true,
-        status: true,
-        fullyPaidMarkedAt: true,
-        fullyPaidMarkedById: true,
-        note: true,
-        payments: { select: PAYMENT_SELECT },
-      },
+      select: PERIOD_SELECT,
     });
 
     return toPeriodRecord(period);
@@ -211,24 +230,13 @@ export class PrismaFinanceRepository extends FinanceRepository {
   async refreshPeriodTotals(
     periodId: string,
     paidAmount: number,
+    refundedAmount: number,
     status: MembershipPeriodStatus,
   ): Promise<MembershipPeriodRecord> {
     const period = await this.prisma.db.membershipPeriod.update({
       where: { id: periodId },
-      data: { paidAmount, status },
-      select: {
-        id: true,
-        athleteId: true,
-        year: true,
-        month: true,
-        expectedAmount: true,
-        paidAmount: true,
-        status: true,
-        fullyPaidMarkedAt: true,
-        fullyPaidMarkedById: true,
-        note: true,
-        payments: { select: PAYMENT_SELECT, orderBy: { paidAt: 'asc' } },
-      },
+      data: { paidAmount, refundedAmount, status },
+      select: PERIOD_SELECT,
     });
 
     return toPeriodRecord(period);
@@ -244,19 +252,7 @@ export class PrismaFinanceRepository extends FinanceRepository {
         ...(input.expectedAmount !== undefined ? { expectedAmount: input.expectedAmount } : {}),
         ...(input.note !== undefined ? { note: input.note } : {}),
       },
-      select: {
-        id: true,
-        athleteId: true,
-        year: true,
-        month: true,
-        expectedAmount: true,
-        paidAmount: true,
-        status: true,
-        fullyPaidMarkedAt: true,
-        fullyPaidMarkedById: true,
-        note: true,
-        payments: { select: PAYMENT_SELECT, orderBy: { paidAt: 'asc' } },
-      },
+      select: PERIOD_SELECT,
     });
 
     return toPeriodRecord(period);
@@ -270,19 +266,7 @@ export class PrismaFinanceRepository extends FinanceRepository {
     const period = await this.prisma.db.membershipPeriod.update({
       where: { id: periodId },
       data: { fullyPaidMarkedAt: markedAt, fullyPaidMarkedById: markedById },
-      select: {
-        id: true,
-        athleteId: true,
-        year: true,
-        month: true,
-        expectedAmount: true,
-        paidAmount: true,
-        status: true,
-        fullyPaidMarkedAt: true,
-        fullyPaidMarkedById: true,
-        note: true,
-        payments: { select: PAYMENT_SELECT, orderBy: { paidAt: 'asc' } },
-      },
+      select: PERIOD_SELECT,
     });
 
     return toPeriodRecord(period);
@@ -291,19 +275,7 @@ export class PrismaFinanceRepository extends FinanceRepository {
   async listPeriodsForMonth(year: number, month: number): Promise<MembershipPeriodRecord[]> {
     const periods = await this.prisma.db.membershipPeriod.findMany({
       where: { year, month },
-      select: {
-        id: true,
-        athleteId: true,
-        year: true,
-        month: true,
-        expectedAmount: true,
-        paidAmount: true,
-        status: true,
-        fullyPaidMarkedAt: true,
-        fullyPaidMarkedById: true,
-        note: true,
-        payments: { select: PAYMENT_SELECT },
-      },
+      select: PERIOD_SELECT,
     });
 
     return periods.map(toPeriodRecord);
@@ -323,6 +295,9 @@ export class PrismaFinanceRepository extends FinanceRepository {
       data: {
         membershipPeriodId: input.periodId,
         athleteId: input.athleteId,
+        // Направление задается явно, а не значением по умолчанию в схеме: так
+        // намерение видно в коде, а не только в миграции (ADR-0010).
+        kind: PaymentKind.PAYMENT,
         amount: input.amount,
         method: input.method,
         paidAt: input.paidAt,
@@ -383,12 +358,76 @@ export class PrismaFinanceRepository extends FinanceRepository {
   }
 
   async sumPayments(periodId: string): Promise<number> {
+    // Возвраты исключены явно: это сумма поступлений, а не зачтенная сумма.
+    // Иначе `sumPayments` и «нетто» стали бы одним и тем же именем с разным
+    // смыслом, и проверки лимита возврата считались бы по завышенной базе.
     const result = await this.prisma.db.paymentTransaction.aggregate({
-      where: { membershipPeriodId: periodId },
+      where: { membershipPeriodId: periodId, kind: PaymentKind.PAYMENT },
       _sum: { amount: true },
     });
 
     return Number(result._sum.amount ?? 0);
+  }
+
+  async sumRefunds(periodId: string): Promise<number> {
+    const result = await this.prisma.db.paymentTransaction.aggregate({
+      where: { membershipPeriodId: periodId, kind: PaymentKind.REFUND },
+      _sum: { amount: true },
+    });
+
+    return Number(result._sum.amount ?? 0);
+  }
+
+  async createRefund(input: {
+    periodId: string;
+    athleteId: string;
+    amount: number;
+    method: PaymentMethod;
+    refundedAt: Date;
+    comment: string | null;
+    refundedPaymentId: string | null;
+    createdById: string;
+    idempotencyKey: string | null;
+  }): Promise<PaymentRecord> {
+    const refund = await this.prisma.db.paymentTransaction.create({
+      data: {
+        membershipPeriodId: input.periodId,
+        athleteId: input.athleteId,
+        kind: PaymentKind.REFUND,
+        amount: input.amount,
+        method: input.method,
+        paidAt: input.refundedAt,
+        comment: input.comment,
+        refundedPaymentId: input.refundedPaymentId,
+        createdById: input.createdById,
+        idempotencyKey: input.idempotencyKey,
+      },
+      select: PAYMENT_SELECT,
+    });
+
+    return toPaymentRecord(refund);
+  }
+
+  async deleteRefund(id: string): Promise<boolean> {
+    const result = await this.prisma.db.paymentTransaction.deleteMany({
+      where: { id, kind: PaymentKind.REFUND },
+    });
+    return result.count > 0;
+  }
+
+  async findRefundsByPayment(paymentId: string): Promise<PaymentRecord[]> {
+    const refunds = await this.prisma.db.paymentTransaction.findMany({
+      where: { refundedPaymentId: paymentId, kind: PaymentKind.REFUND },
+      select: PAYMENT_SELECT,
+    });
+
+    return refunds.map(toPaymentRecord);
+  }
+
+  async countRefundsByPayment(paymentId: string): Promise<number> {
+    return this.prisma.db.paymentTransaction.count({
+      where: { refundedPaymentId: paymentId, kind: PaymentKind.REFUND },
+    });
   }
 
   async findAthlete(
@@ -453,20 +492,24 @@ function toPaymentRecord(payment: {
   id: string;
   membershipPeriodId: string;
   amount: unknown;
+  kind: PaymentKind;
   method: PaymentMethod;
   paidAt: Date;
   comment: string | null;
+  refundedPaymentId: string | null;
   createdById: string | null;
   createdAt: Date;
 }): PaymentRecord {
   return {
     id: payment.id,
     periodId: payment.membershipPeriodId,
+    kind: payment.kind,
     // Decimal из Prisma приводится к числу: контракт использует number.
     amount: Number(payment.amount),
     method: payment.method,
     paidAt: payment.paidAt,
     comment: payment.comment,
+    refundedPaymentId: payment.refundedPaymentId,
     createdById: payment.createdById,
     createdAt: payment.createdAt,
   };
@@ -479,6 +522,7 @@ function toPeriodRecord(period: {
   month: number;
   expectedAmount: unknown;
   paidAmount: unknown;
+  refundedAmount: unknown;
   status: MembershipPeriodStatus;
   fullyPaidMarkedAt: Date | null;
   fullyPaidMarkedById: string | null;
@@ -486,10 +530,12 @@ function toPeriodRecord(period: {
   payments: {
     id: string;
     membershipPeriodId: string;
+    kind: PaymentKind;
     amount: unknown;
     method: PaymentMethod;
     paidAt: Date;
     comment: string | null;
+    refundedPaymentId: string | null;
     createdById: string | null;
     createdAt: Date;
   }[];
@@ -501,6 +547,9 @@ function toPeriodRecord(period: {
     month: period.month,
     expectedAmount: period.expectedAmount === null ? null : Number(period.expectedAmount),
     paidAmount: Number(period.paidAmount),
+    // Поле добавлено миграцией с DEFAULT 0, но у записей, созданных до нее,
+    // значение могло остаться NULL: приводим к нулю, а не к NaN.
+    refundedAmount: Number(period.refundedAmount ?? 0),
     status: period.status,
     fullyPaidMarkedAt: period.fullyPaidMarkedAt,
     fullyPaidMarkedById: period.fullyPaidMarkedById,

@@ -8,6 +8,7 @@ import { getCurrentUser, readTokens } from '@/lib/server/session';
 import { CloseFreezeForm, OpenFreezeForm } from '../../freeze-forms';
 import { PeriodRow } from '../../period-forms';
 import { CURRENT_YEAR, monthQuery, parseYearMonth } from '../../finance-shared';
+import type { PaymentKind } from '@octagon/contracts';
 
 export const metadata = {
   title: 'Финансы спортсмена — OCTAGON',
@@ -23,10 +24,12 @@ interface AthleteDetails {
 
 interface PaymentView {
   id: string;
+  kind: PaymentKind;
   amount: number;
   method: string;
   paidAt: string;
   comment: string | null;
+  refundedPaymentId: string | null;
   createdAt: string;
 }
 
@@ -36,7 +39,10 @@ interface MembershipPeriodView {
   year: number;
   month: number;
   expectedAmount: number | null;
+  /** Зачтено: поступления минус возвраты (ADR-0010). */
   paidAmount: number;
+  /** Сколько возвращено по периоду (ADR-0010). */
+  refundedAmount: number;
   status: 'UNPAID' | 'PARTIALLY_PAID' | 'PAID' | 'FULLY_PAID_MARKED';
   fullyPaidMarkedAt: string | null;
   note: string | null;
@@ -120,6 +126,7 @@ export default async function AthleteFinancePage({
   const periodByMonth = new Map(yearPeriods.map((period) => [period.month, period]));
   const expectedTotal = yearPeriods.reduce((sum, period) => sum + (period.expectedAmount ?? 0), 0);
   const paidTotal = yearPeriods.reduce((sum, period) => sum + period.paidAmount, 0);
+  const refundedTotal = yearPeriods.reduce((sum, period) => sum + period.refundedAmount, 0);
   const openFreeze = (freezes?.ok ? freezes.data : []).find((freeze) => freeze.isOpen) ?? null;
 
   return (
@@ -170,7 +177,13 @@ export default async function AthleteFinancePage({
             <span className="text-slate-600">
               за {year}: ожидается{' '}
               <span className="font-medium text-slate-900">{formatAmount(expectedTotal)}</span>,
-              внесено <span className="font-medium text-slate-900">{formatAmount(paidTotal)}</span>
+              зачтено <span className="font-medium text-slate-900">{formatAmount(paidTotal)}</span>
+              {refundedTotal > 0 ? (
+                <>
+                  {', возвращено '}
+                  <span className="font-medium text-amber-700">{formatAmount(refundedTotal)}</span>
+                </>
+              ) : null}
             </span>
             <YearLinks athleteId={id} year={year} />
           </div>

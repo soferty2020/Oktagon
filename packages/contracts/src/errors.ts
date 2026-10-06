@@ -114,6 +114,20 @@ export const ApiErrorCode = {
   MEMBERSHIP_PERIOD_NOT_FOUND: 'MEMBERSHIP_PERIOD_NOT_FOUND',
   PAYMENT_NOT_FOUND: 'PAYMENT_NOT_FOUND',
   PAYMENT_AMOUNT_INVALID: 'PAYMENT_AMOUNT_INVALID',
+  /** ADR-0010: возврат не найден. */
+  REFUND_NOT_FOUND: 'REFUND_NOT_FOUND',
+  /**
+   * ADR-0010: возврат больше, чем было получено.
+   *
+   * Отдельно от `PAYMENT_AMOUNT_INVALID`: там ошибка в самой сумме, здесь —
+   * попытка вернуть деньги, которых период не получал. Для администратора это
+   * разные ситуации и разные подсказки.
+   */
+  REFUND_EXCEEDS_PAYMENT: 'REFUND_EXCEEDS_PAYMENT',
+  /** ADR-0010: возврат относится к поступлению другого периода. */
+  REFUND_PAYMENT_MISMATCH: 'REFUND_PAYMENT_MISMATCH',
+  /** ADR-0010: по поступлению уже есть возвраты — удалять его нельзя. */
+  PAYMENT_HAS_REFUNDS: 'PAYMENT_HAS_REFUNDS',
   FREEZE_ALREADY_OPEN: 'FREEZE_ALREADY_OPEN',
   FREEZE_PERIOD_INVALID: 'FREEZE_PERIOD_INVALID',
   FREEZE_NOT_OPEN: 'FREEZE_NOT_OPEN',
@@ -208,6 +222,10 @@ export const API_ERROR_HTTP_STATUS: Readonly<Record<ApiErrorCode, number>> = {
   MEMBERSHIP_PERIOD_NOT_FOUND: 404,
   PAYMENT_NOT_FOUND: 404,
   PAYMENT_AMOUNT_INVALID: 400,
+  REFUND_NOT_FOUND: 404,
+  REFUND_EXCEEDS_PAYMENT: 400,
+  REFUND_PAYMENT_MISMATCH: 400,
+  PAYMENT_HAS_REFUNDS: 409,
   FREEZE_ALREADY_OPEN: 409,
   FREEZE_PERIOD_INVALID: 400,
   FREEZE_NOT_OPEN: 409,

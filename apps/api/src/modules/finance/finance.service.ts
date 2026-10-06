@@ -4,11 +4,13 @@ import {
   AuditAction,
   AuditEntityType,
   DebtorExemption,
+  PaymentKind,
   type DebtorSummary,
   type MembershipPeriodView,
   type PaymentMethod,
   type PaymentView,
   type RecordPaymentInput,
+  type RefundPaymentInput,
   type UpdateMembershipPeriodInput,
   type UpdatePaymentInput,
 } from '@octagon/contracts';
@@ -28,15 +30,22 @@ import { FinanceRepository } from './finance.repository';
 import type { MembershipPeriodRecord, PaymentRecord } from './finance.repository';
 
 /**
- * Финансы: расчетные периоды, оплаты и задолженность (эпик F).
+ * Финансы: расчетные периоды, движения средств и задолженность (эпик F).
  *
  * Спецификация: BR-001 (учет по календарным месяцам), BR-002 (произвольная
  * сумма), BR-003 (ручная отметка «оплачен полностью»), BR-004 (задолженность по
- * четырем условиям), BR-010 (доступ только с явным финансовым правом).
+ * четырем условиям), BR-010 (доступ только с явным финансовым правом),
+ * ADR-0010 (возврат — отдельное движение средств).
  *
- * Ключевое правило: статус периода никогда не вводится руками — он выводится из
- * суммы оплат и ручной отметки. Иначе отметка «оплачено» расходилась бы с
- * фактическими поступлениями.
+ * Ключевые правила:
+ *
+ * 1. статус периода никогда не вводится руками — он выводится из движений и
+ *    ручной отметки. Иначе отметка «оплачено» расходилась бы с поступлениями;
+ * 2. зачтено = поступления − возвраты (ADR-0010). Возвращенные деньги не
+ *    считаются оплатой: иначе задолженность осталась бы завышенной;
+ * 3. возврат — не удаление поступления. Отмена оплаты стирает запись, потому что
+ *    денег не было; возврат фиксирует, что деньги были и ушли, и остается в
+ *    истории.
  *
  * Заморозки (BR-005) обслуживает отдельный модуль, но задолженность обязана их
  * учитывать: заморозка — четвертое условие BR-004.
@@ -233,6 +242,17 @@ export class FinanceService {
     const period = await this.requirePeriodForPayment(paymentId);
     await this.scope.assertAthleteAccess(callerUserId, period.athleteId);
 
+    // Возврат правится не «изменением оплаты», а отменой и повторным
+    // оформлением: иначе можно было бы тихо изменить возврат, не привязанный к
+    // поступлению, и лимит по периоду остался бы соблюден только на бумаге.
+    if (payment.kind === PaymentKind.REFUND) {
+      throw new ApiException(
+        'REFUND_PAYMENT_MISMATCH' satisfies ApiErrorCode,
+        'Возврат нельзя изменить: отмените его и оформите заново',
+        { refundId: paymentId },
+      );
+    }
+
     if (input.amount !== undefined && !(input.amount > 0)) {
       throw new ApiException(
         'PAYMENT_AMOUNT_INVALID' satisfies ApiErrorCode,
@@ -271,6 +291,17 @@ export class FinanceService {
     const period = await this.requirePeriodForPayment(paymentId);
     await this.scope.assertAthleteAccess(callerUserId, period.athleteId);
 
+    // ADR-0010: поступление с возвратами удалять нельзя — возврат потерял бы
+    // основание, и в истории осталась бы операция без источника.
+    const refunds = await this.finance.countRefundsByPayment(paymentId);
+    if (refunds > 0) {
+      throw new ApiException(
+        'PAYMENT_HAS_REFUNDS' satisfies ApiErrorCode,
+        'По оплате есть возвраты: сначала отмените их, потом удаляйте оплату',
+        { refunds },
+      );
+    }
+
     await this.finance.deletePayment(paymentId);
     const recalculated = await this.recalculate(period);
 
@@ -279,6 +310,162 @@ export class FinanceService {
       entityType: AuditEntityType.PAYMENT_TRANSACTION,
       entityId: paymentId,
       before: { amount: payment.amount, periodId: period.id },
+    });
+
+    return toPeriodView(recalculated);
+  }
+
+  // --- Возвраты (ADR-0010) --------------------------------------------------
+
+  /**
+   * Оформляет возврат денег по периоду.
+   *
+   * Возврат не удаляет поступление: он фиксирует, что деньги были получены и
+   * возвращены. Зачтенная сумма периода уменьшается, статус пересчитывается.
+   *
+   * Проверки:
+   * - сумма положительна;
+   * - при привязке к поступлению оно принадлежит тому же периоду;
+   * - возвратов по поступлению не больше его суммы;
+   * - возвратов по периоду не больше поступлений периода. Вернуть больше, чем
+   *   получено, — не возврат, а ошибка ввода.
+   */
+  async refundPayment(
+    callerUserId: string,
+    periodId: string,
+    input: RefundPaymentInput,
+  ): Promise<MembershipPeriodView> {
+    const period = await this.requirePeriod(periodId);
+    await this.scope.assertAthleteAccess(callerUserId, period.athleteId);
+
+    if (!(input.amount > 0)) {
+      throw new ApiException(
+        'PAYMENT_AMOUNT_INVALID' satisfies ApiErrorCode,
+        'Сумма возврата должна быть больше нуля',
+      );
+    }
+
+    // Идемпотентность проверяется раньше лимитов: при повторной отправке той же
+    // формы возврат уже учтен в сумме периода, и проверка лимита отклонила бы
+    // повторное нажатие как «возврат больше, чем поступило». Клиент вместо
+    // текущего состояния периода получил бы ошибку.
+    if (input.idempotencyKey) {
+      const existing = await this.finance.findPaymentByIdempotencyKey(input.idempotencyKey);
+      if (existing) {
+        return toPeriodView(await this.recalculate(period));
+      }
+    }
+
+    // --- Привязка к поступлению --------------------------------------------
+    let refundedPaymentId: string | null = null;
+    if (input.paymentId) {
+      const source = await this.finance.findPayment(input.paymentId);
+      if (!source) {
+        throw new ApiException('PAYMENT_NOT_FOUND' satisfies ApiErrorCode, 'Оплата не найдена');
+      }
+      if (source.periodId !== periodId) {
+        throw new ApiException(
+          'REFUND_PAYMENT_MISMATCH' satisfies ApiErrorCode,
+          'Возврат относится к оплате другого расчетного периода',
+          { paymentId: source.id, periodId: source.periodId },
+        );
+      }
+      if (source.kind === PaymentKind.REFUND) {
+        // Возврат возврата: почти всегда это выбор не той строки в интерфейсе.
+        throw new ApiException(
+          'REFUND_PAYMENT_MISMATCH' satisfies ApiErrorCode,
+          'Возврат нельзя привязать к другой операции возврата',
+          { paymentId: source.id },
+        );
+      }
+
+      const alreadyRefunded = (await this.finance.findRefundsByPayment(source.id)).reduce(
+        (sum, refund) => sum + refund.amount,
+        0,
+      );
+      if (alreadyRefunded + input.amount > source.amount) {
+        throw new ApiException(
+          'REFUND_EXCEEDS_PAYMENT' satisfies ApiErrorCode,
+          'По этой оплате возвращено больше, чем получено',
+          { paymentAmount: source.amount, refunded: alreadyRefunded, requested: input.amount },
+        );
+      }
+
+      refundedPaymentId = source.id;
+    }
+
+    // --- Лимит по периоду --------------------------------------------------
+    const [paidTotal, refundedTotal] = await Promise.all([
+      this.finance.sumPayments(periodId),
+      this.finance.sumRefunds(periodId),
+    ]);
+
+    if (refundedTotal + input.amount > paidTotal) {
+      throw new ApiException(
+        'REFUND_EXCEEDS_PAYMENT' satisfies ApiErrorCode,
+        'Возврат больше, чем поступило по этому периоду',
+        { paid: paidTotal, refunded: refundedTotal, requested: input.amount },
+      );
+    }
+
+    const refund = await this.finance.createRefund({
+      periodId,
+      athleteId: period.athleteId,
+      amount: input.amount,
+      method: (input.method ?? 'CASH') as PrismaPaymentMethod,
+      refundedAt: input.refundedAt ? new Date(input.refundedAt) : new Date(),
+      // Причина возврата — тот же по смыслу текст, что комментарий у оплаты.
+      comment: input.reason ?? null,
+      refundedPaymentId,
+      createdById: callerUserId,
+      idempotencyKey: input.idempotencyKey ?? null,
+    });
+
+    const recalculated = await this.recalculate(period);
+
+    await this.audit.recordSafely({
+      action: AuditAction.PAYMENT_REFUNDED,
+      entityType: AuditEntityType.PAYMENT_TRANSACTION,
+      entityId: refund.id,
+      after: {
+        periodId,
+        athleteId: period.athleteId,
+        amount: refund.amount,
+        refundedPaymentId,
+        reason: input.reason ?? null,
+      },
+    });
+
+    this.logger.log(
+      `Возврат ${refund.amount} по периоду ${periodId} (${period.year}-${period.month})`,
+    );
+
+    return toPeriodView(recalculated);
+  }
+
+  /**
+   * Отменяет ошибочно оформленный возврат.
+   *
+   * Запись возврата удаляется, период пересчитывается: возврат, оформленный по
+   * ошибке, не должен уменьшать зачтенную сумму.
+   */
+  async voidRefund(callerUserId: string, refundId: string): Promise<MembershipPeriodView> {
+    const refund = await this.requireRefund(refundId);
+    const period = await this.requirePeriodForPayment(refundId);
+    await this.scope.assertAthleteAccess(callerUserId, period.athleteId);
+
+    await this.finance.deleteRefund(refundId);
+    const recalculated = await this.recalculate(period);
+
+    await this.audit.recordSafely({
+      action: AuditAction.PAYMENT_REFUND_VOIDED,
+      entityType: AuditEntityType.PAYMENT_TRANSACTION,
+      entityId: refundId,
+      before: {
+        amount: refund.amount,
+        periodId: period.id,
+        refundedPaymentId: refund.refundedPaymentId,
+      },
     });
 
     return toPeriodView(recalculated);
@@ -328,7 +515,9 @@ export class FinanceService {
       }
 
       const period = periodByAthlete.get(athlete.athleteId) ?? null;
+      // Нетто: возвращенные деньги не считаются оплатой (ADR-0010).
       const paidAmount = period?.paidAmount ?? 0;
+      const refundedAmount = period?.refundedAmount ?? 0;
 
       let reason: DebtorExemption | null = null;
 
@@ -352,6 +541,7 @@ export class FinanceService {
         year,
         month,
         paidAmount,
+        refundedAmount,
         expectedAmount: period?.expectedAmount ?? null,
         isDebtor: reason === null,
         reason,
@@ -389,19 +579,37 @@ export class FinanceService {
    * Ручная отметка «оплачен полностью» имеет приоритет (BR-003): она ставится
    * именно тогда, когда сумма в системе не совпадает с реальностью.
    */
+  /**
+   * Пересчитывает зачтенную сумму и статус периода по фактическим движениям.
+   *
+   * ADR-0010: зачтено = поступления − возвраты. Обе величины пишутся вместе
+   * (`paidAmount` и `refundedAmount`), поэтому разойтись не могут.
+   *
+   * Ручная отметка «оплачен полностью» имеет приоритет (BR-003): она ставится
+   * именно тогда, когда сумма в системе не совпадает с реальностью.
+   */
   private async recalculate(period: MembershipPeriodRecord): Promise<MembershipPeriodRecord> {
-    const paidAmount = await this.finance.sumPayments(period.id);
+    const [payments, refunds] = await Promise.all([
+      this.finance.sumPayments(period.id),
+      this.finance.sumRefunds(period.id),
+    ]);
+
+    const paidAmount = payments - refunds;
     const status = deriveStatus({
       fullyPaidMarked: period.fullyPaidMarkedAt !== null,
       paidAmount,
       expectedAmount: period.expectedAmount,
     });
 
-    if (paidAmount === period.paidAmount && status === period.status) {
+    if (
+      paidAmount === period.paidAmount &&
+      refunds === period.refundedAmount &&
+      status === period.status
+    ) {
       return period;
     }
 
-    return this.finance.refreshPeriodTotals(period.id, paidAmount, status);
+    return this.finance.refreshPeriodTotals(period.id, paidAmount, refunds, status);
   }
 
   private assertMonth(month: number): void {
@@ -444,9 +652,22 @@ export class FinanceService {
     return payment;
   }
 
+  /** Возврат ищется явно: `REFUND_NOT_FOUND` точнее, чем «оплата не найдена». */
+  private async requireRefund(refundId: string): Promise<PaymentRecord> {
+    const refund = await this.finance.findPayment(refundId);
+    if (!refund || refund.kind !== PaymentKind.REFUND) {
+      throw new ApiException('REFUND_NOT_FOUND' satisfies ApiErrorCode, 'Возврат не найден');
+    }
+    return refund;
+  }
 }
 
-/** Статус периода выводится из оплат и ручной отметки, а не вводится руками. */
+/**
+ * Статус периода выводится из движений и ручной отметки, а не вводится руками.
+ *
+ * ADR-0010: `paidAmount` здесь — уже нетто (поступления минус возвраты), поэтому
+ * полный возврат возвращает период в `UNPAID`, а не оставляет его оплаченным.
+ */
 function deriveStatus(input: {
   fullyPaidMarked: boolean;
   paidAmount: number;
@@ -474,10 +695,12 @@ function toCalendarDate(date: Date): string {
 function toPaymentView(payment: PaymentRecord): PaymentView {
   return {
     id: payment.id,
+    kind: payment.kind as PaymentKind,
     amount: payment.amount,
     method: payment.method as PaymentMethod,
     paidAt: toCalendarDate(payment.paidAt),
     comment: payment.comment,
+    refundedPaymentId: payment.refundedPaymentId,
     createdById: payment.createdById,
     createdAt: payment.createdAt.toISOString(),
   };
@@ -490,7 +713,9 @@ function toPeriodView(period: MembershipPeriodRecord): MembershipPeriodView {
     year: period.year,
     month: period.month,
     expectedAmount: period.expectedAmount,
+    // Зачтено (нетто): поступления минус возвраты (ADR-0010).
     paidAmount: period.paidAmount,
+    refundedAmount: period.refundedAmount,
     status: period.status,
     fullyPaidMarkedAt: period.fullyPaidMarkedAt?.toISOString() ?? null,
     fullyPaidMarkedById: period.fullyPaidMarkedById,

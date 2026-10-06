@@ -18,7 +18,10 @@ interface DebtorSummary {
   lastName: string;
   year: number;
   month: number;
+  /** Зачтено: поступления минус возвраты (ADR-0010). */
   paidAmount: number;
+  /** Сколько возвращено по периоду (ADR-0010). */
+  refundedAmount: number;
   expectedAmount: number | null;
   isDebtor: boolean;
   reason: string | null;
@@ -158,7 +161,8 @@ function DebtorTable({
           <tr>
             <th className="px-4 py-3">Спортсмен</th>
             <th className="px-4 py-3">Ожидается</th>
-            <th className="px-4 py-3">Внесено</th>
+            <th className="px-4 py-3">Зачтено</th>
+            <th className="px-4 py-3">Возвращено</th>
             <th className="px-4 py-3">Состояние</th>
             <th className="px-4 py-3" />
           </tr>
@@ -166,7 +170,7 @@ function DebtorTable({
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={5} className="px-4 py-5 text-sm text-slate-500">
+              <td colSpan={6} className="px-4 py-5 text-sm text-slate-500">
                 {emptyText}
               </td>
             </tr>
@@ -189,6 +193,13 @@ function DebtorTable({
                   )}
                 </td>
                 <td className="px-4 py-3 text-slate-600">{formatAmount(row.paidAmount)}</td>
+                <td className="px-4 py-3 text-slate-600">
+                  {row.refundedAmount > 0 ? (
+                    <span className="text-amber-700">{formatAmount(row.refundedAmount)}</span>
+                  ) : (
+                    '—'
+                  )}
+                </td>
                 <td className="px-4 py-3">
                   {row.isDebtor ? (
                     <span className="rounded-full bg-red-50 px-2 py-1 text-xs text-red-700">

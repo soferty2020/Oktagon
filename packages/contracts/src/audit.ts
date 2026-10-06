@@ -85,6 +85,9 @@ export const AuditAction = {
   PAYMENT_RECORDED: 'finance.payment_recorded',
   PAYMENT_UPDATED: 'finance.payment_updated',
   PAYMENT_VOIDED: 'finance.payment_voided',
+  /** ADR-0010: возврат денег — отдельное движение средств, а не удаление оплаты. */
+  PAYMENT_REFUNDED: 'finance.payment_refunded',
+  PAYMENT_REFUND_VOIDED: 'finance.payment_refund_voided',
   PERIOD_MARKED_FULLY_PAID: 'finance.period_marked_fully_paid',
   PERIOD_FULLY_PAID_UNMARKED: 'finance.period_fully_paid_unmarked',
 

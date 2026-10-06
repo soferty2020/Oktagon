@@ -130,6 +130,52 @@ export class UpdatePaymentDto {
   comment?: string;
 }
 
+/**
+ * Возврат денег по расчетному периоду (ADR-0010).
+ *
+ * `paymentId` необязателен: возврат можно привязать к конкретному поступлению, а
+ * можно оформить как корректировку периода. Сумма всегда положительна —
+ * направление задает сам факт возврата, а не знак числа.
+ */
+export class RefundPaymentDto {
+  @ApiProperty({ example: 10000, description: 'Сумма возврата, больше нуля' })
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0.01)
+  amount!: number;
+
+  @ApiPropertyOptional({ description: 'Календарная дата возврата, YYYY-MM-DD' })
+  @IsOptional()
+  @IsString()
+  refundedAt?: string;
+
+  @ApiPropertyOptional({ maxLength: 500, example: 'Спортсмен ушел из клуба' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  reason?: string;
+
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description: 'Поступление, к которому относится возврат; по нему проверяется лимит',
+  })
+  @IsOptional()
+  @IsUUID()
+  paymentId?: string;
+
+  @ApiPropertyOptional({ enum: Object.values(PaymentMethod), default: 'CASH' })
+  @IsOptional()
+  @IsEnum(PaymentMethod)
+  method?: PaymentMethod;
+
+  @ApiPropertyOptional({
+    description: 'Ключ идемпотентности: повторная отправка не создаст второй возврат',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  idempotencyKey?: string;
+}
+
 /** Идентификатор спортсмена в пути. */
 export class AthleteIdParamDto {
   @ApiProperty({ format: 'uuid' })

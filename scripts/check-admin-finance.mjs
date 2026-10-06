@@ -105,12 +105,12 @@ async function main() {
     finance.html.includes('Финансы') && finance.html.includes('Должников'),
     'сводка месяца: заголовок и карточка должников',
   );
-  check(
-    finance.html.includes('Как считается задолженность'),
-    'сводка объясняет правила BR-004',
-  );
+  check(finance.html.includes('Как считается задолженность'), 'сводка объясняет правила BR-004');
   check(finance.html.includes('Финансы'), 'раздел «Финансы» есть в навигации админки');
-  check(!finance.html.includes('Доступен только просмотр: нет права'), 'разделы доступны суперадмину');
+  check(
+    !finance.html.includes('Доступен только просмотр: нет права'),
+    'разделы доступны суперадмину',
+  );
 
   // --- Список должников: причины освобождения (BR-004) ----------------------
   const debtors = await fetchHtml(admin, `/finance/debtors?year=${year}&month=${month}`, cookie);
@@ -123,10 +123,7 @@ async function main() {
     debtors.html.includes('Не должники') && debtors.html.includes('Освобождение — это решение'),
     'освобожденные вынесены отдельной таблицей с пояснением',
   );
-  check(
-    debtors.html.includes('не задана') || debtors.html.includes('₸'),
-    'суммы периода показаны',
-  );
+  check(debtors.html.includes('не задана') || debtors.html.includes('₸'), 'суммы периода показаны');
 
   // --- Карточка спортсмена: период и формы ---------------------------------
   const cardUrl = `/finance/athletes/${athlete.id}?year=${year}&month=${month}`;
@@ -145,7 +142,8 @@ async function main() {
   const paymentForm = readActionForm(opened.html, 'name="idempotencyKey"');
   check(Boolean(paymentForm), 'форма внесения оплаты появилась после заведения периода');
   check(
-    opened.html.includes('Ожидаемая сумма') && opened.html.includes('Отметить оплаченным полностью'),
+    opened.html.includes('Ожидаемая сумма') &&
+      opened.html.includes('Отметить оплаченным полностью'),
     'доступны изменение ожидаемой суммы и ручная отметка (BR-002, BR-003)',
   );
 
@@ -181,6 +179,66 @@ async function main() {
     const after = await fetchHtml(admin, cardUrl, cookie);
     check(after.html.includes('12 000'), 'сумма оплаты отображается в карточке');
     check(after.html.includes('карта'), 'способ оплаты отображается по-русски');
+
+    // --- Возврат через форму админки (ADR-0010) --------------------------
+    // Возврат оформляется из строки поступления: сумма ограничена остатком,
+    // а поступление остается в истории.
+    check(
+      after.html.includes('Оформить возврат') && after.html.includes('Движения средств'),
+      'карточка предлагает возврат и показывает ленту движений',
+    );
+
+    // Форма возврата ищется по видимому полю `refundedAt`: у «Изменить оплату»
+    // и «Оформить возврат» скрытое поле `paymentId` совпадает.
+    const refundForm = readActionForm(after.html, 'name="refundedAt"', ['refundedAt']);
+    const sourcePayment = period.body?.payments?.find((item) => item.kind === 'PAYMENT');
+    check(Boolean(refundForm), 'форма возврата найдена в карточке');
+    check(Boolean(sourcePayment), `поступление найдено: ${sourcePayment?.amount}`);
+
+    if (refundForm && sourcePayment) {
+      const refundData = new FormData();
+      for (const [name, value] of refundForm.fields) {
+        // Пустой ключ идемпотентности не отправляем: в разметке он пуст, потому
+        // что создается на клиенте после монтирования формы.
+        if (name === 'idempotencyKey' && value === '') {
+          continue;
+        }
+        refundData.set(name, value);
+      }
+      refundData.set('amount', '5000');
+      refundData.set('refundedAt', refundForm.values.refundedAt || sessionDate);
+      refundData.set('reason', `Возврат из проверки админки ${stamp}`);
+
+      const refundSubmitted = await fetch(`${admin}${cardUrl}`, {
+        method: 'POST',
+        body: refundData,
+        headers: { cookie, origin: admin, accept: 'text/x-component' },
+      });
+      check(refundSubmitted.status === 200, `отправка формы возврата: ${refundSubmitted.status}`);
+
+      const afterRefund = await apiCall(
+        api,
+        token,
+        'GET',
+        `/athletes/${athlete.id}/membership-periods/${year}/${month}`,
+      );
+      check(
+        afterRefund.body?.refundedAmount === 5000 && afterRefund.body?.paidAmount === 7000,
+        `возврат из формы попал в БД: возвращено ${afterRefund.body?.refundedAmount}, зачтено ${afterRefund.body?.paidAmount}`,
+      );
+      check(
+        afterRefund.body?.payments?.length === 2 &&
+          afterRefund.body?.payments?.some((item) => item.kind === 'REFUND'),
+        'лента периода содержит поступление и возврат',
+      );
+
+      const refundedCard = await fetchHtml(admin, cardUrl, cookie);
+      check(refundedCard.html.includes('возврат'), 'возврат отображается в ленте движений');
+      check(
+        refundedCard.html.includes('возвращено') && refundedCard.html.includes('Отменить возврат'),
+        'карточка показывает возвращенную сумму и отмену возврата',
+      );
+    }
   }
 
   // --- Заморозка (BR-005) ---------------------------------------------------
@@ -197,7 +255,8 @@ async function main() {
 
   const frozenCard = await fetchHtml(admin, `/finance/athletes/${athlete.id}`, cookie);
   check(
-    frozenCard.html.includes('Спортсмен в заморозке') && frozenCard.html.includes('Завершить заморозку'),
+    frozenCard.html.includes('Спортсмен в заморозке') &&
+      frozenCard.html.includes('Завершить заморозку'),
     'карточка показывает открытую заморозку и форму завершения',
   );
 
@@ -227,6 +286,10 @@ async function main() {
   check(
     debtorsAfterFreeze.html.includes('в заморозке'),
     'причина «в заморозке» видна в списке должников',
+  );
+  check(
+    debtorsAfterFreeze.html.includes('Зачтено') && debtorsAfterFreeze.html.includes('Возвращено'),
+    'список должников показывает зачтенную и возвращенную суммы',
   );
 
   // --- Уборка ---------------------------------------------------------------

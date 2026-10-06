@@ -2811,6 +2811,72 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
 
+  /membership-periods/{periodId}/refunds:
+    post:
+      tags: [finance]
+      description: |
+        ADR-0010: возврат — отдельное движение средств, а не удаление
+        поступления. Деньги сначала поступили, потом были возвращены, и оба
+        факта остаются в истории (BR-007).
+
+        Зачтено = поступления − возвраты, поэтому возврат уменьшает `paidAmount`
+        и может вернуть период в `UNPAID` (полный возврат) или
+        `PARTIALLY_PAID`. Ручная отметка «оплачен полностью» сохраняет приоритет
+        (BR-003).
+
+        Сумма возврата не может превысить поступления: по привязанному
+        поступлению проверяется его сумма, по периоду — сумма всех поступлений.
+        При наличии `idempotencyKey` повторная отправка возвращает текущее
+        состояние периода, а не создает второй возврат.
+      summary: Оформить возврат денег
+      operationId: refundPayment
+      parameters:
+        - name: periodId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefundPaymentRequest'
+      responses:
+        '201':
+          description: Возврат оформлен; период пересчитан по нетто
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipPeriodView'
+        '400':
+          description: |
+            Ошибка валидации (`VALIDATION_FAILED`), сумма не больше нуля
+            (`PAYMENT_AMOUNT_INVALID`), возврат больше полученного
+            (`REFUND_EXCEEDS_PAYMENT`) или возврат относится к поступлению
+            другого периода (`REFUND_PAYMENT_MISMATCH`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `payments.edit` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: |
+            Период не найден (`MEMBERSHIP_PERIOD_NOT_FOUND`) или указанное
+            поступление не найдено (`PAYMENT_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
   /payments/{paymentId}:
     patch:
       tags: [finance]
@@ -2859,6 +2925,9 @@ paths:
       description: |
         Запись удаляется, период пересчитывается: ошибка ввода не должна
         оставаться в истории как факт поступления денег.
+
+        ADR-0010: если по поступлению есть возвраты, отмена отклоняется
+        (`PAYMENT_HAS_REFUNDS`) — возврат потерял бы основание.
       operationId: voidPayment
       parameters:
         - name: paymentId
@@ -2884,6 +2953,51 @@ paths:
                 $ref: '#/components/schemas/ApiError'
         '404':
           description: Оплата не найдена (`PAYMENT_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: По оплате есть возвраты (`PAYMENT_HAS_REFUNDS`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /refunds/{refundId}:
+    delete:
+      tags: [finance]
+      summary: Отменить возврат
+      description: |
+        ADR-0010: ошибочно оформленный возврат удаляется, период
+        пересчитывается — возврат, сделанный по ошибке, не должен уменьшать
+        зачтенную сумму. Это отдельный маршрут: возврат не является оплатой, и
+        «отменить оплату» на него не действует.
+      operationId: voidRefund
+      parameters:
+        - name: refundId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Возврат удален, период пересчитан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipPeriodView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `payments.edit` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Возврат не найден (`REFUND_NOT_FOUND`)
           content:
             application/json:
               schema:
@@ -3994,14 +4108,20 @@ components:
 
     PaymentView:
       type: object
-      required: [id, amount, method, paidAt, createdAt]
+      description: |
+        Транзакция по расчетному периоду: поступление или возврат (ADR-0010).
+        Сумма всегда положительна, направление задает `kind`. Оба движения живут
+        в одной ленте, потому что история периода читается подряд.
+      required: [id, kind, amount, method, paidAt, createdAt]
       properties:
         id:
           type: string
           format: uuid
+        kind:
+          $ref: '#/components/schemas/PaymentKind'
         amount:
           type: number
-          description: Сумма произвольная (BR-002)
+          description: Сумма произвольная (BR-002); всегда положительна
           example: 25000
         method:
           $ref: '#/components/schemas/PaymentMethod'
@@ -4011,6 +4131,13 @@ components:
         comment:
           type: string
           nullable: true
+        refundedPaymentId:
+          type: string
+          format: uuid
+          nullable: true
+          description: |
+            Поступление, к которому привязан возврат (только для `kind = REFUND`).
+            null — корректировка периода без привязки к конкретному поступлению.
         createdById:
           type: string
           format: uuid
@@ -4022,9 +4149,10 @@ components:
     MembershipPeriodView:
       type: object
       description: |
-        Расчетный период за календарный месяц. Статус выводится из суммы оплат и
-        ручной отметки, а не задается вручную.
-      required: [id, athleteId, year, month, paidAmount, status, payments]
+        Расчетный период за календарный месяц. Статус выводится из движений и
+        ручной отметки, а не задается вручную. `paidAmount` — зачтено:
+        поступления минус возвраты (ADR-0010).
+      required: [id, athleteId, year, month, paidAmount, refundedAmount, status, payments]
       properties:
         id:
           type: string
@@ -4044,6 +4172,10 @@ components:
           description: Ожидаемая сумма; может быть не задана (BR-002)
         paidAmount:
           type: number
+          description: Зачтено = поступления − возвраты (ADR-0010)
+        refundedAmount:
+          type: number
+          description: Сколько всего возвращено по периоду (ADR-0010)
         status:
           $ref: '#/components/schemas/MembershipPeriodStatus'
         fullyPaidMarkedAt:
@@ -4060,6 +4192,7 @@ components:
           nullable: true
         payments:
           type: array
+          description: Лента движений периода — поступления и возвраты
           items:
             $ref: '#/components/schemas/PaymentView'
 
@@ -4072,13 +4205,20 @@ components:
       type: string
       enum: [CASH, CARD, TRANSFER, OTHER]
 
+    PaymentKind:
+      type: string
+      description: ADR-0010 — направление движения средств
+      enum: [PAYMENT, REFUND]
+
     DebtorSummary:
       type: object
       description: |
         BR-004: `isDebtor` истинно, только если выполнены все четыре условия.
         `reason` заполняется для не-должников: руководителю важно отличать
         решение (заморозка, отметка об оплате) от отсутствия данных.
-      required: [athleteId, firstName, lastName, year, month, paidAmount, isDebtor]
+        `paidAmount` — зачтено (нетто), поэтому возвращенные деньги
+        задолженность не закрывают (ADR-0010).
+      required: [athleteId, firstName, lastName, year, month, paidAmount, refundedAmount, isDebtor]
       properties:
         athleteId:
           type: string
@@ -4092,6 +4232,8 @@ components:
         month:
           type: integer
         paidAmount:
+          type: number
+        refundedAmount:
           type: number
         expectedAmount:
           type: number
@@ -4187,6 +4329,40 @@ components:
         comment:
           type: string
           maxLength: 500
+
+    RefundPaymentRequest:
+      type: object
+      description: |
+        ADR-0010: возврат — отдельное движение средств, а не удаление
+        поступления. Сумма всегда положительна; `paymentId` необязателен и
+        позволяет привязать возврат к конкретному поступлению, по которому
+        проверяется лимит.
+      required: [amount]
+      properties:
+        amount:
+          type: number
+          minimum: 0.01
+          description: Сумма возврата; не больше поступлений периода
+          example: 10000
+        refundedAt:
+          type: string
+          format: date
+          description: Календарная дата возврата; по умолчанию сегодня
+        reason:
+          type: string
+          maxLength: 500
+          description: Причина возврата
+          example: Спортсмен ушел из клуба
+        paymentId:
+          type: string
+          format: uuid
+          description: Поступление, к которому относится возврат
+        method:
+          $ref: '#/components/schemas/PaymentMethod'
+        idempotencyKey:
+          type: string
+          maxLength: 100
+          description: Повторная отправка с тем же ключом не создаст второй возврат
 
     CreateFreezeRequest:
       type: object

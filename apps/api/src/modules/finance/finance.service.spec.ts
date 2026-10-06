@@ -1,7 +1,11 @@
 import { AuditService } from '../audit/audit.service';
 import type { FreezeRepository } from '../freezes/freezes.repository';
 import { ResourceScopeService } from '../identity/resource-scope.service';
-import type { FinanceRepository, MembershipPeriodRecord } from './finance.repository';
+import type {
+  FinanceRepository,
+  MembershipPeriodRecord,
+  PaymentRecord,
+} from './finance.repository';
 import { FinanceService } from './finance.service';
 
 const period: MembershipPeriodRecord = {
@@ -11,11 +15,40 @@ const period: MembershipPeriodRecord = {
   month: 10,
   expectedAmount: 25000,
   paidAmount: 0,
+  refundedAmount: 0,
   status: 'UNPAID',
   fullyPaidMarkedAt: null,
   fullyPaidMarkedById: null,
   note: null,
   payments: [],
+};
+
+/** Поступление: направление задается явно (ADR-0010). */
+const payment: PaymentRecord = {
+  id: 'payment-1',
+  periodId: 'period-1',
+  kind: 'PAYMENT',
+  amount: 25000,
+  method: 'CASH',
+  paidAt: new Date('2026-10-05T00:00:00.000Z'),
+  comment: null,
+  refundedPaymentId: null,
+  createdById: 'admin-1',
+  createdAt: new Date('2026-10-05T10:00:00.000Z'),
+};
+
+/** Возврат, привязанный к поступлению. */
+const refund: PaymentRecord = {
+  id: 'refund-1',
+  periodId: 'period-1',
+  kind: 'REFUND',
+  amount: 10000,
+  method: 'CASH',
+  paidAt: new Date('2026-10-06T00:00:00.000Z'),
+  comment: 'Спортсмен ушел из клуба',
+  refundedPaymentId: 'payment-1',
+  createdById: 'admin-1',
+  createdAt: new Date('2026-10-06T10:00:00.000Z'),
 };
 
 describe('FinanceService', () => {
@@ -32,8 +65,9 @@ describe('FinanceService', () => {
       createPeriod: jest.fn().mockResolvedValue(period),
       refreshPeriodTotals: jest
         .fn()
-        .mockImplementation((id: string, paidAmount: number, status: string) =>
-          Promise.resolve({ ...period, paidAmount, status }),
+        .mockImplementation(
+          (id: string, paidAmount: number, refundedAmount: number, status: string) =>
+            Promise.resolve({ ...period, paidAmount, refundedAmount, status }),
         ),
       updatePeriod: jest.fn().mockResolvedValue(period),
       setFullyPaidMark: jest
@@ -42,29 +76,27 @@ describe('FinanceService', () => {
           Promise.resolve({ ...period, fullyPaidMarkedAt: markedAt }),
         ),
       listPeriodsForMonth: jest.fn().mockResolvedValue([]),
-      createPayment: jest.fn().mockResolvedValue({
-        id: 'payment-1',
-        periodId: 'period-1',
-        amount: 25000,
-        method: 'CASH',
-        paidAt: new Date('2026-10-05T00:00:00.000Z'),
-        comment: null,
-        createdById: 'admin-1',
-        createdAt: new Date('2026-10-05T10:00:00.000Z'),
-      }),
+      createPayment: jest.fn().mockResolvedValue(payment),
       findPaymentByIdempotencyKey: jest.fn().mockResolvedValue(null),
       findPayment: jest.fn(),
       updatePayment: jest.fn(),
       deletePayment: jest.fn().mockResolvedValue(true),
       sumPayments: jest.fn().mockResolvedValue(0),
+      sumRefunds: jest.fn().mockResolvedValue(0),
+      createRefund: jest.fn().mockResolvedValue(refund),
+      deleteRefund: jest.fn().mockResolvedValue(true),
+      findRefundsByPayment: jest.fn().mockResolvedValue([]),
+      countRefundsByPayment: jest.fn().mockResolvedValue(0),
       findAthlete: jest.fn().mockResolvedValue({
         id: 'athlete-1',
         firstName: 'Али',
         lastName: 'Серик',
       }),
-      listActiveAthletes: jest.fn().mockResolvedValue([
-        { athleteId: 'athlete-1', firstName: 'Али', lastName: 'Серик', status: 'ACTIVE' },
-      ]),
+      listActiveAthletes: jest
+        .fn()
+        .mockResolvedValue([
+          { athleteId: 'athlete-1', firstName: 'Али', lastName: 'Серик', status: 'ACTIVE' },
+        ]),
       athleteIdsWithMembershipInMonth: jest
         .fn()
         .mockResolvedValue([
@@ -129,7 +161,7 @@ describe('FinanceService', () => {
 
       await service.getPeriod('admin-1', 'athlete-1', 2026, 10);
 
-      expect(repository.refreshPeriodTotals).toHaveBeenCalledWith('period-1', 0, 'UNPAID');
+      expect(repository.refreshPeriodTotals).toHaveBeenCalledWith('period-1', 0, 0, 'UNPAID');
     });
 
     it('частичная оплата дает статус PARTIALLY_PAID', async () => {
@@ -140,6 +172,7 @@ describe('FinanceService', () => {
       expect(repository.refreshPeriodTotals).toHaveBeenCalledWith(
         'period-1',
         10000,
+        0,
         'PARTIALLY_PAID',
       );
     });
@@ -149,7 +182,7 @@ describe('FinanceService', () => {
 
       await service.getPeriod('admin-1', 'athlete-1', 2026, 10);
 
-      expect(repository.refreshPeriodTotals).toHaveBeenCalledWith('period-1', 25000, 'PAID');
+      expect(repository.refreshPeriodTotals).toHaveBeenCalledWith('period-1', 25000, 0, 'PAID');
     });
 
     it('без заданной ожидаемой суммы оплата считается полной', async () => {
@@ -158,7 +191,7 @@ describe('FinanceService', () => {
 
       await service.getPeriod('admin-1', 'athlete-1', 2026, 10);
 
-      expect(repository.refreshPeriodTotals).toHaveBeenCalledWith('period-1', 5000, 'PAID');
+      expect(repository.refreshPeriodTotals).toHaveBeenCalledWith('period-1', 5000, 0, 'PAID');
     });
 
     it('не трогает базу, если сумма и статус не изменились', async () => {
@@ -211,6 +244,7 @@ describe('FinanceService', () => {
       expect(repository.refreshPeriodTotals).toHaveBeenCalledWith(
         'period-1',
         0,
+        0,
         'FULLY_PAID_MARKED',
       );
     });
@@ -242,16 +276,7 @@ describe('FinanceService', () => {
     });
 
     it('повторная отправка с тем же ключом не создает вторую оплату', async () => {
-      repository.findPaymentByIdempotencyKey.mockResolvedValue({
-        id: 'payment-1',
-        periodId: 'period-1',
-        amount: 25000,
-        method: 'CASH',
-        paidAt: new Date(),
-        comment: null,
-        createdById: 'admin-1',
-        createdAt: new Date(),
-      });
+      repository.findPaymentByIdempotencyKey.mockResolvedValue(payment);
 
       await service.recordPayment('admin-1', 'period-1', {
         amount: 25000,
@@ -262,16 +287,7 @@ describe('FinanceService', () => {
     });
 
     it('отменяет оплату и пересчитывает период', async () => {
-      repository.findPayment.mockResolvedValue({
-        id: 'payment-1',
-        periodId: 'period-1',
-        amount: 25000,
-        method: 'CASH',
-        paidAt: new Date(),
-        comment: null,
-        createdById: 'admin-1',
-        createdAt: new Date(),
-      });
+      repository.findPayment.mockResolvedValue(payment);
 
       await service.voidPayment('admin-1', 'payment-1');
 
@@ -281,12 +297,173 @@ describe('FinanceService', () => {
       );
     });
 
+    it('не удаляет оплату, по которой есть возвраты (ADR-0010)', async () => {
+      repository.findPayment.mockResolvedValue(payment);
+      repository.countRefundsByPayment.mockResolvedValue(1);
+
+      await expect(service.voidPayment('admin-1', 'payment-1')).rejects.toMatchObject({
+        code: 'PAYMENT_HAS_REFUNDS',
+      });
+      expect(repository.deletePayment).not.toHaveBeenCalled();
+    });
+
+    it('не дает изменить возврат через изменение оплаты', async () => {
+      repository.findPayment.mockResolvedValue(refund);
+
+      await expect(
+        service.updatePayment('admin-1', 'refund-1', { amount: 5000 }),
+      ).rejects.toMatchObject({ code: 'REFUND_PAYMENT_MISMATCH' });
+      expect(repository.updatePayment).not.toHaveBeenCalled();
+    });
+
     it('отдает 404 для неизвестной оплаты', async () => {
       repository.findPayment.mockResolvedValue(null);
 
       await expect(service.voidPayment('admin-1', 'missing')).rejects.toMatchObject({
         code: 'PAYMENT_NOT_FOUND',
       });
+    });
+  });
+
+  describe('возвраты (ADR-0010)', () => {
+    it('оформляет возврат и пересчитывает период по нетто', async () => {
+      repository.findPayment.mockResolvedValue(payment);
+      repository.sumPayments.mockResolvedValue(25000);
+      repository.sumRefunds.mockResolvedValue(10000);
+
+      const view = await service.refundPayment('admin-1', 'period-1', {
+        amount: 10000,
+        paymentId: 'payment-1',
+      });
+
+      expect(repository.createRefund).toHaveBeenCalledWith(
+        expect.objectContaining({
+          periodId: 'period-1',
+          amount: 10000,
+          refundedPaymentId: 'payment-1',
+          createdById: 'admin-1',
+        }),
+      );
+      // Зачтено = поступления − возвраты: 25000 − 10000.
+      expect(view.paidAmount).toBe(15000);
+      expect(view.refundedAmount).toBe(10000);
+      expect(view.status).toBe('PARTIALLY_PAID');
+      expect(audit.recordSafely).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'finance.payment_refunded' }),
+      );
+    });
+
+    it('полный возврат возвращает период в UNPAID', async () => {
+      repository.findPayment.mockResolvedValue(payment);
+      repository.sumPayments.mockResolvedValue(25000);
+      // Первый вызов — проверка лимита до записи возврата, второй — пересчет
+      // после нее: возвращена вся сумма, поэтому зачтено становится нулем.
+      repository.sumRefunds.mockResolvedValueOnce(0).mockResolvedValue(25000);
+
+      const view = await service.refundPayment('admin-1', 'period-1', {
+        amount: 25000,
+        paymentId: 'payment-1',
+      });
+
+      expect(view.paidAmount).toBe(0);
+      expect(view.refundedAmount).toBe(25000);
+      expect(view.status).toBe('UNPAID');
+    });
+
+    it('позволяет возврат без привязки к поступлению', async () => {
+      repository.sumPayments.mockResolvedValue(25000);
+      repository.sumRefunds.mockResolvedValue(0);
+
+      await service.refundPayment('admin-1', 'period-1', { amount: 5000 });
+
+      expect(repository.createRefund).toHaveBeenCalledWith(
+        expect.objectContaining({ refundedPaymentId: null, amount: 5000 }),
+      );
+    });
+
+    it('отклоняет нулевую и отрицательную сумму возврата', async () => {
+      await expect(
+        service.refundPayment('admin-1', 'period-1', { amount: 0 }),
+      ).rejects.toMatchObject({ code: 'PAYMENT_AMOUNT_INVALID' });
+      await expect(
+        service.refundPayment('admin-1', 'period-1', { amount: -1 }),
+      ).rejects.toMatchObject({ code: 'PAYMENT_AMOUNT_INVALID' });
+      expect(repository.createRefund).not.toHaveBeenCalled();
+    });
+
+    it('не возвращает больше, чем поступило по оплате', async () => {
+      repository.findPayment.mockResolvedValue(payment);
+      repository.findRefundsByPayment.mockResolvedValue([refund]);
+
+      await expect(
+        service.refundPayment('admin-1', 'period-1', { amount: 20000, paymentId: 'payment-1' }),
+      ).rejects.toMatchObject({ code: 'REFUND_EXCEEDS_PAYMENT' });
+      expect(repository.createRefund).not.toHaveBeenCalled();
+    });
+
+    it('не возвращает больше, чем поступило по периоду', async () => {
+      repository.sumPayments.mockResolvedValue(25000);
+      repository.sumRefunds.mockResolvedValue(20000);
+
+      await expect(
+        service.refundPayment('admin-1', 'period-1', { amount: 10000 }),
+      ).rejects.toMatchObject({ code: 'REFUND_EXCEEDS_PAYMENT' });
+      expect(repository.createRefund).not.toHaveBeenCalled();
+    });
+
+    it('отклоняет возврат по оплате другого периода', async () => {
+      repository.findPayment.mockResolvedValue({ ...payment, periodId: 'period-2' });
+
+      await expect(
+        service.refundPayment('admin-1', 'period-1', { amount: 1000, paymentId: 'payment-1' }),
+      ).rejects.toMatchObject({ code: 'REFUND_PAYMENT_MISMATCH' });
+    });
+
+    it('не привязывает возврат к другому возврату', async () => {
+      repository.findPayment.mockResolvedValue(refund);
+
+      await expect(
+        service.refundPayment('admin-1', 'period-1', { amount: 1000, paymentId: 'refund-1' }),
+      ).rejects.toMatchObject({ code: 'REFUND_PAYMENT_MISMATCH' });
+    });
+
+    it('повторная отправка с тем же ключом не создает второй возврат', async () => {
+      repository.findPaymentByIdempotencyKey.mockResolvedValue(refund);
+
+      await service.refundPayment('admin-1', 'period-1', {
+        amount: 10000,
+        idempotencyKey: 'key-1',
+      });
+
+      expect(repository.createRefund).not.toHaveBeenCalled();
+    });
+
+    it('отменяет возврат и пересчитывает период', async () => {
+      repository.findPayment.mockResolvedValue(refund);
+
+      await service.voidRefund('admin-1', 'refund-1');
+
+      expect(repository.deleteRefund).toHaveBeenCalledWith('refund-1');
+      expect(audit.recordSafely).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'finance.payment_refund_voided' }),
+      );
+    });
+
+    it('отдает 404 для неизвестного возврата', async () => {
+      repository.findPayment.mockResolvedValue(null);
+
+      await expect(service.voidRefund('admin-1', 'missing')).rejects.toMatchObject({
+        code: 'REFUND_NOT_FOUND',
+      });
+    });
+
+    it('не отменяет возврат по чужому идентификатору оплаты', async () => {
+      repository.findPayment.mockResolvedValue(payment);
+
+      await expect(service.voidRefund('admin-1', 'payment-1')).rejects.toMatchObject({
+        code: 'REFUND_NOT_FOUND',
+      });
+      expect(repository.deleteRefund).not.toHaveBeenCalled();
     });
   });
 

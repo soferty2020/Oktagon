@@ -257,6 +257,82 @@ export async function voidPaymentAction(formData: FormData): Promise<void> {
   revalidateFinance(athleteId || undefined);
 }
 
+// --- Возвраты (ADR-0010) -----------------------------------------------------
+
+/**
+ * Оформляет возврат денег по периоду.
+ *
+ * Возврат не удаляет поступление: он фиксирует, что деньги были получены и
+ * возвращены. Зачтенная сумма периода уменьшается, поэтому статус и
+ * задолженность пересчитываются (ADR-0010).
+ */
+export async function refundPaymentAction(
+  _prev: FinanceFormState,
+  formData: FormData,
+): Promise<FinanceFormState> {
+  const periodId = String(formData.get('periodId') ?? '');
+  const athleteId = String(formData.get('athleteId') ?? '');
+  if (!periodId) {
+    return { error: 'Не указан расчетный период' };
+  }
+
+  const amount = parseAmount(String(formData.get('amount') ?? ''), { required: true });
+  if (amount.error || amount.value === null) {
+    return { error: amount.error ?? 'Укажите сумму возврата' };
+  }
+
+  const refundedAt = parseCalendarDate(String(formData.get('refundedAt') ?? ''));
+  if (refundedAt.error) {
+    return { error: refundedAt.error };
+  }
+
+  const reason = optionalText(formData, 'reason');
+  const paymentId = optionalText(formData, 'paymentId');
+  const idempotencyKey = optionalText(formData, 'idempotencyKey');
+
+  const state = await withSession(
+    (accessToken) =>
+      apiFetch(`/membership-periods/${periodId}/refunds`, {
+        accessToken,
+        method: 'POST',
+        body: {
+          amount: amount.value,
+          ...(refundedAt.value ? { refundedAt: refundedAt.value } : {}),
+          ...(reason ? { reason } : {}),
+          ...(paymentId ? { paymentId } : {}),
+          ...(idempotencyKey ? { idempotencyKey } : {}),
+        },
+      }),
+    'Возврат оформлен',
+  );
+
+  if (!state.error) {
+    revalidateFinance(athleteId || undefined);
+  }
+  return state;
+}
+
+/**
+ * Отменяет ошибочно оформленный возврат.
+ *
+ * Возврат удаляется, период пересчитывается: возврат по ошибке не должен
+ * уменьшать зачтенную сумму.
+ */
+export async function voidRefundAction(formData: FormData): Promise<void> {
+  const refundId = String(formData.get('refundId') ?? '');
+  const athleteId = String(formData.get('athleteId') ?? '');
+  if (!refundId) {
+    return;
+  }
+
+  await withSession(
+    (accessToken) => apiFetch(`/refunds/${refundId}`, { accessToken, method: 'DELETE' }),
+    'Возврат отменен',
+  );
+
+  revalidateFinance(athleteId || undefined);
+}
+
 // --- Заморозки (BR-005) ------------------------------------------------------
 
 /** Открытие заморозки: дату начала можно внести задним числом. */
@@ -337,6 +413,14 @@ function describeFinanceError(error: ApiFailure): string {
       return 'Оплата не найдена: возможно, ее уже отменили';
     case 'PAYMENT_AMOUNT_INVALID':
       return 'Сумма оплаты должна быть больше нуля';
+    case 'REFUND_NOT_FOUND':
+      return 'Возврат не найден: возможно, его уже отменили';
+    case 'REFUND_EXCEEDS_PAYMENT':
+      return 'Возврат больше, чем поступило по этому периоду';
+    case 'REFUND_PAYMENT_MISMATCH':
+      return 'Возврат относится к другому периоду либо его нельзя изменить: отмените и оформите заново';
+    case 'PAYMENT_HAS_REFUNDS':
+      return 'По оплате есть возвраты: сначала отмените их, потом удаляйте оплату';
     case 'FREEZE_ALREADY_OPEN':
       return 'У спортсмена уже есть открытая заморозка: сначала завершите ее';
     case 'FREEZE_NOT_OPEN':

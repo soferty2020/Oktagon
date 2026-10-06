@@ -171,3 +171,16 @@ export const PaymentMethod = {
   OTHER: 'OTHER',
 } as const;
 export type PaymentMethod = (typeof PaymentMethod)[keyof typeof PaymentMethod];
+
+/**
+ * Направление движения средств (ADR-0010).
+ *
+ * Возврат — не удаление поступления: деньги сначала поступили, потом были
+ * возвращены, и оба факта остаются в истории. Сумма транзакции всегда
+ * положительна, направление задает этот признак.
+ */
+export const PaymentKind = {
+  PAYMENT: 'PAYMENT',
+  REFUND: 'REFUND',
+} as const;
+export type PaymentKind = (typeof PaymentKind)[keyof typeof PaymentKind];

@@ -19,6 +19,7 @@ REST JSON API, versioned prefix: `/api/v1`.
 - /attendance
 - /membership-periods
 - /payments
+- /refunds
 - /freezes
 - /news
 - /conversations

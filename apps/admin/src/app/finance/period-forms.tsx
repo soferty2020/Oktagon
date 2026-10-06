@@ -1,40 +1,61 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect, useId, useState } from 'react';
 
-import { markFullyPaidAction, updatePeriodAction } from '@/app/finance/actions';
 import {
+  markFullyPaidAction,
+  refundPaymentAction,
+  updatePeriodAction,
+} from '@/app/finance/actions';
+import {
+  DateInput,
   PeriodStatusBadge,
   StateMessages,
   SubHeading,
+  calendarValue,
   labelClass,
   smallButtonClass,
   smallInputClass,
 } from '@/app/finance/finance-ui';
-import { paymentMethodLabel } from '@/app/finance/finance-shared';
-import { EditPaymentForm, RecordPaymentForm, VoidPaymentForm } from '@/app/finance/payment-forms';
+import { newIdempotencyKey, paymentMethodLabel } from '@/app/finance/finance-shared';
+import {
+  EditPaymentForm,
+  RecordPaymentForm,
+  RefundPaymentForm,
+  VoidPaymentForm,
+  VoidRefundForm,
+} from '@/app/finance/payment-forms';
 import { formatCalendarDate, formatMoney, formatMonth } from '@/lib/money';
-import type { MembershipPeriodStatus } from '@octagon/contracts';
+import type { MembershipPeriodStatus, PaymentKind } from '@octagon/contracts';
 import type { FinanceFormState } from '@/app/finance/actions';
 
 const initialState: FinanceFormState = {};
 
-/** Период с оплатами в том виде, в каком его отдает backend. */
+/**
+ * Период с движениями средств в том виде, в каком его отдает backend.
+ *
+ * `paidAmount` — зачтено (нетто): поступления минус возвраты (ADR-0010),
+ * поэтому рядом нужен `refundedAmount`, иначе «внесено 0 при возврате 25 000»
+ * выглядело бы потерей данных.
+ */
 export interface PeriodView {
   id: string;
   year: number;
   month: number;
   expectedAmount: number | null;
   paidAmount: number;
+  refundedAmount: number;
   status: MembershipPeriodStatus;
   fullyPaidMarkedAt: string | null;
   note: string | null;
   payments: {
     id: string;
+    kind: PaymentKind;
     amount: number;
     method: string;
     paidAt: string;
     comment: string | null;
+    refundedPaymentId: string | null;
   }[];
 }
 
@@ -148,6 +169,23 @@ export function PeriodRow({
       ? period.paidAmount - period.expectedAmount
       : null;
 
+  // Лента движений: поступления и возвраты. Сумма поступлений нужна отдельно от
+  // зачтенной: администратору важно видеть, что «внесено» — это нетто, иначе
+  // возврат выглядел бы потерей данных (ADR-0010).
+  const received = period.payments
+    .filter((movement) => movement.kind === 'PAYMENT')
+    .reduce((sum, movement) => sum + movement.amount, 0);
+  const refundedByPayment = new Map<string, number>();
+  for (const movement of period.payments) {
+    if (movement.kind === 'REFUND' && movement.refundedPaymentId) {
+      refundedByPayment.set(
+        movement.refundedPaymentId,
+        (refundedByPayment.get(movement.refundedPaymentId) ?? 0) + movement.amount,
+      );
+    }
+  }
+  const movements = period.payments.filter((movement) => movement.kind === 'PAYMENT');
+
   return (
     <details className="border-b border-slate-100 last:border-0">
       <summary className="flex cursor-pointer flex-wrap items-center gap-3 px-4 py-3 text-sm">
@@ -156,18 +194,23 @@ export function PeriodRow({
         </span>
         <PeriodStatusBadge status={period.status} />
         <span className="text-slate-600">
-          ожидается {formatMoney(period.expectedAmount)} · внесено {formatMoney(period.paidAmount)}
+          ожидается {formatMoney(period.expectedAmount)} · зачтено {formatMoney(period.paidAmount)}
         </span>
+        {period.refundedAmount > 0 ? (
+          <span className="text-xs text-amber-700">
+            возвращено {formatMoney(period.refundedAmount)} из {formatMoney(received)}
+          </span>
+        ) : null}
         {period.fullyPaidMarkedAt ? (
           <span className="text-xs text-emerald-700">отмечен вручную (BR-003)</span>
         ) : null}
         {overpaid !== null ? (
           <span className="text-xs text-amber-700">
-            внесено больше ожидаемого на {formatMoney(overpaid)}
+            зачтено больше ожидаемого на {formatMoney(overpaid)}
           </span>
         ) : null}
         <span className="ml-auto text-xs text-slate-400">
-          оплат: {period.payments.length} · подробнее
+          движений: {period.payments.length} · подробнее
         </span>
       </summary>
 
@@ -179,46 +222,108 @@ export function PeriodRow({
         ) : null}
 
         <div>
-          <SubHeading>Оплаты</SubHeading>
+          <SubHeading>Движения средств</SubHeading>
+
           {period.payments.length === 0 ? (
             <p className="mt-1 text-xs text-slate-500">
               Поступлений нет: месяц считается неоплаченным.
             </p>
           ) : (
-            <ul className="mt-1 flex flex-col gap-2">
-              {period.payments.map((payment) => (
-                <li key={payment.id} className="rounded-lg border border-slate-200 bg-white p-3">
-                  <div className="flex flex-wrap items-center gap-3 text-sm">
-                    <span className="font-medium text-slate-900">
-                      {formatMoney(payment.amount)}
-                    </span>
-                    <span className="text-slate-600">{formatCalendarDate(payment.paidAt)}</span>
-                    <span className="text-xs text-slate-500">
-                      {paymentMethodLabel(payment.method)}
-                    </span>
-                    {payment.comment ? (
-                      <span className="text-xs text-slate-500">{payment.comment}</span>
-                    ) : null}
-                    {canEdit ? (
-                      <div className="ml-auto">
-                        <VoidPaymentForm paymentId={payment.id} athleteId={athleteId} />
-                      </div>
-                    ) : null}
-                  </div>
+            <>
+              <p className="mt-1 text-xs text-slate-500">
+                Лента целиком: поступления и возвраты. Зачтено = поступления − возвраты (ADR-0010).
+              </p>
 
-                  {canEdit ? (
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-xs text-slate-500 hover:text-slate-900">
-                        Изменить оплату
-                      </summary>
-                      <div className="mt-2">
-                        <EditPaymentForm payment={payment} athleteId={athleteId} />
+              <ul className="mt-2 flex flex-col gap-2">
+                {period.payments.map((movement) => {
+                  const isRefund = movement.kind === 'REFUND';
+                  const source = isRefund
+                    ? period.payments.find(
+                        (candidate) => candidate.id === movement.refundedPaymentId,
+                      )
+                    : null;
+
+                  return (
+                    <li
+                      key={movement.id}
+                      className={
+                        isRefund
+                          ? 'rounded-lg border border-amber-200 bg-amber-50/40 p-3'
+                          : 'rounded-lg border border-slate-200 bg-white p-3'
+                      }
+                    >
+                      <div className="flex flex-wrap items-center gap-3 text-sm">
+                        <span
+                          className={
+                            isRefund
+                              ? 'rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-800'
+                              : 'rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700'
+                          }
+                        >
+                          {isRefund ? 'возврат' : 'поступление'}
+                        </span>
+                        <span className="font-medium text-slate-900">
+                          {isRefund ? '−' : '+'}
+                          {formatMoney(movement.amount)}
+                        </span>
+                        <span className="text-slate-600">
+                          {formatCalendarDate(movement.paidAt)}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {paymentMethodLabel(movement.method)}
+                        </span>
+                        {movement.comment ? (
+                          <span className="text-xs text-slate-500">{movement.comment}</span>
+                        ) : null}
+                        {source ? (
+                          <span className="text-xs text-slate-500">
+                            по оплате от {formatCalendarDate(source.paidAt)} на{' '}
+                            {formatMoney(source.amount)}
+                          </span>
+                        ) : null}
+                        {canEdit ? (
+                          <div className="ml-auto">
+                            {isRefund ? (
+                              <VoidRefundForm refundId={movement.id} athleteId={athleteId} />
+                            ) : (
+                              <VoidPaymentForm paymentId={movement.id} athleteId={athleteId} />
+                            )}
+                          </div>
+                        ) : null}
                       </div>
-                    </details>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
+
+                      {canEdit && !isRefund ? (
+                        <div className="mt-2 flex flex-col gap-2">
+                          <details>
+                            <summary className="cursor-pointer text-xs text-slate-500 hover:text-slate-900">
+                              Изменить оплату
+                            </summary>
+                            <div className="mt-2">
+                              <EditPaymentForm payment={movement} athleteId={athleteId} />
+                            </div>
+                          </details>
+
+                          <details>
+                            <summary className="cursor-pointer text-xs text-slate-500 hover:text-slate-900">
+                              Оформить возврат
+                            </summary>
+                            <div className="mt-2">
+                              <RefundPaymentForm
+                                periodId={period.id}
+                                athleteId={athleteId}
+                                paymentId={movement.id}
+                                paymentAmount={movement.amount}
+                                alreadyRefunded={refundedByPayment.get(movement.id) ?? 0}
+                              />
+                            </div>
+                          </details>
+                        </div>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
           )}
         </div>
 
@@ -230,6 +335,14 @@ export function PeriodRow({
               expectedAmount={period.expectedAmount}
               paidAmount={period.paidAmount}
             />
+
+            <ReturnWithoutPaymentForm
+              periodId={period.id}
+              athleteId={athleteId}
+              available={Math.max(received - period.refundedAmount, 0)}
+              hasPayments={movements.length > 0}
+            />
+
             <ExpectedAmountForm
               periodId={period.id}
               athleteId={athleteId}
@@ -249,5 +362,83 @@ export function PeriodRow({
         )}
       </div>
     </details>
+  );
+}
+
+/**
+ * Возврат без привязки к конкретному поступлению.
+ *
+ * ADR-0010 разрешает корректировку периода: возврат бывает не связан с одной
+ * операцией (например, пересчет после соглашения с родителем). Сумма ограничена
+ * тем, что осталось от всех поступлений периода.
+ */
+function ReturnWithoutPaymentForm({
+  periodId,
+  athleteId,
+  available,
+  hasPayments,
+}: {
+  periodId: string;
+  athleteId: string;
+  available: number;
+  hasPayments: boolean;
+}) {
+  const [state, formAction, pending] = useActionState(refundPaymentAction, initialState);
+  const [idempotencyKey, setIdempotencyKey] = useState('');
+  const refundedAtId = useId();
+
+  useEffect(() => {
+    setIdempotencyKey((current) => (current === '' ? newIdempotencyKey() : current));
+  }, []);
+
+  if (!hasPayments) {
+    return null;
+  }
+
+  return (
+    <form action={formAction} className="flex flex-col gap-2">
+      <input type="hidden" name="periodId" value={periodId} />
+      <input type="hidden" name="athleteId" value={athleteId} />
+      <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
+
+      <SubHeading>Возврат без привязки к оплате</SubHeading>
+      <div className="flex flex-wrap items-end gap-2">
+        <label className={labelClass}>
+          Сумма
+          <input
+            name="amount"
+            inputMode="decimal"
+            placeholder={String(available)}
+            className={`${smallInputClass} w-28`}
+          />
+        </label>
+        <label className={labelClass} htmlFor={refundedAtId}>
+          Дата
+          <DateInput
+            id={refundedAtId}
+            name="refundedAt"
+            initialValue={calendarValue()}
+            className={smallInputClass}
+          />
+        </label>
+        <label className={`${labelClass} flex-1`}>
+          Причина
+          <input
+            name="reason"
+            maxLength={500}
+            placeholder="корректировка периода"
+            className={smallInputClass}
+          />
+        </label>
+        <button type="submit" disabled={pending} className={smallButtonClass}>
+          {pending ? '…' : 'Вернуть'}
+        </button>
+      </div>
+      <p className="text-xs text-slate-500">
+        Не больше поступлений периода; доступно {formatMoney(available)}.
+      </p>
+
+      <StateMessages state={state} />
+    </form>
   );
 }

@@ -86,7 +86,11 @@ export async function fetchHtml(base, path, cookie) {
     headers: cookie ? { cookie } : {},
     redirect: 'manual',
   });
-  return { status: response.status, location: response.headers.get('location'), html: await response.text() };
+  return {
+    status: response.status,
+    location: response.headers.get('location'),
+    html: await response.text(),
+  };
 }
 
 /** Вход в backend API: нужен для подготовки данных и сверки с БД. */
@@ -122,11 +126,13 @@ export async function apiCall(apiBase, token, method, path, body) {
 /**
  * Разбор формы серверного действия из разметки.
  *
- * Возвращает скрытые поля действия и подписи видимых полей: отправка повторяет
- * то, что сделал бы браузер, поэтому проверка подтверждает работу формы, а не
- * только ее наличие.
+ * `fieldsMarker` перечисляет видимые поля, значения которых нужно прочитать.
+ * Это нужно там, где у форм совпадают скрытые поля: у «Изменить оплату» и
+ * «Оформить возврат» одинаковый `paymentId`, и по нему одну форму от другой не
+ * отличить. Значения видимых полей нужны, чтобы отправка повторяла то, что
+ * сделал бы браузер: иначе проверка подтверждала бы только наличие формы.
  */
-export function readActionForm(html, marker) {
+export function readActionForm(html, marker, fieldsMarker = []) {
   const index = html.indexOf(marker);
   if (index < 0) {
     return null;
@@ -146,5 +152,20 @@ export function readActionForm(html, marker) {
     fields.set(match[1], decodeHtml(match[2] ?? ''));
   }
 
-  return { fields, html: formHtml };
+  const values = {};
+  for (const name of fieldsMarker) {
+    const input = formHtml.match(
+      new RegExp(
+        `<input[^>]*name="${name}"[^>]*>|<select[^>]*name="${name}"[^>]*>[\\s\\S]*?</select>`,
+      ),
+    )?.[0];
+    if (!input) {
+      continue;
+    }
+    const inline = input.match(/value="([^"]*)"/)?.[1];
+    const selected = input.match(/<option[^>]*selected[^>]*value="([^"]*)"/)?.[1];
+    values[name] = decodeHtml(inline ?? selected ?? '');
+  }
+
+  return { fields, html: formHtml, values };
 }

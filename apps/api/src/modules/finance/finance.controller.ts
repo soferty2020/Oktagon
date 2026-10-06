@@ -20,6 +20,7 @@ import {
   MarkFullyPaidDto,
   PeriodQueryDto,
   RecordPaymentDto,
+  RefundPaymentDto,
   UpdateMembershipPeriodDto,
   UpdatePaymentDto,
   YearQueryDto,
@@ -124,6 +125,25 @@ export class MembershipPeriodActionsController {
       idempotencyKey: dto.idempotencyKey,
     });
   }
+
+  @Post(':periodId/refunds')
+  @RequirePermissions(PermissionCode.PaymentsEdit)
+  @ApiOperation({ summary: 'Оформить возврат денег' })
+  @ApiOkResponse({ description: 'Период после пересчета: зачтено = поступления − возвраты' })
+  refundPayment(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('periodId') periodId: string,
+    @Body() dto: RefundPaymentDto,
+  ): Promise<MembershipPeriodView> {
+    return this.finance.refundPayment(user.id, periodId, {
+      amount: dto.amount,
+      refundedAt: dto.refundedAt,
+      reason: dto.reason ?? null,
+      paymentId: dto.paymentId ?? null,
+      method: dto.method,
+      idempotencyKey: dto.idempotencyKey,
+    });
+  }
 }
 
 /** Оплаты: изменения и отмена. */
@@ -157,6 +177,29 @@ export class PaymentsController {
   @ApiOkResponse({ description: 'Оплата удалена, период пересчитан' })
   void(@CurrentUser() user: AuthenticatedUser, @Param('paymentId') paymentId: string) {
     return this.finance.voidPayment(user.id, paymentId);
+  }
+}
+
+/**
+ * Возвраты: отмена ошибочно оформленного возврата (ADR-0010).
+ *
+ * Отдельный маршрут: возврат — не оплата, и «отменить оплату» на него не
+ * действует. Оформление возврата адресуется периодом, отмена — идентификатором
+ * самой записи.
+ */
+@ApiTags('finance')
+@ApiBearerAuth()
+@UseGuards(AuthGuard, PermissionsGuard)
+@Controller('refunds')
+export class RefundsController {
+  constructor(private readonly finance: FinanceService) {}
+
+  @Delete(':refundId')
+  @RequirePermissions(PermissionCode.PaymentsEdit)
+  @ApiOperation({ summary: 'Отменить возврат' })
+  @ApiOkResponse({ description: 'Возврат удален, период пересчитан' })
+  void(@CurrentUser() user: AuthenticatedUser, @Param('refundId') refundId: string) {
+    return this.finance.voidRefund(user.id, refundId);
   }
 }
 

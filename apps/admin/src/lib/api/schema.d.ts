@@ -1167,6 +1167,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/membership-periods/{periodId}/refunds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Оформить возврат денег
+         * @description ADR-0010: возврат — отдельное движение средств, а не удаление
+         *     поступления. Деньги сначала поступили, потом были возвращены, и оба
+         *     факта остаются в истории (BR-007).
+         *
+         *     Зачтено = поступления − возвраты, поэтому возврат уменьшает `paidAmount`
+         *     и может вернуть период в `UNPAID` (полный возврат) или
+         *     `PARTIALLY_PAID`. Ручная отметка «оплачен полностью» сохраняет приоритет
+         *     (BR-003).
+         *
+         *     Сумма возврата не может превысить поступления: по привязанному
+         *     поступлению проверяется его сумма, по периоду — сумма всех поступлений.
+         *     При наличии `idempotencyKey` повторная отправка возвращает текущее
+         *     состояние периода, а не создает второй возврат.
+         */
+        post: operations["refundPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/payments/{paymentId}": {
         parameters: {
             query?: never;
@@ -1181,6 +1213,9 @@ export interface paths {
          * Отменить оплату
          * @description Запись удаляется, период пересчитывается: ошибка ввода не должна
          *     оставаться в истории как факт поступления денег.
+         *
+         *     ADR-0010: если по поступлению есть возвраты, отмена отклоняется
+         *     (`PAYMENT_HAS_REFUNDS`) — возврат потерял бы основание.
          */
         delete: operations["voidPayment"];
         options?: never;
@@ -1190,6 +1225,29 @@ export interface paths {
          * @description Изменение пересчитывает статус периода.
          */
         patch: operations["updatePayment"];
+        trace?: never;
+    };
+    "/refunds/{refundId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Отменить возврат
+         * @description ADR-0010: ошибочно оформленный возврат удаляется, период
+         *     пересчитывается — возврат, сделанный по ошибке, не должен уменьшать
+         *     зачтенную сумму. Это отдельный маршрут: возврат не является оплатой, и
+         *     «отменить оплату» на него не действует.
+         */
+        delete: operations["voidRefund"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/debts": {
@@ -1680,11 +1738,17 @@ export interface components {
             /** @description Основной аккаунт спортсмена; он может быть один */
             isPrimary?: boolean;
         };
+        /**
+         * @description Транзакция по расчетному периоду: поступление или возврат (ADR-0010).
+         *     Сумма всегда положительна, направление задает `kind`. Оба движения живут
+         *     в одной ленте, потому что история периода читается подряд.
+         */
         PaymentView: {
             /** Format: uuid */
             id: string;
+            kind: components["schemas"]["PaymentKind"];
             /**
-             * @description Сумма произвольная (BR-002)
+             * @description Сумма произвольная (BR-002); всегда положительна
              * @example 25000
              */
             amount: number;
@@ -1692,14 +1756,21 @@ export interface components {
             /** Format: date */
             paidAt: string;
             comment?: string | null;
+            /**
+             * Format: uuid
+             * @description Поступление, к которому привязан возврат (только для `kind = REFUND`).
+             *     null — корректировка периода без привязки к конкретному поступлению.
+             */
+            refundedPaymentId?: string | null;
             /** Format: uuid */
             createdById?: string | null;
             /** Format: date-time */
             createdAt: string;
         };
         /**
-         * @description Расчетный период за календарный месяц. Статус выводится из суммы оплат и
-         *     ручной отметки, а не задается вручную.
+         * @description Расчетный период за календарный месяц. Статус выводится из движений и
+         *     ручной отметки, а не задается вручную. `paidAmount` — зачтено:
+         *     поступления минус возвраты (ADR-0010).
          */
         MembershipPeriodView: {
             /** Format: uuid */
@@ -1710,7 +1781,10 @@ export interface components {
             month: number;
             /** @description Ожидаемая сумма; может быть не задана (BR-002) */
             expectedAmount?: number | null;
+            /** @description Зачтено = поступления − возвраты (ADR-0010) */
             paidAmount: number;
+            /** @description Сколько всего возвращено по периоду (ADR-0010) */
+            refundedAmount: number;
             status: components["schemas"]["MembershipPeriodStatus"];
             /**
              * Format: date-time
@@ -1720,6 +1794,7 @@ export interface components {
             /** Format: uuid */
             fullyPaidMarkedById?: string | null;
             note?: string | null;
+            /** @description Лента движений периода — поступления и возвраты */
             payments: components["schemas"]["PaymentView"][];
         };
         /**
@@ -1730,9 +1805,16 @@ export interface components {
         /** @enum {string} */
         PaymentMethod: "CASH" | "CARD" | "TRANSFER" | "OTHER";
         /**
+         * @description ADR-0010 — направление движения средств
+         * @enum {string}
+         */
+        PaymentKind: "PAYMENT" | "REFUND";
+        /**
          * @description BR-004: `isDebtor` истинно, только если выполнены все четыре условия.
          *     `reason` заполняется для не-должников: руководителю важно отличать
          *     решение (заморозка, отметка об оплате) от отсутствия данных.
+         *     `paidAmount` — зачтено (нетто), поэтому возвращенные деньги
+         *     задолженность не закрывают (ADR-0010).
          */
         DebtorSummary: {
             /** Format: uuid */
@@ -1742,6 +1824,7 @@ export interface components {
             year: number;
             month: number;
             paidAmount: number;
+            refundedAmount: number;
             expectedAmount?: number | null;
             isDebtor: boolean;
             /** @enum {string|null} */
@@ -1787,6 +1870,37 @@ export interface components {
             /** Format: date */
             paidAt?: string;
             comment?: string;
+        };
+        /**
+         * @description ADR-0010: возврат — отдельное движение средств, а не удаление
+         *     поступления. Сумма всегда положительна; `paymentId` необязателен и
+         *     позволяет привязать возврат к конкретному поступлению, по которому
+         *     проверяется лимит.
+         */
+        RefundPaymentRequest: {
+            /**
+             * @description Сумма возврата; не больше поступлений периода
+             * @example 10000
+             */
+            amount: number;
+            /**
+             * Format: date
+             * @description Календарная дата возврата; по умолчанию сегодня
+             */
+            refundedAt?: string;
+            /**
+             * @description Причина возврата
+             * @example Спортсмен ушел из клуба
+             */
+            reason?: string;
+            /**
+             * Format: uuid
+             * @description Поступление, к которому относится возврат
+             */
+            paymentId?: string;
+            method?: components["schemas"]["PaymentMethod"];
+            /** @description Повторная отправка с тем же ключом не создаст второй возврат */
+            idempotencyKey?: string;
         };
         CreateFreezeRequest: {
             /**
@@ -5476,6 +5590,68 @@ export interface operations {
             };
         };
     };
+    refundPayment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                periodId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefundPaymentRequest"];
+            };
+        };
+        responses: {
+            /** @description Возврат оформлен; период пересчитан по нетто */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipPeriodView"];
+                };
+            };
+            /**
+             * @description Ошибка валидации (`VALIDATION_FAILED`), сумма не больше нуля
+             *     (`PAYMENT_AMOUNT_INVALID`), возврат больше полученного
+             *     (`REFUND_EXCEEDS_PAYMENT`) или возврат относится к поступлению
+             *     другого периода (`REFUND_PAYMENT_MISMATCH`).
+             */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `payments.edit` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /**
+             * @description Период не найден (`MEMBERSHIP_PERIOD_NOT_FOUND`) или указанное
+             *     поступление не найдено (`PAYMENT_NOT_FOUND`)
+             */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     voidPayment: {
         parameters: {
             query?: never;
@@ -5508,6 +5684,15 @@ export interface operations {
             };
             /** @description Оплата не найдена (`PAYMENT_NOT_FOUND`) */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description По оплате есть возвраты (`PAYMENT_HAS_REFUNDS`) */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5553,6 +5738,47 @@ export interface operations {
                 };
             };
             /** @description Оплата не найдена (`PAYMENT_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    voidRefund: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                refundId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Возврат удален, период пересчитан */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipPeriodView"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `payments.edit` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Возврат не найден (`REFUND_NOT_FOUND`) */
             404: {
                 headers: {
                     [name: string]: unknown;
