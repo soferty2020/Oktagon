@@ -94,9 +94,13 @@ async function main() {
 
   check(
     1,
-    'аккаунты созданы: права на доступ к чатам не нужны (матрица: own conversations)',
-    Boolean(trainer.id) && Boolean(parent.id) && parent.permissions.length === 0,
-    `прав у тренера ${trainer.permissions.length}, у родителя ${parent.permissions.length}`,
+    'аккаунты созданы: доступ к чатам не требует права chat.use',
+    Boolean(trainer.id) && Boolean(parent.id) && !parent.permissions.includes('chat.use'),
+    `прав у тренера ${trainer.permissions.length} (chat.use: ${trainer.permissions.includes(
+      'chat.use',
+    )}), у родителя ${parent.permissions.length} (chat.use: ${parent.permissions.includes(
+      'chat.use',
+    )}) — разговор родителя с тренером правом не обусловлен (BR-012)`,
   );
 
   const trainerProfile = await apiCall(apiBase, adminToken, 'POST', '/trainers', {
@@ -489,7 +493,7 @@ async function main() {
   const parentChatsApi = await apiCall(apiBase, parent.token, 'GET', '/conversations');
   check(
     28,
-    'родитель без единого права пользуется чатами (BR-012, матрица прав)',
+    'родитель пользуется чатами: доступ дает участие, а не право chat.use (BR-012)',
     parentChatsStatus === 200 && Array.isArray(parentChatsApi.body),
     `экран ${parentChatsStatus}, API ${parentChatsApi.status}, диалогов ${
       Array.isArray(parentChatsApi.body) ? parentChatsApi.body.length : '—'

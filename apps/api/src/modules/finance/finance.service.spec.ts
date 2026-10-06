@@ -478,6 +478,50 @@ describe('FinanceService', () => {
       expect(debtors[0]).toMatchObject({ athleteId: 'athlete-1', isDebtor: true, reason: null });
     });
 
+    it('внесена вся ожидаемая сумма — спортсмен не должник', async () => {
+      // Найдено сквозным сценарием приемки: при зачтенном, равном ожидаемому,
+      // спортсмен оставался в списке должников, и клуб требовал бы деньги с уже
+      // оплатившего. Правило BR-004 перечисляет четыре условия, но «должен»
+      // означает еще и недоплату.
+      repository.listPeriodsForMonth.mockResolvedValue([
+        { ...period, expectedAmount: 25000, paidAmount: 25000 },
+      ]);
+
+      const debtors = await service.listDebtors('admin-1', 2026, 10);
+
+      expect(debtors[0]).toMatchObject({
+        isDebtor: false,
+        expectedAmount: 25000,
+        paidAmount: 25000,
+      });
+    });
+
+    it('частичная оплата оставляет должником', async () => {
+      repository.listPeriodsForMonth.mockResolvedValue([
+        { ...period, expectedAmount: 25000, paidAmount: 15000 },
+      ]);
+
+      const debtors = await service.listDebtors('admin-1', 2026, 10);
+
+      expect(debtors[0]).toMatchObject({ isDebtor: true, paidAmount: 15000 });
+    });
+
+    it('возврат денег возвращает спортсмена в должники (ADR-0010)', async () => {
+      // `paidAmount` хранится нетто: после возврата 10000 из внесенных 25000
+      // зачтено 15000, и задолженность снова появляется.
+      repository.listPeriodsForMonth.mockResolvedValue([
+        { ...period, expectedAmount: 25000, paidAmount: 15000, refundedAmount: 10000 },
+      ]);
+
+      const debtors = await service.listDebtors('admin-1', 2026, 10);
+
+      expect(debtors[0]).toMatchObject({
+        isDebtor: true,
+        paidAmount: 15000,
+        refundedAmount: 10000,
+      });
+    });
+
     it('отметка «оплачен полностью» снимает задолженность', async () => {
       repository.listPeriodsForMonth.mockResolvedValue([
         { ...period, fullyPaidMarkedAt: new Date('2026-10-01') },

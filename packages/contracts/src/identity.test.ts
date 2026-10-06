@@ -15,11 +15,30 @@ describe('resolvePermissions', () => {
     expect(permissions.codes).toContain(PermissionCode.PaymentsEdit);
   });
 
-  it('не выдает MEMBER никаких прав: его доступ ограничен ресурсом', () => {
-    // docs/21-permission-matrix.md: own linked athletes — это scope, не capability
+  it('выдает MEMBER права на чтение своих данных, но не на запись (ADR-0013)', () => {
+    // docs/21-permission-matrix.md: «own schedule», «own attendance» — это
+    // возможности со scope. Без этих прав запрос отклонялся guard'ом до
+    // проверки scope, и родитель не видел расписание ребенка.
     const permissions = resolvePermissions({ role: UserRole.MEMBER, grants: [] });
 
-    expect(permissions.codes).toEqual([]);
+    expect(permissions.codes).toEqual([
+      PermissionCode.AttendanceView,
+      PermissionCode.GroupsView,
+      PermissionCode.ScheduleView,
+    ]);
+  });
+
+  it('не выдает MEMBER прав на запись, финансов и контактов (ADR-0013)', () => {
+    const permissions = resolvePermissions({ role: UserRole.MEMBER, grants: [] });
+
+    // Родитель не отмечает посещаемость, не переносит занятия и не видит
+    // финансы: payments.view открыл бы суммы по всей школе.
+    expect(permissions.codes).not.toContain(PermissionCode.AttendanceEdit);
+    expect(permissions.codes).not.toContain(PermissionCode.ScheduleEdit);
+    expect(permissions.codes).not.toContain(PermissionCode.ScheduleCancel);
+    expect(permissions.codes).not.toContain(PermissionCode.PaymentsView);
+    expect(permissions.codes).not.toContain(PermissionCode.AthletesContactsView);
+    expect(permissions.codes).not.toContain(PermissionCode.AnalyticsView);
   });
 
   it('не выдает STAFF финансовые права по умолчанию (BR-010)', () => {
@@ -49,9 +68,7 @@ describe('resolvePermissions', () => {
 
     const permissions = resolvePermissions({ role: UserRole.STAFF, grants });
 
-    const occurrences = permissions.codes.filter(
-      (code) => code === PermissionCode.AttendanceView,
-    );
+    const occurrences = permissions.codes.filter((code) => code === PermissionCode.AttendanceView);
     expect(occurrences).toHaveLength(1);
   });
 });

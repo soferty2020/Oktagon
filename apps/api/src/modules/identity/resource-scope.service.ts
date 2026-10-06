@@ -1,5 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ApiErrorCode, canAccessAthlete, canAccessGroup, type ScopeDecision } from '@octagon/contracts';
+import {
+  ApiErrorCode,
+  canAccessAthlete,
+  canAccessGroup,
+  type ScopeDecision,
+} from '@octagon/contracts';
 
 import { ApiException } from '../../shared/api-exception';
 import { IdentityRepository, type UserProfileRecord } from './identity.repository';
@@ -52,6 +57,13 @@ export class ResourceScopeService {
   async checkGroup(userId: string, groupId: string): Promise<ScopeDecision> {
     const record = await this.requireUser(userId);
 
+    // Участник видит группы своих спортсменов (ADR-0013): матрица прав обещает
+    // ему «own schedule» и «own attendance», а они выражаются именно группами.
+    if (record.role === 'MEMBER') {
+      const groupIds = await this.repository.listLinkedGroupIds(userId);
+      return canAccessGroup({ role: record.role, staffGroupIds: groupIds }, groupId);
+    }
+
     const staffGroupIds =
       record.role === 'STAFF' ? await this.repository.listStaffGroupIds(userId) : [];
 
@@ -70,9 +82,7 @@ export class ResourceScopeService {
   async assertAthleteAccess(userId: string, athleteId: string): Promise<void> {
     const decision = await this.checkAthlete(userId, athleteId);
     if (!decision.allowed) {
-      this.logger.debug(
-        `Отказ по scope к спортсмену (${decision.reason}): пользователь ${userId}`,
-      );
+      this.logger.debug(`Отказ по scope к спортсмену (${decision.reason}): пользователь ${userId}`);
       throw new ApiException('FORBIDDEN', 'Спортсмен вне зоны доступа');
     }
   }
@@ -92,6 +102,11 @@ export class ResourceScopeService {
 
     if (record.role === 'SUPERADMIN' || record.scopeAllGroups) {
       return null;
+    }
+    // Участник видит группы своих спортсменов, а не группы тренера (ADR-0013):
+    // иначе расписание ребенка было бы пустым, хотя матрица прав его обещает.
+    if (record.role === 'MEMBER') {
+      return this.repository.listLinkedGroupIds(userId);
     }
     return this.repository.listStaffGroupIds(userId);
   }

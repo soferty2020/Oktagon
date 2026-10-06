@@ -1,4 +1,9 @@
-import { type CallHandler, type ExecutionContext, Injectable, type NestInterceptor } from '@nestjs/common';
+import {
+  type CallHandler,
+  type ExecutionContext,
+  Injectable,
+  type NestInterceptor,
+} from '@nestjs/common';
 import type { Request } from 'express';
 import type { Observable } from 'rxjs';
 
@@ -20,15 +25,20 @@ export class AuditContextInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const request = context.switchToHttp().getRequest<Request & { requestId?: string }>();
+    const request = context
+      .switchToHttp()
+      .getRequest<Request & { requestId?: string; user?: { id: string } }>();
 
     return this.requestContext.run(
       {
         requestId: request.requestId ?? null,
         ipAddress: clientIp(request),
         userAgent: request.headers['user-agent'] ?? null,
-        // actorUserId заполнит аутентификация (модуль auth).
-        actorUserId: null,
+        // Автор изменения берется из запроса: guards выполняются **до**
+        // интерсепторов, поэтому к этому моменту `request.user` уже заполнен
+        // AuthGuard. Проставлять автора в самом guard нельзя: контекст запроса
+        // еще не открыт, и `patch` не находит хранилище (BR-007).
+        actorUserId: request.user?.id ?? null,
       },
       () => next.handle(),
     );

@@ -62,7 +62,10 @@ export class AuthService {
       });
       // Одинаковое сообщение для неизвестного email и неверного пароля:
       // не раскрываем существование аккаунта.
-      throw new ApiException('INVALID_CREDENTIALS' satisfies ApiErrorCode, 'Неверный email или пароль');
+      throw new ApiException(
+        'INVALID_CREDENTIALS' satisfies ApiErrorCode,
+        'Неверный email или пароль',
+      );
     }
 
     if (user.status === ('BLOCKED' satisfies UserStatus)) {
@@ -142,6 +145,11 @@ export class AuthService {
       action: AuditAction.AUTH_TOKEN_REFRESHED,
       entityType: AuditEntityType.REFRESH_TOKEN,
       entityId: user.id,
+      // Автор указывается явно: маршрут `/auth/refresh` не защищен guard'ом
+      // (refresh-токен приходит в теле), поэтому контекст запроса не знает
+      // пользователя. Без этого обновление сессии попадало в журнал без
+      // действующего лица.
+      actorUserId: user.id,
     });
 
     return {

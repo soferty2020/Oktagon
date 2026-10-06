@@ -1,5 +1,8 @@
 import { AuditAction, ApiErrorCode } from '@octagon/contracts';
-import { UserRole as PrismaUserRole, UserStatus as PrismaUserStatus } from '../../../generated/prisma';
+import {
+  UserRole as PrismaUserRole,
+  UserStatus as PrismaUserStatus,
+} from '../../../generated/prisma';
 import { ApiException } from '../../shared/api-exception';
 import { AuditService } from '../audit/audit.service';
 import type {
@@ -56,10 +59,13 @@ describe('toProfile', () => {
     ]);
   });
 
-  it('для MEMBER не выдает прав: доступ ограничен ресурсом (ADR-0006)', () => {
+  it('для MEMBER выдает права на чтение своих данных, но не на запись (ADR-0013)', () => {
     const profile = toProfile(baseRecord);
 
-    expect(profile.permissions.codes).toEqual([]);
+    // Матрица прав обещает родителю «own schedule» и «own attendance»: без этих
+    // прав запрос отклонялся guard'ом до проверки scope (ADR-0013).
+    expect(profile.permissions.codes).toEqual(['attendance.view', 'groups.view', 'schedule.view']);
+    // Индивидуальных выдач нет: все права пришли от роли.
     expect(profile.permissions.grants).toEqual([]);
   });
 });

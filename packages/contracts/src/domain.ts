@@ -64,16 +64,23 @@ export const FINANCIAL_PERMISSION_CODES: readonly PermissionCode[] = [
 /**
  * Базовый набор прав роли. Индивидуальные permissions добавляются поверх.
  *
- * MEMBER не получает permissions: по docs/21-permission-matrix.md его доступ
- * («own linked athletes», «own schedule») ограничен ресурсом через UserAthlete,
- * а не capability. Такой доступ выдают guards scope, а не этот набор.
+ * MEMBER получает три права **на чтение** — `groups.view`, `schedule.view`,
+ * `attendance.view` (ADR-0013). Матрица прав обещает ему «own linked athletes»,
+ * «own schedule» и «own attendance» со scope, а не capability, но без этих прав
+ * запрос отклонялся guard'ом **до** проверки scope, и родитель не видел
+ * расписание и посещаемость своего спортсмена (критерии 7, 9 и 14 приемки).
+ *
+ * Права на запись (`attendance.edit`, `schedule.edit`, `schedule.cancel`) роли не
+ * даются: родитель не отмечает посещаемость и не переносит занятия. Финансовые
+ * права тоже не даются: `payments.view` открывает суммы по всей школе и список
+ * должников, что не выражает «own status only» (см. ADR-0013, Consequences).
  *
  * Каталог permissions в БД (seed) должен содержать ровно PERMISSION_CODES;
  * права, не выданные ни одной роли, включая payments.* и freezes.*, доступны
  * только через индивидуальную выдачу (BR-010).
  */
 export const ROLE_PERMISSIONS: Readonly<Record<UserRole, readonly PermissionCode[]>> = {
-  MEMBER: [],
+  MEMBER: [PermissionCode.GroupsView, PermissionCode.ScheduleView, PermissionCode.AttendanceView],
   STAFF: [
     PermissionCode.AthletesView,
     PermissionCode.AthletesContactsView,

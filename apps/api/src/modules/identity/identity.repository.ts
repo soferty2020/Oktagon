@@ -93,6 +93,13 @@ export abstract class IdentityRepository {
   abstract listCoachedAthleteIds(trainerUserId: string): Promise<string[]>;
   /** Группы, которые ведет сотрудник (активные назначения). */
   abstract listStaffGroupIds(userId: string): Promise<string[]>;
+  /**
+   * Группы связанных спортсменов (ADR-0013).
+   *
+   * Нужны участнику: матрица прав обещает ему «own schedule» и «own attendance»,
+   * а без списка групп его спортсменов scope не может ответить, видна ли группа.
+   */
+  abstract listLinkedGroupIds(userId: string): Promise<string[]>;
 
   /** Каталог permissions: проверка, что код существует. */
   abstract findPermissionByCode(
@@ -251,7 +258,8 @@ export class PrismaIdentityRepository extends IdentityRepository {
     return { items, total };
   }
 
-  async listCoachedAthleteIds(trainerUserId: string): Promise<string[]> {    const memberships = await this.prisma.db.groupMembership.findMany({
+  async listCoachedAthleteIds(trainerUserId: string): Promise<string[]> {
+    const memberships = await this.prisma.db.groupMembership.findMany({
       where: {
         state: MembershipState.ACTIVE,
         athlete: { archivedAt: null },
@@ -282,6 +290,21 @@ export class PrismaIdentityRepository extends IdentityRepository {
     });
 
     return [...new Set(assignments.map((assignment) => assignment.groupId))];
+  }
+
+  async listLinkedGroupIds(userId: string): Promise<string[]> {
+    // Только активные членства: спортсмен, ушедший из группы, не должен
+    // оставлять родителю доступ к ее расписанию (ADR-0013).
+    const memberships = await this.prisma.db.groupMembership.findMany({
+      where: {
+        state: MembershipState.ACTIVE,
+        group: { isActive: true, archivedAt: null },
+        athlete: { archivedAt: null, userLinks: { some: { userId } } },
+      },
+      select: { groupId: true },
+    });
+
+    return [...new Set(memberships.map((membership) => membership.groupId))];
   }
 
   async findPermissionByCode(

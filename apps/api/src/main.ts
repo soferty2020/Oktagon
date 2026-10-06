@@ -5,7 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import type { AppEnvironment } from '@octagon/config';
 
 import { AppModule } from './app.module';
-import { ApiExceptionFilter, RequestIdInterceptor } from './shared';
+import { ApiExceptionFilter } from './shared';
 
 async function bootstrap(): Promise<void> {
   const logger = new Logger('Bootstrap');
@@ -25,7 +25,8 @@ async function bootstrap(): Promise<void> {
     }),
   );
   app.useGlobalFilters(new ApiExceptionFilter());
-  app.useGlobalInterceptors(new RequestIdInterceptor());
+  // Интерсепторы зарегистрированы в AppModule через APP_INTERCEPTOR: контексту
+  // запроса нужен DI. Порядок — requestId, затем контекст аудита.
   app.enableCors({ origin: true, credentials: true });
   app.enableShutdownHooks();
 

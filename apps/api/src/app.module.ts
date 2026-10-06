@@ -1,13 +1,16 @@
 import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
 import { AppConfigModule } from './config/config.module';
 import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma';
 import { RedisModule } from './redis';
+import { RequestContextService, RequestIdInterceptor } from './shared';
 import { TokenModule } from './shared/token.module';
 import { AnalyticsModule } from './modules/analytics';
 import { AthletesModule } from './modules/athletes';
 import { AttendanceModule } from './modules/attendance';
+import { AuditContextInterceptor } from './modules/audit/audit-context.interceptor';
 import { AuditModule } from './modules/audit';
 import { AuthModule } from './modules/auth';
 import { ChatModule } from './modules/chat';
@@ -25,6 +28,13 @@ import { SchedulingModule } from './modules/scheduling';
  * Состав модулей соответствует docs/13-architecture.md. Порядок внедрения —
  * docs/24-multi-agent-plan.md (Foundation -> identity/core -> schedule ->
  * attendance/finance -> communication -> clients -> stabilization).
+ *
+ * Интерсепторы регистрируются через `APP_INTERCEPTOR`, а не
+ * `app.useGlobalInterceptors`: контексту запроса нужен DI, и без него
+ * `AuditContextInterceptor` не создавался — audit log писался без автора.
+ *
+ * Порядок регистрации задает порядок выполнения: requestId должен появиться до
+ * того, как откроется контекст, иначе в аудит попадал бы пустой идентификатор.
  */
 @Module({
   imports: [
@@ -57,6 +67,11 @@ import { SchedulingModule } from './modules/scheduling';
 
     // Analytics
     AnalyticsModule,
+  ],
+  providers: [
+    RequestContextService,
+    { provide: APP_INTERCEPTOR, useClass: RequestIdInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: AuditContextInterceptor },
   ],
 })
 export class AppModule {}

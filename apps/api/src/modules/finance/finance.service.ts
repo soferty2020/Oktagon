@@ -537,6 +537,23 @@ export class FinanceService {
         reason = DebtorExemption.NO_TRAININGS_YET;
       }
 
+      // Задолженность — это не только «нет оснований не считать должником», но и
+      // наличие недоплаты. Без этой проверки должником оставался и тот, кто внес
+      // всю ожидаемую сумму: список требовал бы денег с уже оплативших.
+      //
+      // Правило BR-004 перечисляет четыре условия, но не называет пятое — что
+      // взыскивать есть что. Это не пятое условие, а смысл слова «должен»:
+      // оснований не считать должником нет И остаток положительный.
+      //
+      // Ожидаемая сумма не задана — спортсмен остается должником: клуб еще не
+      // решил, сколько с него брать (BR-002: сумма вводится вручную), и такая
+      // карточка как раз требует внимания администратора. Это отдельно
+      // отмечается в сводке (`debtorsWithoutExpected`).
+      const expected = period?.expectedAmount ?? null;
+      // `paidAmount` уже нетто (поступления минус возвраты, ADR-0010), поэтому
+      // возвраты здесь повторно не вычитаются.
+      const outstanding = expected === null ? null : Number(expected) - paidAmount;
+
       summaries.push({
         athleteId: athlete.athleteId,
         firstName: athlete.firstName,
@@ -546,7 +563,7 @@ export class FinanceService {
         paidAmount,
         refundedAmount,
         expectedAmount: period?.expectedAmount ?? null,
-        isDebtor: reason === null,
+        isDebtor: reason === null && (outstanding === null || outstanding > 0),
         reason,
       });
     }
