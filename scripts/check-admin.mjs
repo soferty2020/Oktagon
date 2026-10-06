@@ -8,49 +8,32 @@
  *
  * Скрытые поля формы (в том числе $ACTION_KEY) разбираются из HTML: в проде это
  * делает браузер, а в проверке — скрипт, поэтому формат не дублируется вручную.
+ * Разбор и вход вынесены в `scripts/admin-check-client.mjs`: те же шаги нужны
+ * проверке экранов финансов (`check-admin-finance.mjs`).
  *
  * Использование:
  *   node scripts/check-admin.mjs [baseUrl] [apiBaseUrl]
  */
-const base = process.argv[2] ?? 'http://127.0.0.1:3001';
-const apiBase = process.argv[3] ?? 'http://127.0.0.1:3900/api/v1';
+import {
+  DEFAULT_ADMIN_BASE,
+  DEFAULT_API_BASE,
+  apiCall,
+  apiLogin,
+  fetchHtml,
+  loginCookies,
+  readHiddenFields,
+} from './admin-check-client.mjs';
+
+const base = process.argv[2] ?? DEFAULT_ADMIN_BASE;
+const apiBase = process.argv[3] ?? DEFAULT_API_BASE;
 const email = process.env.ADMIN_EMAIL ?? 'superadmin@octagon.local';
 const password = process.env.ADMIN_PASSWORD ?? 'ChangeMe-Octagon-2026!';
 
 const log = (step, message) => console.log(`${step}. ${message}`);
 
-function decodeHtml(value) {
-  return value
-    .replace(/&quot;/g, '"')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>');
-}
-
-/** Скрытые поля формы входа: их формирует useActionState. */
-function readHiddenFields(html) {
-  const form = html.match(/<form[\s\S]*?<\/form>/)?.[0];
-  if (!form) {
-    return null;
-  }
-
-  const fields = new Map();
-  for (const match of form.matchAll(
-    /<input type="hidden" name="([^"]+)"(?: value="([^"]*)")?\/>/g,
-  )) {
-    fields.set(match[1], decodeHtml(match[2] ?? ''));
-  }
-  return fields;
-}
-
-async function fetchHtml(path, cookie) {
-  const response = await fetch(`${base}${path}`, { headers: cookie ? { cookie } : {} });
-  return { status: response.status, html: await response.text() };
-}
-
 /** Проверяет, что страница отдается и содержит ожидаемый текст. */
 async function checkPage(cookie, path, expected, label) {
-  const { status, html } = await fetchHtml(path, cookie);
+  const { status, html } = await fetchHtml(base, path, cookie);
   const found = html.includes(expected);
   console.log(
     `${found ? '✔' : '✕'} ${label}: ${path} → ${status}${
@@ -61,11 +44,20 @@ async function checkPage(cookie, path, expected, label) {
 
 async function main() {
   // 1. Страница входа доступна без сессии.
-  const { status: loginStatus, html: loginHtml } = await fetchHtml('/login');
+  const { status: loginStatus, html: loginHtml } = await fetchHtml(base, '/login', '');
   log(1, `/login: ${loginStatus} | форма входа: ${loginHtml.includes('name="email"')}`);
 
   // 2. Защищенные страницы без cookie отправляют на вход.
-  for (const path of ['/', '/groups', '/athletes', '/users']) {
+  const protectedPages = [
+    '/',
+    '/groups',
+    '/athletes',
+    '/users',
+    '/finance',
+    '/finance/debtors',
+    '/finance/freezes',
+  ];
+  for (const path of protectedPages) {
     const response = await fetch(`${base}${path}`, { redirect: 'manual' });
     log(2, `${path} без сессии: ${response.status} → ${response.headers.get('location')}`);
   }
@@ -82,24 +74,11 @@ async function main() {
   }
   log(4, `скрытые поля формы: ${[...hidden.keys()].join(', ')}`);
 
-  const form = new FormData();
-  for (const [name, value] of hidden) {
-    form.set(name, value);
-  }
-  form.set('email', email);
-  form.set('password', password);
-
-  const post = await fetch(`${base}/login`, {
-    method: 'POST',
-    body: form,
-    redirect: 'manual',
-    headers: { accept: 'text/x-component' },
-  });
-
-  const setCookie = post.headers.getSetCookie();
+  const session = await loginCookies({ base, email, password });
+  const setCookie = session.setCookie;
   log(
     5,
-    `вход: ${post.status} | redirect: ${post.headers.get('location')} | cookie: ${
+    `вход: ${session.status} | redirect: ${session.location} | cookie: ${
       setCookie.map((cookie) => cookie.split('=')[0]).join(', ') || '(нет)'
     }`,
   );
@@ -116,7 +95,7 @@ async function main() {
     )}`,
   );
 
-  const cookie = setCookie.map((entry) => entry.split(';')[0]).join('; ');
+  const cookie = session.cookie;
 
   // 7. Прокси отдает данные backend от имени пользователя.
   const viaProxy = await fetch(`${base}/api/proxy/branches`, { headers: { cookie } });
@@ -138,7 +117,7 @@ async function main() {
     await fetch(`${base}/api/proxy/schedule-templates`, { headers: { cookie } })
   ).json();
   if (Array.isArray(templates) && templates.length > 0) {
-    const { html } = await fetchHtml(`/schedule/${templates[0].id}`, cookie);
+    const { html } = await fetchHtml(base, `/schedule/${templates[0].id}`, cookie);
     const published = templates[0].publishedAt !== null;
     log(
       8,
@@ -154,30 +133,22 @@ async function main() {
 
   // 8г. Черновик: слоты можно менять, форма добавления видна. Проверяется на
   // будущем квартале, чтобы не мешать текущему расписанию.
-  const draftLogin = await fetch(`${apiBase}/auth/login`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
-  const draftToken = (await draftLogin.json())?.accessToken;
+  const draftToken = await apiLogin(apiBase, email, password);
 
   const groupsForDraft = await (
     await fetch(`${base}/api/proxy/groups`, { headers: { cookie } })
   ).json();
   if (Array.isArray(groupsForDraft) && groupsForDraft.length > 0 && draftToken) {
     const draftYear = new Date().getFullYear() + 1;
-    const draft = await fetch(`${apiBase}/schedule-templates`, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        authorization: `Bearer ${draftToken}`,
-      },
-      body: JSON.stringify({ groupId: groupsForDraft[0].id, year: draftYear, quarter: 1 }),
+    const draft = await apiCall(apiBase, draftToken, 'POST', '/schedule-templates', {
+      groupId: groupsForDraft[0].id,
+      year: draftYear,
+      quarter: 1,
     });
 
-    if (draft.ok) {
-      const created = await draft.json();
-      const { html } = await fetchHtml(`/schedule/${created.id}`, cookie);
+    if (draft.status === 201) {
+      const created = draft.body;
+      const { html } = await fetchHtml(base, `/schedule/${created.id}`, cookie);
       log(
         '8г',
         `черновик расписания (${draftYear} Q1): добавление слота ${html.includes(
@@ -185,29 +156,17 @@ async function main() {
         )} | кнопка публикации ${html.includes('Опубликовать расписание')}`,
       );
       // Удаляем черновик, чтобы не оставлять данные после проверки.
-      await fetch(`${apiBase}/schedule-templates/${created.id}`, {
-        method: 'DELETE',
-        headers: { authorization: `Bearer ${draftToken}` },
-      });
+      await apiCall(apiBase, draftToken, 'DELETE', `/schedule-templates/${created.id}`);
     } else {
       log('8г', `черновик создать не удалось: ${draft.status}`);
     }
   }
 
   // 8д. Посещаемость занятия: журнал, отметки и предупреждения.
-  const demoLogin = await fetch(`${apiBase}/auth/login`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
-  const demoToken = (await demoLogin.json())?.accessToken;
+  const demoToken = await apiLogin(apiBase, email, password);
 
   if (demoToken) {
-    const sessions = await (
-      await fetch(`${apiBase}/training-sessions`, {
-        headers: { authorization: `Bearer ${demoToken}` },
-      })
-    ).json();
+    const sessions = (await apiCall(apiBase, demoToken, 'GET', '/training-sessions')).body;
 
     // Нужно занятие с непустым составом: у групп, оставшихся от прошлых
     // проверок, участников может уже не быть.
@@ -215,15 +174,16 @@ async function main() {
     let withAbsence = null;
     if (Array.isArray(sessions)) {
       for (const candidate of sessions.slice(0, 10)) {
-        const journal = await fetch(
-          `${apiBase}/training-sessions/${candidate.id}/attendance`,
-          { headers: { authorization: `Bearer ${demoToken}` } },
+        const journal = await apiCall(
+          apiBase,
+          demoToken,
+          'GET',
+          `/training-sessions/${candidate.id}/attendance`,
         );
-        if (!journal.ok) {
+        if (journal.status !== 200) {
           continue;
         }
-        const payload = await journal.json();
-        const roster = payload.roster ?? [];
+        const roster = journal.body?.roster ?? [];
         if (roster.length > 0 && !reportable) {
           reportable = { session: candidate, rosterSize: roster.length };
         }
@@ -238,6 +198,7 @@ async function main() {
 
     if (reportable) {
       const { html } = await fetchHtml(
+        base,
         `/schedule/sessions/${reportable.session.id}/attendance`,
         cookie,
       );
@@ -255,6 +216,7 @@ async function main() {
 
     if (withAbsence) {
       const { html } = await fetchHtml(
+        base,
         `/schedule/sessions/${withAbsence.session.id}/attendance`,
         cookie,
       );
@@ -276,7 +238,7 @@ async function main() {
     await fetch(`${base}/api/proxy/groups`, { headers: { cookie } })
   ).json();
   if (Array.isArray(groups) && groups.length > 0) {
-    const { html } = await fetchHtml(`/groups/${groups[0].id}`, cookie);
+    const { html } = await fetchHtml(base, `/groups/${groups[0].id}`, cookie);
     log(
       9,
       `карточка группы: филиалы ${html.includes('Филиалы')} | тренеры ${html.includes(
@@ -294,7 +256,7 @@ async function main() {
     await fetch(`${base}/api/proxy/athletes`, { headers: { cookie } })
   ).json();
   if (Array.isArray(athletes) && athletes.length > 0) {
-    const { html } = await fetchHtml(`/athletes/${athletes[0].id}`, cookie);
+    const { html } = await fetchHtml(base, `/athletes/${athletes[0].id}`, cookie);
     log(
       10,
       `карточка спортсмена: связи аккаунтов ${html.includes(
@@ -308,27 +270,12 @@ async function main() {
   }
 
   // 11. Права пользователя: ролевые и индивидуальные показаны раздельно.
-  const login = await (
-    await fetch(`${apiBase}/auth/login`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    })
-  ).json();
+  const token = await apiLogin(apiBase, email, password);
 
-  const me = await (
-    await fetch(`${apiBase}/me`, {
-      headers: { authorization: `Bearer ${login.accessToken}` },
-    })
-  ).json();
+  const me = (await apiCall(apiBase, token, 'GET', '/me')).body;
+  const usersCount = (await apiCall(apiBase, token, 'GET', '/users?perPage=100')).body;
 
-  const usersCount = await (
-    await fetch(`${apiBase}/users?perPage=100`, {
-      headers: { authorization: `Bearer ${login.accessToken}` },
-    })
-  ).json();
-
-  const { html: permissionsHtml } = await fetchHtml(`/users/${me.id}/permissions`, cookie);
+  const { html: permissionsHtml } = await fetchHtml(base, `/users/${me.id}/permissions`, cookie);
   log(
     11,
     `права: ролевые ${permissionsHtml.includes('Права роли')} | личные ${permissionsHtml.includes(
@@ -340,6 +287,31 @@ async function main() {
     `/users как API: всего ${usersCount.meta?.total} | на странице ${usersCount.items?.length} | приватные поля: ${
       usersCount.items?.[0]?.passwordHash === undefined ? 'не раскрыты' : 'УТЕЧКА'
     }`,
+  );
+
+  // 13. Финансы: сводка месяца, список должников, заморозки.
+  //
+  // Подробная проверка (периоды, оплаты через форму, BR-003 и BR-005) —
+  // отдельным скриптом `check-admin-finance.mjs`: здесь только то, что экраны
+  // отдаются и объясняют правила.
+  const today = new Date();
+  const financeYear = today.getUTCFullYear();
+  const financeMonth = today.getUTCMonth() + 1;
+
+  await checkPage(cookie, '/finance', 'Финансы', 'финансы (сводка)');
+  await checkPage(cookie, '/finance/debtors', 'Не должники', 'финансы (должники)');
+  await checkPage(cookie, '/finance/freezes', 'Заморозки', 'финансы (заморозки)');
+
+  const financeHtml = await fetchHtml(
+    base,
+    `/finance?year=${financeYear}&month=${financeMonth}`,
+    cookie,
+  );
+  log(
+    13,
+    `сводка финансов: долги ${financeHtml.html.includes('Ожидается к оплате')} | правила BR-004 ${financeHtml.html.includes(
+      'Как считается задолженность',
+    )} | месяц в адресе ${financeHtml.html.includes(String(financeYear))}`,
   );
 }
 

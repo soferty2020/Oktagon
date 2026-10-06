@@ -3,23 +3,39 @@ import Link from 'next/link';
 import { logoutAction } from '@/app/actions';
 import type { CurrentUser } from '@/lib/server/session';
 
-const NAVIGATION = [
+/**
+ * Разделы навигации.
+ *
+ * `requiredPermissions` — права, хотя бы одно из которых открывает раздел. Это
+ * только удобство: окончательная проверка всегда на backend (ADR-0006), но
+ * ссылка на закрытый раздел заставляла бы тренера искать причину отказа.
+ */
+const NAVIGATION: readonly {
+  href: string;
+  label: string;
+  requiredPermissions?: readonly string[];
+}[] = [
   { href: '/', label: 'Обзор' },
   { href: '/branches', label: 'Филиалы' },
   { href: '/groups', label: 'Группы' },
   { href: '/athletes', label: 'Спортсмены' },
   { href: '/schedule', label: 'Расписание' },
+  {
+    href: '/finance',
+    label: 'Финансы',
+    requiredPermissions: ['payments.view', 'freezes.view'],
+  },
   { href: '/users', label: 'Пользователи' },
-] as const;
+];
 
 /** Каркас страницы админки: шапка с пользователем и навигация по разделам. */
-export function AppShell({
-  user,
-  children,
-}: {
-  user: CurrentUser;
-  children: React.ReactNode;
-}) {
+export function AppShell({ user, children }: { user: CurrentUser; children: React.ReactNode }) {
+  const navigation = NAVIGATION.filter(
+    (item) =>
+      !item.requiredPermissions ||
+      item.requiredPermissions.some((code) => user.permissions.includes(code)),
+  );
+
   return (
     <div className="min-h-screen bg-slate-100">
       <header className="border-b border-slate-200 bg-white">
@@ -27,7 +43,7 @@ export function AppShell({
           <div className="flex items-center gap-6">
             <span className="text-sm font-semibold tracking-wide text-slate-900">OCTAGON</span>
             <nav className="flex items-center gap-4">
-              {NAVIGATION.map((item) => (
+              {navigation.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}

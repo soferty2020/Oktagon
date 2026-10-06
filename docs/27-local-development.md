@@ -333,6 +333,28 @@ pnpm --filter @octagon/admin api:types   # → apps/admin/src/lib/api/schema.d.t
 `scripts/verify.ps1` по умолчанию выполняет только проверку типов админки, а
 сборку — с флагом `-IncludeAdminBuild`.
 
+Важно: в dev-режиме `next build`, запущенный в том же каталоге, переписывает
+`.next` и ломает уже работающий dev-сервер — тот начинает отвечать
+`Failed to find Server Action` на отправку форм. После сборки dev-сервер нужно
+перезапустить.
+
+### Проверка экранов по HTTP
+
+`scripts/check-admin.mjs` (разделы админки) и `scripts/check-admin-finance.mjs`
+(экраны финансов) повторяют то, что делает браузер: разбирают скрытые поля
+server action и отправляют форму. Условие, без которого проверка не работает:
+адрес админки должен совпадать с заголовком `origin`. Next отклоняет server
+actions без этого заголовка, а `localhost` и `127.0.0.1` для него — разные
+источники, поэтому проверяемый адрес передается аргументом и используется и как
+база, и как origin.
+
+Запуск при поднятых backend и админке:
+
+```bash
+node scripts/check-admin.mjs http://localhost:3001 http://127.0.0.1:3000/api/v1
+node scripts/check-admin-finance.mjs http://localhost:3001 http://127.0.0.1:3000/api/v1
+```
+
 ## 9. CI
 
 `.github/workflows/ci.yml` запускается на push и pull request и состоит из двух

@@ -11,8 +11,8 @@
 
 | Путь | Стек | Состояние |
 | --- | --- | --- |
-| `apps/api` | NestJS + Prisma + PostgreSQL | auth, identity, RBAC, филиалы, залы, тренеры, спортсмены, группы |
-| `apps/admin` | Next.js 16 + React 19 + Tailwind 4 | вход, обзор, филиалы, группы, спортсмены |
+| `apps/api` | NestJS + Prisma + PostgreSQL | auth, identity, RBAC, филиалы, залы, тренеры, спортсмены, группы, расписание, посещаемость, финансы и заморозки |
+| `apps/admin` | Next.js 16 + React 19 + Tailwind 4 | вход, обзор, филиалы, группы, спортсмены, пользователи и права, расписание, посещаемость, финансы |
 | `apps/mobile` | Flutter | не создан |
 | `packages/contracts` | TypeScript | доменные enum'ы, коды ошибок, контракты модулей |
 | `packages/config` | TypeScript | схемы конфигурации |
