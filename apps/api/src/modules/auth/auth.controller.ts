@@ -1,6 +1,6 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Req } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { AuthSession } from '@octagon/contracts';
+import type { AuthSession, UserInvitePreview } from '@octagon/contracts';
 import type { Request } from 'express';
 
 import { AuthService } from './auth.service';
@@ -69,6 +69,24 @@ export class AuthController {
       middleName: dto.middleName,
       phone: dto.phone,
     });
+  }
+
+  /**
+   * Просмотр приглашения по токену: адрес, роль и срок.
+   *
+   * Публичный: у приглашенного еще нет аккаунта, и страница принятия должна
+   * показать, на какой адрес выдано приглашение. Токен — секрет, поэтому попытки
+   * подбора ограничиваются по IP так же, как при принятии.
+   */
+  @Get('invites/:token')
+  @ApiOperation({ summary: 'Просмотр приглашения по токену' })
+  @ApiOkResponse({ description: 'Адрес, роль и срок действия приглашения' })
+  async previewInvite(
+    @Param('token') token: string,
+    @Req() request: Request,
+  ): Promise<UserInvitePreview> {
+    await this.auth.enforceInviteRateLimit(clientIp(request));
+    return this.invites.preview(token);
   }
 }
 

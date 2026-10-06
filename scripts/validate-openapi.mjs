@@ -105,6 +105,7 @@ const expectedRoutes = [
   ['post', '/auth/refresh'],
   ['post', '/auth/logout'],
   ['post', '/auth/accept-invite'],
+  ['get', '/auth/invites/{token}'],
   ['get', '/me'],
   ['get', '/me/athletes'],
   ['get', '/users/invites'],

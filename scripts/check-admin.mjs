@@ -234,9 +234,7 @@ async function main() {
   }
 
   // 9. Карточка группы: филиалы, тренеры, состав.
-  const groups = await (
-    await fetch(`${base}/api/proxy/groups`, { headers: { cookie } })
-  ).json();
+  const groups = await (await fetch(`${base}/api/proxy/groups`, { headers: { cookie } })).json();
   if (Array.isArray(groups) && groups.length > 0) {
     const { html } = await fetchHtml(base, `/groups/${groups[0].id}`, cookie);
     log(
@@ -315,6 +313,122 @@ async function main() {
       'Как считается задолженность',
     )} | месяц в адресе ${financeHtml.html.includes(String(financeYear))}`,
   );
+
+  // 14. Приглашения: полный цикл «создать → открыть ссылку → задать пароль → войти».
+  //
+  // Проверяется именно цикл, а не отдельные эндпоинты: приглашение бессмысленно,
+  // если ссылка не открывается или по ней нельзя войти. Пользователь создается
+  // каждый раз новый: повторное приглашение на занятый адрес отклоняется.
+  const inviteStamp = Date.now();
+  const inviteEmail = `invite-${inviteStamp}@octagon.local`;
+  const invitePassword = 'Invite-Check-2026!';
+
+  const created = await apiCall(apiBase, token, 'POST', '/users/invites', {
+    email: inviteEmail,
+    role: 'STAFF',
+  });
+  log(
+    14,
+    `приглашение создано: ${created.status} | роль ${created.body?.role} | токен ${
+      typeof created.body?.token === 'string' && created.body.token.length >= 32
+        ? 'выдан'
+        : 'НЕ ВЫДАН'
+    }`,
+  );
+
+  const invitesList = await apiCall(apiBase, token, 'GET', '/users/invites');
+  log(
+    '14б',
+    `список приглашений: всего ${invitesList.body?.length} | хеш токена ${
+      JSON.stringify(invitesList.body ?? []).includes('tokenHash') ? 'УТЕЧКА' : 'не раскрыт'
+    }`,
+  );
+
+  const { html: invitesHtml } = await fetchHtml(base, '/users/invites', cookie);
+  log(
+    '14в',
+    `экран приглашений: форма ${invitesHtml.includes('Пригласить пользователя')} | доставка вручную ${invitesHtml.includes(
+      'Письмо не отправляется',
+    )} | список ${invitesHtml.includes('Действующие приглашения')}`,
+  );
+
+  const inviteToken = created.body?.token;
+  if (inviteToken) {
+    const preview = await apiCall(
+      apiBase,
+      '',
+      'GET',
+      `/auth/invites/${encodeURIComponent(inviteToken)}`,
+    );
+    log(
+      '14г',
+      `просмотр по ссылке без сессии: ${preview.status} | email ${
+        preview.body?.email === inviteEmail ? 'совпадает' : 'НЕ СОВПАДАЕТ'
+      } | хеш ${JSON.stringify(preview.body ?? {}).includes('tokenHash') ? 'УТЕЧКА' : 'не раскрыт'}`,
+    );
+
+    const { html: invitePageHtml, status: invitePageStatus } = await fetchHtml(
+      base,
+      `/invite/${inviteToken}`,
+      '',
+    );
+    log(
+      '14д',
+      `страница принятия без сессии: ${invitePageStatus} | форма ${invitePageHtml.includes(
+        'Создать аккаунт',
+      )} | адрес показан ${invitePageHtml.includes(inviteEmail)}`,
+    );
+
+    const accepted = await apiCall(apiBase, '', 'POST', '/auth/accept-invite', {
+      token: inviteToken,
+      email: inviteEmail,
+      password: invitePassword,
+      firstName: 'Приглашенный',
+      lastName: `Проверка ${inviteStamp}`,
+    });
+    log('14е', `приглашение принято: ${accepted.status} | роль ${accepted.body?.role}`);
+
+    // Главное: по приглашению действительно можно войти.
+    const inviteLogin = await apiCall(apiBase, '', 'POST', '/auth/login', {
+      email: inviteEmail,
+      password: invitePassword,
+    });
+    log(
+      '14ж',
+      `вход приглашенного: ${inviteLogin.status} | роль ${inviteLogin.body?.user?.role} | прав ${
+        inviteLogin.body?.user?.permissions?.codes?.length ?? '—'
+      }`,
+    );
+
+    const reused = await apiCall(apiBase, '', 'POST', '/auth/accept-invite', {
+      token: inviteToken,
+      email: inviteEmail,
+      password: 'Another-Password-2026!',
+      firstName: 'Повтор',
+      lastName: 'Повтор',
+    });
+    log('14з', `повторное принятие отклонено: ${reused.status} ${reused.body?.code ?? ''}`);
+
+    const unknownToken = await apiCall(
+      apiBase,
+      '',
+      'GET',
+      '/auth/invites/unknown-token-0123456789',
+    );
+    log(
+      '14и',
+      `неизвестный токен не отличается от истекшего: ${unknownToken.status} ${unknownToken.body?.code ?? ''}`,
+    );
+
+    const secondInvite = await apiCall(apiBase, token, 'POST', '/users/invites', {
+      email: inviteEmail,
+      role: 'STAFF',
+    });
+    log(
+      '14к',
+      `повторное приглашение занятого адреса отклонено: ${secondInvite.status} ${secondInvite.body?.code ?? ''}`,
+    );
+  }
 }
 
 main().catch((error) => {

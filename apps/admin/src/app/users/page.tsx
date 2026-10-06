@@ -58,6 +58,11 @@ export default async function UsersPage() {
       <PageHeader
         title="Пользователи"
         description="Роли, статусы и индивидуальные права"
+        actions={
+          <Link href="/users/invites" className="text-sm text-slate-500 hover:text-slate-900">
+            Приглашения →
+          </Link>
+        }
       />
 
       <div className="rounded-xl border border-slate-200 bg-white">
@@ -122,9 +127,7 @@ export default async function UsersPage() {
       </div>
 
       {result.ok ? (
-        <p className="mt-3 text-xs text-slate-500">
-          Всего пользователей: {result.data.meta.total}
-        </p>
+        <p className="mt-3 text-xs text-slate-500">Всего пользователей: {result.data.meta.total}</p>
       ) : null}
     </AppShell>
   );

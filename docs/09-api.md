@@ -9,8 +9,8 @@ REST JSON API, versioned prefix: `/api/v1`.
 - server-side permission checks mandatory.
 
 ## Основные ресурсы
-- /auth
-- /users
+- /auth (в том числе публичный просмотр приглашения по токену)
+- /users (в том числе приглашения)
 - /athletes
 - /branches
 - /groups

@@ -1,5 +1,11 @@
 import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { PermissionCode, type UserInviteCreated, type UserInviteView } from '@octagon/contracts';
 
 import { AuthGuard, CurrentUser, type AuthenticatedUser } from '../../shared/auth-stub';

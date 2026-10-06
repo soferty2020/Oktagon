@@ -7,6 +7,7 @@ import {
   AuditAction,
   AuditEntityType,
   type UserInviteCreated,
+  type UserInvitePreview,
   type UserInviteView,
   type UserRole,
 } from '@octagon/contracts';
@@ -111,6 +112,32 @@ export class InviteService {
   }
 
   /**
+   * Что видно по токену приглашения до его принятия.
+   *
+   * Отдается без сессии: ссылку открывает приглашенный, у которого аккаунта еще
+   * нет. Поэтому в ответе только адрес, роль и срок — ничего о клубе и его
+   * пользователях. Недействительное, истекшее или уже использованное приглашение
+   * неотличимы друг от друга (`INVITE_INVALID`): по ответу нельзя перебором
+   * выяснить, какие приглашения существуют.
+   */
+  async preview(token: string): Promise<UserInvitePreview> {
+    const invite = await this.invites.findByTokenHash(hashInviteToken(token));
+
+    if (!invite || invite.usedAt || invite.expiresAt.getTime() <= Date.now()) {
+      throw new ApiException(
+        'INVITE_INVALID' satisfies ApiErrorCode,
+        'Приглашение недействительно: запросите новое у администратора',
+      );
+    }
+
+    return {
+      email: invite.email,
+      role: invite.role,
+      expiresAt: invite.expiresAt.toISOString(),
+    };
+  }
+
+  /**
    * Принятие приглашения: пользователь задает пароль.
    *
    * Проверки: токен существует (или приглашение найдено по id), не истек, не
@@ -120,7 +147,9 @@ export class InviteService {
    * Гашение приглашения выполняется атомарно (consume): при одновременных
    * запросах успеет только один, второй получит INVITE_ALREADY_USED.
    */
-  async accept(input: AcceptInviteInput): Promise<{ userId: string; email: string; role: UserRole }> {
+  async accept(
+    input: AcceptInviteInput,
+  ): Promise<{ userId: string; email: string; role: UserRole }> {
     const invite = await this.resolveInvite(input);
     const email = input.email.trim().toLowerCase();
 

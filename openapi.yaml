@@ -219,6 +219,45 @@ paths:
         '429':
           $ref: '#/components/responses/RateLimited'
 
+  /auth/invites/{token}:
+    get:
+      tags: [auth]
+      summary: Просмотр приглашения по токену
+      description: |
+        Публичный эндпоинт: у приглашенного еще нет аккаунта, а страница принятия
+        должна показать, на какой адрес выдано приглашение — иначе человек
+        заполнит пароль и получит `INVITE_EMAIL_MISMATCH` без объяснения.
+
+        В ответе только адрес, роль и срок: ничего о клубе и его пользователях.
+        Недействительное, истекшее и уже использованное приглашение неотличимы
+        друг от друга (`INVITE_INVALID`), чтобы перебором нельзя было выяснить,
+        какие приглашения существуют. Попытки подбора ограничены по IP.
+      security: []
+      operationId: previewInvite
+      parameters:
+        - name: token
+          in: path
+          required: true
+          description: Токен приглашения из ссылки
+          schema:
+            type: string
+            minLength: 16
+      responses:
+        '200':
+          description: Адрес, роль и срок действия приглашения
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInvitePreview'
+        '400':
+          description: Приглашение недействительно (`INVITE_INVALID`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
   /me:
     get:
       tags: [identity]
@@ -3736,6 +3775,23 @@ components:
                 Токен приглашения. Возвращается только при создании; в БД
                 хранится его SHA-256-хеш. Передается пользователю вручную.
               example: 9f8c1d2e3a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5
+
+    UserInvitePreview:
+      type: object
+      description: |
+        Что видно по токену приглашения до его принятия. Отдается публично, поэтому
+        в ответе минимум: адрес, роль и срок.
+      required: [email, role, expiresAt]
+      properties:
+        email:
+          type: string
+          format: email
+          description: Адрес, на который выдано приглашение; форма его показывает
+        role:
+          $ref: '#/components/schemas/UserRole'
+        expiresAt:
+          type: string
+          format: date-time
 
     AcceptInviteRequest:
       type: object

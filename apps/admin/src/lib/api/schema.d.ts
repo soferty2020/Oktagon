@@ -137,6 +137,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/invites/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Просмотр приглашения по токену
+         * @description Публичный эндпоинт: у приглашенного еще нет аккаунта, а страница принятия
+         *     должна показать, на какой адрес выдано приглашение — иначе человек
+         *     заполнит пароль и получит `INVITE_EMAIL_MISMATCH` без объяснения.
+         *
+         *     В ответе только адрес, роль и срок: ничего о клубе и его пользователях.
+         *     Недействительное, истекшее и уже использованное приглашение неотличимы
+         *     друг от друга (`INVITE_INVALID`), чтобы перебором нельзя было выяснить,
+         *     какие приглашения существуют. Попытки подбора ограничены по IP.
+         */
+        get: operations["previewInvite"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me": {
         parameters: {
             query?: never;
@@ -1563,6 +1590,20 @@ export interface components {
              */
             token: string;
         };
+        /**
+         * @description Что видно по токену приглашения до его принятия. Отдается публично, поэтому
+         *     в ответе минимум: адрес, роль и срок.
+         */
+        UserInvitePreview: {
+            /**
+             * Format: email
+             * @description Адрес, на который выдано приглашение; форма его показывает
+             */
+            email: string;
+            role: components["schemas"]["UserRole"];
+            /** Format: date-time */
+            expiresAt: string;
+        };
         /** @description Нужно указать ровно одно из `token` или `inviteId` */
         AcceptInviteRequest: {
             /** @description Токен приглашения из ответа на создание */
@@ -2644,6 +2685,39 @@ export interface operations {
             };
             /** @description Приглашение уже использовано (`INVITE_ALREADY_USED`) */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            429: components["responses"]["RateLimited"];
+        };
+    };
+    previewInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Токен приглашения из ссылки */
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Адрес, роль и срок действия приглашения */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserInvitePreview"];
+                };
+            };
+            /** @description Приглашение недействительно (`INVITE_INVALID`) */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

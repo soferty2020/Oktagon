@@ -221,4 +221,40 @@ describe('InviteService', () => {
       expect(list[0]).not.toHaveProperty('tokenHash');
     });
   });
+
+  describe('preview', () => {
+    it('отдает адрес, роль и срок по токену', async () => {
+      const preview = await service.preview('token-from-link');
+
+      expect(preview).toEqual({
+        email: 'trainer@example.com',
+        role: 'STAFF',
+        expiresAt: inviteRecord.expiresAt.toISOString(),
+      });
+      // Хеш токена в ответ не попадает: страница принятия публичная.
+      expect(preview).not.toHaveProperty('tokenHash');
+    });
+
+    it('ищет приглашение по хешу токена, а не по самому токену', async () => {
+      await service.preview('token-from-link');
+
+      // В БД хранится только хеш, поэтому искать по сырому токену нельзя.
+      expect(invites.findByTokenHash).toHaveBeenCalledWith(expect.stringMatching(/^[0-9a-f]{64}$/));
+      expect(invites.findByTokenHash).not.toHaveBeenCalledWith('token-from-link');
+    });
+
+    it('не отличает неизвестный токен от истекшего и использованного', async () => {
+      invites.findByTokenHash.mockResolvedValueOnce(null);
+      await expect(service.preview('unknown')).rejects.toMatchObject({ code: 'INVITE_INVALID' });
+
+      invites.findByTokenHash.mockResolvedValueOnce({
+        ...inviteRecord,
+        expiresAt: new Date(Date.now() - 1000),
+      });
+      await expect(service.preview('expired')).rejects.toMatchObject({ code: 'INVITE_INVALID' });
+
+      invites.findByTokenHash.mockResolvedValueOnce({ ...inviteRecord, usedAt: new Date() });
+      await expect(service.preview('used')).rejects.toMatchObject({ code: 'INVITE_INVALID' });
+    });
+  });
 });
