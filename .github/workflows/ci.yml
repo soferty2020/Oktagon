@@ -24,12 +24,7 @@ env:
 jobs:
   verify:
     name: lint, typecheck, tests, build
-    # Образ зафиксирован, а не `ubuntu-latest`: 24.04 не содержит psql, и
-    # `Prepare test database` падал на «command not found», останавливая всю
-    # проверку до линтера и тестов. Явная версия делает поведение CI
-    # предсказуемым; клиент PostgreSQL все равно ставится отдельным шагом ниже,
-    # чтобы сборка не зависела от состава образа.
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     timeout-minutes: 20
 
     services:
@@ -86,23 +81,35 @@ jobs:
       - name: Generate Prisma Client
         run: pnpm db:generate
 
-      - name: Install PostgreSQL client
-        # Образ ubuntu-latest не содержит psql, а он нужен шагу ниже: без него
-        # `Prepare test database` падает с «command not found», и вся проверка
-        # останавливается до линтера и тестов. Локально клиент есть в составе
-        # установленного PostgreSQL, поэтому там шаг проходит — расхождение
-        # окружений и было причиной падения CI.
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq postgresql-client
-
       - name: Prepare test database
         # Схема тестовой БД создается теми же миграциями, что и рабочая:
         # иначе e2e-тесты проверяли бы не то, что уедет в staging.
+        #
+        # Шаг печатает версии утилит и проверяет подключение до изменений: без
+        # этого падение на этом шаге не оставляет следов в логе, а именно он
+        # останавливал всю проверку до линтера и тестов.
         run: |
-          PGPASSWORD=octagon psql -h localhost -U octagon -d postgres \
+          set -euxo pipefail
+
+          echo "psql: $(command -v psql || echo 'НЕ НАЙДЕН')"
+          psql --version
+          echo "node: $(node --version)"
+          echo "целевая база: $TEST_DATABASE_URL (host $PGHOST)"
+
+          export PGPASSWORD=octagon
+          echo "проверка подключения к серверу:"
+          psql -h localhost -U octagon -d postgres -c 'select version();'
+
+          echo "создание тестовой базы:"
+          psql -h localhost -U octagon -d postgres -v ON_ERROR_STOP=1 \
             -c "CREATE DATABASE octagon_test OWNER octagon"
+
+          echo "применение миграций:"
           DATABASE_URL="$TEST_DATABASE_URL" pnpm db:deploy:test
+
+          echo "таблиц в тестовой базе:"
+          psql -h localhost -U octagon -d octagon_test -tAc \
+            "select count(*) from information_schema.tables where table_schema = 'public'"
 
       - name: Lint
         run: pnpm lint
@@ -136,9 +143,7 @@ jobs:
     # Админка собирается отдельным job: Next не нужны БД и Redis, а отдельный
     # job быстрее показывает, что именно сломалось.
     name: admin (lint, typecheck, build)
-    # Версия та же, что у job verify: расхождение окружений между проверками
-    # затрудняет разбор, какая из них сломалась.
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
