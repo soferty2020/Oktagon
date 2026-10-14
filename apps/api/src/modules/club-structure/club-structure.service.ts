@@ -17,6 +17,7 @@ import {
 
 import { ApiException } from '../../shared/api-exception';
 import { AuditService } from '../audit/audit.service';
+import { UserRole, UserStatus } from '../../../generated/prisma';
 // Обычный импорт, не `import type`: ClubStructureRepository — DI-токен, его
 // значение должно попасть в метаданные конструктора (emitDecoratorMetadata).
 import { ClubStructureRepository } from './club-structure.repository';
@@ -216,6 +217,112 @@ export class ClubStructureService {
       entityId: id,
       before: { displayName: trainer.displayName },
     });
+  }
+
+  /**
+   * Связывает профиль тренера с аккаунтом.
+   *
+   * Связь дает человеку доступ к системе: тренер попадает в чаты своих групп
+   * (состав вычисляется по `TrainerProfile.userId`), видит расписание и может
+   * отмечать посещаемость. Поэтому операция проверяется правом на управление
+   * пользователями, а не только правом на справочники клуба.
+   *
+   * Роль аккаунта проверяется: участник клуба (MEMBER) прав тренера не имеет, и
+   * «тренер» из него получился бы только на бумаге — он не увидел бы занятий.
+   * Молчаливое состояние, в котором доступ есть, а возможностей нет, хуже отказа.
+   */
+  async linkTrainerAccount(id: string, userId: string): Promise<TrainerView> {
+    const trainer = await this.requireTrainer(id);
+
+    if (trainer.userId === userId) {
+      // Повторный вызов не ошибка: администратор мог нажать дважды.
+      return toTrainerView(trainer);
+    }
+
+    if (trainer.userId !== null) {
+      throw new ApiException(
+        'TRAINER_ALREADY_ASSIGNED' satisfies ApiErrorCode,
+        'С профилем уже связан аккаунт: сначала снимите связь',
+        { currentUserId: trainer.userId },
+      );
+    }
+
+    const account = await this.repository.findAccount(userId);
+    if (!account) {
+      throw new ApiException('NOT_FOUND' satisfies ApiErrorCode, 'Пользователь не найден');
+    }
+
+    if (account.role !== UserRole.STAFF && account.role !== UserRole.SUPERADMIN) {
+      throw new ApiException(
+        'TRAINER_ACCOUNT_ROLE_INVALID' satisfies ApiErrorCode,
+        `Аккаунт имеет роль ${account.role}: тренеру нужна роль STAFF, иначе он не увидит занятия`,
+        { role: account.role },
+      );
+    }
+
+    if (account.status !== UserStatus.ACTIVE) {
+      throw new ApiException(
+        'TRAINER_ACCOUNT_NOT_ACTIVE' satisfies ApiErrorCode,
+        `Аккаунт в статусе ${account.status}: сначала приглашение должно быть принято`,
+        { status: account.status },
+      );
+    }
+
+    // Аккаунт мог быть связан с другим профилем: связь уникальна (см. схему).
+    const holder = await this.repository.findTrainerByUserId(userId);
+    if (holder && holder.id !== id) {
+      throw new ApiException(
+        'TRAINER_ALREADY_ASSIGNED' satisfies ApiErrorCode,
+        'С этим аккаунтом уже связан другой профиль тренера',
+        { trainerId: holder.id },
+      );
+    }
+
+    const linked = await this.repository.setTrainerAccount(id, userId);
+
+    await this.audit.recordSafely({
+      action: AuditAction.TRAINER_UPDATED,
+      entityType: AuditEntityType.TRAINER_PROFILE,
+      entityId: id,
+      before: { userId: null },
+      after: { userId, role: account.role },
+    });
+
+    this.logger.log(`Профиль тренера ${id} связан с аккаунтом ${userId}`);
+
+    return toTrainerView(linked);
+  }
+
+  /**
+   * Снимает связь профиля с аккаунтом.
+   *
+   * Профиль и история сохраняются: тренер перестает входить в систему, но
+   * остается в расписании и в проведенных занятиях. Удаление профиля сломало бы
+   * историю посещаемости (BR-007).
+   */
+  async unlinkTrainerAccount(id: string): Promise<TrainerView> {
+    const trainer = await this.requireTrainer(id);
+
+    if (trainer.userId === null) {
+      throw new ApiException(
+        'TRAINER_ACCOUNT_NOT_LINKED' satisfies ApiErrorCode,
+        'С профилем не связан аккаунт',
+      );
+    }
+
+    const unlinked = await this.repository.setTrainerAccount(id, null);
+
+    await this.audit.recordSafely({
+      action: AuditAction.TRAINER_UPDATED,
+      entityType: AuditEntityType.TRAINER_PROFILE,
+      entityId: id,
+      before: { userId: trainer.userId },
+      after: { userId: null },
+    });
+
+    this.logger.log(`Профиль тренера ${id}: связь с аккаунтом снята`);
+
+    return toTrainerView(unlinked);
   }
 
   // --- Вспомогательное -----------------------------------------------------

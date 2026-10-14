@@ -33,6 +33,7 @@ import {
   CreateBranchDto,
   CreateBranchHallDto,
   CreateTrainerDto,
+  LinkTrainerAccountDto,
   ListBranchesQueryDto,
   ListTrainersQueryDto,
   UpdateBranchDto,
@@ -213,5 +214,38 @@ export class TrainersController {
   @ApiNoContentResponse({ description: 'Профиль архивирован' })
   archive(@Param('id') id: string): Promise<void> {
     return this.club.archiveTrainer(id);
+  }
+
+  /**
+   * Связывание профиля с аккаунтом.
+   *
+   * Право `users.manage`, а не `branches.manage`: связь дает человеку доступ к
+   * системе — чаты групп, расписание, посещаемость. Это операция с учетной
+   * записью, а не правка справочника, и она попадает в аудит (BR-007).
+   *
+   * `TRAINER_MANAGE_PERMISSIONS` в контракте перечисляет оба права для правки
+   * профиля целиком; здесь важно именно то, которое отвечает за доступ.
+   */
+  @Post(':id/account')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(PermissionCode.UsersManage)
+  @ApiOperation({ summary: 'Связать профиль тренера с аккаунтом' })
+  @ApiOkResponse({ description: 'Связь создана; профиль с аккаунтом' })
+  linkAccount(@Param('id') id: string, @Body() dto: LinkTrainerAccountDto): Promise<TrainerView> {
+    return this.club.linkTrainerAccount(id, dto.userId);
+  }
+
+  /**
+   * Снятие связи с аккаунтом.
+   *
+   * Отдельный маршрут, а не `PATCH` с пустым `userId`: «отвязать» — это решение
+   * отозвать доступ, и оно должно быть явным действием, а не отсутствием поля.
+   */
+  @Delete(':id/account')
+  @RequirePermissions(PermissionCode.UsersManage)
+  @ApiOperation({ summary: 'Снять связь профиля тренера с аккаунтом' })
+  @ApiOkResponse({ description: 'Связь снята; профиль остается в расписании' })
+  unlinkAccount(@Param('id') id: string): Promise<TrainerView> {
+    return this.club.unlinkTrainerAccount(id);
   }
 }

@@ -194,6 +194,8 @@ const expectedRoutes = [
   ['get', '/conversations/{id}'],
   ['post', '/conversations/{id}/messages'],
   ['delete', '/messages/{messageId}'],
+  ['post', '/trainers/{id}/account'],
+  ['delete', '/trainers/{id}/account'],
 ];
 
 for (const [method, route] of expectedRoutes) {

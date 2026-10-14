@@ -42,6 +42,17 @@ export const ApiErrorCode = {
   HALL_NOT_FOUND: 'HALL_NOT_FOUND',
   TRAINER_ALREADY_ASSIGNED: 'TRAINER_ALREADY_ASSIGNED',
   TRAINER_NOT_FOUND: 'TRAINER_NOT_FOUND',
+  /** Профиль тренера не связан с аккаунтом: отвязывать нечего. */
+  TRAINER_ACCOUNT_NOT_LINKED: 'TRAINER_ACCOUNT_NOT_LINKED',
+  /**
+   * Роль аккаунта не подходит для тренера.
+   *
+   * Тренеру нужна роль STAFF: у участника клуба (MEMBER) нет прав на занятия и
+   * посещаемость, поэтому связь создала бы «тренера» без возможностей.
+   */
+  TRAINER_ACCOUNT_ROLE_INVALID: 'TRAINER_ACCOUNT_ROLE_INVALID',
+  /** Аккаунт не активирован: приглашение еще не принято. */
+  TRAINER_ACCOUNT_NOT_ACTIVE: 'TRAINER_ACCOUNT_NOT_ACTIVE',
   /** Аккаунт уже связан с этим спортсменом. */
   ACCOUNT_ALREADY_LINKED: 'ACCOUNT_ALREADY_LINKED',
   /** Связи аккаунта со спортсменом нет. */
@@ -203,6 +214,9 @@ export const API_ERROR_HTTP_STATUS: Readonly<Record<ApiErrorCode, number>> = {
   HALL_NOT_FOUND: 404,
   TRAINER_ALREADY_ASSIGNED: 409,
   TRAINER_NOT_FOUND: 404,
+  TRAINER_ACCOUNT_NOT_LINKED: 404,
+  TRAINER_ACCOUNT_ROLE_INVALID: 409,
+  TRAINER_ACCOUNT_NOT_ACTIVE: 409,
   ACCOUNT_ALREADY_LINKED: 409,
   ACCOUNT_NOT_LINKED: 404,
 

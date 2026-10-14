@@ -1009,6 +1009,102 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
 
+  /trainers/{id}/account:
+    post:
+      tags: [trainers]
+      summary: Связать профиль тренера с аккаунтом
+      description: |
+        Связь дает человеку доступ к системе: тренер попадает в чаты своих групп
+        (состав вычисляется по `TrainerProfile.userId`), видит расписание и может
+        отмечать посещаемость. Поэтому операция требует `users.manage`, а не
+        `branches.manage`: это работа с учетной записью, а не правка справочника.
+
+        **Роль аккаунта проверяется.** Тренеру нужна роль `STAFF` или
+        `SUPERADMIN`: у участника клуба (`MEMBER`) нет прав на занятия и
+        посещаемость, и связь создала бы «тренера» без возможностей — молчаливое
+        состояние, в котором доступ есть, а работать нельзя, хуже отказа.
+
+        Аккаунт должен быть активирован: приглашение, которое еще не принято, не
+        может войти в систему.
+      operationId: linkTrainerAccount
+      parameters:
+        - $ref: '#/components/parameters/TrainerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkTrainerAccountRequest'
+      responses:
+        '200':
+          description: Связь создана; профиль с аккаунтом
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainerView'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `users.manage` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: |
+            Тренер не найден (`TRAINER_NOT_FOUND`) или аккаунт не существует
+            (`NOT_FOUND`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: |
+            Профиль уже связан (`TRAINER_ALREADY_ASSIGNED`), роль не подходит
+            (`TRAINER_ACCOUNT_ROLE_INVALID`) или аккаунт не активирован
+            (`TRAINER_ACCOUNT_NOT_ACTIVE`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    delete:
+      tags: [trainers]
+      summary: Снять связь профиля тренера с аккаунтом
+      description: |
+        Отдельный маршрут, а не `PATCH` с пустым полем: «отвязать» — это решение
+        отозвать доступ, и оно должно быть явным действием. Профиль при этом
+        сохраняется: тренер перестает входить в систему, но остается в расписании
+        и в проведенных занятиях, иначе история посещаемости потеряла бы тренера
+        (BR-007).
+      operationId: unlinkTrainerAccount
+      parameters:
+        - $ref: '#/components/parameters/TrainerId'
+      responses:
+        '200':
+          description: Связь снята; профиль остается в расписании
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainerView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `users.manage` (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: |
+            Тренер не найден (`TRAINER_NOT_FOUND`) или связь уже снята
+            (`TRAINER_ACCOUNT_NOT_LINKED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
   /athletes:
     get:
       tags: [athletes]
@@ -4630,6 +4726,18 @@ components:
           maxLength: 2000
         isActive:
           type: boolean
+
+    LinkTrainerAccountRequest:
+      type: object
+      required: [userId]
+      description: |
+        Поле одно и обязательное: «отвязать» — отдельная операция. Иначе отправка
+        формы без выбора аккаунта молча снимала бы у человека доступ к системе.
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: Аккаунт сотрудника (роль STAFF или SUPERADMIN, статус ACTIVE)
 
     AthleteView:
       type: object

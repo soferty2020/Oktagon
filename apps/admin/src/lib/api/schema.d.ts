@@ -445,6 +445,45 @@ export interface paths {
         patch: operations["updateTrainer"];
         trace?: never;
     };
+    "/trainers/{id}/account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Связать профиль тренера с аккаунтом
+         * @description Связь дает человеку доступ к системе: тренер попадает в чаты своих групп
+         *     (состав вычисляется по `TrainerProfile.userId`), видит расписание и может
+         *     отмечать посещаемость. Поэтому операция требует `users.manage`, а не
+         *     `branches.manage`: это работа с учетной записью, а не правка справочника.
+         *
+         *     **Роль аккаунта проверяется.** Тренеру нужна роль `STAFF` или
+         *     `SUPERADMIN`: у участника клуба (`MEMBER`) нет прав на занятия и
+         *     посещаемость, и связь создала бы «тренера» без возможностей — молчаливое
+         *     состояние, в котором доступ есть, а работать нельзя, хуже отказа.
+         *
+         *     Аккаунт должен быть активирован: приглашение, которое еще не принято, не
+         *     может войти в систему.
+         */
+        post: operations["linkTrainerAccount"];
+        /**
+         * Снять связь профиля тренера с аккаунтом
+         * @description Отдельный маршрут, а не `PATCH` с пустым полем: «отвязать» — это решение
+         *     отозвать доступ, и оно должно быть явным действием. Профиль при этом
+         *     сохраняется: тренер перестает входить в систему, но остается в расписании
+         *     и в проведенных занятиях, иначе история посещаемости потеряла бы тренера
+         *     (BR-007).
+         */
+        delete: operations["unlinkTrainerAccount"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/athletes": {
         parameters: {
             query?: never;
@@ -2000,6 +2039,17 @@ export interface components {
             phone?: string;
             bio?: string;
             isActive?: boolean;
+        };
+        /**
+         * @description Поле одно и обязательное: «отвязать» — отдельная операция. Иначе отправка
+         *     формы без выбора аккаунта молча снимала бы у человека доступ к системе.
+         */
+        LinkTrainerAccountRequest: {
+            /**
+             * Format: uuid
+             * @description Аккаунт сотрудника (роль STAFF или SUPERADMIN, статус ACTIVE)
+             */
+            userId: string;
         };
         /**
          * @description Карточка спортсмена. `phone` и `email` равны null, если у вызывающего
@@ -4037,6 +4087,114 @@ export interface operations {
                 };
             };
             /** @description Тренер не найден (`TRAINER_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    linkTrainerAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Идентификатор профиля тренера */
+                id: components["parameters"]["TrainerId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkTrainerAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Связь создана; профиль с аккаунтом */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainerView"];
+                };
+            };
+            400: components["responses"]["ValidationFailed"];
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `users.manage` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /**
+             * @description Тренер не найден (`TRAINER_NOT_FOUND`) или аккаунт не существует
+             *     (`NOT_FOUND`).
+             */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /**
+             * @description Профиль уже связан (`TRAINER_ALREADY_ASSIGNED`), роль не подходит
+             *     (`TRAINER_ACCOUNT_ROLE_INVALID`) или аккаунт не активирован
+             *     (`TRAINER_ACCOUNT_NOT_ACTIVE`).
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    unlinkTrainerAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Идентификатор профиля тренера */
+                id: components["parameters"]["TrainerId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Связь снята; профиль остается в расписании */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainerView"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `users.manage` (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /**
+             * @description Тренер не найден (`TRAINER_NOT_FOUND`) или связь уже снята
+             *     (`TRAINER_ACCOUNT_NOT_LINKED`).
+             */
             404: {
                 headers: {
                     [name: string]: unknown;

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { UserRole, UserStatus } from '../../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 
 export interface BranchRecord {
@@ -93,6 +94,23 @@ export abstract class ClubStructureRepository {
   abstract createTrainer(input: CreateTrainerInput): Promise<TrainerRecord>;
   abstract updateTrainer(id: string, input: UpdateTrainerInput): Promise<TrainerRecord>;
   abstract archiveTrainer(id: string, at: Date): Promise<void>;
+  /**
+   * Связывает профиль с аккаунтом или снимает связь (`userId: null`).
+   *
+   * Отдельный метод, а не поле в `updateTrainer`: привязка даёт доступ к системе
+   * и проверяется другим правом, поэтому не должна применяться «заодно» с
+   * правкой карточки.
+   */
+  abstract setTrainerAccount(id: string, userId: string | null): Promise<TrainerRecord>;
+  /**
+   * Аккаунт для привязки к профилю тренера.
+   *
+   * Возвращается роль и статус: привязывать можно не любой аккаунт. Участник
+   * клуба (MEMBER) не имеет прав тренера, поэтому «тренер» из него получился бы
+   * только на бумаге: он не увидел бы занятия и не смог бы отмечать
+   * посещаемость.
+   */
+  abstract findAccount(userId: string): Promise<{ role: UserRole; status: UserStatus } | null>;
 }
 
 const BRANCH_SELECT = {
@@ -140,7 +158,10 @@ export class PrismaClubStructureRepository extends ClubStructureRepository {
   }
 
   async findBranch(id: string): Promise<BranchRecord | null> {
-    return this.prisma.db.branch.findFirst({ where: { id, archivedAt: null }, select: BRANCH_SELECT });
+    return this.prisma.db.branch.findFirst({
+      where: { id, archivedAt: null },
+      select: BRANCH_SELECT,
+    });
   }
 
   async createBranch(input: CreateBranchInput): Promise<BranchRecord> {
@@ -257,5 +278,22 @@ export class PrismaClubStructureRepository extends ClubStructureRepository {
       where: { id },
       data: { archivedAt: at, isActive: false },
     });
+  }
+
+  async setTrainerAccount(id: string, userId: string | null): Promise<TrainerRecord> {
+    return this.prisma.db.trainerProfile.update({
+      where: { id },
+      data: { userId },
+      select: TRAINER_SELECT,
+    });
+  }
+
+  async findAccount(userId: string): Promise<{ role: UserRole; status: UserStatus } | null> {
+    const user = await this.prisma.db.user.findUnique({
+      where: { id: userId },
+      select: { role: true, status: true },
+    });
+
+    return user ? { role: user.role, status: user.status } : null;
   }
 }

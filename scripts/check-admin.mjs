@@ -574,9 +574,9 @@ async function main() {
   log(
     '15н',
     `архивирование: ${archived.status} | статус ${archived.body?.status} | из ленты ${
-      (
-        (await apiCall(apiBase, memberToken, 'GET', '/news')).body ?? []
-      ).some((item) => item.id === draft.body?.id)
+      ((await apiCall(apiBase, memberToken, 'GET', '/news')).body ?? []).some(
+        (item) => item.id === draft.body?.id,
+      )
         ? 'ОСТАЛАСЬ'
         : 'убрана'
     }`,
@@ -598,6 +598,149 @@ async function main() {
     `экран новостей: лента ${newsHtml.includes('Новая публикация')} | у читателя без прав формы нет ${
       memberNewsHtml.includes('Новая публикация') ? 'ЕСТЬ' : 'нет'
     }`,
+  );
+
+  // 16. Тренеры: профиль, привязка аккаунта и проверка роли.
+  //
+  // Проверяется то, чего раньше нельзя было сделать из интерфейса: связать
+  // существующий профиль с аккаунтом. До этого связь задавалась только при
+  // создании, и профиль, заведенный заранее, оставался без доступа в систему.
+  const trainerStamp = Date.now();
+
+  const trainerProfile = await apiCall(apiBase, token, 'POST', '/trainers', {
+    displayName: `Тренер экрана ${trainerStamp}`,
+  });
+  log(
+    16,
+    `профиль тренера без аккаунта: ${trainerProfile.status} | userId ${
+      trainerProfile.body?.userId ?? 'нет'
+    }`,
+  );
+
+  // Аккаунт сотрудника: подходит для привязки.
+  const staffEmail = `trainer-page-staff-${trainerStamp}@octagon.local`;
+  const staffPassword = 'Trainer-Page-2026!';
+  const staffInvite = await apiCall(apiBase, token, 'POST', '/users/invites', {
+    email: staffEmail,
+    role: 'STAFF',
+  });
+  const staffAccept = await apiCall(apiBase, '', 'POST', '/auth/accept-invite', {
+    token: staffInvite.body?.token,
+    email: staffEmail,
+    password: staffPassword,
+    firstName: 'Сотрудник',
+    lastName: `Экрана ${trainerStamp}`,
+  });
+
+  // Участник клуба: тренером быть не может, у него нет прав на занятия.
+  const pageMemberInvite = await apiCall(apiBase, token, 'POST', '/users/invites', {
+    email: `trainer-page-member-${trainerStamp}@octagon.local`,
+    role: 'MEMBER',
+  });
+  const pageMemberAccept = await apiCall(apiBase, '', 'POST', '/auth/accept-invite', {
+    token: pageMemberInvite.body?.token,
+    email: `trainer-page-member-${trainerStamp}@octagon.local`,
+    password: 'Trainer-Page-Member-2026!',
+    firstName: 'Участник',
+    lastName: `Экрана ${trainerStamp}`,
+  });
+
+  const linkMember = await apiCall(
+    apiBase,
+    token,
+    'POST',
+    `/trainers/${trainerProfile.body?.id}/account`,
+    { userId: pageMemberAccept.body?.userId },
+  );
+  log(
+    '16б',
+    `участник клуба не привязывается к тренеру: ${linkMember.status} ${
+      linkMember.body?.code ?? ''
+    }`,
+  );
+
+  const linked = await apiCall(
+    apiBase,
+    token,
+    'POST',
+    `/trainers/${trainerProfile.body?.id}/account`,
+    {
+      userId: staffAccept.body?.userId,
+    },
+  );
+  log(
+    '16в',
+    `аккаунт сотрудника привязан: ${linked.status} | userId ${
+      linked.body?.userId === staffAccept.body?.userId ? 'совпадает' : 'НЕ СОВПАДАЕТ'
+    }`,
+  );
+
+  const linkedAgain = await apiCall(
+    apiBase,
+    token,
+    'POST',
+    `/trainers/${trainerProfile.body?.id}/account`,
+    { userId: staffAccept.body?.userId },
+  );
+  log('16г', `повторная привязка того же аккаунта не ошибка: ${linkedAgain.status}`);
+
+  const unlinked = await apiCall(
+    apiBase,
+    token,
+    'DELETE',
+    `/trainers/${trainerProfile.body?.id}/account`,
+  );
+  log(
+    '16д',
+    `связь снята, профиль сохранен: ${unlinked.status} | userId ${
+      unlinked.body?.userId ?? 'нет'
+    } | профиль ${unlinked.body?.id === trainerProfile.body?.id ? 'тот же' : 'ПОТЕРЯН'}`,
+  );
+
+  const unlinkAgain = await apiCall(
+    apiBase,
+    token,
+    'DELETE',
+    `/trainers/${trainerProfile.body?.id}/account`,
+  );
+  log('16е', `повторная отвязка отклонена: ${unlinkAgain.status} ${unlinkAgain.body?.code ?? ''}`);
+
+  const { html: trainersHtml } = await fetchHtml(base, '/trainers', cookie);
+  log(
+    '16ж',
+    `экран тренеров: список ${trainersHtml.includes('Тренеры')} | форма создания ${trainersHtml.includes(
+      'Новый тренер',
+    )} | статус доступа ${trainersHtml.includes('без аккаунта') || trainersHtml.includes('аккаунт привязан')}`,
+  );
+
+  // Тренер с привязанным аккаунтом попадает в чат своей группы: это и есть
+  // практический смысл связи, ради которой экран и сделан.
+  const group = await apiCall(apiBase, token, 'POST', '/groups', {
+    name: `Группа тренера ${trainerStamp}`,
+  });
+  await apiCall(apiBase, token, 'POST', `/groups/${group.body?.id}/trainers`, {
+    trainerId: trainerProfile.body?.id,
+  });
+
+  const staffLogin = await apiCall(apiBase, '', 'POST', '/auth/login', {
+    email: staffEmail,
+    password: staffPassword,
+  });
+  const staffToken = staffLogin.body?.accessToken ?? '';
+
+  const chatWithoutLink = await apiCall(apiBase, staffToken, 'POST', '/conversations', {
+    groupId: group.body?.id,
+  });
+
+  await apiCall(apiBase, token, 'POST', `/trainers/${trainerProfile.body?.id}/account`, {
+    userId: staffAccept.body?.userId,
+  });
+  const chatWithLink = await apiCall(apiBase, staffToken, 'POST', '/conversations', {
+    groupId: group.body?.id,
+  });
+  log(
+    '16з',
+    `связь влияет на доступ к чату группы: без связи ${chatWithoutLink.status}, со связью ${chatWithLink.status}`,
   );
 }
 

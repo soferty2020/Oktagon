@@ -188,3 +188,15 @@ export class ListTrainersQueryDto {
   @IsBoolean()
   isActive?: boolean;
 }
+
+/**
+ * Связывание профиля тренера с аккаунтом.
+ *
+ * Поле одно и обязательное: «отвязать» — отдельная операция. Иначе отправка
+ * формы без выбора аккаунта молча снимала бы у человека доступ к системе.
+ */
+export class LinkTrainerAccountDto {
+  @ApiProperty({ format: 'uuid', description: 'Аккаунт сотрудника' })
+  @IsUUID()
+  userId!: string;
+}

@@ -1,5 +1,10 @@
 import { AuditService } from '../audit/audit.service';
-import type { BranchRecord, ClubStructureRepository, HallRecord, TrainerRecord } from './club-structure.repository';
+import type {
+  BranchRecord,
+  ClubStructureRepository,
+  HallRecord,
+  TrainerRecord,
+} from './club-structure.repository';
 import { ClubStructureService } from './club-structure.service';
 
 const branch: BranchRecord = {
@@ -89,7 +94,9 @@ describe('ClubStructureService', () => {
     it('отдает 404 для неизвестного филиала', async () => {
       repository.findBranch.mockResolvedValue(null);
 
-      await expect(service.getBranch('missing')).rejects.toMatchObject({ code: 'BRANCH_NOT_FOUND' });
+      await expect(service.getBranch('missing')).rejects.toMatchObject({
+        code: 'BRANCH_NOT_FOUND',
+      });
     });
   });
 
@@ -167,6 +174,119 @@ describe('ClubStructureService', () => {
       await service.archiveTrainer('trainer-1');
 
       expect(repository.archiveTrainer).toHaveBeenCalledWith('trainer-1', expect.any(Date));
+    });
+  });
+
+  describe('связь профиля тренера с аккаунтом', () => {
+    /** Аккаунт сотрудника: только такой подходит тренеру. */
+    const staffAccount = { role: 'STAFF' as const, status: 'ACTIVE' as const };
+
+    beforeEach(() => {
+      repository.findAccount = jest.fn().mockResolvedValue(staffAccount);
+      repository.setTrainerAccount = jest.fn().mockResolvedValue({ ...trainer, userId: 'user-1' });
+    });
+
+    it('связывает профиль с аккаунтом сотрудника', async () => {
+      const linked = await service.linkTrainerAccount('trainer-1', 'user-1');
+
+      expect(linked.userId).toBe('user-1');
+      expect(repository.setTrainerAccount).toHaveBeenCalledWith('trainer-1', 'user-1');
+      expect(audit.recordSafely).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'trainer.updated',
+          after: expect.objectContaining({ userId: 'user-1' }),
+        }),
+      );
+    });
+
+    it('не связывает аккаунт участника клуба', async () => {
+      // У MEMBER нет прав тренера: занятия и посещаемость ему недоступны, и
+      // связь создала бы «тренера» без возможностей. Отказ лучше молчаливого
+      // состояния, в котором доступ есть, а работать нельзя.
+      repository.findAccount.mockResolvedValue({ role: 'MEMBER', status: 'ACTIVE' });
+
+      await expect(service.linkTrainerAccount('trainer-1', 'user-1')).rejects.toMatchObject({
+        code: 'TRAINER_ACCOUNT_ROLE_INVALID',
+      });
+      expect(repository.setTrainerAccount).not.toHaveBeenCalled();
+    });
+
+    it('не связывает неактивированный аккаунт', async () => {
+      // Приглашение не принято: человек не может войти, связь бессмысленна.
+      repository.findAccount.mockResolvedValue({ role: 'STAFF', status: 'INVITED' });
+
+      await expect(service.linkTrainerAccount('trainer-1', 'user-1')).rejects.toMatchObject({
+        code: 'TRAINER_ACCOUNT_NOT_ACTIVE',
+      });
+      expect(repository.setTrainerAccount).not.toHaveBeenCalled();
+    });
+
+    it('не связывает несуществующий аккаунт', async () => {
+      repository.findAccount.mockResolvedValue(null);
+
+      await expect(service.linkTrainerAccount('trainer-1', 'user-1')).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      });
+    });
+
+    it('разрешает аккаунт суперадминистратора', async () => {
+      // У суперадмина есть все права, включая тренерские: запрет был бы
+      // формальностью, мешающей владельцу клуба вести занятия.
+      repository.findAccount.mockResolvedValue({ role: 'SUPERADMIN', status: 'ACTIVE' });
+
+      await expect(service.linkTrainerAccount('trainer-1', 'user-1')).resolves.toMatchObject({
+        userId: 'user-1',
+      });
+    });
+
+    it('не заменяет уже связанный аккаунт', async () => {
+      repository.findTrainer.mockResolvedValue({ ...trainer, userId: 'user-old' });
+
+      await expect(service.linkTrainerAccount('trainer-1', 'user-2')).rejects.toMatchObject({
+        code: 'TRAINER_ALREADY_ASSIGNED',
+      });
+      expect(repository.setTrainerAccount).not.toHaveBeenCalled();
+    });
+
+    it('повторная связь с тем же аккаунтом не ошибка', async () => {
+      repository.findTrainer.mockResolvedValue({ ...trainer, userId: 'user-1' });
+
+      await expect(service.linkTrainerAccount('trainer-1', 'user-1')).resolves.toMatchObject({
+        userId: 'user-1',
+      });
+      // Администратор мог нажать дважды: это не повод показывать ошибку.
+      expect(repository.setTrainerAccount).not.toHaveBeenCalled();
+    });
+
+    it('не связывает аккаунт, занятый другим профилем', async () => {
+      repository.findTrainerByUserId.mockResolvedValue({ ...trainer, id: 'trainer-other' });
+
+      await expect(service.linkTrainerAccount('trainer-1', 'user-1')).rejects.toMatchObject({
+        code: 'TRAINER_ALREADY_ASSIGNED',
+      });
+    });
+
+    it('снимает связь, сохраняя профиль', async () => {
+      repository.findTrainer.mockResolvedValue({ ...trainer, userId: 'user-1' });
+      repository.setTrainerAccount.mockResolvedValue({ ...trainer, userId: null });
+
+      const unlinked = await service.unlinkTrainerAccount('trainer-1');
+
+      expect(unlinked.userId).toBeNull();
+      // Профиль не удаляется: он остается в расписании и в проведенных занятиях,
+      // иначе история посещаемости потеряла бы тренера (BR-007).
+      expect(repository.archiveTrainer).not.toHaveBeenCalled();
+      expect(audit.recordSafely).toHaveBeenCalledWith(
+        expect.objectContaining({ before: { userId: 'user-1' }, after: { userId: null } }),
+      );
+    });
+
+    it('отвязка несвязанного профиля отклоняется', async () => {
+      repository.findTrainer.mockResolvedValue({ ...trainer, userId: null });
+
+      await expect(service.unlinkTrainerAccount('trainer-1')).rejects.toMatchObject({
+        code: 'TRAINER_ACCOUNT_NOT_LINKED',
+      });
     });
   });
 });

@@ -19,6 +19,9 @@ const NAVIGATION: readonly {
   { href: '/branches', label: 'Филиалы' },
   { href: '/groups', label: 'Группы' },
   { href: '/athletes', label: 'Спортсмены' },
+  // Тренеры: карточка правится `branches.manage`, привязка аккаунта — `users.manage`.
+  // Ссылка показывается тем, кто видит группы: без этого список тренеров не нужен.
+  { href: '/trainers', label: 'Тренеры', requiredPermissions: ['groups.view'] },
   { href: '/schedule', label: 'Расписание' },
   // Новости без `requiredPermissions`: BR-011 — новости и комментарии видны всем
   // пользователям клуба, поэтому раздел не скрывается ни от кого (ADR-0011).
