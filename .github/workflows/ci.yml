@@ -85,30 +85,29 @@ jobs:
         # Схема тестовой БД создается теми же миграциями, что и рабочая:
         # иначе e2e-тесты проверяли бы не то, что уедет в staging.
         #
-        # Шаг печатает версии утилит и проверяет подключение до изменений: без
-        # этого падение на этом шаге не оставляет следов в логе, а именно он
-        # останавливал всю проверку до линтера и тестов.
+        # База создается внутри контейнера PostgreSQL, а не клиентом psql на
+        # раннере. Так шаг не зависит от того, есть ли клиент в образе: в
+        # ubuntu-latest (24.04) его нет, и шаг падал, останавливая всю проверку
+        # до линтера и тестов. Локально psql есть в составе PostgreSQL, поэтому
+        # расхождение было незаметно.
         run: |
           set -euxo pipefail
 
-          echo "psql: $(command -v psql || echo 'НЕ НАЙДЕН')"
-          psql --version
-          echo "node: $(node --version)"
-          echo "целевая база: $TEST_DATABASE_URL (host $PGHOST)"
+          # Сервисные контейнеры GitHub Actions доступны по имени сервиса.
+          echo "сервис postgres:"
+          docker ps --filter name=postgres --format '{{.Names}} {{.Image}}'
 
-          export PGPASSWORD=octagon
-          echo "проверка подключения к серверу:"
-          psql -h localhost -U octagon -d postgres -c 'select version();'
-
-          echo "создание тестовой базы:"
-          psql -h localhost -U octagon -d postgres -v ON_ERROR_STOP=1 \
+          echo "создание тестовой базы внутри контейнера:"
+          docker exec "$(docker ps -q --filter name=postgres | head -n1)" \
+            psql -U octagon -d postgres -v ON_ERROR_STOP=1 \
             -c "CREATE DATABASE octagon_test OWNER octagon"
 
           echo "применение миграций:"
           DATABASE_URL="$TEST_DATABASE_URL" pnpm db:deploy:test
 
           echo "таблиц в тестовой базе:"
-          psql -h localhost -U octagon -d octagon_test -tAc \
+          docker exec "$(docker ps -q --filter name=postgres | head -n1)" \
+            psql -U octagon -d octagon_test -tAc \
             "select count(*) from information_schema.tables where table_schema = 'public'"
 
       - name: Lint
