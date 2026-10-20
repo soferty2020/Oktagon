@@ -21,6 +21,7 @@
     "db:generate": "pnpm --filter @octagon/api db:generate",
     "db:migrate": "pnpm --filter @octagon/api db:migrate",
     "db:deploy": "pnpm --filter @octagon/api db:deploy",
+    "db:deploy:test": "pnpm --filter @octagon/api db:deploy:test",
     "db:status": "pnpm --filter @octagon/api db:status",
     "db:seed": "pnpm --filter @octagon/api db:seed",
     "db:studio": "pnpm --filter @octagon/api db:studio"

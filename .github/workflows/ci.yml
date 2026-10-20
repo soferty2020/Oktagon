@@ -81,33 +81,35 @@ jobs:
       - name: Generate Prisma Client
         run: pnpm db:generate
 
+      - name: Install PostgreSQL client
+        # ubuntu-latest может не содержать psql, а он нужен шагу ниже.
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+          psql --version
+
       - name: Prepare test database
         # Схема тестовой БД создается теми же миграциями, что и рабочая:
         # иначе e2e-тесты проверяли бы не то, что уедет в staging.
         #
-        # База создается внутри контейнера PostgreSQL, а не клиентом psql на
-        # раннере. Так шаг не зависит от того, есть ли клиент в образе: в
-        # ubuntu-latest (24.04) его нет, и шаг падал, останавливая всю проверку
-        # до линтера и тестов. Локально psql есть в составе PostgreSQL, поэтому
-        # расхождение было незаметно.
+        # `pnpm db:deploy:test` — корневой скрипт. Его не было в корневом
+        # package.json (только в apps/api), поэтому шаг падал с «command not
+        # found» и не давал запуститься линтеру и тестам. Локальный аналог CI
+        # этого не показывал: там миграции применяются через
+        # scripts/apply-migration.mjs, а не через этот скрипт.
         run: |
           set -euxo pipefail
 
-          # Сервисные контейнеры GitHub Actions доступны по имени сервиса.
-          echo "сервис postgres:"
-          docker ps --filter name=postgres --format '{{.Names}} {{.Image}}'
+          echo "psql: $(command -v psql)"
 
-          echo "создание тестовой базы внутри контейнера:"
-          docker exec "$(docker ps -q --filter name=postgres | head -n1)" \
-            psql -U octagon -d postgres -v ON_ERROR_STOP=1 \
+          PGPASSWORD=octagon psql -h localhost -U octagon -d postgres \
+            -v ON_ERROR_STOP=1 \
             -c "CREATE DATABASE octagon_test OWNER octagon"
 
-          echo "применение миграций:"
           DATABASE_URL="$TEST_DATABASE_URL" pnpm db:deploy:test
 
-          echo "таблиц в тестовой базе:"
-          docker exec "$(docker ps -q --filter name=postgres | head -n1)" \
-            psql -U octagon -d octagon_test -tAc \
+          echo "tables in test database:"
+          PGPASSWORD=octagon psql -h localhost -U octagon -d octagon_test -tAc \
             "select count(*) from information_schema.tables where table_schema = 'public'"
 
       - name: Lint
