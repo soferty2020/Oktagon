@@ -81,6 +81,15 @@ jobs:
       - name: Generate Prisma Client
         run: pnpm db:generate
 
+      - name: Build packages
+        # Пакеты отдают только собранный dist (`main` и `types` в package.json
+        # указывают на dist), а typecheck и тесты API резолвят @octagon/contracts
+        # и @octagon/config именно через него. В job admin такая сборка была, в
+        # job verify — нет, поэтому typecheck падал с «Cannot find module
+        # @octagon/config». Локально dist уже лежал от предыдущих сборок,
+        # поэтому расхождение было незаметно.
+        run: pnpm build:packages
+
       - name: Install PostgreSQL client
         # ubuntu-latest может не содержать psql, а он нужен шагу ниже.
         run: |
