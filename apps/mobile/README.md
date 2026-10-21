@@ -31,6 +31,15 @@ flutter test             # unit- и widget-тесты
 flutter build web        # проверка компиляции (не требует Android SDK)
 ```
 
+Скриншоты экранов для проверки дизайна:
+
+```bash
+flutter test --update-goldens test/golden_screens_test.dart
+```
+
+Эталоны лежат в `test/goldens`. Тесты выполняются только на Windows: на Linux
+шрифт подменяется тестовым, и сравнение теряет смысл (в CI шаг пропускается).
+
 `flutter build web` используется для проверки компиляции в окружениях без
 Android SDK. Для сборки APK нужен Android SDK, для iOS — macOS с Xcode.
 
@@ -40,7 +49,9 @@ Android SDK. Для сборки APK нужен Android SDK, для iOS — macO
 lib/
   main.dart                  сборка зависимостей и запуск
   app.dart                   корневой виджет, выбор экрана по состоянию сессии
-  app_theme.dart             тема: оранжевый акцент, светлый фон (docs/12)
+  app_theme.dart             тема на основе дизайн-токенов (docs/12)
+  design/
+    tokens.dart              цвета, отступы, радиусы по макету клуба
   core/
     api_config.dart          адрес API из --dart-define
     api_client.dart          HTTP-клиент и его интерфейс

@@ -61,6 +61,8 @@ class _MemberShellState extends State<MemberShell> {
                 MemberHomeContent(
                   auth: widget.auth,
                   controller: widget.home,
+                  onOpenSchedule: () => setState(() => _index = 1),
+                  onOpenNews: () => setState(() => _index = 2),
                 ),
                 ScheduleScreen(
                   auth: widget.auth,
