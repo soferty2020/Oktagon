@@ -1,0 +1,141 @@
+# OCTAGON Club System — staging (docs/14-infrastructure.md)
+#
+# Отличия от локального docker-compose.yml:
+# - наружу опубликован только nginx: PostgreSQL и Redis доступны лишь внутри
+#   сети compose. Открытый порт базы — самая частая причина утечки данных;
+# - админка и API собираются из Dockerfile, а не запускаются с монтированием
+#   исходников;
+# - все секреты берутся из `.env.staging` (в git не попадает);
+# - миграции вынесены в отдельный одноразовый сервис `migrate`.
+#
+# Запуск:
+#   cp infra/staging.env.example .env.staging   # заполнить секреты
+#   docker compose -f docker-compose.staging.yml build
+#   docker compose -f docker-compose.staging.yml run --rm migrate
+#   docker compose -f docker-compose.staging.yml up -d
+
+name: octagon-staging
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?задайте POSTGRES_USER в .env.staging}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD в .env.staging}
+      POSTGRES_DB: ${POSTGRES_DB:-octagon}
+      TZ: UTC
+      # Collation совпадает с CI и локальным compose: иначе регистронезависимый
+      # поиск по кириллице ведет себя по-разному на разных стендах.
+      POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale-provider=icu --icu-locale=en-US'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB:-octagon}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # Порт наружу намеренно не публикуется.
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # Redis держит только лимиты и сессионные счетчики: данные не критичны, но
+    # RDB раз в минуту дешев и переживает перезапуск контейнера.
+    command: ['redis-server', '--save', '60', '1', '--maxmemory-policy', 'allkeys-lru']
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    env_file: .env.staging
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-octagon}?schema=public
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # Проверяется готовность, а не просто открытый порт: `/health/ready`
+      # опрашивает базу и Redis. Иначе nginx начал бы проксировать запросы в
+      # приложение, которое еще не подключилось к базе.
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3000/api/v1/health/ready || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      # Админка обращается к API только серверно, через route handler прокси:
+      # адрес не попадает в браузер. Внутреннее имя compose, не публичный домен,
+      # чтобы запрос не выходил из сети контейнеров.
+      API_BASE_URL: http://api:3000/api/v1
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3000/login || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      # Имена хостов подставляются в шаблон конфига при старте.
+      ADMIN_HOST: ${ADMIN_HOST:?задайте ADMIN_HOST в .env.staging}
+      API_HOST: ${API_HOST:?задайте API_HOST в .env.staging}
+      # Без фильтра envsubst подставил бы все переменные окружения и заодно
+      # затёр бы переменные самого nginx ($host, $request_uri): конфиг стал бы
+      # синтаксически валидным, но нерабочим. Фильтр ограничивает подстановку
+      # двумя нашими переменными.
+      NGINX_ENVSUBST_FILTER: '^(ADMIN_HOST|API_HOST)$$'
+    volumes:
+      - ./infra/nginx/staging.conf.template:/etc/nginx/templates/staging.conf.template:ro
+      - ./infra/nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - admin
+      - api
+
+  # Одноразовый сервис: применяет миграции и завершается. Запускается вручную
+  # перед `up -d`, а не при каждом старте, чтобы падение миграции не крутило
+  # контейнер в цикле перезапуска.
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: migrate
+    env_file: .env.staging
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-octagon}?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+
+volumes:
+  postgres-data:
+  redis-data:

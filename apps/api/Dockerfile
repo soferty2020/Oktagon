@@ -21,9 +21,30 @@ FROM deps AS build
 COPY tsconfig.base.json ./
 COPY packages ./packages
 COPY apps/api ./apps/api
+# Пакеты отдают только собранный dist (`main`/`types` указывают на него), а
+# `.dockerignore` исключает dist из контекста: он собирается здесь. Без этого
+# шага компиляция падает на «Cannot find module @octagon/contracts».
+RUN pnpm build:packages
 RUN pnpm --filter @octagon/api exec prisma generate
 RUN pnpm --filter @octagon/api build
 RUN pnpm --filter @octagon/api prune --prod
+
+# --- migrate: применение миграций перед стартом новой версии ---
+#
+# Отдельная стадия, а не runtime: в runtime стоит `prune --prod`, и CLI Prisma там
+# отсутствует. Миграции должны примениться до того, как поднимется API новой
+# версии, поэтому в compose это отдельный одноразовый контейнер, который
+# запускается первым (`docker compose run --rm migrate`).
+#
+# Используется стадия `deps`: там есть devDependencies с CLI Prisma, но нет
+# компиляции TypeScript — образ нужен только для одной команды.
+FROM deps AS migrate
+COPY tsconfig.base.json ./
+COPY packages ./packages
+COPY apps/api/prisma ./apps/api/prisma
+COPY apps/api/package.json ./apps/api/package.json
+WORKDIR /repo/apps/api
+CMD ["pnpm", "db:deploy"]
 
 # --- runtime ---
 FROM base AS runtime

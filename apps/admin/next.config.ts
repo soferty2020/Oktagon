@@ -16,6 +16,18 @@ const currentDir = dirname(fileURLToPath(import.meta.url));
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  /**
+   * Автономная сборка для контейнера.
+   *
+   * `standalone` кладет в `.next/standalone` только те файлы, которые реально
+   * нужны в рантайме, вместе с урезанным `node_modules`. Без этого образам
+   * пришлось бы тащить весь `node_modules`, а он в разы больше самого
+   * приложения: это замедляет выкат и раздувает хранилище образов.
+   *
+   * Проверяется в CI отдельным job: собранный образ запускается и отвечает на
+   * запрос, иначе ошибка вида «модуль не найден» всплыла бы только на сервере.
+   */
+  output: 'standalone',
   // Workspace-пакеты содержат TypeScript-исходники, их нужно транспилировать.
   transpilePackages: ['@octagon/contracts'],
   webpack: (config) => {

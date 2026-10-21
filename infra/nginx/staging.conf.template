@@ -1,0 +1,89 @@
+# OCTAGON Club System — reverse proxy для staging
+#
+# Это ШАБЛОН, а не готовый конфиг: официальный образ nginx при старте прогоняет
+# `envsubst` по файлам `/etc/nginx/templates/*.template` и кладет результат в
+# `/etc/nginx/conf.d/`. Поэтому имена хостов задаются переменными окружения
+# (`ADMIN_HOST`, `API_HOST`), а не редактированием файла на сервере: иначе при
+# выкате пришлось бы помнить, что конфиг в репозитории и на сервере разный.
+#
+# Два публичных имени:
+#   ${ADMIN_HOST} — web-админка (Next.js);
+#   ${API_HOST}   — backend API (нужен мобильному приложению и внешним клиентам).
+#
+# API не публикуется на отдельном порту: он доступен только через этот прокси,
+# чтобы TLS и ограничения запросов были в одном месте.
+#
+# Сертификаты монтируются из infra/nginx/certs. Инструкция — docs/14-infrastructure.md.
+
+# HTTP: только редирект на HTTPS и проверка ACME. Отдавать приложение по HTTP
+# нельзя: токены сессии ушли бы открытым текстом.
+server {
+    listen 80;
+    server_name _;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${ADMIN_HOST};
+
+    ssl_certificate     /etc/nginx/certs/admin.crt;
+    ssl_certificate_key /etc/nginx/certs/admin.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+
+    # Заголовки безопасности выставляет и само приложение (SecurityHeadersMiddleware
+    # в API), но для админки это делает прокси: Next отдает HTML, и без nosniff
+    # браузер может интерпретировать тип содержимого иначе.
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options DENY always;
+    add_header Referrer-Policy no-referrer always;
+
+    client_max_body_size 2m;
+
+    location / {
+        proxy_pass http://admin:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        # Приложение строит абсолютные ссылки и редиректы, поэтому схема должна
+        # быть видна ему как https, хотя внутри контейнера это http.
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_read_timeout 60s;
+    }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${API_HOST};
+
+    ssl_certificate     /etc/nginx/certs/api.crt;
+    ssl_certificate_key /etc/nginx/certs/api.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+
+    client_max_body_size 2m;
+
+    location / {
+        proxy_pass http://api:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # API отвечает быстро; долгий таймаут держал бы соединения зря.
+        proxy_read_timeout 30s;
+    }
+}

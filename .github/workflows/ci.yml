@@ -198,3 +198,120 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: '1'
         run: pnpm --filter @octagon/admin exec next build
+
+  docker:
+    # Образы проверяются сборкой и запуском, а не только наличием Dockerfile:
+    # ошибка в путях COPY или отсутствующий модуль в standalone-сборке
+    # обнаружились бы иначе лишь на сервере при выкате.
+    name: docker (образы и конфиг nginx)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: false
+          load: true
+          tags: octagon-api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build migrate image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          target: migrate
+          push: false
+          load: true
+          tags: octagon-migrate:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build admin image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/admin/Dockerfile
+          push: false
+          load: true
+          tags: octagon-admin:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test admin image
+        # Контейнер должен подняться и отдать страницу входа. Это проверяет, что
+        # standalone-сборка содержит все нужные файлы и что сервер слушает
+        # 0.0.0.0, а не только localhost.
+        run: |
+          set -euxo pipefail
+          docker run -d --name admin-smoke -p 3000:3000 \
+            -e API_BASE_URL=http://127.0.0.1:9/api/v1 octagon-admin:ci
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/login > /dev/null; then
+              echo "админка отвечает на /login"
+              break
+            fi
+            if [ "$attempt" = "30" ]; then
+              echo "админка не ответила за 30 попыток"
+              docker logs admin-smoke
+              exit 1
+            fi
+            sleep 2
+          done
+
+      - name: Stop admin container
+        if: always()
+        run: docker rm -f admin-smoke || true
+
+      - name: Check nginx config
+        # `nginx -t` проверяет синтаксис и доступность сертификатов. Тестовые
+        # сертификаты создаются здесь же: в репозитории их быть не должно.
+        run: |
+          set -euxo pipefail
+          mkdir -p infra/nginx/certs
+          openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
+            -subj '/CN=staging.test' \
+            -keyout infra/nginx/certs/admin.key -out infra/nginx/certs/admin.crt
+          openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
+            -subj '/CN=api.staging.test' \
+            -keyout infra/nginx/certs/api.key -out infra/nginx/certs/api.crt
+
+          docker run --rm \
+            -e ADMIN_HOST=staging.test \
+            -e API_HOST=api.staging.test \
+            -e 'NGINX_ENVSUBST_FILTER=^(ADMIN_HOST|API_HOST)$' \
+            -v "$PWD/infra/nginx/staging.conf.template:/etc/nginx/templates/staging.conf.template:ro" \
+            -v "$PWD/infra/nginx/certs:/etc/nginx/certs:ro" \
+            nginx:1.27-alpine nginx -t
+
+      - name: Check nginx config output
+        # Отдельная проверка подстановки: если envsubst затронул переменные самого
+        # nginx ($host, $request_uri), конфиг останется синтаксически валидным, но
+        # работать не будет. Здесь проверяется, что подставились только домены.
+        run: |
+          set -euxo pipefail
+          docker run --rm \
+            -e ADMIN_HOST=staging.test \
+            -e API_HOST=api.staging.test \
+            -e 'NGINX_ENVSUBST_FILTER=^(ADMIN_HOST|API_HOST)$' \
+            -v "$PWD/infra/nginx/staging.conf.template:/etc/nginx/templates/staging.conf.template:ro" \
+            -v "$PWD/infra/nginx/certs:/etc/nginx/certs:ro" \
+            nginx:1.27-alpine sh -c '
+              envsubst "$(printf "\${%s} " ADMIN_HOST API_HOST)" \
+                < /etc/nginx/templates/staging.conf.template > /tmp/rendered.conf
+              grep -q "server_name staging.test;" /tmp/rendered.conf
+              grep -q "server_name api.staging.test;" /tmp/rendered.conf
+              grep -q "\$host" /tmp/rendered.conf
+              grep -q "\$request_uri" /tmp/rendered.conf
+              echo "подстановка корректна: домены заменены, переменные nginx сохранены"
+            '

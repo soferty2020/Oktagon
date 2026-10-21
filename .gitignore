@@ -19,6 +19,8 @@ apps/api/generated/
 !.env.example
 *.pem
 *.key
+# TLS-сертификаты staging: приватный ключ и цепочка не должны попасть в репозиторий
+infra/nginx/certs/
 
 # logs
 *.log

@@ -107,3 +107,96 @@ node scripts/check-backup.mjs --skip-api         # без запуска API
 - production
 
 Секреты не хранятся в Git.
+
+## Выкат staging
+
+Подготовка целиком лежит в репозитории: `docker-compose.staging.yml`,
+`apps/api/Dockerfile`, `apps/admin/Dockerfile`, `infra/nginx/staging.conf.template`.
+Ниже — что нужно сделать на сервере.
+
+### 1. Сервер и DNS
+
+Ориентир из начала этого документа: 2 vCPU, 4 ГБ RAM, 40–60 ГБ SSD, Docker и
+Docker Compose. Нужны два имени в DNS, оба на адрес сервера:
+
+- `ADMIN_HOST` — web-админка;
+- `API_HOST` — backend API (нужен мобильному приложению и внешним клиентам).
+
+### 2. Секреты
+
+```bash
+git clone <repo> /srv/octagon && cd /srv/octagon
+cp infra/staging.env.example .env.staging
+# заполнить: POSTGRES_PASSWORD, JWT_*_SECRET (openssl rand -base64 48),
+# CORS_ORIGINS=https://<ADMIN_HOST>, ADMIN_HOST, API_HOST
+```
+
+`.env.staging` в git не попадает. `DATABASE_URL` и `REDIS_URL` вручную не
+задаются: compose собирает их из `POSTGRES_*`, чтобы пароль не расходился в двух
+местах.
+
+### 3. Сертификаты
+
+Сертификаты монтируются из `infra/nginx/certs` и в репозиторий не попадают.
+Для staging допустимы самоподписанные — браузер покажет предупреждение, но трафик
+будет шифрован:
+
+```bash
+mkdir -p infra/nginx/certs
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -subj "/CN=$ADMIN_HOST" \
+  -keyout infra/nginx/certs/admin.key -out infra/nginx/certs/admin.crt
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -subj "/CN=$API_HOST" \
+  -keyout infra/nginx/certs/api.key -out infra/nginx/certs/api.crt
+```
+
+Для production — Let's Encrypt (certbot) с продлением; тогда `infra/nginx/certs`
+становится точкой монтирования архивов certbot.
+
+### 4. Первый выкат
+
+```bash
+docker compose -f docker-compose.staging.yml build
+docker compose -f docker-compose.staging.yml run --rm migrate   # миграции
+docker compose -f docker-compose.staging.yml up -d
+```
+
+Миграции вынесены в отдельный сервис намеренно: если применить их при старте
+`api`, падение миграции превратилось бы в цикл перезапуска контейнера.
+
+Проверка:
+
+```bash
+curl -fsS https://<API_HOST>/api/v1/health/ready   # база и Redis
+curl -fsS -o /dev/null -w '%{http_code}\n' https://<ADMIN_HOST>/login
+docker compose -f docker-compose.staging.yml ps    # все healthy
+```
+
+### 5. Обновление версии
+
+```bash
+git pull
+docker compose -f docker-compose.staging.yml build
+docker compose -f docker-compose.staging.yml run --rm migrate   # до старта api
+docker compose -f docker-compose.staging.yml up -d
+```
+
+Порядок важен: миграции применяются **до** запуска новой версии API. Обратный
+порядок даст окно, в котором код уже новый, а схема старая.
+
+### 6. Бэкапы
+
+Ежедневный дамп (`scripts/backup-db.mjs`) и проверка восстановления
+(`scripts/check-backup.mjs`) — раздел Backups выше. Проверка восстановления
+обязательна перед каждым релизным циклом: непроверенный бэкап бэкапом не является.
+
+### Что проверяется в CI
+
+Job `docker` собирает оба образа, запускает контейнер админки и проверяет, что
+`/login` отвечает, а также прогоняет `nginx -t` с тестовыми сертификатами.
+Отдельный шаг проверяет подстановку переменных в шаблоне: если `envsubst`
+затронет `$host`, конфиг останется синтаксически валидным, но нерабочим, поэтому
+проверяется наличие и подставленных доменов, и переменных nginx.
+
+Сборка локально требует Docker; в средах без него ориентируйтесь на этот job.
