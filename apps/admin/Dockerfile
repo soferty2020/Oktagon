@@ -9,12 +9,13 @@
 # размеру, и по времени выката.
 
 FROM node:22-alpine AS base
-ENV PNPM_HOME=/pnpm
-ENV PATH=$PNPM_HOME:$PATH
+# pnpm фиксированной версии, а не через corepack: corepack без поля
+# `packageManager` берет последнюю (12.x), а lockfile создан pnpm 10.x — при
+# `--frozen-lockfile` это несовместимо. В CI версия та же (pnpm/action-setup).
+RUN npm install -g pnpm@10.34.7
 # Next в контейнере не должен тянуть телеметрию: это лишний сетевой вызов и
 # шум в логах.
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN corepack enable
 WORKDIR /repo
 
 # --- deps: установка по lockfile -------------------------------------------

@@ -2,13 +2,15 @@
 # Сборка из корня монорепо: docker build -f apps/api/Dockerfile .
 
 FROM node:22-alpine AS base
-ENV PNPM_HOME=/pnpm
-ENV PATH=$PNPM_HOME:$PATH
+# pnpm ставится фиксированной версии, а не через corepack. Corepack без поля
+# `packageManager` берет последнюю версию (сейчас 12.x), а lockfile создан pnpm
+# 10.x: при `--frozen-lockfile` это несовместимо, и сборка падает. В CI тот же
+# pnpm 10 ставится через pnpm/action-setup, поэтому версия совпадает.
+RUN npm install -g pnpm@10.34.7
 # Prisma на Alpine требует openssl (движок связывается с libssl), а libc6-compat
 # нужен части нативных модулей. Без этого `prisma generate` и запуск падают с
 # «Unable to require libquery_engine».
 RUN apk add --no-cache openssl libc6-compat
-RUN corepack enable
 WORKDIR /repo
 
 # --- deps: установка по lockfile ---
