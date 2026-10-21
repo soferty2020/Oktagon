@@ -199,6 +199,46 @@ jobs:
           NEXT_TELEMETRY_DISABLED: '1'
         run: pnpm --filter @octagon/admin exec next build
 
+  mobile:
+    # Отдельный job: Flutter не нужен ни API, ни админке, а его установка
+    # занимает время. Раздельные job быстрее показывают, что именно сломалось.
+    name: mobile (analyze, tests)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          # Версия зафиксирована: сборка не должна зависеть от того, что
+          # `stable` сегодня другая. Локально проверено на этой же версии.
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        working-directory: apps/mobile
+        run: flutter pub get
+
+      - name: Analyze
+        # Анализатор с включенными строгими правилами (analysis_options.yaml):
+        # ошибкой считаются и неиспользуемые импорты, и неявные приведения.
+        working-directory: apps/mobile
+        run: flutter analyze
+
+      - name: Tests
+        working-directory: apps/mobile
+        run: flutter test
+
+      - name: Build web
+        # Проверка компиляции в артефакт. APK требует Android SDK, которого в CI
+        # нет, а web-сборка компилирует тот же Dart-код и ловит ошибки сборки.
+        working-directory: apps/mobile
+        run: flutter build web --release
+
   docker:
     # Образы проверяются сборкой и запуском, а не только наличием Dockerfile:
     # ошибка в путях COPY или отсутствующий модуль в standalone-сборке

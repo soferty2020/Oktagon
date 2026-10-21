@@ -1,0 +1,43 @@
+# Правила анализа для мобильного приложения.
+#
+# Основа — flutter_lints. Дополнительно включены проверки, которые ловят ошибки,
+# дорогие в мобильной разработке: неожиданный `null` в рантайме, изменяемые
+# глобальные коллекции, неявные приведения типов.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  # Платформенные каталоги генерируются Flutter и не пишутся руками.
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - '**/*.g.dart'
+
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+
+  errors:
+    # Неиспользуемый код — не предупреждение, а мусор, который копится.
+    unused_import: error
+    unused_local_variable: error
+    unused_element: warning
+
+# Правила заданы отображением, а не списком: так можно и включать, и отключать
+# их в одном месте.
+linter:
+  rules:
+    always_declare_return_types: true
+    avoid_print: true
+    prefer_const_constructors: true
+    prefer_const_declarations: true
+    prefer_final_locals: true
+    unawaited_futures: true
+    use_super_parameters: true
+    # Отключено осознанно: правило предлагает `this._repository`, но тогда
+    # именованный параметр становится приватным (`_repository`), и передать его
+    # из другого файла нельзя. Приватное поле + обычный параметр — единственный
+    # способ сохранить и инкапсуляцию, и читаемый вызов конструктора.
+    prefer_initializing_formals: false

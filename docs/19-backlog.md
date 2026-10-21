@@ -76,8 +76,17 @@ ADR-0011 и ADR-0012.
 Не сделано: фактический выкат на сервер (нужны площадка, домены и DNS),
 нагрузочная проверка (до staging измерять нечего).
 
-**Эпик H — Mobile: не начат** (каркас `apps/mobile` не создан, Flutter SDK не
-установлен)
+**Эпик H — Mobile: начат** (каркас `apps/mobile` создан, Flutter 3.47.7)
+
+Сделано: **H1 Auth** — экран входа, токены в защищенном хранилище платформы,
+восстановление сессии при запуске, обновление access-токена по refresh, выход с
+отзывом токена. Ошибки объясняются по кодам контракта. 19 тестов, `flutter
+analyze` чистый, сборка web как проверка компиляции; все три проверки — в CI
+(job `mobile`).
+
+Не сделано: H2 athlete switcher, H3 member home, H4 schedule, H5 attendance,
+H6 planned absence, H7 news, H8 chat, H9 profile, H10 trainer. Сборка APK требует
+Android SDK, iOS — macOS.
 
 **Эпик I — Admin Web: частично**
 

@@ -1,0 +1,35 @@
+name: octagon_mobile
+description: "OCTAGON Club System — mobile app (docs/10-mobile-app.md)"
+publish_to: 'none'
+
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Иконки Cupertino: часть Material-виджетов ссылается на них при сборке под
+  # iOS, и без пакета сборка предупреждает об отсутствующих шрифтах.
+  cupertino_icons: ^1.0.8
+
+  # HTTP-клиент: стандартная библиотека + http покрывает нужды приложения.
+  # Dio не берется намеренно: интерцепторы и повторные попытки здесь не нужны,
+  # а лишняя зависимость усложняет обновление Flutter.
+  http: ^1.2.2
+
+  # Токены сессии хранятся в защищенном хранилище платформы (Keychain/Keystore),
+  # а не в SharedPreferences: access и refresh токены дают доступ к данным клуба
+  # (docs/15-security.md).
+  flutter_secure_storage: ^9.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
