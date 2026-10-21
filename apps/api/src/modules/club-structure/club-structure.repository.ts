@@ -84,9 +84,28 @@ export abstract class ClubStructureRepository {
 
   abstract listHalls(branchId: string): Promise<HallRecord[]>;
   abstract findHall(id: string): Promise<HallRecord | null>;
+  /**
+   * Зал с таким названием в филиале.
+   *
+   * Пара «филиал + название» уникальна в схеме. Проверка нужна до записи: иначе
+   * Prisma вернет P2002, и администратор увидит 500 вместо понятной причины.
+   * `excludeId` исключает сам зал при переименовании.
+   */
+  abstract findHallByName(
+    branchId: string,
+    name: string,
+    excludeId?: string,
+  ): Promise<HallRecord | null>;
   abstract createHall(input: CreateHallInput): Promise<HallRecord>;
   abstract updateHall(id: string, input: UpdateHallInput): Promise<HallRecord>;
   abstract archiveHall(id: string, at: Date): Promise<void>;
+  /**
+   * Сколько у зала занятий, которые еще не начались.
+   *
+   * Архивный зал пропадает из выбора в расписании, поэтому сначала нужно
+   * перенести предстоящие занятия. Прошедшие не мешают: они остаются историей.
+   */
+  abstract countUpcomingSessions(hallId: string, from: Date): Promise<number>;
 
   abstract listTrainers(options: { isActive?: boolean }): Promise<TrainerRecord[]>;
   abstract findTrainer(id: string): Promise<TrainerRecord | null>;
@@ -213,6 +232,35 @@ export class PrismaClubStructureRepository extends ClubStructureRepository {
     await this.prisma.db.hall.update({
       where: { id },
       data: { archivedAt: at, isActive: false },
+    });
+  }
+
+  async findHallByName(
+    branchId: string,
+    name: string,
+    excludeId?: string,
+  ): Promise<HallRecord | null> {
+    return this.prisma.db.hall.findFirst({
+      // Архивированные залы не мешают создать зал с тем же названием: они уже
+      // не участвуют в расписании, а уникальность в схеме остается.
+      where: {
+        branchId,
+        name,
+        archivedAt: null,
+        ...(excludeId ? { id: { not: excludeId } } : {}),
+      },
+      select: HALL_SELECT,
+    });
+  }
+
+  async countUpcomingSessions(hallId: string, from: Date): Promise<number> {
+    return this.prisma.db.trainingSession.count({
+      where: {
+        hallId,
+        startsAt: { gte: from },
+        // Отмененные занятия не требуют зала: они не мешают архивированию.
+        status: { not: 'CANCELLED' },
+      },
     });
   }
 

@@ -40,6 +40,21 @@ export const ApiErrorCode = {
   BRANCH_NOT_FOUND: 'BRANCH_NOT_FOUND',
   HALL_NOT_IN_BRANCH: 'HALL_NOT_IN_BRANCH',
   HALL_NOT_FOUND: 'HALL_NOT_FOUND',
+  /**
+   * В филиале уже есть зал с таким названием.
+   *
+   * Схема требует уникальности пары «филиал + название» (`@@unique`). Без явной
+   * проверки Prisma отдавала ошибку P2002, которая превращалась в 500:
+   * администратор видел «внутренняя ошибка» вместо причины.
+   */
+  HALL_NAME_TAKEN: 'HALL_NAME_TAKEN',
+  /**
+   * В зале есть предстоящие занятия: архивировать нельзя.
+   *
+   * Архивный зал исчезает из выбора в расписании, а занятия в нем остались бы:
+   * тренер и группа пришли бы в закрытый зал. Сначала занятия нужно перенести.
+   */
+  HALL_HAS_SESSIONS: 'HALL_HAS_SESSIONS',
   TRAINER_ALREADY_ASSIGNED: 'TRAINER_ALREADY_ASSIGNED',
   TRAINER_NOT_FOUND: 'TRAINER_NOT_FOUND',
   /** Профиль тренера не связан с аккаунтом: отвязывать нечего. */
@@ -212,6 +227,8 @@ export const API_ERROR_HTTP_STATUS: Readonly<Record<ApiErrorCode, number>> = {
   BRANCH_NOT_FOUND: 404,
   HALL_NOT_IN_BRANCH: 400,
   HALL_NOT_FOUND: 404,
+  HALL_NAME_TAKEN: 409,
+  HALL_HAS_SESSIONS: 409,
   TRAINER_ALREADY_ASSIGNED: 409,
   TRAINER_NOT_FOUND: 404,
   TRAINER_ACCOUNT_NOT_LINKED: 404,

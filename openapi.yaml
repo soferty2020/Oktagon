@@ -822,7 +822,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
         '404':
-          description: Зал не найден (`HALL_NOT_FOUND`)
+          description: |
+            Зал не найден (`HALL_NOT_FOUND`) или филиал не найден
+            (`BRANCH_NOT_FOUND`) при переносе.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: |
+            Название занято в филиале (`HALL_NAME_TAKEN`) или филиал архивный
+            (`BRANCH_ARCHIVED`).
           content:
             application/json:
               schema:
@@ -830,6 +840,10 @@ paths:
     delete:
       tags: [halls]
       summary: Архивировать зал
+      description: |
+        Запрещено, если в зале есть предстоящие занятия (`HALL_HAS_SESSIONS`):
+        архивный зал исчезает из выбора в расписании, и тренер с группой пришли бы
+        в закрытый зал. Прошедшие занятия не мешают — они остаются историей.
       operationId: archiveHall
       parameters:
         - name: id
@@ -851,6 +865,12 @@ paths:
                 $ref: '#/components/schemas/ApiError'
         '404':
           description: Зал не найден (`HALL_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: В зале есть предстоящие занятия (`HALL_HAS_SESSIONS`)
           content:
             application/json:
               schema:
@@ -4691,6 +4711,13 @@ components:
           maximum: 1000
         isActive:
           type: boolean
+        branchId:
+          type: string
+          format: uuid
+          description: |
+            Перенести зал в другой филиал. Нужно для исправления ошибки при
+            заведении. Занятия не меняют филиал — он берется из первичной группы,
+            поэтому отчеты по филиалам не искажаются.
 
     CreateTrainerRequest:
       type: object

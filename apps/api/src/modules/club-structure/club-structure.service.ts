@@ -111,6 +111,7 @@ export class ClubStructureService {
   async createHall(input: CreateHallInput): Promise<HallView> {
     const branch = await this.requireBranch(input.branchId);
     this.assertBranchActive(branch);
+    await this.assertHallNameFree(input.branchId, input.name);
 
     const hall = await this.repository.createHall(input);
 
@@ -124,23 +125,67 @@ export class ClubStructureService {
     return toHallView(hall);
   }
 
+  /**
+   * Изменение зала, включая перенос в другой филиал.
+   *
+   * Перенос нужен для исправления ошибки при заведении: зал могли создать не в
+   * том филиале. Занятия при этом не меняют филиал — он берется из первичной
+   * группы (`TrainingSession.branchId`), поэтому отчеты по филиалам остаются
+   * верными. Проверяется только уникальность названия в новом филиале: иначе
+   * Prisma вернула бы P2002 и администратор увидел бы 500.
+   */
   async updateHall(id: string, input: UpdateHallInput): Promise<HallView> {
     const before = await this.requireHall(id);
+
+    const branchChanged = input.branchId !== undefined && input.branchId !== before.branchId;
+    if (branchChanged) {
+      const branch = await this.requireBranch(input.branchId as string);
+      this.assertBranchActive(branch);
+    }
+
+    const nextBranchId = input.branchId ?? before.branchId;
+    const nextName = input.name ?? before.name;
+    if (branchChanged || (input.name !== undefined && input.name !== before.name)) {
+      await this.assertHallNameFree(nextBranchId, nextName, id);
+    }
+
     const hall = await this.repository.updateHall(id, input);
 
     await this.audit.recordSafely({
       action: AuditAction.HALL_UPDATED,
       entityType: AuditEntityType.HALL,
       entityId: id,
-      before: { name: before.name, isActive: before.isActive },
-      after: { name: hall.name, isActive: hall.isActive },
+      before: { name: before.name, isActive: before.isActive, branchId: before.branchId },
+      after: {
+        name: hall.name,
+        isActive: hall.isActive,
+        branchId: hall.branchId,
+        ...(branchChanged ? { movedFrom: before.branchId } : {}),
+      },
     });
 
     return toHallView(hall);
   }
 
+  /**
+   * Архивирование зала.
+   *
+   * Запрещено, если в зале есть предстоящие занятия: архивный зал исчезает из
+   * выбора в расписании, и тренер с группой пришли бы в закрытый зал. Прошедшие
+   * занятия не мешают — они остаются историей посещаемости (BR-007).
+   */
   async archiveHall(id: string): Promise<void> {
     const hall = await this.requireHall(id);
+
+    const upcoming = await this.repository.countUpcomingSessions(id, new Date());
+    if (upcoming > 0) {
+      throw new ApiException(
+        'HALL_HAS_SESSIONS' satisfies ApiErrorCode,
+        `В зале ${upcoming} предстоящих занятий: сначала перенесите их`,
+        { upcoming },
+      );
+    }
+
     await this.repository.archiveHall(id, new Date());
 
     await this.audit.recordSafely({
@@ -149,6 +194,22 @@ export class ClubStructureService {
       entityId: id,
       before: { name: hall.name, branchId: hall.branchId },
     });
+  }
+
+  /** Проверяет, что название зала свободно в филиале. */
+  private async assertHallNameFree(
+    branchId: string,
+    name: string,
+    excludeId?: string,
+  ): Promise<void> {
+    const existing = await this.repository.findHallByName(branchId, name, excludeId);
+    if (existing) {
+      throw new ApiException(
+        'HALL_NAME_TAKEN' satisfies ApiErrorCode,
+        `В филиале уже есть зал «${name}»`,
+        { hallId: existing.id },
+      );
+    }
   }
 
   // --- Тренеры -------------------------------------------------------------

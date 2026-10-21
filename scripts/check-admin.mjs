@@ -742,6 +742,115 @@ async function main() {
     '16з',
     `связь влияет на доступ к чату группы: без связи ${chatWithoutLink.status}, со связью ${chatWithLink.status}`,
   );
+
+  // 17. Залы: правка, конфликт названий, перенос между филиалами и архивирование.
+  //
+  // До этого залы можно было только выбрать в расписании: создать, переименовать
+  // или закрыть их из интерфейса было нельзя, и зал, заведенный с ошибкой,
+  // исправить было нечем.
+  const hallStamp = Date.now();
+
+  const firstBranch = await apiCall(apiBase, token, 'POST', '/branches', {
+    name: `Филиал залов А ${hallStamp}`,
+  });
+  const secondBranch = await apiCall(apiBase, token, 'POST', '/branches', {
+    name: `Филиал залов Б ${hallStamp}`,
+  });
+
+  const hall = await apiCall(apiBase, token, 'POST', `/branches/${firstBranch.body?.id}/halls`, {
+    name: `Зал ${hallStamp}`,
+    capacity: 25,
+  });
+  log('17', `зал создан: ${hall.status} | вместимость ${hall.body?.capacity}`);
+
+  const duplicateHall = await apiCall(
+    apiBase,
+    token,
+    'POST',
+    `/branches/${firstBranch.body?.id}/halls`,
+    { name: `Зал ${hallStamp}` },
+  );
+  log(
+    '17б',
+    `дубль названия в филиале отклонен: ${duplicateHall.status} ${duplicateHall.body?.code ?? ''}`,
+  );
+
+  const sameNameOtherBranch = await apiCall(
+    apiBase,
+    token,
+    'POST',
+    `/branches/${secondBranch.body?.id}/halls`,
+    { name: `Зал ${hallStamp}` },
+  );
+  log('17в', `то же название в другом филиале разрешено: ${sameNameOtherBranch.status}`);
+
+  const renamed = await apiCall(apiBase, token, 'PATCH', `/halls/${hall.body?.id}`, {
+    name: `Зал ${hallStamp} переименован`,
+    capacity: 30,
+  });
+  log(
+    '17г',
+    `зал переименован: ${renamed.status} | имя ${
+      renamed.body?.name === `Зал ${hallStamp} переименован` ? 'новое' : 'СТАРОЕ'
+    } | вместимость ${renamed.body?.capacity}`,
+  );
+
+  const moved = await apiCall(apiBase, token, 'PATCH', `/halls/${hall.body?.id}`, {
+    branchId: secondBranch.body?.id,
+  });
+  log(
+    '17д',
+    `зал перенесен в другой филиал: ${moved.status} | филиал ${
+      moved.body?.branchId === secondBranch.body?.id ? 'новый' : 'СТАРЫЙ'
+    }`,
+  );
+
+  // Занятие в зале: архивирование должно быть отклонено, иначе группа придет в
+  // закрытый зал. Дата в будущем, чтобы занятие считалось предстоящим.
+  const futureDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  // `branchId` в создании группы не передается: этого поля нет в контракте,
+  // филиал группы задается отдельно (первичная группа).
+  const groupForHall = await apiCall(apiBase, token, 'POST', '/groups', {
+    name: `Группа зала ${hallStamp}`,
+  });
+  const sessionInHall = await apiCall(apiBase, token, 'POST', '/training-sessions', {
+    groupId: groupForHall.body?.id,
+    date: futureDate,
+    startTime: '10:00',
+    endTime: '11:00',
+    hallId: hall.body?.id,
+    // Причина обязательна: занятие заводится вручную и попадает в аудит.
+    reason: 'Проверка зала',
+  });
+  log('17е', `занятие в зале создано: ${sessionInHall.status}`);
+
+  const archiveBusy = await apiCall(apiBase, token, 'DELETE', `/halls/${hall.body?.id}`);
+  log(
+    '17ж',
+    `архивирование зала с занятием отклонено: ${archiveBusy.status} ${
+      archiveBusy.body?.code ?? ''
+    }`,
+  );
+
+  const freeHall = await apiCall(
+    apiBase,
+    token,
+    'POST',
+    `/branches/${firstBranch.body?.id}/halls`,
+    {
+      name: `Свободный зал ${hallStamp}`,
+    },
+  );
+  const archiveFree = await apiCall(apiBase, token, 'DELETE', `/halls/${freeHall.body?.id}`);
+  log('17з', `архивирование зала без занятий: ${archiveFree.status}`);
+
+  const { html: branchesHtml } = await fetchHtml(base, '/branches', cookie);
+  log(
+    '17и',
+    `экран филиалов: залы ${branchesHtml.includes(`Зал ${hallStamp}`)} | форма добавления ${
+      branchesHtml.includes('Добавить зал') ? 'есть' : 'НЕТ'
+    } | правка ${branchesHtml.includes('Сохранить зал') ? 'есть' : 'НЕТ'}`,
+  );
 }
 
 main().catch((error) => {

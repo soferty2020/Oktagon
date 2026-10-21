@@ -395,7 +395,12 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Архивировать зал */
+        /**
+         * Архивировать зал
+         * @description Запрещено, если в зале есть предстоящие занятия (`HALL_HAS_SESSIONS`):
+         *     архивный зал исчезает из выбора в расписании, и тренер с группой пришли бы
+         *     в закрытый зал. Прошедшие занятия не мешают — они остаются историей.
+         */
         delete: operations["archiveHall"];
         options?: never;
         head?: never;
@@ -2023,6 +2028,13 @@ export interface components {
             name?: string;
             capacity?: number;
             isActive?: boolean;
+            /**
+             * Format: uuid
+             * @description Перенести зал в другой филиал. Нужно для исправления ошибки при
+             *     заведении. Занятия не меняют филиал — он берется из первичной группы,
+             *     поэтому отчеты по филиалам не искажаются.
+             */
+            branchId?: string;
         };
         CreateTrainerRequest: {
             displayName: string;
@@ -3844,6 +3856,15 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
+            /** @description В зале есть предстоящие занятия (`HALL_HAS_SESSIONS`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
         };
     };
     updateHall: {
@@ -3881,8 +3902,23 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description Зал не найден (`HALL_NOT_FOUND`) */
+            /**
+             * @description Зал не найден (`HALL_NOT_FOUND`) или филиал не найден
+             *     (`BRANCH_NOT_FOUND`) при переносе.
+             */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /**
+             * @description Название занято в филиале (`HALL_NAME_TAKEN`) или филиал архивный
+             *     (`BRANCH_ARCHIVED`).
+             */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

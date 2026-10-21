@@ -125,6 +125,18 @@ export class UpdateHallDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  /**
+   * Перенос зала в другой филиал.
+   *
+   * Отдельное поле нужно, чтобы исправить ошибку при заведении: зал могли
+   * создать не в том филиале. Занятия не меняют филиал — он берется из
+   * первичной группы.
+   */
+  @ApiPropertyOptional({ format: 'uuid', description: 'Перенести зал в другой филиал' })
+  @IsOptional()
+  @IsUUID()
+  branchId?: string;
 }
 
 /** Тренеры (C3). */

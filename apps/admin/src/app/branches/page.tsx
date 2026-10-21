@@ -3,8 +3,8 @@ import { redirect } from 'next/navigation';
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
-import { archiveBranchAction } from './actions';
 import { BranchForm } from './branch-form';
+import { ArchiveBranchForm, CreateHallForm, HallRow } from './hall-forms';
 
 export const metadata = {
   title: 'Филиалы — OCTAGON',
@@ -18,7 +18,26 @@ interface BranchView {
   isActive: boolean;
 }
 
-/** Справочник филиалов (C1): список, создание, архивирование. */
+interface HallView {
+  id: string;
+  branchId: string;
+  name: string;
+  capacity: number | null;
+  isActive: boolean;
+}
+
+/**
+ * Справочник филиалов и залов (C1).
+ *
+ * Залы показаны под своим филиалом: раньше их можно было только выбрать в
+ * расписании, а создать, переименовать или закрыть — нет, хотя API это умеет.
+ * Существовал разрыв: зал, заведенный с ошибкой, нельзя было исправить из
+ * интерфейса вообще.
+ *
+ * Правка зала включает перенос в другой филиал: это исправление ошибки при
+ * заведении. Занятия при переносе не меняют филиал — он берется из первичной
+ * группы, поэтому отчеты по филиалам не искажаются.
+ */
 export default async function BranchesPage() {
   const user = await getCurrentUser();
   if (!user) {
@@ -30,79 +49,100 @@ export default async function BranchesPage() {
 
   const canManage = user.permissions.includes('branches.manage');
 
+  // Залы запрашиваются для каждого филиала: отдельного «списка всех залов» в API
+  // нет, а филиалов в клубе немного.
+  const hallsByBranch = new Map<string, HallView[]>();
+  if (result.ok) {
+    const lists = await Promise.all(
+      result.data.map(async (branch) => {
+        const halls = await apiFetch<HallView[]>(`/branches/${branch.id}/halls`, { accessToken });
+        return { branchId: branch.id, halls: halls.ok ? halls.data : [] };
+      }),
+    );
+    for (const list of lists) {
+      hallsByBranch.set(list.branchId, list.halls);
+    }
+  }
+
+  const branches = result.ok ? result.data : [];
+  const branchOptions = branches.map((branch) => ({ id: branch.id, name: branch.name }));
+
   return (
     <AppShell user={user}>
-      <PageHeader
-        title="Филиалы"
-        description="Структура клуба: филиалы и их залы"
-      />
+      <PageHeader title="Филиалы" description="Структура клуба: филиалы и их залы" />
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-        <div className="rounded-xl border border-slate-200 bg-white">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="px-4 py-3">Название</th>
-                <th className="px-4 py-3">Адрес</th>
-                <th className="px-4 py-3">Телефон</th>
-                <th className="px-4 py-3">Статус</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {result.ok && result.data.length > 0 ? (
-                result.data.map((branch) => (
-                  <tr key={branch.id} className="border-b border-slate-100 last:border-0">
-                    <td className="px-4 py-3 font-medium text-slate-900">{branch.name}</td>
-                    <td className="px-4 py-3 text-slate-600">{branch.address ?? '—'}</td>
-                    <td className="px-4 py-3 text-slate-600">{branch.phone ?? '—'}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={
-                          branch.isActive
-                            ? 'rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700'
-                            : 'rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-500'
-                        }
-                      >
-                        {branch.isActive ? 'активен' : 'неактивен'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {canManage && branch.isActive ? (
-                        <form action={archiveBranchAction}>
-                          <input type="hidden" name="branchId" value={branch.id} />
-                          <button
-                            type="submit"
-                            className="text-xs text-slate-500 underline hover:text-red-700"
-                          >
-                            Архивировать
-                          </button>
-                        </form>
-                      ) : null}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="px-4 py-6">
-                    <Notice>
-                      {result.ok
-                        ? 'Филиалов пока нет: создайте первый в форме справа.'
-                        : describeError(result.error)}
-                    </Notice>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        <div className="flex flex-col gap-4">
+          {!result.ok ? <Notice tone="error">{describeError(result.error)}</Notice> : null}
+
+          {result.ok && branches.length === 0 ? (
+            <Notice>Филиалов пока нет: создайте первый в форме справа.</Notice>
+          ) : null}
+
+          {branches.map((branch) => {
+            const halls = hallsByBranch.get(branch.id) ?? [];
+
+            return (
+              <section key={branch.id} className="rounded-xl border border-slate-200 bg-white p-5">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h2 className="text-base font-semibold text-slate-900">{branch.name}</h2>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {[branch.address, branch.phone].filter(Boolean).join(' · ') || 'без адреса'}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={
+                        branch.isActive
+                          ? 'rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700'
+                          : 'rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-500'
+                      }
+                    >
+                      {branch.isActive ? 'активен' : 'неактивен'}
+                    </span>
+
+                    {canManage && branch.isActive ? (
+                      <ArchiveBranchForm branchId={branch.id} branchName={branch.name} />
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="mt-4 border-t border-slate-100 pt-3">
+                  <h3 className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                    Залы {halls.length > 0 ? `(${halls.length})` : ''}
+                  </h3>
+
+                  {halls.length === 0 ? (
+                    <p className="mt-2 text-xs text-slate-500">
+                      Залов нет. Зал нужен, чтобы указывать место занятия в расписании.
+                    </p>
+                  ) : (
+                    <div className="mt-2 flex flex-col gap-2">
+                      {halls.map((hall) => (
+                        <HallRow key={hall.id} hall={hall} branches={branchOptions} />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Создание зала требует того же права, что и правка филиала. */}
+                  {canManage && branch.isActive ? <CreateHallForm branchId={branch.id} /> : null}
+                  {canManage && !branch.isActive ? (
+                    <p className="mt-3 text-xs text-slate-500">
+                      Филиал неактивен: залы в нем не создаются.
+                    </p>
+                  ) : null}
+                </div>
+              </section>
+            );
+          })}
         </div>
 
         {canManage ? (
           <BranchForm />
         ) : (
-          <Notice>
-            Раздел доступен только для просмотра: нет права «branches.manage».
-          </Notice>
+          <Notice>Раздел доступен только для просмотра: нет права «branches.manage».</Notice>
         )}
       </div>
     </AppShell>

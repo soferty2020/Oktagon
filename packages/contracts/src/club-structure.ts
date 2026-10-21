@@ -61,6 +61,14 @@ export interface UpdateHallInput {
   name?: string;
   capacity?: number | null;
   isActive?: boolean;
+  /**
+   * Перенос зала в другой филиал.
+   *
+   * Нужен для исправления ошибки при заведении: зал могли создать не в том
+   * филиале. Занятия при этом не меняют филиал — он берется из первичной группы
+   * (`TrainingSession.branchId`), поэтому отчеты по филиалам не искажаются.
+   */
+  branchId?: string;
 }
 
 export interface CreateTrainerInput {

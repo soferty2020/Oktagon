@@ -48,9 +48,11 @@ describe('ClubStructureService', () => {
       archiveBranch: jest.fn().mockResolvedValue(undefined),
       listHalls: jest.fn().mockResolvedValue([hall]),
       findHall: jest.fn().mockResolvedValue(hall),
+      findHallByName: jest.fn().mockResolvedValue(null),
       createHall: jest.fn().mockResolvedValue(hall),
       updateHall: jest.fn().mockResolvedValue(hall),
       archiveHall: jest.fn().mockResolvedValue(undefined),
+      countUpcomingSessions: jest.fn().mockResolvedValue(0),
       listTrainers: jest.fn().mockResolvedValue([trainer]),
       findTrainer: jest.fn().mockResolvedValue(trainer),
       findTrainerByUserId: jest.fn().mockResolvedValue(null),
@@ -133,6 +135,79 @@ describe('ClubStructureService', () => {
       await expect(service.updateHall('missing', { name: 'X' })).rejects.toMatchObject({
         code: 'HALL_NOT_FOUND',
       });
+    });
+
+    it('не дает создать второй зал с тем же названием в филиале', async () => {
+      // Схема требует уникальности пары «филиал + название». Без проверки
+      // Prisma вернула бы P2002, и администратор увидел бы 500 вместо причины.
+      repository.findHallByName.mockResolvedValue(hall);
+
+      await expect(
+        service.createHall({ branchId: 'branch-1', name: 'Основной зал' }),
+      ).rejects.toMatchObject({ code: 'HALL_NAME_TAKEN' });
+      expect(repository.createHall).not.toHaveBeenCalled();
+    });
+
+    it('разрешает то же название в другом филиале', async () => {
+      repository.findHallByName.mockResolvedValue(null);
+
+      await expect(
+        service.createHall({ branchId: 'branch-2', name: 'Основной зал' }),
+      ).resolves.toBeDefined();
+    });
+
+    it('проверяет название при переименовании, исключая сам зал', async () => {
+      await service.updateHall('hall-1', { name: 'Большой зал' });
+
+      // excludeId обязателен: иначе зал конфликтовал бы сам с собой при
+      // сохранении формы без изменения названия.
+      expect(repository.findHallByName).toHaveBeenCalledWith('branch-1', 'Большой зал', 'hall-1');
+    });
+
+    it('переносит зал в другой филиал', async () => {
+      repository.findHallByName.mockResolvedValue(null);
+      repository.updateHall.mockResolvedValue({ ...hall, branchId: 'branch-2' });
+
+      const moved = await service.updateHall('hall-1', { branchId: 'branch-2' });
+
+      expect(moved.branchId).toBe('branch-2');
+      expect(repository.findBranch).toHaveBeenCalledWith('branch-2');
+    });
+
+    it('не переносит зал в архивный филиал', async () => {
+      repository.findBranch.mockResolvedValue({ ...branch, isActive: false });
+
+      await expect(service.updateHall('hall-1', { branchId: 'branch-2' })).rejects.toMatchObject({
+        code: 'BRANCH_ARCHIVED',
+      });
+      expect(repository.updateHall).not.toHaveBeenCalled();
+    });
+
+    it('не переносит зал в несуществующий филиал', async () => {
+      repository.findBranch.mockResolvedValue(null);
+
+      await expect(service.updateHall('hall-1', { branchId: 'missing' })).rejects.toMatchObject({
+        code: 'BRANCH_NOT_FOUND',
+      });
+    });
+
+    it('не архивирует зал с предстоящими занятиями', async () => {
+      // Архивный зал исчезает из выбора в расписании: тренер и группа пришли бы
+      // в закрытый зал. Сначала занятия нужно перенести.
+      repository.countUpcomingSessions.mockResolvedValue(3);
+
+      await expect(service.archiveHall('hall-1')).rejects.toMatchObject({
+        code: 'HALL_HAS_SESSIONS',
+      });
+      expect(repository.archiveHall).not.toHaveBeenCalled();
+    });
+
+    it('архивирует зал без предстоящих занятий', async () => {
+      repository.countUpcomingSessions.mockResolvedValue(0);
+
+      await service.archiveHall('hall-1');
+
+      expect(repository.archiveHall).toHaveBeenCalledWith('hall-1', expect.any(Date));
     });
   });
 

@@ -42,8 +42,7 @@ export async function apiFetch<T>(
   }
 
   const payload = (await response.json().catch(() => null)) as
-    | (T & { code?: string; message?: string; details?: Record<string, unknown> })
-    | null;
+    (T & { code?: string; message?: string; details?: Record<string, unknown> }) | null;
 
   if (!response.ok) {
     return {
@@ -71,6 +70,10 @@ export function describeError(error: ApiFailure): string {
       return 'Филиал неактивен: сначала включите его';
     case 'EMAIL_ALREADY_EXISTS':
       return 'Пользователь с таким email уже существует';
+    case 'HALL_NAME_TAKEN':
+      return 'В этом филиале уже есть зал с таким названием';
+    case 'HALL_HAS_SESSIONS':
+      return 'В зале есть предстоящие занятия: сначала перенесите их в другой зал';
     default:
       return error.message;
   }

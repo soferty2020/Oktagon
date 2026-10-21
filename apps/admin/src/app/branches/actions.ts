@@ -18,7 +18,9 @@ export interface FormState {
  * администратора и обновляем страницу после изменения.
  */
 async function withSession<T>(
-  action: (accessToken: string) => Promise<{ ok: true; data: T } | { ok: false; error: ApiFailure }>,
+  action: (
+    accessToken: string,
+  ) => Promise<{ ok: true; data: T } | { ok: false; error: ApiFailure }>,
 ): Promise<FormState> {
   const user = await getCurrentUser();
   if (!user) {
@@ -37,10 +39,7 @@ async function withSession<T>(
   return {};
 }
 
-export async function createBranchAction(
-  _prev: FormState,
-  formData: FormData,
-): Promise<FormState> {
+export async function createBranchAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const name = String(formData.get('name') ?? '').trim();
   const address = String(formData.get('address') ?? '').trim();
   const phone = String(formData.get('phone') ?? '').trim();
@@ -81,4 +80,107 @@ export async function archiveBranchAction(formData: FormData): Promise<void> {
 
   revalidatePath('/branches');
   revalidatePath('/');
+}
+
+/** Необязательное число: пустая строка означает «не задано». */
+function optionalNumber(value: unknown): number | undefined {
+  const text = String(value ?? '').trim();
+  if (text === '') {
+    return undefined;
+  }
+  const parsed = Number(text);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function revalidateHalls(): void {
+  revalidatePath('/branches');
+  revalidatePath('/schedule');
+}
+
+export async function createHallAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const branchId = String(formData.get('branchId') ?? '');
+  const name = String(formData.get('name') ?? '').trim();
+  const capacity = optionalNumber(formData.get('capacity'));
+
+  if (!branchId) {
+    return { error: 'Не указан филиал' };
+  }
+  if (!name) {
+    return { error: 'Укажите название зала' };
+  }
+
+  const state = await withSession((accessToken) =>
+    apiFetch(`/branches/${branchId}/halls`, {
+      accessToken,
+      method: 'POST',
+      body: { name, ...(capacity === undefined ? {} : { capacity }) },
+    }),
+  );
+
+  if (!state.error) {
+    revalidateHalls();
+    return { success: `Зал «${name}» добавлен` };
+  }
+  return state;
+}
+
+/**
+ * Изменение зала, включая перенос в другой филиал.
+ *
+ * Пустая вместимость передается как null: так значение очищается. Иначе форма не
+ * смогла бы убрать уже указанное число, а отправка undefined означала бы «не
+ * менять» — то есть опечатку нельзя было бы исправить.
+ */
+export async function updateHallAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const hallId = String(formData.get('hallId') ?? '');
+  const name = String(formData.get('name') ?? '').trim();
+  const capacityRaw = String(formData.get('capacity') ?? '').trim();
+  const branchId = String(formData.get('branchId') ?? '').trim();
+  const isActive = formData.get('isActive') === 'on';
+
+  if (!hallId) {
+    return { error: 'Не указан зал' };
+  }
+  if (!name) {
+    return { error: 'Укажите название зала' };
+  }
+
+  const state = await withSession((accessToken) =>
+    apiFetch(`/halls/${hallId}`, {
+      accessToken,
+      method: 'PATCH',
+      body: {
+        name,
+        capacity: capacityRaw === '' ? null : Number(capacityRaw),
+        isActive,
+        ...(branchId ? { branchId } : {}),
+      },
+    }),
+  );
+
+  if (!state.error) {
+    revalidateHalls();
+    return { success: 'Зал обновлен' };
+  }
+  return state;
+}
+
+/**
+ * Архивирование зала.
+ *
+ * Backend откажет, если в зале есть предстоящие занятия (`HALL_HAS_SESSIONS`):
+ * архивный зал исчезает из выбора в расписании, и группа пришла бы в закрытый
+ * зал. Ошибку показываем текстом, а не молча игнорируем.
+ */
+export async function archiveHallAction(formData: FormData): Promise<void> {
+  const hallId = String(formData.get('hallId') ?? '');
+  if (!hallId) {
+    return;
+  }
+
+  await withSession((accessToken) =>
+    apiFetch(`/halls/${hallId}`, { accessToken, method: 'DELETE' }),
+  );
+
+  revalidateHalls();
 }
