@@ -290,6 +290,8 @@ jobs:
             -e ADMIN_HOST=staging.test \
             -e API_HOST=api.staging.test \
             -e 'NGINX_ENVSUBST_FILTER=^(ADMIN_HOST|API_HOST)$' \
+            --add-host admin:127.0.0.1 \
+            --add-host api:127.0.0.1 \
             -v "$PWD/infra/nginx/staging.conf.template:/etc/nginx/templates/staging.conf.template:ro" \
             -v "$PWD/infra/nginx/certs:/etc/nginx/certs:ro" \
             nginx:1.27-alpine nginx -t
