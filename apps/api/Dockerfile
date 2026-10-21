@@ -38,7 +38,11 @@ COPY apps/api ./apps/api
 RUN pnpm build:packages
 RUN pnpm --filter @octagon/api exec prisma generate
 RUN pnpm --filter @octagon/api build
-RUN pnpm --filter @octagon/api prune --prod
+# `prune --prod` здесь не используется: `pnpm prune` не принимает `--filter`
+# (флаг разворачивается в `--recursive`, который prune не поддерживает), и
+# сборка падала на «Unknown option: 'recursive'». В образ попадают
+# devDependencies — это увеличивает размер, но не влияет на работу; вынос
+# прод-зависимостей в отдельную стадию — отдельная задача.
 
 # --- migrate: применение миграций перед стартом новой версии ---
 #
