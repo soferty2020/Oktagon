@@ -4,17 +4,26 @@
 FROM node:22-alpine AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
+# Prisma на Alpine требует openssl (движок связывается с libssl), а libc6-compat
+# нужен части нативных модулей. Без этого `prisma generate` и запуск падают с
+# «Unable to require libquery_engine».
+RUN apk add --no-cache openssl libc6-compat
 RUN corepack enable
 WORKDIR /repo
 
 # --- deps: установка по lockfile ---
+#
+# Второй фильтр включает сами пакеты: их `typescript` лежит в devDependencies, а
+# `--filter @octagon/api...` ставит зависимости API, но не devDependencies его
+# workspace-зависимостей. Без этого `pnpm build:packages` падал бы на отсутствии
+# tsc.
 FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/api/package.json apps/api/
 COPY packages/contracts/package.json packages/contracts/
 COPY packages/config/package.json packages/config/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm install --frozen-lockfile --filter @octagon/api... --prod=false
+    pnpm install --frozen-lockfile --filter @octagon/api... --filter "./packages/**" --prod=false
 
 # --- build: компиляция TypeScript и генерация Prisma Client ---
 FROM deps AS build

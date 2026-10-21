@@ -19,14 +19,16 @@ WORKDIR /repo
 
 # --- deps: установка по lockfile -------------------------------------------
 # `--filter @octagon/admin...` ставит зависимости админки и ее workspace-зависимостей
-# (@octagon/contracts). Копируются только package.json: слой переиспользуется,
-# пока не изменились зависимости.
+# (@octagon/contracts). Второй фильтр нужен для devDependencies пакетов: их
+# `typescript` используется при сборке contracts, а без него `build:packages`
+# падает. Копируются только package.json: слой переиспользуется, пока не
+# изменились зависимости.
 FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/admin/package.json apps/admin/
 COPY packages/contracts/package.json packages/contracts/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm install --frozen-lockfile --filter @octagon/admin... --prod=false
+    pnpm install --frozen-lockfile --filter @octagon/admin... --filter "./packages/**" --prod=false
 
 # --- build: сборка Next -----------------------------------------------------
 FROM deps AS build
