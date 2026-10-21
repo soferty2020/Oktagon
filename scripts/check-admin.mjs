@@ -851,6 +851,81 @@ async function main() {
       branchesHtml.includes('Добавить зал') ? 'есть' : 'НЕТ'
     } | правка ${branchesHtml.includes('Сохранить зал') ? 'есть' : 'НЕТ'}`,
   );
+
+  // 18. Занятие вручную: задним числом и разовое.
+  //
+  // Нужно клубам, которые начали работать до внедрения системы: иначе прошедшие
+  // занятия не попадают в посещаемость. API умел это с самого начала, но экрана
+  // не было — то есть возможность была недостижима.
+  const manualStamp = Date.now();
+
+  const manualGroup = await apiCall(apiBase, token, 'POST', '/groups', {
+    name: `Группа вручную ${manualStamp}`,
+  });
+
+  const pastDate = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const manualSession = await apiCall(apiBase, token, 'POST', '/training-sessions', {
+    groupId: manualGroup.body?.id,
+    date: pastDate,
+    startTime: '18:00',
+    endTime: '19:30',
+    reason: 'Занесение занятий за прошлый месяц',
+  });
+  log(
+    '18',
+    `занятие задним числом создано: ${manualSession.status} | дата ${pastDate} | из шаблона ${
+      manualSession.body?.fromTemplate
+    }`,
+  );
+
+  const withoutReason = await apiCall(apiBase, token, 'POST', '/training-sessions', {
+    groupId: manualGroup.body?.id,
+    date: pastDate,
+    startTime: '20:00',
+    endTime: '21:00',
+  });
+  log(
+    '18б',
+    `занятие без причины отклонено: ${withoutReason.status} ${withoutReason.body?.code ?? ''}`,
+  );
+
+  // Накладка в прошлом допустима: в прошлом расписание часто велось иначе,
+  // поэтому проверка конфликтов применяется только к будущим занятиям.
+  const overlapPast = await apiCall(apiBase, token, 'POST', '/training-sessions', {
+    groupId: manualGroup.body?.id,
+    date: pastDate,
+    startTime: '18:30',
+    endTime: '19:00',
+    reason: 'Пересечение в прошлом',
+  });
+  log('18в', `пересечение в прошлом разрешено: ${overlapPast.status}`);
+
+  // `to` — исключающая граница (начало дня), поэтому берется следующий день:
+  // иначе занятие вечером последнего дня в выборку не попадет.
+  const nextDay = new Date(Date.now() - 19 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const sessionsList = await apiCall(
+    apiBase,
+    token,
+    'GET',
+    `/training-sessions?groupId=${manualGroup.body?.id}&from=${pastDate}&to=${nextDay}`,
+  );
+  const createdSession = (sessionsList.body ?? []).find(
+    (item) => item.id === manualSession.body?.id,
+  );
+  log(
+    '18г',
+    `занятие в списке: ${createdSession ? 'есть' : 'НЕТ'} | из шаблона ${
+      createdSession?.fromTemplate
+    } | причина ${createdSession?.changeReason ?? 'не сохранена'}`,
+  );
+
+  const { html: sessionsHtml } = await fetchHtml(base, '/schedule/sessions', cookie);
+  log(
+    '18д',
+    `экран занятий: форма ${sessionsHtml.includes('Добавить занятие вручную') ? 'есть' : 'НЕТ'} | поле причины ${
+      sessionsHtml.includes('Причина') ? 'есть' : 'НЕТ'
+    }`,
+  );
 }
 
 main().catch((error) => {

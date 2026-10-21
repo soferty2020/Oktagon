@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
-import { CancelSessionForm, MoveSessionForm } from '../schedule-forms';
+import { CancelSessionForm, CreateSessionForm, MoveSessionForm } from '../schedule-forms';
 
 export const metadata = {
   title: 'Занятия — OCTAGON',
@@ -22,6 +22,31 @@ interface TrainingSessionView {
   changeReason: string | null;
   cancelledAt: string | null;
   fromTemplate: boolean;
+}
+
+interface GroupView {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
+interface BranchView {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
+interface HallView {
+  id: string;
+  branchId: string;
+  name: string;
+  isActive: boolean;
+}
+
+interface TrainerView {
+  id: string;
+  displayName: string;
+  isActive: boolean;
 }
 
 /**
@@ -63,6 +88,60 @@ export default async function SessionsPage({
   const canEdit = user.permissions.includes('schedule.edit');
   const canCancel = user.permissions.includes('schedule.cancel');
 
+  // Данные для формы занятия вручную: активные группы, залы активных филиалов и
+  // активные тренеры. Неактивные не предлагаются — занятие в закрытом зале или с
+  // уволенным тренером создавать бессмысленно.
+  let manualGroups: { id: string; name: string }[] = [];
+  let manualHalls: { id: string; name: string; branchName: string }[] = [];
+  let manualTrainers: { id: string; name: string }[] = [];
+
+  if (canEdit) {
+    const [groupsResult, branchesResult, trainersResult] = await Promise.all([
+      apiFetch<GroupView[]>('/groups', { accessToken }),
+      apiFetch<BranchView[]>('/branches', { accessToken }),
+      apiFetch<TrainerView[]>('/trainers?isActive=true', { accessToken }),
+    ]);
+
+    if (groupsResult.ok) {
+      manualGroups = groupsResult.data
+        .filter((group) => group.isActive)
+        .map((group) => ({ id: group.id, name: group.name }));
+    }
+
+    if (trainersResult.ok) {
+      manualTrainers = trainersResult.data
+        .filter((trainer) => trainer.isActive)
+        .map((trainer) => ({ id: trainer.id, name: trainer.displayName }));
+    }
+
+    if (branchesResult.ok) {
+      const activeBranches = branchesResult.data.filter((branch) => branch.isActive);
+      const hallLists = await Promise.all(
+        activeBranches.map(async (branch) => {
+          const halls = await apiFetch<HallView[]>(`/branches/${branch.id}/halls`, { accessToken });
+          return {
+            branchName: branch.name,
+            halls: halls.ok ? halls.data.filter((hall) => hall.isActive) : [],
+          };
+        }),
+      );
+
+      manualHalls = hallLists.flatMap((list) =>
+        list.halls.map((hall) => ({
+          id: hall.id,
+          name: hall.name,
+          branchName: list.branchName,
+        })),
+      );
+    }
+  }
+
+  // Дата по умолчанию — сегодня по часовому поясу клуба: занятие чаще всего
+  // заводят «за сегодня» или «за прошлый месяц».
+  const today = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: process.env.CLUB_TIMEZONE ?? 'Asia/Almaty',
+  }).format(new Date());
+
   return (
     <AppShell user={user}>
       <PageHeader
@@ -78,19 +157,32 @@ export default async function SessionsPage({
       {sessions.ok && sessions.data.length === 0 ? (
         <Notice>
           Занятий за период нет. Если расписание опубликовано, создайте занятия на странице
-          расписания группы.
+          расписания группы. Прошедшее или разовое занятие можно добавить вручную.
         </Notice>
       ) : null}
 
       {!sessions.ok ? <Notice tone="error">{describeError(sessions.error)}</Notice> : null}
 
+      {canEdit ? (
+        <section className="mb-6 rounded-xl border border-slate-200 bg-white p-5">
+          <h2 className="text-sm font-semibold text-slate-900">Добавить занятие вручную</h2>
+          <p className="mt-1 mb-3 text-xs text-slate-500">
+            Для занятий задним числом (клуб работал до внедрения системы) и разовых занятий вне
+            расписания. Шаблон расписания не меняется (BR-009).
+          </p>
+          <CreateSessionForm
+            groups={manualGroups}
+            halls={manualHalls}
+            trainers={manualTrainers}
+            today={today}
+          />
+        </section>
+      ) : null}
+
       <div className="flex flex-col gap-3">
         {sessions.ok
           ? sessions.data.map((session) => (
-              <article
-                key={session.id}
-                className="rounded-xl border border-slate-200 bg-white p-5"
-              >
+              <article key={session.id} className="rounded-xl border border-slate-200 bg-white p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="font-medium text-slate-900">{session.groupName}</p>
@@ -104,7 +196,9 @@ export default async function SessionsPage({
                   </div>
 
                   <div className="flex flex-col items-end gap-1">
-                    <span className={statusClass(session.status)}>{statusLabel(session.status)}</span>
+                    <span className={statusClass(session.status)}>
+                      {statusLabel(session.status)}
+                    </span>
                     <span className="text-xs text-slate-400">
                       {session.fromTemplate ? 'из расписания' : 'добавлено вручную'}
                     </span>

@@ -5,6 +5,7 @@ import { useActionState } from 'react';
 import {
   addSlotAction,
   cancelSessionAction,
+  createSessionAction,
   createTemplateAction,
   generateSessionsAction,
   moveSessionAction,
@@ -148,7 +149,13 @@ export function AddSlotForm({
         </label>
         <label className={labelClass}>
           Начало
-          <input type="time" name="startTime" required defaultValue="18:00" className={inputClass} />
+          <input
+            type="time"
+            name="startTime"
+            required
+            defaultValue="18:00"
+            className={inputClass}
+          />
         </label>
         <label className={labelClass}>
           Окончание
@@ -280,6 +287,124 @@ export function CancelSessionForm({ sessionId }: { sessionId: string }) {
         className="self-start rounded-md border border-red-300 bg-white px-4 py-2 text-sm text-red-700 hover:bg-red-50 disabled:opacity-60"
       >
         {pending ? '…' : 'Отменить занятие'}
+      </button>
+    </form>
+  );
+}
+
+/**
+ * Занятие вручную: разовое или задним числом.
+ *
+ * Нужно клубам, которые начали работать до внедрения системы: иначе прошедшие
+ * занятия не попадают в посещаемость, а разовые занятия вне расписания не
+ * существуют вовсе. Причина обязательна — по ней в карточке видно, откуда
+ * занятие взялось.
+ *
+ * Зал и тренер необязательны: занятие могло быть без назначенного зала, а
+ * тренера могли завести позже. Накладки проверяются только для будущих занятий
+ * (в прошлом расписание часто велось иначе), поэтому задним числом можно
+ * добавить занятие, пересекающееся с существующим.
+ */
+export function CreateSessionForm({
+  groups,
+  halls,
+  trainers,
+  today,
+}: {
+  groups: { id: string; name: string }[];
+  halls: { id: string; name: string; branchName: string }[];
+  trainers: { id: string; name: string }[];
+  today: string;
+}) {
+  const [state, formAction, pending] = useActionState(createSessionAction, initialState);
+
+  if (groups.length === 0) {
+    return (
+      <p className="text-xs text-slate-500">
+        Сначала создайте группу: занятие всегда принадлежит группе.
+      </p>
+    );
+  }
+
+  return (
+    <form action={formAction} className="flex flex-col gap-3">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <label className={labelClass}>
+          Группа
+          <select name="groupId" required defaultValue="" className={inputClass}>
+            <option value="" disabled>
+              выберите группу
+            </option>
+            {groups.map((group) => (
+              <option key={group.id} value={group.id}>
+                {group.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className={labelClass}>
+          Дата
+          <input type="date" name="date" required defaultValue={today} className={inputClass} />
+        </label>
+
+        <label className={labelClass}>
+          Начало
+          <input type="time" name="startTime" required className={inputClass} />
+        </label>
+
+        <label className={labelClass}>
+          Окончание
+          <input type="time" name="endTime" required className={inputClass} />
+        </label>
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-2">
+        <label className={labelClass}>
+          Зал (необязательно)
+          <select name="hallId" defaultValue="" className={inputClass}>
+            <option value="">без зала</option>
+            {halls.map((hall) => (
+              <option key={hall.id} value={hall.id}>
+                {hall.branchName} · {hall.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className={labelClass}>
+          Тренер (необязательно)
+          <select name="trainerId" defaultValue="" className={inputClass}>
+            <option value="">без тренера</option>
+            {trainers.map((trainer) => (
+              <option key={trainer.id} value={trainer.id}>
+                {trainer.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <label className={labelClass}>
+        Причина
+        <input
+          name="reason"
+          required
+          maxLength={500}
+          placeholder="Например: занесение занятий за прошлый месяц"
+          className={inputClass}
+        />
+      </label>
+
+      <p className="text-xs text-slate-500">
+        Причина попадет в карточку занятия и в журнал аудита: по ней видно, что занятие добавлено
+        вручную, а не пришло из расписания.
+      </p>
+
+      <StateMessages state={state} />
+
+      <button type="submit" disabled={pending} className={`${buttonClass} self-start`}>
+        {pending ? 'Добавление…' : 'Добавить занятие'}
       </button>
     </form>
   );

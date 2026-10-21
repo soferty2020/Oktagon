@@ -291,3 +291,62 @@ export async function cancelSessionAction(
   }
   return state;
 }
+
+/**
+ * Занятие вручную: разовое или задним числом.
+ *
+ * Нужно для клубов, которые начали работать до внедрения системы: прошедшие
+ * занятия иначе не попадали бы в посещаемость, а разовые занятия вне
+ * расписания — не существовали бы вовсе.
+ *
+ * Дата и время вводятся в локальном времени клуба: администратор пишет «7
+ * октября 18:00», а не UTC. Смещение вычисляет backend по `CLUB_TIMEZONE`.
+ *
+ * Причина обязательна: занятие, добавленное вручную, отличается от созданного по
+ * расписанию, и в карточке должно быть видно, откуда оно взялось (BR-009).
+ */
+export async function createSessionAction(
+  _prev: ScheduleFormState,
+  formData: FormData,
+): Promise<ScheduleFormState> {
+  const groupId = String(formData.get('groupId') ?? '').trim();
+  const date = String(formData.get('date') ?? '').trim();
+  const startTime = String(formData.get('startTime') ?? '').trim();
+  const endTime = String(formData.get('endTime') ?? '').trim();
+  const reason = String(formData.get('reason') ?? '').trim();
+  const hallId = optionalText(formData, 'hallId');
+  const trainerId = optionalText(formData, 'trainerId');
+
+  if (!groupId) {
+    return { error: 'Выберите группу' };
+  }
+  if (!date || !startTime || !endTime) {
+    return { error: 'Укажите дату и время занятия' };
+  }
+  if (!reason) {
+    return { error: 'Укажите причину: она попадет в карточку занятия и в аудит' };
+  }
+
+  const state = await withSession(
+    (accessToken) =>
+      apiFetch('/training-sessions', {
+        accessToken,
+        method: 'POST',
+        body: {
+          groupId,
+          date,
+          startTime,
+          endTime,
+          ...(hallId ? { hallId } : {}),
+          ...(trainerId ? { trainerId } : {}),
+          reason,
+        },
+      }),
+    'Занятие добавлено вручную',
+  );
+
+  if (!state.error) {
+    revalidatePath('/schedule/sessions');
+  }
+  return state;
+}
