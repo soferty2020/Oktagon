@@ -76,17 +76,19 @@ ADR-0011 и ADR-0012.
 Не сделано: фактический выкат на сервер (нужны площадка, домены и DNS),
 нагрузочная проверка (до staging измерять нечего).
 
-**Эпик H — Mobile: начат** (каркас `apps/mobile` создан, Flutter 3.47.7)
+**Эпик H — Mobile: в работе** (Flutter 3.47.7, каркас `apps/mobile` создан)
 
-Сделано: **H1 Auth** — экран входа, токены в защищенном хранилище платформы,
-восстановление сессии при запуске, обновление access-токена по refresh, выход с
-отзывом токена. Ошибки объясняются по кодам контракта. 19 тестов, `flutter
-analyze` чистый, сборка web как проверка компиляции; все три проверки — в CI
-(job `mobile`).
+Сделано: **H1 Auth** (вход, сессия, токены в защищенном хранилище, обновление,
+выход), **H2 Athlete switcher** (список связанных спортсменов, основной по
+`isPrimary`), **H3 Member home** (ближайшая тренировка, посещаемость за месяц,
+последнее объявление). 29 тестов, `flutter analyze` чистый, web-сборка как
+проверка компиляции; все проверки в CI (job `mobile`).
 
-Не сделано: H2 athlete switcher, H3 member home, H4 schedule, H5 attendance,
-H6 planned absence, H7 news, H8 chat, H9 profile, H10 trainer. Сборка APK требует
-Android SDK, iOS — macOS.
+Статус оплаты на главной не показывается: финансы закрыты для участника
+(BR-010, ADR-0013), вопрос вынесен в `docs/25-open-questions.md`.
+
+Не сделано: H4 schedule, H5 attendance, H6 planned absence, H7 news, H8 chat,
+H9 profile, H10 trainer. Сборка APK требует Android SDK, iOS — macOS.
 
 **Эпик I — Admin Web: частично**
 

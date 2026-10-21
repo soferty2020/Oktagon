@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../features/auth/auth_controller.dart';
-import '../features/auth/login_screen.dart';
+import 'features/auth/auth_controller.dart';
+import 'features/auth/login_screen.dart';
+import 'features/home/member_home_controller.dart';
+import 'features/home/member_home_screen.dart';
 import 'app_theme.dart';
 
 /// Корневой виджет приложения.
@@ -10,9 +12,14 @@ import 'app_theme.dart';
 /// Проверка сохраненной сессии идет при запуске: если токены есть и живы,
 /// человек не должен вводить пароль каждый раз.
 class OctagonApp extends StatelessWidget {
-  const OctagonApp({super.key, required this.authController});
+  const OctagonApp({
+    super.key,
+    required this.authController,
+    required this.memberHomeController,
+  });
 
   final AuthController authController;
+  final MemberHomeController memberHomeController;
 
   @override
   Widget build(BuildContext context) {
@@ -26,11 +33,22 @@ class OctagonApp extends StatelessWidget {
           return switch (authController.status) {
             AuthStatus.checking => const _SplashScreen(),
             AuthStatus.unauthenticated => LoginScreen(controller: authController),
-            AuthStatus.authenticated => HomeScreen(controller: authController),
+            AuthStatus.authenticated => _authenticatedScreen(),
           };
         },
       ),
     );
+  }
+
+  /// Экран после входа зависит от роли: приложение одно, но состав разделов
+  /// разный (docs/10-mobile-app.md). Роль приходит с сервера, выбирать ее вручную
+  /// нельзя.
+  Widget _authenticatedScreen() {
+    final role = authController.user?.role;
+    if (role == 'MEMBER') {
+      return MemberHomeScreen(auth: authController, controller: memberHomeController);
+    }
+    return StaffHomeScreen(controller: authController);
   }
 }
 
@@ -58,13 +76,13 @@ class _SplashScreen extends StatelessWidget {
   }
 }
 
-/// Временная главная после входа.
+/// Временная главная сотрудника.
 ///
-/// Заглушка до H2–H3 (переключатель спортсменов и домашний экран по роли). Уже
-/// здесь показываются роль и действующие права: по ним видно, что вход прошел с
-/// теми правами, которые выданы на сервере, а не теми, что ожидались.
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key, required this.controller});
+/// Заглушка до H10 (сегодня, группы, посещаемость тренера). Уже здесь видны роль и
+/// действующие права: по ним тренер понимает, что вход прошел с теми правами,
+/// которые выданы на сервере.
+class StaffHomeScreen extends StatelessWidget {
+  const StaffHomeScreen({super.key, required this.controller});
 
   final AuthController controller;
 

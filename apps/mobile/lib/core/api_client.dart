@@ -12,7 +12,11 @@ import 'api_exception.dart';
 /// тестироваться без сети: тест на «неверный пароль» не должен зависеть от
 /// запущенного backend.
 abstract class ApiClient {
-  Future<Map<String, dynamic>> getJson(String path, {String? token});
+  Future<Map<String, dynamic>> getJson(
+    String path, {
+    String? token,
+    Map<String, String>? query,
+  });
 
   Future<Map<String, dynamic>> postJson(
     String path, {
@@ -37,8 +41,12 @@ class HttpApiClient implements ApiClient {
   final Duration timeout;
 
   @override
-  Future<Map<String, dynamic>> getJson(String path, {String? token}) {
-    return _send(path, method: 'GET', token: token);
+  Future<Map<String, dynamic>> getJson(
+    String path, {
+    String? token,
+    Map<String, String>? query,
+  }) {
+    return _send(path, method: 'GET', token: token, query: query);
   }
 
   @override
@@ -55,8 +63,9 @@ class HttpApiClient implements ApiClient {
     required String method,
     Map<String, dynamic>? body,
     String? token,
+    Map<String, String>? query,
   }) async {
-    final uri = config.resolve(path);
+    final uri = config.resolve(path, query);
     final headers = <String, String>{
       'accept': 'application/json',
       if (body != null) 'content-type': 'application/json',

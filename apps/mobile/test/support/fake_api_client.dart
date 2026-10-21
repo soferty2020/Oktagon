@@ -3,12 +3,10 @@ import 'package:octagon_mobile/core/api_exception.dart';
 
 /// Фейковый клиент API для тестов: сеть не нужна, ответы задаются в тесте.
 class FakeApiClient implements ApiClient {
-  FakeApiClient();
-
-  /// Ответы по пути; запрос method+path должен быть зарегистрирован.
+  /// Ответы по ключу `METHOD путь`; запрос должен быть зарегистрирован.
   final Map<String, Map<String, dynamic>> responses = {};
 
-  /// Ошибки по пути: используются, чтобы проверить обработку отказов.
+  /// Ошибки по тому же ключу: проверяют обработку отказов.
   final Map<String, ApiException> errors = {};
 
   /// Журнал вызовов: позволяет проверить, что запрос действительно ушел.
@@ -17,9 +15,17 @@ class FakeApiClient implements ApiClient {
   /// Токены, с которыми выполнялись запросы.
   final List<String?> tokens = [];
 
+  /// Параметры строки запроса по каждому вызову.
+  final List<Map<String, String>?> queries = [];
+
   @override
-  Future<Map<String, dynamic>> getJson(String path, {String? token}) {
-    return _respond('GET $path', path, token);
+  Future<Map<String, dynamic>> getJson(
+    String path, {
+    String? token,
+    Map<String, String>? query,
+  }) {
+    queries.add(query);
+    return _respond('GET $path', token);
   }
 
   @override
@@ -28,10 +34,11 @@ class FakeApiClient implements ApiClient {
     Map<String, dynamic>? body,
     String? token,
   }) {
-    return _respond('POST $path', path, token);
+    queries.add(null);
+    return _respond('POST $path', token);
   }
 
-  Future<Map<String, dynamic>> _respond(String call, String path, String? token) async {
+  Future<Map<String, dynamic>> _respond(String call, String? token) async {
     calls.add(call);
     tokens.add(token);
 
