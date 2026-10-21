@@ -13,8 +13,11 @@ import 'member_home_controller.dart';
 /// тренировка, посещаемость, последнее объявление. Статус оплаты не
 /// показывается: финансовые данные закрыты для участника (ADR-0013), и это
 /// отмечено как открытый вопрос в `docs/25-open-questions.md`.
-class MemberHomeScreen extends StatefulWidget {
-  const MemberHomeScreen({
+///
+/// `Scaffold` не создается: экран живет внутри `MemberShell` с нижней
+/// навигацией, и вложенный `Scaffold` дал бы вторую панель приложения.
+class MemberHomeContent extends StatefulWidget {
+  const MemberHomeContent({
     super.key,
     required this.auth,
     required this.controller,
@@ -24,10 +27,10 @@ class MemberHomeScreen extends StatefulWidget {
   final MemberHomeController controller;
 
   @override
-  State<MemberHomeScreen> createState() => _MemberHomeScreenState();
+  State<MemberHomeContent> createState() => _MemberHomeContentState();
 }
 
-class _MemberHomeScreenState extends State<MemberHomeScreen> {
+class _MemberHomeContentState extends State<MemberHomeContent> {
   @override
   void initState() {
     super.initState();
@@ -35,7 +38,7 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
   }
 
   @override
-  void didUpdateWidget(MemberHomeScreen oldWidget) {
+  void didUpdateWidget(MemberHomeContent oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Токен меняется после повторного входа: данные нужно загрузить заново,
     // иначе на экране останутся чужие.
@@ -55,71 +58,57 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('OCTAGON'),
-        actions: [
-          IconButton(
-            tooltip: 'Выйти',
-            icon: const Icon(Icons.logout),
-            onPressed: widget.auth.busy ? null : widget.auth.logout,
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: ListenableBuilder(
-          listenable: widget.controller,
-          builder: (context, _) {
-            final controller = widget.controller;
+    return ListenableBuilder(
+      listenable: widget.controller,
+      builder: (context, _) {
+        final controller = widget.controller;
 
-            if (controller.loading && controller.athletes.isEmpty) {
-              return const Center(child: CircularProgressIndicator());
-            }
+        if (controller.loading && controller.athletes.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-            final error = controller.error;
-            if (error != null && controller.athletes.isEmpty) {
-              return _ErrorState(message: error, onRetry: controller.retry);
-            }
+        final error = controller.error;
+        if (error != null && controller.athletes.isEmpty) {
+          return _ErrorState(message: error, onRetry: controller.retry);
+        }
 
-            if (controller.athletes.isEmpty) {
-              return const _EmptyState(
-                title: 'Нет связанных спортсменов',
-                message: 'Попросите администратора клуба связать вашу учетную запись '
-                    'со спортсменом. После этого здесь появится расписание ребенка.',
-              );
-            }
+        if (controller.athletes.isEmpty) {
+          return const _EmptyState(
+            title: 'Нет связанных спортсменов',
+            message: 'Попросите администратора клуба связать вашу учетную запись '
+                'со спортсменом. После этого здесь появится расписание ребенка.',
+          );
+        }
 
-            return RefreshIndicator(
-              onRefresh: controller.retry,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _AthleteSwitcher(
-                    athletes: controller.athletes,
-                    selected: controller.selected,
-                    onSelect: controller.select,
-                  ),
-                  if (error != null) ...[
-                    const SizedBox(height: 12),
-                    _InlineError(message: error, onRetry: controller.retry),
-                  ],
-                  const SizedBox(height: 16),
-                  _NextSessionCard(
-                    session: controller.nextSession,
-                    groupName: controller.group?.name,
-                  ),
-                  const SizedBox(height: 12),
-                  _AttendanceCard(
-                    attendance: controller.attendance,
-                  ),
-                  const SizedBox(height: 12),
-                  _NewsCard(news: controller.latestNews),
-                ],
+        return RefreshIndicator(
+          onRefresh: controller.retry,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              _AthleteSwitcher(
+                athletes: controller.athletes,
+                selected: controller.selected,
+                onSelect: controller.select,
               ),
-            );
-          },
-        ),
-      ),
+              if (error != null) ...[
+                const SizedBox(height: 12),
+                _InlineError(message: error, onRetry: controller.retry),
+              ],
+              const SizedBox(height: 16),
+              _NextSessionCard(
+                session: controller.nextSession,
+                groupName: controller.group?.name,
+              ),
+              const SizedBox(height: 12),
+              _AttendanceCard(
+                attendance: controller.attendance,
+              ),
+              const SizedBox(height: 12),
+              _NewsCard(news: controller.latestNews),
+            ],
+          ),
+        );
+      },
     );
   }
 }

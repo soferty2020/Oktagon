@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'features/auth/auth_controller.dart';
 import 'features/auth/login_screen.dart';
 import 'features/home/member_home_controller.dart';
-import 'features/home/member_home_screen.dart';
+import 'features/news/news_controller.dart';
+import 'features/schedule/schedule_controller.dart';
+import 'features/shell/member_shell.dart';
 import 'app_theme.dart';
 
 /// Корневой виджет приложения.
@@ -16,10 +18,14 @@ class OctagonApp extends StatelessWidget {
     super.key,
     required this.authController,
     required this.memberHomeController,
+    required this.scheduleController,
+    required this.newsController,
   });
 
   final AuthController authController;
   final MemberHomeController memberHomeController;
+  final ScheduleController scheduleController;
+  final NewsController newsController;
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +52,12 @@ class OctagonApp extends StatelessWidget {
   Widget _authenticatedScreen() {
     final role = authController.user?.role;
     if (role == 'MEMBER') {
-      return MemberHomeScreen(auth: authController, controller: memberHomeController);
+      return MemberShell(
+        auth: authController,
+        home: memberHomeController,
+        schedule: scheduleController,
+        news: newsController,
+      );
     }
     return StaffHomeScreen(controller: authController);
   }

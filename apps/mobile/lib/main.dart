@@ -12,7 +12,9 @@ import 'features/auth/auth_controller.dart';
 import 'features/auth/auth_repository.dart';
 import 'features/groups/group_repository.dart';
 import 'features/home/member_home_controller.dart';
+import 'features/news/news_controller.dart';
 import 'features/news/news_repository.dart';
+import 'features/schedule/schedule_controller.dart';
 import 'features/schedule/schedule_repository.dart';
 
 /// Точка входа приложения.
@@ -41,6 +43,12 @@ void main() {
     news: NewsRepository(client: client),
   );
 
+  final scheduleController = ScheduleController(
+    repository: ScheduleRepository(client: client),
+  );
+
+  final newsController = NewsController(repository: NewsRepository(client: client));
+
   // Проверка сессии запускается до показа интерфейса: иначе у уже вошедшего
   // человека на мгновение мелькал бы экран входа.
   unawaited(authController.restore());
@@ -49,6 +57,8 @@ void main() {
     OctagonApp(
       authController: authController,
       memberHomeController: memberHomeController,
+      scheduleController: scheduleController,
+      newsController: newsController,
     ),
   );
 }

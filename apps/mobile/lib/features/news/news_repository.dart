@@ -37,36 +37,37 @@ class NewsRepository {
 
   final ApiClient _client;
 
-  /// Последнее опубликованное объявление или `null`, если новостей нет.
+  /// Все опубликованные новости, закрепленные сверху.
   ///
-  /// Черновики и архивные в выборку не попадают: их отсекает backend, клиент не
-  /// должен полагаться на собственную фильтрацию.
-  Future<NewsPost?> latestPublished(String token) async {
+  /// Черновики и архивные отсекает backend: клиент не должен полагаться на
+  /// собственную фильтрацию, иначе при ошибке в ней показал бы черновик.
+  Future<List<NewsPost>> listPublished(String token) async {
     final response = await _client.getJson('/news', token: token);
 
     final raw = response['data'] ?? response;
     if (raw is! List) {
-      return null;
+      return const [];
     }
 
     final posts = raw.whereType<Map<String, dynamic>>().map(NewsPost.fromJson).toList();
 
-    // Закрепленная новость важнее свежести: если клуб закрепил объявление, оно и
-    // должно быть на главной.
-    final pinned = posts.where((post) => post.isPinned).toList();
-    if (pinned.isNotEmpty) {
-      return pinned.first;
-    }
-
-    if (posts.isEmpty) {
-      return null;
-    }
-
     posts.sort((left, right) {
+      // Закрепленное всегда выше: клуб закрепил объявление, потому что оно важно
+      // не свежестью.
+      if (left.isPinned != right.isPinned) {
+        return left.isPinned ? -1 : 1;
+      }
       final leftDate = left.publishedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
       final rightDate = right.publishedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
       return rightDate.compareTo(leftDate);
     });
-    return posts.first;
+
+    return posts;
+  }
+
+  /// Последнее опубликованное объявление или `null`, если новостей нет.
+  Future<NewsPost?> latestPublished(String token) async {
+    final posts = await listPublished(token);
+    return posts.isEmpty ? null : posts.first;
   }
 }
