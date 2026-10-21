@@ -28,6 +28,10 @@ FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/admin/package.json apps/admin/
 COPY packages/contracts/package.json packages/contracts/
+# Манифест config тоже нужен: фильтр `./packages/**` обходит все пакеты, и без
+# него pnpm сообщал «Local package.json exists, but node_modules missing» на
+# шаге сборки пакетов.
+COPY packages/config/package.json packages/config/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile --filter @octagon/admin... --filter "./packages/**" --prod=false
 
