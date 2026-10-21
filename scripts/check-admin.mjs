@@ -926,6 +926,97 @@ async function main() {
       sessionsHtml.includes('Причина') ? 'есть' : 'НЕТ'
     }`,
   );
+
+  // 19. Сводка посещаемости группы.
+  //
+  // API `/attendance/summary` умел это с самого начала, но экрана не было: цифры
+  // существовали только для того, кто дергал API вручную. Проверяется не только
+  // расчет, но и то, что экран показывает имена и процент.
+  const summaryStamp = Date.now();
+
+  const summaryGroup = await apiCall(apiBase, token, 'POST', '/groups', {
+    name: `Группа сводки ${summaryStamp}`,
+  });
+
+  const athlete = await apiCall(apiBase, token, 'POST', '/athletes', {
+    firstName: `Сводка${summaryStamp}`,
+    lastName: 'Проверкин',
+    gender: 'MALE',
+  });
+  await apiCall(apiBase, token, 'POST', `/groups/${summaryGroup.body?.id}/members`, {
+    athleteId: athlete.body?.id,
+  });
+
+  // Занятие и период — на сегодня: спортсмен добавлен в группу только что, а
+  // отметить его на дату раньше вступления нельзя (ATHLETE_NOT_IN_GROUP).
+  // Это защита, а не помеха: иначе в сводку попал бы человек, который тогда еще
+  // не занимался.
+  const summaryDate = new Date().toISOString().slice(0, 10);
+  const summarySession = await apiCall(apiBase, token, 'POST', '/training-sessions', {
+    groupId: summaryGroup.body?.id,
+    date: summaryDate,
+    startTime: '09:00',
+    endTime: '10:00',
+    reason: 'Проверка сводки посещаемости',
+  });
+
+  const marked = await apiCall(
+    apiBase,
+    token,
+    'PUT',
+    `/training-sessions/${summarySession.body?.id}/attendance`,
+    { marks: [{ athleteId: athlete.body?.id, status: 'PRESENT' }] },
+  );
+  log('19', `посещаемость отмечена: ${marked.status}`);
+
+  // `to` — исключающая граница: берется завтра, чтобы занятие попало в выборку.
+  const summaryNextDay = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const summaryResult = await apiCall(
+    apiBase,
+    token,
+    'GET',
+    `/attendance/summary?groupId=${summaryGroup.body?.id}&from=${summaryDate}&to=${summaryNextDay}`,
+  );
+  const summaryRow = (summaryResult.body ?? []).find((item) => item.athleteId === athlete.body?.id);
+  log(
+    '19б',
+    `сводка: ${summaryResult.status} | занятий ${summaryRow?.total} | был ${summaryRow?.present} | без отметки ${summaryRow?.unmarked}`,
+  );
+
+  const { html: attendanceHtml } = await fetchHtml(
+    base,
+    `/attendance?groupId=${summaryGroup.body?.id}&from=${summaryDate}&to=${summaryNextDay}`,
+    cookie,
+  );
+  log(
+    '19в',
+    `экран сводки: спортсмен ${attendanceHtml.includes(`Сводка${summaryStamp}`) ? 'есть' : 'НЕТ'} | таблица ${
+      attendanceHtml.includes('Посещаемость') ? 'есть' : 'НЕТ'
+    } | процент ${attendanceHtml.includes('100%') ? 'верный' : 'НЕ НАЙДЕН'}`,
+  );
+
+  // Сводка без отметок не должна выдавать «0%»: это не «никто не ходил», а
+  // «посещаемость не отмечали». Проверяется на втором занятии без отметки.
+  const unmarkedSession = await apiCall(apiBase, token, 'POST', '/training-sessions', {
+    groupId: summaryGroup.body?.id,
+    date: summaryDate,
+    startTime: '11:00',
+    endTime: '12:00',
+    reason: 'Проверка занятия без отметки',
+  });
+  const summaryAfterUnmarked = await apiCall(
+    apiBase,
+    token,
+    'GET',
+    `/attendance/summary?groupId=${summaryGroup.body?.id}&from=${summaryDate}&to=${summaryNextDay}`,
+  );
+  const unmarkedRow = (summaryAfterUnmarked.body ?? []).find(
+    (item) => item.athleteId === athlete.body?.id,
+  );
+  log(
+    '19г',
+    `занятие без отметки учтено: total ${unmarkedRow?.total} | unmarked ${unmarkedRow?.unmarked} | создано ${unmarkedSession.status}`,
+  );
 }
 
 main().catch((error) => {
