@@ -15,6 +15,8 @@ export const metadata = {
 interface FinanceSummary {
   totals: { received: number; refunded: number; revenue: number };
   debtors: number;
+  /** Должники без заданной ожидаемой суммы: их долг посчитать нельзя. */
+  debtorsWithoutExpected: number;
   debt: number;
   activeAthletes: number;
 }
@@ -174,7 +176,12 @@ export default async function DashboardPage() {
             >
               {formatAmount(financeData?.debt ?? 0)}
             </p>
-            <p className="mt-1 text-xs text-muted">должников: {financeData?.debtors ?? 0}</p>
+            <p className="mt-1 text-xs text-muted">
+              должников: {financeData?.debtors ?? 0}
+              {financeData && financeData.debtorsWithoutExpected > 0
+                ? ` (без ожидаемой суммы: ${financeData.debtorsWithoutExpected})`
+                : ''}
+            </p>
           </Link>
 
           <section className="rounded-card border border-line bg-white p-5 lg:col-span-2">
