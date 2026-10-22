@@ -10,6 +10,9 @@ import 'features/athletes/athlete_repository.dart';
 import 'features/attendance/attendance_repository.dart';
 import 'features/auth/auth_controller.dart';
 import 'features/auth/auth_repository.dart';
+import 'features/chat/chat_controller.dart';
+import 'features/chat/chat_repository.dart';
+import 'features/chat/chats_controller.dart';
 import 'features/groups/group_repository.dart';
 import 'features/home/member_home_controller.dart';
 import 'features/news/news_controller.dart';
@@ -60,6 +63,10 @@ void main() {
   final trainerCalendarController = TrainerCalendarController(repository: trainerRepository);
   final trainerStudentsController = TrainerStudentsController(repository: trainerRepository);
 
+  // Чаты: репозиторий общий, состояние списка и переписок — раздельное.
+  final chatRepository = ChatRepository(client: client);
+  final chatsController = ChatsController(repository: chatRepository);
+
   // Проверка сессии запускается до показа интерфейса: иначе у уже вошедшего
   // человека на мгновение мелькал бы экран входа.
   unawaited(authController.restore());
@@ -70,10 +77,12 @@ void main() {
       memberHomeController: memberHomeController,
       scheduleController: scheduleController,
       newsController: newsController,
+      chatsController: chatsController,
       trainerDayController: trainerDayController,
       trainerCalendarController: trainerCalendarController,
       trainerStudentsController: trainerStudentsController,
       attendanceFactory: () => AttendanceController(repository: trainerRepository),
+      chatFactory: () => ChatController(repository: chatRepository),
     ),
   );
 }

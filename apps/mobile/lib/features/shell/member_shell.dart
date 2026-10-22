@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../design/tokens.dart';
 import '../auth/auth_controller.dart';
+import '../chat/chat_controller.dart';
+import '../chat/chats_controller.dart';
+import '../chat/chats_screen.dart';
 import '../home/member_home_controller.dart';
 import '../home/member_home_screen.dart';
 import '../news/news_controller.dart';
@@ -11,9 +15,7 @@ import '../schedule/schedule_screen.dart';
 
 /// Основной каркас участника с нижней навигацией (docs/10-mobile-app.md).
 ///
-/// Состав вкладок по документу: Главная, Расписание, Чат, Новости, Профиль. Чата
-/// пока нет (H8), поэтому вкладок четыре: пустая вкладка «Чат» выглядела бы как
-/// сломанная.
+/// Состав вкладок по макету: Главная, Расписание, Новости, Чат, Профиль.
 ///
 /// Экраны держатся в `IndexedStack`: при переключении вкладок состояние не
 /// теряется, и возврат на главную не перезагружает данные заново.
@@ -24,12 +26,19 @@ class MemberShell extends StatefulWidget {
     required this.home,
     required this.schedule,
     required this.news,
+    required this.chats,
+    required this.chatFactory,
   });
 
   final AuthController auth;
   final MemberHomeController home;
   final ScheduleController schedule;
   final NewsController news;
+  final ChatsController chats;
+
+  /// Переписка создается на каждый диалог: состояние одной не должно переходить
+  /// в другую.
+  final ChatController Function() chatFactory;
 
   @override
   State<MemberShell> createState() => _MemberShellState();
@@ -37,14 +46,6 @@ class MemberShell extends StatefulWidget {
 
 class _MemberShellState extends State<MemberShell> {
   int _index = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    // Главная загружает спортсменов и данные по основному при первом показе.
-    // Остальные вкладки подгружаются при открытии, чтобы не делать лишние
-    // запросы сразу после входа.
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,38 +73,78 @@ class _MemberShellState extends State<MemberShell> {
                   refreshKey: '${selected?.id ?? ''}:${widget.home.group?.id ?? ''}',
                 ),
                 NewsScreen(auth: widget.auth, controller: widget.news),
+                ChatsScreen(
+                  auth: widget.auth,
+                  controller: widget.chats,
+                  chatFactory: widget.chatFactory,
+                ),
                 ProfileScreen(auth: widget.auth),
               ],
             );
           },
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (index) => setState(() => _index = index),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Главная',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month),
-            label: 'Расписание',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.campaign_outlined),
-            selectedIcon: Icon(Icons.campaign),
-            label: 'Новости',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Профиль',
-          ),
-        ],
+      bottomNavigationBar: ListenableBuilder(
+        listenable: widget.chats,
+        builder: (context, _) {
+          final unread = widget.chats.unreadTotal;
+
+          return NavigationBar(
+            selectedIndex: _index,
+            onDestinationSelected: (index) => setState(() => _index = index),
+            destinations: [
+              const NavigationDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home),
+                label: 'Главная',
+              ),
+              const NavigationDestination(
+                icon: Icon(Icons.calendar_month_outlined),
+                selectedIcon: Icon(Icons.calendar_month),
+                label: 'Расписание',
+              ),
+              const NavigationDestination(
+                icon: Icon(Icons.campaign_outlined),
+                selectedIcon: Icon(Icons.campaign),
+                label: 'Новости',
+              ),
+              NavigationDestination(
+                // Значок с числом непрочитанных: иначе новое сообщение
+                // обнаруживается только при заходе в раздел.
+                icon: _ChatIcon(unread: unread),
+                selectedIcon: _ChatIcon(unread: unread),
+                label: 'Чат',
+              ),
+              const NavigationDestination(
+                icon: Icon(Icons.person_outline),
+                selectedIcon: Icon(Icons.person),
+                label: 'Профиль',
+              ),
+            ],
+          );
+        },
       ),
+    );
+  }
+}
+
+class _ChatIcon extends StatelessWidget {
+  const _ChatIcon({required this.unread});
+
+  final int unread;
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = Icon(unread > 0 ? Icons.chat_bubble : Icons.chat_bubble_outline);
+
+    if (unread == 0) {
+      return icon;
+    }
+
+    return Badge(
+      label: Text(unread > 9 ? '9+' : '$unread'),
+      backgroundColor: AppColors.accent,
+      child: icon,
     );
   }
 }

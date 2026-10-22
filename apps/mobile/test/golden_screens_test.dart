@@ -6,6 +6,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:octagon_mobile/app_theme.dart';
 import 'package:octagon_mobile/features/auth/auth_controller.dart';
 import 'package:octagon_mobile/features/auth/auth_repository.dart';
+import 'package:octagon_mobile/features/chat/chat_controller.dart';
+import 'package:octagon_mobile/features/chat/chat_repository.dart';
+import 'package:octagon_mobile/features/chat/chat_screen.dart';
+import 'package:octagon_mobile/features/chat/chats_controller.dart';
+import 'package:octagon_mobile/features/chat/chats_screen.dart';
 import 'package:octagon_mobile/features/home/member_home_controller.dart';
 import 'package:octagon_mobile/features/home/member_home_screen.dart';
 import 'package:octagon_mobile/features/news/news_controller.dart';
@@ -182,6 +187,81 @@ FakeApiClient buildClient() {
     ],
   };
 
+  // Чаты: групповой чат группы ребёнка и личная переписка с тренером.
+  const user = {
+    'userId': 'user-1',
+    'firstName': 'Алия',
+    'lastName': 'Демо',
+    'role': 'PARENT',
+  };
+  const trainer = {
+    'userId': 'user-2',
+    'firstName': 'Иван',
+    'lastName': 'Иванов',
+    'role': 'TRAINER',
+  };
+
+  Map<String, dynamic> chatMessage(String id, Map<String, dynamic> sender, String body, int minutes) => {
+        'id': id,
+        'conversationId': 'conversation-1',
+        'sender': sender,
+        'body': body,
+        'isDeleted': false,
+        'canDelete': sender['userId'] == 'user-1',
+        'createdAt': now.subtract(Duration(minutes: minutes)).toIso8601String(),
+      };
+
+  client.responses['GET /conversations'] = {
+    'data': [
+      {
+        'id': 'conversation-1',
+        'type': 'GROUP',
+        'title': 'Дети 7-9 лет, новички',
+        'groupId': 'group-1',
+        'participants': [user, trainer],
+        'lastMessage': chatMessage(
+          'message-1',
+          trainer,
+          'Напоминаю: завтра занятие в 18:00',
+          30,
+        ),
+        'unreadCount': 2,
+        'lastMessageAt': now.subtract(const Duration(minutes: 30)).toIso8601String(),
+        'createdAt': now.toIso8601String(),
+      },
+      {
+        'id': 'conversation-2',
+        'type': 'PRIVATE',
+        'title': 'Иван Иванов',
+        'groupId': null,
+        'participants': [user, trainer],
+        'lastMessage': chatMessage('message-2', user, 'Спасибо, будем', 180),
+        'unreadCount': 0,
+        'lastMessageAt': now.subtract(const Duration(hours: 3)).toIso8601String(),
+        'createdAt': now.toIso8601String(),
+      },
+    ],
+  };
+
+  client.responses['GET /conversations/conversation-1'] = {
+    'id': 'conversation-1',
+    'type': 'GROUP',
+    'title': 'Дети 7-9 лет, новички',
+    'groupId': 'group-1',
+    'participants': [user, trainer],
+    'lastMessage': chatMessage('message-4', trainer, 'Хорошо, до завтра!', 5),
+    'unreadCount': 0,
+    'lastMessageAt': now.subtract(const Duration(minutes: 5)).toIso8601String(),
+    'createdAt': now.toIso8601String(),
+    'olderCursor': null,
+    'messages': [
+      chatMessage('message-1', trainer, 'Напоминаю: завтра занятие в 18:00', 40),
+      chatMessage('message-2', user, 'Спасибо, будем', 30),
+      chatMessage('message-3', user, 'Дамир немного приболел, но придёт', 25),
+      chatMessage('message-4', trainer, 'Хорошо, до завтра!', 5),
+    ],
+  };
+
   return client;
 }
 
@@ -305,4 +385,72 @@ void main() {
       matchesGoldenFile('goldens/profile.png'),
     );
   });
+
+  testWidgets(
+    skip: !Platform.isWindows,
+    'скриншот: список чатов',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final client = buildClient();
+      final auth = await buildAuth(client);
+      final chats = ChatsController(repository: ChatRepository(client: client));
+      await chats.load(token: 'token', currentUserId: 'user-1');
+
+      await tester.pumpWidget(
+        wrap(
+          Scaffold(
+            body: SafeArea(
+              child: ChatsScreen(
+                auth: auth,
+                controller: chats,
+                chatFactory: () => ChatController(repository: ChatRepository(client: client)),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await expectLater(
+        find.byType(ChatsScreen),
+        matchesGoldenFile('goldens/chats.png'),
+      );
+    },
+  );
+
+  testWidgets(
+    skip: !Platform.isWindows,
+    'скриншот: переписка',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final client = buildClient();
+      final auth = await buildAuth(client);
+      final chat = ChatController(repository: ChatRepository(client: client));
+      await chat.load(
+        token: 'token',
+        conversationId: 'conversation-1',
+        currentUserId: 'user-1',
+      );
+
+      await tester.pumpWidget(
+        wrap(
+          ChatScreen(
+            auth: auth,
+            controller: chat,
+            title: 'Дети 7-9 лет, новички',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await expectLater(
+        find.byType(ChatScreen),
+        matchesGoldenFile('goldens/chat.png'),
+      );
+    },
+  );
 }

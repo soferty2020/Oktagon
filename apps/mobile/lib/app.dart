@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'app_theme.dart';
 import 'features/auth/auth_controller.dart';
 import 'features/auth/login_screen.dart';
+import 'features/chat/chat_controller.dart';
+import 'features/chat/chats_controller.dart';
 import 'features/home/member_home_controller.dart';
 import 'features/news/news_controller.dart';
 import 'features/schedule/schedule_controller.dart';
@@ -25,16 +27,19 @@ class OctagonApp extends StatelessWidget {
     required this.memberHomeController,
     required this.scheduleController,
     required this.newsController,
+    required this.chatsController,
     required this.trainerDayController,
     required this.trainerCalendarController,
     required this.trainerStudentsController,
     required this.attendanceFactory,
+    required this.chatFactory,
   });
 
   final AuthController authController;
   final MemberHomeController memberHomeController;
   final ScheduleController scheduleController;
   final NewsController newsController;
+  final ChatsController chatsController;
 
   final TrainerDayController trainerDayController;
   final TrainerCalendarController trainerCalendarController;
@@ -43,6 +48,9 @@ class OctagonApp extends StatelessWidget {
   /// Фабрика журналов: у каждого занятия свой журнал, и состояние одного не
   /// должно переходить в другое.
   final AttendanceController Function() attendanceFactory;
+
+  /// Фабрика переписок: у каждого диалога свое состояние.
+  final ChatController Function() chatFactory;
 
   @override
   Widget build(BuildContext context) {
@@ -75,6 +83,8 @@ class OctagonApp extends StatelessWidget {
         home: memberHomeController,
         schedule: scheduleController,
         news: newsController,
+        chats: chatsController,
+        chatFactory: chatFactory,
       );
     }
 
