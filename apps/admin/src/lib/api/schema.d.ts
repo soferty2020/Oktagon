@@ -1130,6 +1130,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/attendance/athletes/{athleteId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * История посещений спортсмена за период
+         * @description Отвечает на вопрос «был ли ребенок 12 ноября», на который сводка не
+         *     отвечает: она отдает только суммы. Записи идут от новых к старым.
+         */
+        get: operations["getAthleteAttendanceHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/athletes/{id}/membership-periods": {
         parameters: {
             query?: never;
@@ -2670,6 +2691,24 @@ export interface components {
             athleteId: string;
             /** @example Поездка с семьей */
             reason?: string;
+        };
+        /** @description Отметка спортсмена на конкретном занятии. */
+        AthleteAttendanceHistoryEntry: {
+            /** Format: uuid */
+            sessionId: string;
+            /** Format: uuid */
+            groupId: string;
+            groupName: string;
+            /** Format: date-time */
+            startsAt: string;
+            status: components["schemas"]["AttendanceStatus"];
+            /** @description Комментарий тренера к отметке */
+            comment: string | null;
+            /**
+             * Format: date-time
+             * @description Когда отметка подтверждена
+             */
+            markedAt: string;
         };
         /**
          * @description `total` считается по занятиям, на которых спортсмен числился в составе:
@@ -6122,6 +6161,43 @@ export interface operations {
             };
             401: components["responses"]["Unauthenticated"];
             /** @description Нет права `attendance.view` или группа вне доступа (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getAthleteAttendanceHistory: {
+        parameters: {
+            query?: {
+                /** @description Начало периода, ISO-8601; по умолчанию 90 дней назад */
+                from?: string;
+                /** @description Конец периода, ISO-8601; по умолчанию сейчас */
+                to?: string;
+            };
+            header?: never;
+            path: {
+                athleteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Отметки по занятиям, от новых к старым */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AthleteAttendanceHistoryEntry"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `attendance.view` или спортсмен вне доступа (`FORBIDDEN`) */
             403: {
                 headers: {
                     [name: string]: unknown;
