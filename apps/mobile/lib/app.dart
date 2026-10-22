@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_theme.dart';
+import 'features/attendance/attendance_repository.dart';
 import 'features/auth/auth_controller.dart';
 import 'features/auth/login_screen.dart';
 import 'features/chat/chat_controller.dart';
@@ -28,6 +29,7 @@ class OctagonApp extends StatelessWidget {
     required this.scheduleController,
     required this.newsController,
     required this.chatsController,
+    required this.attendanceRepository,
     required this.trainerDayController,
     required this.trainerCalendarController,
     required this.trainerStudentsController,
@@ -40,6 +42,9 @@ class OctagonApp extends StatelessWidget {
   final ScheduleController scheduleController;
   final NewsController newsController;
   final ChatsController chatsController;
+
+  /// Нужен истории посещений и предупреждению об отсутствии (H5, H6).
+  final AttendanceRepository attendanceRepository;
 
   final TrainerDayController trainerDayController;
   final TrainerCalendarController trainerCalendarController;
@@ -84,6 +89,7 @@ class OctagonApp extends StatelessWidget {
         schedule: scheduleController,
         news: newsController,
         chats: chatsController,
+        attendance: attendanceRepository,
         chatFactory: chatFactory,
       );
     }

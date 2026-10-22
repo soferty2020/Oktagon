@@ -2738,6 +2738,53 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
 
+  /attendance/athletes/{athleteId}:
+    get:
+      tags: [attendance]
+      summary: История посещений спортсмена за период
+      description: |
+        Отвечает на вопрос «был ли ребенок 12 ноября», на который сводка не
+        отвечает: она отдает только суммы. Записи идут от новых к старым.
+      operationId: getAthleteAttendanceHistory
+      parameters:
+        - name: athleteId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          required: false
+          description: Начало периода, ISO-8601; по умолчанию 90 дней назад
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: false
+          description: Конец периода, ISO-8601; по умолчанию сейчас
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Отметки по занятиям, от новых к старым
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AthleteAttendanceHistoryEntry'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `attendance.view` или спортсмен вне доступа (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
   /athletes/{id}/membership-periods:
     get:
       tags: [finance]
@@ -5846,6 +5893,33 @@ components:
           type: string
           maxLength: 500
           example: Поездка с семьей
+
+    AthleteAttendanceHistoryEntry:
+      type: object
+      description: Отметка спортсмена на конкретном занятии.
+      required: [sessionId, groupId, groupName, startsAt, status, comment, markedAt]
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        groupId:
+          type: string
+          format: uuid
+        groupName:
+          type: string
+        startsAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/AttendanceStatus'
+        comment:
+          type: string
+          nullable: true
+          description: Комментарий тренера к отметке
+        markedAt:
+          type: string
+          format: date-time
+          description: Когда отметка подтверждена
 
     AthleteAttendanceSummary:
       type: object

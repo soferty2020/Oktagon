@@ -58,6 +58,7 @@ describe('AttendanceService', () => {
       listSessionIds: jest.fn().mockResolvedValue(['session-1']),
       listAttendance: jest.fn().mockResolvedValue([]),
       listAttendanceForSessions: jest.fn().mockResolvedValue([]),
+      listAthleteAttendance: jest.fn().mockResolvedValue([]),
       findAttendance: jest.fn().mockResolvedValue(null),
       upsertAttendance: jest.fn().mockResolvedValue(mark),
       deleteAttendance: jest.fn().mockResolvedValue(true),
@@ -301,6 +302,59 @@ describe('AttendanceService', () => {
           new Date('2026-11-01T00:00:00.000Z'),
         ),
       ).resolves.toEqual([]);
+    });
+  });
+
+  describe('история посещений', () => {
+    it('отдает отметки по занятиям от новых к старым', async () => {
+      repository.listAthleteAttendance.mockResolvedValue([
+        {
+          sessionId: 'session-2',
+          groupId: 'group-1',
+          groupName: 'Дети 7-9',
+          startsAt: new Date('2026-10-20T11:00:00.000Z'),
+          status: 'ABSENT',
+          comment: 'Болезнь',
+          markedAt: new Date('2026-10-20T13:00:00.000Z'),
+        },
+        {
+          sessionId: 'session-1',
+          groupId: 'group-1',
+          groupName: 'Дети 7-9',
+          startsAt: new Date('2026-10-18T11:00:00.000Z'),
+          status: 'PRESENT',
+          comment: null,
+          markedAt: new Date('2026-10-18T12:30:00.000Z'),
+        },
+      ]);
+
+      const history = await service.history(
+        'parent-1',
+        'athlete-1',
+        new Date('2026-09-01T00:00:00.000Z'),
+        new Date('2026-11-01T00:00:00.000Z'),
+      );
+
+      expect(history).toHaveLength(2);
+      expect(history[0]).toMatchObject({ sessionId: 'session-2', status: 'ABSENT' });
+      expect(history[1]).toMatchObject({ sessionId: 'session-1', status: 'PRESENT' });
+      // Доступ проверяется до запроса: иначе чужой ребенок выдал бы 404 вместо 403.
+      expect(scope.assertAthleteAccess).toHaveBeenCalledWith('parent-1', 'athlete-1');
+    });
+
+    it('не отдает историю чужого спортсмена', async () => {
+      scope.assertAthleteAccess.mockRejectedValueOnce(new Error('forbidden'));
+
+      await expect(
+        service.history(
+          'parent-1',
+          'athlete-9',
+          new Date('2026-10-01T00:00:00.000Z'),
+          new Date('2026-11-01T00:00:00.000Z'),
+        ),
+      ).rejects.toThrow('forbidden');
+
+      expect(repository.listAthleteAttendance).not.toHaveBeenCalled();
     });
   });
 });

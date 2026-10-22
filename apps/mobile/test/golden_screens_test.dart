@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:octagon_mobile/app_theme.dart';
+import 'package:octagon_mobile/features/attendance/attendance_history_controller.dart';
+import 'package:octagon_mobile/features/attendance/attendance_history_screen.dart';
+import 'package:octagon_mobile/features/attendance/attendance_repository.dart';
 import 'package:octagon_mobile/features/auth/auth_controller.dart';
 import 'package:octagon_mobile/features/auth/auth_repository.dart';
 import 'package:octagon_mobile/features/chat/chat_controller.dart';
@@ -21,7 +24,6 @@ import 'package:octagon_mobile/features/schedule/schedule_controller.dart';
 import 'package:octagon_mobile/features/schedule/schedule_repository.dart';
 import 'package:octagon_mobile/features/schedule/schedule_screen.dart';
 import 'package:octagon_mobile/features/athletes/athlete_repository.dart';
-import 'package:octagon_mobile/features/attendance/attendance_repository.dart';
 import 'package:octagon_mobile/features/groups/group_repository.dart';
 
 import 'support/fake_api_client.dart';
@@ -262,6 +264,38 @@ FakeApiClient buildClient() {
     ],
   };
 
+  client.responses['GET /attendance/athletes/athlete-1'] = {
+    'data': [
+      {
+        'sessionId': 'session-1',
+        'groupId': 'group-1',
+        'groupName': 'Дети 7-9 лет, новички',
+        'startsAt': now.subtract(const Duration(days: 2)).toUtc().toIso8601String(),
+        'status': 'PRESENT',
+        'comment': null,
+        'markedAt': now.subtract(const Duration(days: 2)).toUtc().toIso8601String(),
+      },
+      {
+        'sessionId': 'session-2',
+        'groupId': 'group-1',
+        'groupName': 'Дети 7-9 лет, новички',
+        'startsAt': now.subtract(const Duration(days: 5)).toUtc().toIso8601String(),
+        'status': 'ABSENT',
+        'comment': 'Болезнь',
+        'markedAt': now.subtract(const Duration(days: 5)).toUtc().toIso8601String(),
+      },
+      {
+        'sessionId': 'session-3',
+        'groupId': 'group-1',
+        'groupName': 'Дети 7-9 лет, новички',
+        'startsAt': now.subtract(const Duration(days: 9)).toUtc().toIso8601String(),
+        'status': 'EXCUSED',
+        'comment': 'Поездка с семьей',
+        'markedAt': now.subtract(const Duration(days: 9)).toUtc().toIso8601String(),
+      },
+    ],
+  };
+
   return client;
 }
 
@@ -338,6 +372,8 @@ void main() {
         ScheduleScreen(
           auth: auth,
           controller: schedule,
+          attendance: AttendanceRepository(client: client),
+          athleteId: 'athlete-1',
           athleteName: 'Дамир Демо',
           groupId: 'group-1',
           refreshKey: 'group-1',
@@ -450,6 +486,42 @@ void main() {
       await expectLater(
         find.byType(ChatScreen),
         matchesGoldenFile('goldens/chat.png'),
+      );
+    },
+  );
+
+  testWidgets(
+    skip: !Platform.isWindows,
+    'скриншот: история посещений',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final client = buildClient();
+      final auth = await buildAuth(client);
+      final history = AttendanceHistoryController(
+        repository: AttendanceRepository(client: client),
+        clock: () => now,
+      );
+      await history.load(token: 'token', athleteId: 'athlete-1');
+
+      await tester.pumpWidget(
+        wrap(
+          Scaffold(
+            body: AttendanceHistoryScreen(
+              auth: auth,
+              controller: history,
+              athleteId: 'athlete-1',
+              athleteName: 'Дамир Демо',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await expectLater(
+        find.byType(AttendanceHistoryScreen),
+        matchesGoldenFile('goldens/attendance_history.png'),
       );
     },
   );

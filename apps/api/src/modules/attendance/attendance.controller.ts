@@ -20,6 +20,7 @@ import {
 import {
   ApiErrorCode,
   PermissionCode,
+  type AthleteAttendanceHistoryEntry,
   type AthleteAttendanceSummary,
   type SessionAttendanceView,
 } from '@octagon/contracts';
@@ -28,6 +29,7 @@ import { ApiException } from '../../shared/api-exception';
 import { AuthGuard, CurrentUser, type AuthenticatedUser } from '../../shared/auth-stub';
 import { PermissionsGuard, RequirePermissions } from '../../shared/permissions.guard';
 import {
+  AthleteHistoryQueryDto,
   AttendanceSummaryQueryDto,
   ReportPlannedAbsenceDto,
   SaveAttendanceDto,
@@ -153,5 +155,26 @@ export class AttendanceSummaryController {
     const from = query.from ? new Date(query.from) : new Date(to.getTime() - 30 * 86_400_000);
 
     return this.attendance.summary(user.id, query.groupId, from, to);
+  }
+
+  /**
+   * История посещений спортсмена.
+   *
+   * Нужна мобильному экрану «Посещаемость»: сводка отдает проценты, но по ней
+   * нельзя ответить, был ли ребенок на конкретном занятии.
+   */
+  @Get('athletes/:athleteId')
+  @RequirePermissions(PermissionCode.AttendanceView)
+  @ApiOperation({ summary: 'История посещений спортсмена за период' })
+  @ApiOkResponse({ description: 'Отметки по занятиям, от новых к старым' })
+  history(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('athleteId') athleteId: string,
+    @Query() query: AthleteHistoryQueryDto,
+  ): Promise<AthleteAttendanceHistoryEntry[]> {
+    const to = query.to ? new Date(query.to) : new Date();
+    const from = query.from ? new Date(query.from) : new Date(to.getTime() - 90 * 86_400_000);
+
+    return this.attendance.history(user.id, athleteId, from, to);
   }
 }

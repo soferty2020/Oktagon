@@ -45,7 +45,59 @@ class AthleteAttendance {
   }
 }
 
-/// Сводка посещаемости группы (`GET /attendance/summary`).
+/// Отметка на конкретном занятии (H5).
+enum AttendanceRecordStatus {
+  present,
+  absent,
+  excused;
+
+  static AttendanceRecordStatus fromApi(String? value) {
+    return switch (value) {
+      'ABSENT' => AttendanceRecordStatus.absent,
+      'EXCUSED' => AttendanceRecordStatus.excused,
+      _ => AttendanceRecordStatus.present,
+    };
+  }
+
+  String get label {
+    return switch (this) {
+      AttendanceRecordStatus.present => 'Был',
+      AttendanceRecordStatus.absent => 'Не был',
+      AttendanceRecordStatus.excused => 'Уважительная',
+    };
+  }
+}
+
+/// Запись истории посещений.
+class AttendanceRecord {
+  const AttendanceRecord({
+    required this.sessionId,
+    required this.groupName,
+    required this.startsAt,
+    required this.status,
+    required this.comment,
+  });
+
+  final String sessionId;
+  final String groupName;
+  final DateTime startsAt;
+  final AttendanceRecordStatus status;
+
+  /// Комментарий тренера к отметке.
+  final String? comment;
+
+  factory AttendanceRecord.fromJson(Map<String, dynamic> json) {
+    return AttendanceRecord(
+      sessionId: json['sessionId'] as String,
+      groupName: (json['groupName'] as String?) ?? '',
+      startsAt: DateTime.parse(json['startsAt'] as String).toLocal(),
+      status: AttendanceRecordStatus.fromApi(json['status'] as String?),
+      comment: json['comment'] as String?,
+    );
+  }
+}
+
+/// Сводка посещаемости группы (`GET /attendance/summary`) и история отметок.
 class AttendanceRepository {
   AttendanceRepository({required ApiClient client}) : _client = client;
 
@@ -84,5 +136,55 @@ class AttendanceRepository {
       }
     }
     return null;
+  }
+
+  /// История посещений спортсмена за период (H5).
+  ///
+  /// Отвечает на вопрос «был ли ребенок 12 ноября», на который сводка не отвечает:
+  /// она отдает только суммы.
+  Future<List<AttendanceRecord>> history({
+    required String token,
+    required String athleteId,
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    final response = await _client.getJson(
+      '/attendance/athletes/$athleteId',
+      token: token,
+      query: {
+        'from': from.toUtc().toIso8601String(),
+        'to': to.toUtc().toIso8601String(),
+      },
+    );
+
+    final raw = response['data'] ?? response;
+    if (raw is! List) {
+      return const [];
+    }
+
+    return raw
+        .whereType<Map<String, dynamic>>()
+        .map(AttendanceRecord.fromJson)
+        .toList(growable: false);
+  }
+
+  /// Предупредить клуб о планируемом отсутствии (BR-008).
+  ///
+  /// Отправляется на конкретное занятие: предупреждение — намерение родителя, а
+  /// не факт, и тренер подтверждает итог отметкой.
+  Future<void> reportAbsence({
+    required String token,
+    required String sessionId,
+    required String athleteId,
+    String? reason,
+  }) async {
+    await _client.postJson(
+      '/training-sessions/$sessionId/attendance/planned-absence',
+      body: {
+        'athleteId': athleteId,
+        if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
+      },
+      token: token,
+    );
   }
 }

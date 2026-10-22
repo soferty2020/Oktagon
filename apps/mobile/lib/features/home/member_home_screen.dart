@@ -20,6 +20,7 @@ class MemberHomeContent extends StatefulWidget {
     required this.controller,
     this.onOpenSchedule,
     this.onOpenNews,
+    this.onOpenAttendance,
   });
 
   final AuthController auth;
@@ -29,6 +30,9 @@ class MemberHomeContent extends StatefulWidget {
   /// но экономят один тап — по макету они и есть главный способ перехода.
   final VoidCallback? onOpenSchedule;
   final VoidCallback? onOpenNews;
+
+  /// История посещений: отдельный экран, открывается с главной.
+  final VoidCallback? onOpenAttendance;
 
   @override
   State<MemberHomeContent> createState() => _MemberHomeContentState();
@@ -119,6 +123,7 @@ class _MemberHomeContentState extends State<MemberHomeContent> {
               _QuickActions(
                 onOpenSchedule: widget.onOpenSchedule,
                 onOpenNews: widget.onOpenNews,
+                onOpenAttendance: widget.onOpenAttendance,
                 attendance: controller.attendance,
               ),
 
@@ -335,11 +340,13 @@ class _QuickActions extends StatelessWidget {
   const _QuickActions({
     this.onOpenSchedule,
     this.onOpenNews,
+    this.onOpenAttendance,
     required this.attendance,
   });
 
   final VoidCallback? onOpenSchedule;
   final VoidCallback? onOpenNews;
+  final VoidCallback? onOpenAttendance;
   final AthleteAttendance? attendance;
 
   @override
@@ -358,7 +365,9 @@ class _QuickActions extends StatelessWidget {
           icon: Icons.check_circle_outline,
           label: 'Посещаемость',
           badge: percent == null ? null : '$percent%',
-          onTap: onOpenSchedule,
+          // Ведет в историю посещений: процент без дат не отвечает на вопрос
+          // «был ли ребенок 12 ноября».
+          onTap: onOpenAttendance,
         ),
         const SizedBox(width: AppSpacing.sm),
         _QuickAction(

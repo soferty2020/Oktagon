@@ -37,6 +37,22 @@ export interface PlannedAbsenceRecord {
   reportedAt: Date;
 }
 
+/**
+ * Отметка вместе с занятием и группой.
+ *
+ * Нужна истории посещений спортсмена: сводка показывает проценты, а по ним нельзя
+ * ответить, был ли ребенок на конкретном занятии.
+ */
+export interface AthleteAttendanceEntryRecord {
+  sessionId: string;
+  groupId: string;
+  groupName: string;
+  startsAt: Date;
+  status: AttendanceStatus;
+  comment: string | null;
+  markedAt: Date;
+}
+
 export interface UpsertAttendanceInput {
   sessionId: string;
   athleteId: string;
@@ -58,6 +74,12 @@ export abstract class AttendanceRepository {
   abstract listAttendance(sessionId: string): Promise<AttendanceRecord[]>;
   /** Отметки по нескольким занятиям сразу: нужно сводке за период. */
   abstract listAttendanceForSessions(sessionIds: string[]): Promise<SessionAttendanceRecord[]>;
+  /** Отметки спортсмена за период — история посещений, от новых к старым. */
+  abstract listAthleteAttendance(
+    athleteId: string,
+    from: Date,
+    to: Date,
+  ): Promise<AthleteAttendanceEntryRecord[]>;
   abstract findAttendance(
     sessionId: string,
     athleteId: string,
@@ -158,6 +180,41 @@ export class PrismaAttendanceRepository extends AttendanceRepository {
     return marks.map((mark) => ({
       ...toAttendanceRecord(mark),
       sessionId: mark.trainingSessionId,
+    }));
+  }
+
+  async listAthleteAttendance(
+    athleteId: string,
+    from: Date,
+    to: Date,
+  ): Promise<AthleteAttendanceEntryRecord[]> {
+    const marks = await this.prisma.db.attendance.findMany({
+      where: {
+        athleteId,
+        trainingSession: { startsAt: { gte: from, lt: to } },
+      },
+      select: {
+        ...ATTENDANCE_SELECT,
+        trainingSessionId: true,
+        trainingSession: {
+          select: {
+            groupId: true,
+            startsAt: true,
+            group: { select: { name: true } },
+          },
+        },
+      },
+      orderBy: { trainingSession: { startsAt: 'desc' } },
+    });
+
+    return marks.map((mark) => ({
+      sessionId: mark.trainingSessionId,
+      groupId: mark.trainingSession.groupId,
+      groupName: mark.trainingSession.group.name,
+      startsAt: mark.trainingSession.startsAt,
+      status: mark.status,
+      comment: mark.comment,
+      markedAt: mark.markedAt,
     }));
   }
 

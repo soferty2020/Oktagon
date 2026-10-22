@@ -43,11 +43,15 @@ void main() {
     ),
   );
 
+  // Посещаемость нужна и главной (сводка), и истории с предупреждением об
+  // отсутствии: репозиторий один, запросы разные.
+  final attendanceRepository = AttendanceRepository(client: client);
+
   final memberHomeController = MemberHomeController(
     athletes: AthleteRepository(client: client),
     groups: GroupRepository(client: client),
     schedule: ScheduleRepository(client: client),
-    attendance: AttendanceRepository(client: client),
+    attendance: attendanceRepository,
     news: NewsRepository(client: client),
   );
 
@@ -78,6 +82,7 @@ void main() {
       scheduleController: scheduleController,
       newsController: newsController,
       chatsController: chatsController,
+      attendanceRepository: attendanceRepository,
       trainerDayController: trainerDayController,
       trainerCalendarController: trainerCalendarController,
       trainerStudentsController: trainerStudentsController,

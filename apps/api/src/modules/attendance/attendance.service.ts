@@ -3,6 +3,7 @@ import {
   ApiErrorCode,
   AuditAction,
   AuditEntityType,
+  type AthleteAttendanceHistoryEntry,
   type AthleteAttendanceSummary,
   type ReportPlannedAbsenceInput,
   type SaveAttendanceInput,
@@ -337,6 +338,35 @@ export class AttendanceService {
       );
     }
     return session;
+  }
+
+  /**
+   * История посещений спортсмена за период.
+   *
+   * Отвечает на вопрос «был ли ребенок 12 ноября», на который сводка не отвечает:
+   * она отдает только суммы. Доступ проверяется тем же `assertAthleteAccess`, что
+   * и у остальных операций с посещаемостью: родитель видит своего ребенка, тренер
+   * — спортсменов своих групп (ADR-0006).
+   */
+  async history(
+    callerUserId: string,
+    athleteId: string,
+    from: Date,
+    to: Date,
+  ): Promise<AthleteAttendanceHistoryEntry[]> {
+    await this.scope.assertAthleteAccess(callerUserId, athleteId);
+
+    const entries = await this.attendance.listAthleteAttendance(athleteId, from, to);
+
+    return entries.map((entry) => ({
+      sessionId: entry.sessionId,
+      groupId: entry.groupId,
+      groupName: entry.groupName,
+      startsAt: entry.startsAt.toISOString(),
+      status: entry.status,
+      comment: entry.comment,
+      markedAt: entry.markedAt.toISOString(),
+    }));
   }
 }
 

@@ -78,3 +78,16 @@ export class AttendanceSummaryQueryDto {
   @IsDateString()
   to?: string;
 }
+
+/** Период истории посещений спортсмена. */
+export class AthleteHistoryQueryDto {
+  @ApiPropertyOptional({ description: 'Начало периода, ISO-8601; по умолчанию 90 дней назад' })
+  @IsOptional()
+  @IsDateString()
+  from?: string;
+
+  @ApiPropertyOptional({ description: 'Конец периода, ISO-8601; по умолчанию сейчас' })
+  @IsOptional()
+  @IsDateString()
+  to?: string;
+}

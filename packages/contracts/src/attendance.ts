@@ -92,6 +92,26 @@ export interface PlannedAbsenceView {
   reportedAt: string;
 }
 
+/**
+ * Отметка спортсмена на конкретном занятии (история посещений).
+ *
+ * Нужна экрану «Посещаемость»: сводка за период показывает проценты, но по ней
+ * нельзя ответить на вопрос «был ли ребенок 12 ноября». Записи идут от новых к
+ * старым.
+ */
+export interface AthleteAttendanceHistoryEntry {
+  sessionId: string;
+  groupId: string;
+  groupName: string;
+  /** Время начала занятия в UTC. */
+  startsAt: string;
+  status: AttendanceStatus;
+  /** Комментарий тренера к отметке, если он был. */
+  comment: string | null;
+  /** Когда отметка подтверждена: по ней видно, ставили ее после занятия или нет. */
+  markedAt: string;
+}
+
 /** Сводка посещаемости спортсмена за период. */
 export interface AthleteAttendanceSummary {
   athleteId: string;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../design/tokens.dart';
+import '../attendance/attendance_repository.dart';
 import '../auth/auth_controller.dart';
 import 'schedule_controller.dart';
 import 'schedule_models.dart';
@@ -9,11 +10,16 @@ import 'schedule_models.dart';
 ///
 /// Верхняя строка — дни, ниже — занятия выбранного дня. Переключатель
 /// спортсмена здесь не дублируется: выбор один и тот же, на главной.
+///
+/// На будущем занятии можно предупредить об отсутствии (H6, BR-008): это
+/// намерение родителя, итог подтверждает тренер отметкой.
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({
     super.key,
     required this.auth,
     required this.controller,
+    required this.attendance,
+    required this.athleteId,
     required this.athleteName,
     required this.groupId,
     required this.refreshKey,
@@ -21,6 +27,10 @@ class ScheduleScreen extends StatefulWidget {
 
   final AuthController auth;
   final ScheduleController controller;
+  final AttendanceRepository attendance;
+
+  /// Спортсмен, за которого можно предупредить об отсутствии.
+  final String? athleteId;
 
   /// Имя выбранного спортсмена: по нему видно, чье расписание открыто.
   final String athleteName;
@@ -140,7 +150,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               )
             else
               for (final session in selectedSessions) ...[
-                _SessionTile(session: session),
+                _SessionTile(
+                  session: session,
+                  canReportAbsence: _canReportAbsence(session),
+                  onReportAbsence: () => _reportAbsence(session),
+                ),
                 const SizedBox(height: AppSpacing.sm),
               ],
           ],
@@ -160,6 +174,57 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   bool _sameDay(DateTime left, DateTime right) {
     return left.year == right.year && left.month == right.month && left.day == right.day;
+  }
+
+  /// Предупредить можно только о будущем занятии: писать «ребенка не будет» на
+  /// прошедшую тренировку бессмысленно, а тренер уже поставил отметку.
+  bool _canReportAbsence(TrainingSession session) {
+    return widget.athleteId != null && session.startsAt.isAfter(DateTime.now());
+  }
+
+  Future<void> _reportAbsence(TrainingSession session) async {
+    final token = widget.auth.session?.accessToken;
+    final athleteId = widget.athleteId;
+    if (token == null || athleteId == null) {
+      return;
+    }
+
+    final reason = await showDialog<String?>(
+      context: context,
+      builder: (context) => const _AbsenceDialog(),
+    );
+
+    // null — диалог закрыт без отправки; пустая строка — «без причины».
+    if (reason == null || !mounted) {
+      return;
+    }
+
+    try {
+      await widget.attendance.reportAbsence(
+        token: token,
+        sessionId: session.id,
+        athleteId: athleteId,
+        reason: reason,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Тренер увидит предупреждение в журнале занятия'),
+        ),
+      );
+    } on Object {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Не удалось отправить предупреждение')),
+      );
+    }
   }
 }
 
@@ -256,9 +321,17 @@ class _DateStrip extends StatelessWidget {
 
 /// Строка занятия: время слева, группа и место справа.
 class _SessionTile extends StatelessWidget {
-  const _SessionTile({required this.session});
+  const _SessionTile({
+    required this.session,
+    required this.canReportAbsence,
+    required this.onReportAbsence,
+  });
 
   final TrainingSession session;
+
+  /// Предупреждение об отсутствии доступно только для будущего занятия.
+  final bool canReportAbsence;
+  final VoidCallback onReportAbsence;
 
   @override
   Widget build(BuildContext context) {
@@ -327,8 +400,77 @@ class _SessionTile extends StatelessWidget {
               message: 'Занятие перенесено',
               child: Icon(Icons.swap_horiz, size: 18, color: AppColors.accent),
             ),
+          if (canReportAbsence)
+            IconButton(
+              tooltip: 'Сообщить об отсутствии',
+              onPressed: onReportAbsence,
+              icon: const Icon(
+                Icons.event_busy_outlined,
+                size: 20,
+                color: AppColors.textSecondary,
+              ),
+            ),
         ],
       ),
+    );
+  }
+}
+
+/// Диалог предупреждения об отсутствии (BR-008).
+///
+/// Причина необязательна: родитель может не хотеть объяснять, но тренеру она
+/// полезна, чтобы отличить болезнь от поездки. Отмена возвращает `null`, отправка
+/// без текста — пустую строку.
+class _AbsenceDialog extends StatefulWidget {
+  const _AbsenceDialog();
+
+  @override
+  State<_AbsenceDialog> createState() => _AbsenceDialogState();
+}
+
+class _AbsenceDialogState extends State<_AbsenceDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Ребенка не будет?'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Тренер увидит предупреждение в журнале занятия. Итог он подтвердит отметкой.',
+            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            maxLength: 500,
+            decoration: const InputDecoration(
+              labelText: 'Причина (необязательно)',
+              hintText: 'Например: болезнь или поездка',
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop<String?>(),
+          child: const Text('Отмена'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text),
+          child: const Text('Сообщить'),
+        ),
+      ],
     );
   }
 }

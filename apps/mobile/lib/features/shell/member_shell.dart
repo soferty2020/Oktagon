@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../design/tokens.dart';
+import '../attendance/attendance_history_controller.dart';
+import '../attendance/attendance_history_screen.dart';
+import '../attendance/attendance_repository.dart';
 import '../auth/auth_controller.dart';
 import '../chat/chat_controller.dart';
 import '../chat/chats_controller.dart';
@@ -27,6 +30,7 @@ class MemberShell extends StatefulWidget {
     required this.schedule,
     required this.news,
     required this.chats,
+    required this.attendance,
     required this.chatFactory,
   });
 
@@ -35,6 +39,9 @@ class MemberShell extends StatefulWidget {
   final ScheduleController schedule;
   final NewsController news;
   final ChatsController chats;
+
+  /// Нужен истории посещений и предупреждению об отсутствии (H5, H6).
+  final AttendanceRepository attendance;
 
   /// Переписка создается на каждый диалог: состояние одной не должно переходить
   /// в другую.
@@ -46,6 +53,27 @@ class MemberShell extends StatefulWidget {
 
 class _MemberShellState extends State<MemberShell> {
   int _index = 0;
+
+  /// История посещений открывается отдельным экраном: в нижнюю навигацию она не
+  /// помещается (вкладок уже пять), а нужна точечно.
+  Future<void> _openHistory(String? athleteId, String athleteName) async {
+    if (athleteId == null) {
+      return;
+    }
+
+    final controller = AttendanceHistoryController(repository: widget.attendance);
+
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => AttendanceHistoryScreen(
+          auth: widget.auth,
+          controller: controller,
+          athleteId: athleteId,
+          athleteName: athleteName,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,10 +92,13 @@ class _MemberShellState extends State<MemberShell> {
                   controller: widget.home,
                   onOpenSchedule: () => setState(() => _index = 1),
                   onOpenNews: () => setState(() => _index = 2),
+                  onOpenAttendance: () => _openHistory(selected?.id, selected?.firstName ?? ''),
                 ),
                 ScheduleScreen(
                   auth: widget.auth,
                   controller: widget.schedule,
+                  attendance: widget.attendance,
+                  athleteId: selected?.id,
                   athleteName: selected?.firstName ?? '',
                   groupId: widget.home.group?.id,
                   refreshKey: '${selected?.id ?? ''}:${widget.home.group?.id ?? ''}',
