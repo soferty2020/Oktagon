@@ -16,6 +16,11 @@ import 'features/news/news_controller.dart';
 import 'features/news/news_repository.dart';
 import 'features/schedule/schedule_controller.dart';
 import 'features/schedule/schedule_repository.dart';
+import 'features/trainer/attendance_controller.dart';
+import 'features/trainer/trainer_calendar_controller.dart';
+import 'features/trainer/trainer_day_controller.dart';
+import 'features/trainer/trainer_repository.dart';
+import 'features/trainer/trainer_students_controller.dart';
 
 /// Точка входа приложения.
 ///
@@ -49,6 +54,12 @@ void main() {
 
   final newsController = NewsController(repository: NewsRepository(client: client));
 
+  // Тренерские контроллеры: репозиторий общий, состояние — раздельное.
+  final trainerRepository = TrainerRepository(client: client);
+  final trainerDayController = TrainerDayController(repository: trainerRepository);
+  final trainerCalendarController = TrainerCalendarController(repository: trainerRepository);
+  final trainerStudentsController = TrainerStudentsController(repository: trainerRepository);
+
   // Проверка сессии запускается до показа интерфейса: иначе у уже вошедшего
   // человека на мгновение мелькал бы экран входа.
   unawaited(authController.restore());
@@ -59,6 +70,10 @@ void main() {
       memberHomeController: memberHomeController,
       scheduleController: scheduleController,
       newsController: newsController,
+      trainerDayController: trainerDayController,
+      trainerCalendarController: trainerCalendarController,
+      trainerStudentsController: trainerStudentsController,
+      attendanceFactory: () => AttendanceController(repository: trainerRepository),
     ),
   );
 }

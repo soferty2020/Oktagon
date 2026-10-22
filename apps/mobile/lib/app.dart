@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 
+import 'app_theme.dart';
 import 'features/auth/auth_controller.dart';
 import 'features/auth/login_screen.dart';
 import 'features/home/member_home_controller.dart';
 import 'features/news/news_controller.dart';
 import 'features/schedule/schedule_controller.dart';
 import 'features/shell/member_shell.dart';
-import 'app_theme.dart';
+import 'features/trainer/attendance_controller.dart';
+import 'features/trainer/trainer_calendar_controller.dart';
+import 'features/trainer/trainer_day_controller.dart';
+import 'features/trainer/trainer_shell.dart';
+import 'features/trainer/trainer_students_controller.dart';
 
 /// Корневой виджет приложения.
 ///
@@ -20,12 +25,24 @@ class OctagonApp extends StatelessWidget {
     required this.memberHomeController,
     required this.scheduleController,
     required this.newsController,
+    required this.trainerDayController,
+    required this.trainerCalendarController,
+    required this.trainerStudentsController,
+    required this.attendanceFactory,
   });
 
   final AuthController authController;
   final MemberHomeController memberHomeController;
   final ScheduleController scheduleController;
   final NewsController newsController;
+
+  final TrainerDayController trainerDayController;
+  final TrainerCalendarController trainerCalendarController;
+  final TrainerStudentsController trainerStudentsController;
+
+  /// Фабрика журналов: у каждого занятия свой журнал, и состояние одного не
+  /// должно переходить в другое.
+  final AttendanceController Function() attendanceFactory;
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +68,7 @@ class OctagonApp extends StatelessWidget {
   /// нельзя.
   Widget _authenticatedScreen() {
     final role = authController.user?.role;
+
     if (role == 'MEMBER') {
       return MemberShell(
         auth: authController,
@@ -59,7 +77,15 @@ class OctagonApp extends StatelessWidget {
         news: newsController,
       );
     }
-    return StaffHomeScreen(controller: authController);
+
+    return TrainerShell(
+      auth: authController,
+      day: trainerDayController,
+      calendar: trainerCalendarController,
+      students: trainerStudentsController,
+      news: newsController,
+      attendanceFactory: attendanceFactory,
+    );
   }
 }
 
@@ -83,126 +109,6 @@ class _SplashScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-/// Временная главная сотрудника.
-///
-/// Заглушка до H10 (сегодня, группы, посещаемость тренера). Уже здесь видны роль и
-/// действующие права: по ним тренер понимает, что вход прошел с теми правами,
-/// которые выданы на сервере.
-class StaffHomeScreen extends StatelessWidget {
-  const StaffHomeScreen({super.key, required this.controller});
-
-  final AuthController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final user = controller.user;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('OCTAGON'),
-        actions: [
-          IconButton(
-            tooltip: 'Выйти',
-            icon: const Icon(Icons.logout),
-            onPressed: controller.busy ? null : controller.logout,
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Здравствуйте, ${user?.displayName ?? ''}',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      user?.email ?? '',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFF777777),
-                          ),
-                    ),
-                    const SizedBox(height: 12),
-                    _InfoRow(label: 'Роль', value: _roleLabel(user?.role)),
-                    const SizedBox(height: 8),
-                    _InfoRow(label: 'Права', value: '${user?.permissions.length ?? 0}'),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Что дальше', style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Главная, расписание, посещаемость, новости и чат появятся в '
-                      'следующих шагах. Сейчас проверен вход и хранение сессии.',
-                      style: TextStyle(color: Color(0xFF666666)),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _roleLabel(String? role) {
-    return switch (role) {
-      'MEMBER' => 'Участник клуба',
-      'STAFF' => 'Сотрудник',
-      'SUPERADMIN' => 'Суперадминистратор',
-      _ => role ?? 'неизвестно',
-    };
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 110,
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: const Color(0xFF888888),
-                ),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-        ),
-      ],
     );
   }
 }

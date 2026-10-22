@@ -23,6 +23,14 @@ abstract class ApiClient {
     Map<String, dynamic>? body,
     String? token,
   });
+
+  /// PUT нужен для сохранения посещаемости: отметки заменяют состояние журнала,
+  /// а не дополняют его, поэтому POST здесь семантически неверен.
+  Future<Map<String, dynamic>> putJson(
+    String path, {
+    Map<String, dynamic>? body,
+    String? token,
+  });
 }
 
 /// HTTP-клиент поверх пакета `http`.
@@ -58,6 +66,15 @@ class HttpApiClient implements ApiClient {
     return _send(path, method: 'POST', body: body, token: token);
   }
 
+  @override
+  Future<Map<String, dynamic>> putJson(
+    String path, {
+    Map<String, dynamic>? body,
+    String? token,
+  }) {
+    return _send(path, method: 'PUT', body: body, token: token);
+  }
+
   Future<Map<String, dynamic>> _send(
     String path, {
     required String method,
@@ -75,6 +92,7 @@ class HttpApiClient implements ApiClient {
     try {
       final response = await switch (method) {
         'GET' => _client.get(uri, headers: headers),
+        'PUT' => _client.put(uri, headers: headers, body: jsonEncode(body ?? const {})),
         _ => _client.post(uri, headers: headers, body: jsonEncode(body ?? const {})),
       }
           .timeout(timeout);

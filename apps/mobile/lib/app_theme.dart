@@ -40,17 +40,24 @@ class AppTheme {
           color: AppColors.textPrimary,
           fontSize: 22,
           fontWeight: FontWeight.w700,
+          fontFamily: 'Roboto',
         ),
       ),
 
       // Кнопки: оранжевая заливка, белый текст, высота 52 — по макету кнопки
-      // крупные, чтобы попадать пальцем.
+      // крупные, чтобы попадать пальцем. Шрифт задан явно: ButtonStyle.textStyle
+      // не наследует текстовую тему, и без семейства текст кнопки рисуется
+      // другим шрифтом, чем остальной экран.
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.accent,
           foregroundColor: Colors.white,
           minimumSize: const Size.fromHeight(52),
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(
+            fontFamily: 'Roboto',
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.control),
           ),
@@ -61,6 +68,7 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.textPrimary,
           minimumSize: const Size.fromHeight(52),
+          textStyle: const TextStyle(fontFamily: 'Roboto', fontSize: 16),
           side: const BorderSide(color: AppColors.divider),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.control),

@@ -38,6 +38,16 @@ class FakeApiClient implements ApiClient {
     return _respond('POST $path', token);
   }
 
+  @override
+  Future<Map<String, dynamic>> putJson(
+    String path, {
+    Map<String, dynamic>? body,
+    String? token,
+  }) {
+    queries.add(null);
+    return _respond('PUT $path', token);
+  }
+
   Future<Map<String, dynamic>> _respond(String call, String? token) async {
     calls.add(call);
     tokens.add(token);
