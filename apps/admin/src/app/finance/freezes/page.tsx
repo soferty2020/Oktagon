@@ -91,7 +91,7 @@ export default async function FreezesPage({
         title="Заморозки"
         description="Заморозка — открытый период приостановления: начало и завершение можно внести задним числом (BR-005)."
         actions={
-          <Link href="/finance" className="text-sm text-slate-500 hover:text-slate-900">
+          <Link href="/finance" className="text-sm text-muted hover:text-ink">
             ← Финансы
           </Link>
         }
@@ -104,13 +104,13 @@ export default async function FreezesPage({
         </Notice>
       ) : (
         <form action="/finance/freezes" className="flex flex-wrap items-end gap-2">
-          <label className="flex flex-1 flex-col gap-1 text-xs font-medium text-slate-600">
+          <label className="flex flex-1 flex-col gap-1 text-xs font-medium text-muted">
             Спортсмен
             <select
               name="athleteId"
               required
               defaultValue={athleteId ?? ''}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+              className="rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent"
             >
               <option value="" disabled>
                 выберите спортсмена
@@ -126,7 +126,7 @@ export default async function FreezesPage({
           </label>
           <button
             type="submit"
-            className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            className="rounded-md border border-line bg-white px-4 py-2 text-sm text-ink hover:bg-canvas"
           >
             Показать заморозки
           </button>
@@ -140,14 +140,14 @@ export default async function FreezesPage({
       ) : null}
 
       {athleteId ? (
-        <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5">
+        <section className="mt-6 rounded-card border border-line bg-white p-5">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-sm font-semibold text-slate-900">
+            <h2 className="text-sm font-semibold text-ink">
               {selected ? `${selected.lastName} ${selected.firstName}` : 'Выбранный спортсмен'}
             </h2>
             <Link
               href={`/finance/athletes/${athleteId}`}
-              className="text-xs text-slate-500 underline hover:text-slate-900"
+              className="text-xs text-muted underline hover:text-ink"
             >
               Финансы спортсмена →
             </Link>
@@ -182,7 +182,7 @@ export default async function FreezesPage({
               )}
 
               <table className="mt-4 w-full text-left text-sm">
-                <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+                <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
                   <tr>
                     <th className="py-2">Начало</th>
                     <th className="py-2">Завершение</th>
@@ -193,26 +193,26 @@ export default async function FreezesPage({
                 <tbody>
                   {(freezes?.ok ? freezes.data : []).length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-4 text-sm text-slate-500">
+                      <td colSpan={4} className="py-4 text-sm text-muted">
                         Заморозок не было
                       </td>
                     </tr>
                   ) : (
                     (freezes?.ok ? freezes.data : []).map((freeze) => (
-                      <tr key={freeze.id} className="border-b border-slate-100 last:border-0">
-                        <td className="py-2 text-slate-900">
+                      <tr key={freeze.id} className="border-b border-line last:border-0">
+                        <td className="py-2 text-ink">
                           {formatCalendarDate(freeze.startedOn)}
                         </td>
-                        <td className="py-2 text-slate-600">
+                        <td className="py-2 text-muted">
                           {freeze.endedOn ? formatCalendarDate(freeze.endedOn) : 'не завершена'}
                         </td>
-                        <td className="py-2 text-slate-600">{freeze.reason ?? '—'}</td>
+                        <td className="py-2 text-muted">{freeze.reason ?? '—'}</td>
                         <td className="py-2">
                           <span
                             className={
                               freeze.isOpen
                                 ? 'rounded-full bg-amber-50 px-2 py-1 text-xs text-amber-700'
-                                : 'rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600'
+                                : 'rounded-full bg-canvas px-2 py-1 text-xs text-muted'
                             }
                           >
                             {freeze.isOpen ? 'открыта' : 'завершена'}

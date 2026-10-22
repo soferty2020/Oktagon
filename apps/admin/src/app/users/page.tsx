@@ -59,15 +59,15 @@ export default async function UsersPage() {
         title="Пользователи"
         description="Роли, статусы и индивидуальные права"
         actions={
-          <Link href="/users/invites" className="text-sm text-slate-500 hover:text-slate-900">
+          <Link href="/users/invites" className="text-sm text-muted hover:text-ink">
             Приглашения →
           </Link>
         }
       />
 
-      <div className="rounded-xl border border-slate-200 bg-white">
+      <div className="rounded-card border border-line bg-white">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+          <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
             <tr>
               <th className="px-4 py-3">Пользователь</th>
               <th className="px-4 py-3">Роль</th>
@@ -79,33 +79,33 @@ export default async function UsersPage() {
           <tbody>
             {result.ok && result.data.items.length > 0 ? (
               result.data.items.map((candidate) => (
-                <tr key={candidate.id} className="border-b border-slate-100 last:border-0">
+                <tr key={candidate.id} className="border-b border-line last:border-0">
                   <td className="px-4 py-3">
-                    <span className="font-medium text-slate-900">
+                    <span className="font-medium text-ink">
                       {candidate.lastName} {candidate.firstName}
                     </span>
-                    <span className="block text-xs text-slate-500">{candidate.email}</span>
+                    <span className="block text-xs text-muted">{candidate.email}</span>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{candidate.role}</td>
+                  <td className="px-4 py-3 text-muted">{candidate.role}</td>
                   <td className="px-4 py-3">
                     <span
                       className={
                         candidate.status === 'ACTIVE'
                           ? 'rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700'
-                          : 'rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-500'
+                          : 'rounded-full bg-canvas px-2 py-1 text-xs text-muted'
                       }
                     >
                       {candidate.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-muted">
                     {candidate.scopeAllGroups ? 'все группы' : 'только назначенные'}
                   </td>
                   <td className="px-4 py-3 text-right">
                     {canManagePermissions ? (
                       <Link
                         href={`/users/${candidate.id}/permissions`}
-                        className="text-xs text-slate-500 underline hover:text-slate-900"
+                        className="text-xs text-muted underline hover:text-ink"
                       >
                         Права
                       </Link>
@@ -127,7 +127,7 @@ export default async function UsersPage() {
       </div>
 
       {result.ok ? (
-        <p className="mt-3 text-xs text-slate-500">Всего пользователей: {result.data.meta.total}</p>
+        <p className="mt-3 text-xs text-muted">Всего пользователей: {result.data.meta.total}</p>
       ) : null}
     </AppShell>
   );

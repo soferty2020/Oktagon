@@ -355,6 +355,26 @@ node scripts/check-admin.mjs http://localhost:3001 http://127.0.0.1:3000/api/v1
 node scripts/check-admin-finance.mjs http://localhost:3001 http://127.0.0.1:3000/api/v1
 ```
 
+### Скриншоты админки
+
+Проверить, что страница действительно отрисовалась (а не только вернула 200),
+можно снимками через Chrome DevTools Protocol. Обычный `chrome --headless
+--screenshot` не подходит: он попадет на страницу входа.
+
+```bash
+# 1. Chrome с отладочным портом
+chrome --headless=new --remote-debugging-port=9222 --window-size=1500,1000 \
+  --user-data-dir=.tools/chrome-admin http://127.0.0.1:3001/login
+
+# 2. Вход и снимки
+node scripts/shoot-admin.mjs http://127.0.0.1:3001 .tools/admin-shots /athletes /groups /finance
+```
+
+Скрипт сам входит под локальным супер-администратором (`ADMIN_EMAIL` /
+`ADMIN_PASSWORD`, по умолчанию — значения из `.env.example`), затем снимает
+обзор и перечисленные разделы. В CI не запускается: там нет ни Chrome, ни живого
+API.
+
 ## 9. CI
 
 `.github/workflows/ci.yml` запускается на push и pull request и состоит из двух

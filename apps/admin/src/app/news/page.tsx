@@ -72,12 +72,12 @@ export default async function NewsPage({
         description="Новости и комментарии видны всем пользователям клуба (BR-011)."
         actions={
           <form action="/news" className="flex flex-wrap items-end gap-2">
-            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+            <label className="flex flex-col gap-1 text-xs font-medium text-muted">
               Статус
               <select
                 name="status"
                 defaultValue={params.status ?? ''}
-                className="rounded-md border border-slate-300 px-2 py-1 text-sm outline-none focus:border-slate-500"
+                className="rounded-md border border-line px-2 py-1 text-sm outline-none focus:border-accent"
               >
                 <option value="">все доступные</option>
                 <option value="PUBLISHED">опубликованные</option>
@@ -85,15 +85,15 @@ export default async function NewsPage({
                 <option value="ARCHIVED">архив</option>
               </select>
             </label>
-            <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+            <label className="flex flex-col gap-1 text-xs font-medium text-muted">
               Поиск
               <input
                 name="search"
                 defaultValue={params.search ?? ''}
-                className="rounded-md border border-slate-300 px-2 py-1 text-sm outline-none focus:border-slate-500"
+                className="rounded-md border border-line px-2 py-1 text-sm outline-none focus:border-accent"
               />
             </label>
-            <label className="flex items-center gap-2 pb-1 text-xs text-slate-600">
+            <label className="flex items-center gap-2 pb-1 text-xs text-muted">
               <input
                 type="checkbox"
                 name="includeArchived"
@@ -104,7 +104,7 @@ export default async function NewsPage({
             </label>
             <button
               type="submit"
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
+              className="rounded-md border border-line bg-white px-3 py-1.5 text-xs text-ink hover:bg-canvas"
             >
               Показать
             </button>
@@ -122,10 +122,10 @@ export default async function NewsPage({
 
           {posts.ok
             ? posts.data.map((post) => (
-                <article key={post.id} className="rounded-xl border border-slate-200 bg-white p-5">
+                <article key={post.id} className="rounded-card border border-line bg-white p-5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <h2 className="text-base font-semibold text-slate-900">
+                      <h2 className="text-base font-semibold text-ink">
                         {post.isPinned ? (
                           <span className="mr-2 rounded-full bg-amber-50 px-2 py-1 text-xs text-amber-700">
                             закреплено
@@ -133,12 +133,12 @@ export default async function NewsPage({
                         ) : null}
                         <Link
                           href={`/news/${post.id}`}
-                          className="underline decoration-slate-300 hover:decoration-slate-900"
+                          className="underline decoration-line hover:decoration-accent"
                         >
                           {post.title}
                         </Link>
                       </h2>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-xs text-muted">
                         {post.author.lastName} {post.author.firstName} ·{' '}
                         {post.publishedAt
                           ? `опубликовано ${formatMoment(post.publishedAt)}`
@@ -155,14 +155,14 @@ export default async function NewsPage({
                     </div>
                   </div>
 
-                  <p className="mt-3 whitespace-pre-line text-sm text-slate-700">{post.body}</p>
+                  <p className="mt-3 whitespace-pre-line text-sm text-ink">{post.body}</p>
 
-                  <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                    <Link href={`/news/${post.id}`} className="underline hover:text-slate-900">
+                  <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted">
+                    <Link href={`/news/${post.id}`} className="underline hover:text-ink">
                       Комментарии: {post.commentsCount}
                     </Link>
                     {post.canEdit ? (
-                      <Link href={`/news/${post.id}`} className="underline hover:text-slate-900">
+                      <Link href={`/news/${post.id}`} className="underline hover:text-ink">
                         Изменить
                       </Link>
                     ) : null}
@@ -183,9 +183,9 @@ function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; className: string }> = {
     DRAFT: { label: 'черновик', className: 'bg-amber-50 text-amber-700' },
     PUBLISHED: { label: 'опубликовано', className: 'bg-emerald-50 text-emerald-700' },
-    ARCHIVED: { label: 'в архиве', className: 'bg-slate-100 text-slate-600' },
+    ARCHIVED: { label: 'в архиве', className: 'bg-canvas text-muted' },
   };
-  const badge = map[status] ?? { label: status, className: 'bg-slate-100 text-slate-600' };
+  const badge = map[status] ?? { label: status, className: 'bg-canvas text-muted' };
 
   return <span className={`rounded-full px-2 py-1 text-xs ${badge.className}`}>{badge.label}</span>;
 }

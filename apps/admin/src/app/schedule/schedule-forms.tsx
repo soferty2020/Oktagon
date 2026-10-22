@@ -15,10 +15,10 @@ import {
 const initialState: ScheduleFormState = {};
 
 const inputClass =
-  'rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500';
-const labelClass = 'flex flex-col gap-1 text-xs font-medium text-slate-600';
+  'rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent';
+const labelClass = 'flex flex-col gap-1 text-xs font-medium text-muted';
 const buttonClass =
-  'rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+  'rounded-md bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
 
 const WEEKDAYS = [
   { value: 'MONDAY', label: 'Понедельник' },
@@ -62,9 +62,9 @@ export function CreateTemplateForm({
   return (
     <form
       action={formAction}
-      className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5"
+      className="flex flex-col gap-3 rounded-card border border-line bg-white p-5"
     >
-      <h2 className="text-sm font-semibold text-slate-900">Расписание на квартал</h2>
+      <h2 className="text-sm font-semibold text-ink">Расписание на квартал</h2>
 
       <label className={labelClass}>
         Группа
@@ -110,7 +110,7 @@ export function CreateTemplateForm({
       <button type="submit" disabled={pending} className={buttonClass}>
         {pending ? 'Сохранение…' : 'Создать расписание'}
       </button>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         Расписание на квартал у группы одно: повторное создание будет отклонено.
       </p>
     </form>
@@ -185,7 +185,7 @@ export function AddSlotForm({
         </label>
       </div>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         Время указывается по часовому поясу клуба. Слоты внутри одного расписания не должны
         пересекаться.
       </p>
@@ -212,7 +212,7 @@ export function GenerateForm({ templateId }: { templateId: string }) {
     <form action={formAction} className="flex flex-col gap-3">
       <input type="hidden" name="templateId" value={templateId} />
 
-      <label className="flex items-center gap-2 text-xs text-slate-600">
+      <label className="flex items-center gap-2 text-xs text-muted">
         <input type="checkbox" name="regenerate" />
         пересоздать занятия квартала (удаляются только будущие)
       </label>
@@ -259,7 +259,7 @@ export function MoveSessionForm({ sessionId }: { sessionId: string }) {
       <button type="submit" disabled={pending} className={`${buttonClass} self-start`}>
         {pending ? '…' : 'Перенести занятие'}
       </button>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         Квартальное расписание не изменится: правка касается только этого занятия.
       </p>
     </form>
@@ -320,7 +320,7 @@ export function CreateSessionForm({
 
   if (groups.length === 0) {
     return (
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         Сначала создайте группу: занятие всегда принадлежит группе.
       </p>
     );
@@ -396,7 +396,7 @@ export function CreateSessionForm({
         />
       </label>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         Причина попадет в карточку занятия и в журнал аудита: по ней видно, что занятие добавлено
         вручную, а не пришло из расписания.
       </p>

@@ -13,10 +13,10 @@ import {
 const initialState: FormState = {};
 
 const inputClass =
-  'w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500';
-const labelClass = 'flex flex-col gap-1 text-xs font-medium text-slate-600';
+  'w-full rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent';
+const labelClass = 'flex flex-col gap-1 text-xs font-medium text-muted';
 const secondaryButtonClass =
-  'rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-60';
+  'rounded-md border border-line bg-white px-3 py-1.5 text-xs text-ink hover:bg-canvas disabled:opacity-60';
 
 function StateMessages({ state }: { state: FormState }) {
   return (
@@ -62,7 +62,7 @@ export function ArchiveBranchForm({
       }}
     >
       <input type="hidden" name="branchId" value={branchId} />
-      <button type="submit" className="text-xs text-slate-500 underline hover:text-red-700">
+      <button type="submit" className="text-xs text-muted underline hover:text-red-700">
         Архивировать
       </button>
     </form>
@@ -74,7 +74,7 @@ export function CreateHallForm({ branchId }: { branchId: string }) {
   const [state, formAction, pending] = useActionState(createHallAction, initialState);
 
   return (
-    <form action={formAction} className="mt-3 flex flex-col gap-2 border-t border-slate-100 pt-3">
+    <form action={formAction} className="mt-3 flex flex-col gap-2 border-t border-line pt-3">
       <input type="hidden" name="branchId" value={branchId} />
 
       <div className="flex flex-wrap items-end gap-2">
@@ -149,7 +149,7 @@ export function EditHallForm({
         </label>
       </div>
 
-      <label className="flex items-center gap-2 text-xs text-slate-600">
+      <label className="flex items-center gap-2 text-xs text-muted">
         <input type="checkbox" name="isActive" defaultChecked={hall.isActive} />
         активен (неактивный зал не предлагается в расписании)
       </label>
@@ -188,7 +188,7 @@ export function ArchiveHallForm({ hallId, hallName }: { hallId: string; hallName
       }}
     >
       <input type="hidden" name="hallId" value={hallId} />
-      <button type="submit" className="text-xs text-slate-500 underline hover:text-red-700">
+      <button type="submit" className="text-xs text-muted underline hover:text-red-700">
         Архивировать зал
       </button>
     </form>
@@ -209,18 +209,18 @@ export function HallRow({
   branches: { id: string; name: string }[];
 }) {
   return (
-    <details className="rounded-md border border-slate-200 bg-slate-50/50 px-3 py-2">
-      <summary className="flex cursor-pointer flex-wrap items-center gap-2 text-sm text-slate-900">
+    <details className="rounded-md border border-line bg-canvas px-3 py-2">
+      <summary className="flex cursor-pointer flex-wrap items-center gap-2 text-sm text-ink">
         <span className="font-medium">{hall.name}</span>
         {hall.capacity ? (
-          <span className="text-xs text-slate-500">до {hall.capacity} чел.</span>
+          <span className="text-xs text-muted">до {hall.capacity} чел.</span>
         ) : null}
         {!hall.isActive ? (
-          <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs text-slate-600">
+          <span className="rounded-full bg-line px-2 py-0.5 text-xs text-muted">
             неактивен
           </span>
         ) : null}
-        <span className="ml-auto text-xs text-slate-400">изменить</span>
+        <span className="ml-auto text-xs text-muted">изменить</span>
       </summary>
 
       <div className="mt-1 flex flex-col gap-3">

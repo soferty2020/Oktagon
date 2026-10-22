@@ -91,46 +91,46 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
         title={group.data.name}
         description={group.data.description ?? 'Группа клуба'}
         actions={
-          <Link href="/groups" className="text-sm text-slate-500 hover:text-slate-900">
+          <Link href="/groups" className="text-sm text-muted hover:text-ink">
             ← Все группы
           </Link>
         }
       />
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <p className="text-xs text-slate-500">Основной филиал</p>
-          <p className="mt-1 text-sm font-medium text-slate-900">
+        <div className="rounded-card border border-line bg-white p-4">
+          <p className="text-xs text-muted">Основной филиал</p>
+          <p className="mt-1 text-sm font-medium text-ink">
             {group.data.primaryBranchName ?? 'не назначен'}
           </p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <p className="text-xs text-slate-500">Участников</p>
-          <p className="mt-1 text-sm font-medium text-slate-900">
+        <div className="rounded-card border border-line bg-white p-4">
+          <p className="text-xs text-muted">Участников</p>
+          <p className="mt-1 text-sm font-medium text-ink">
             {group.data.activeMembersCount}
           </p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <p className="text-xs text-slate-500">Статус</p>
-          <p className="mt-1 text-sm font-medium text-slate-900">
+        <div className="rounded-card border border-line bg-white p-4">
+          <p className="text-xs text-muted">Статус</p>
+          <p className="mt-1 text-sm font-medium text-ink">
             {group.data.isActive ? 'активна' : 'неактивна'}
           </p>
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="text-sm font-semibold text-slate-900">Филиалы</h2>
+        <section className="rounded-card border border-line bg-white p-5">
+          <h2 className="text-sm font-semibold text-ink">Филиалы</h2>
           <ul className="mt-3 flex flex-col gap-2">
             {group.data.branches.length === 0 ? (
-              <li className="text-sm text-slate-500">Филиалы не привязаны</li>
+              <li className="text-sm text-muted">Филиалы не привязаны</li>
             ) : (
               group.data.branches.map((branch) => (
                 <li
                   key={branch.branchId}
                   className="flex items-center justify-between gap-2 text-sm"
                 >
-                  <span className="text-slate-900">
+                  <span className="text-ink">
                     {branch.branchName}
                     {branch.isPrimary ? (
                       <span className="ml-2 rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700">
@@ -144,7 +144,7 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
                       <input type="hidden" name="branchId" value={branch.branchId} />
                       <button
                         type="submit"
-                        className="text-xs text-slate-500 underline hover:text-red-700"
+                        className="text-xs text-muted underline hover:text-red-700"
                       >
                         Отвязать
                       </button>
@@ -156,28 +156,28 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
           </ul>
 
           {canManage ? (
-            <div className="mt-4 border-t border-slate-100 pt-4">
+            <div className="mt-4 border-t border-line pt-4">
               {availableBranches.length > 0 ? (
                 <LinkBranchForm groupId={group.data.id} branches={availableBranches} />
               ) : (
-                <p className="text-xs text-slate-500">Все активные филиалы уже привязаны</p>
+                <p className="text-xs text-muted">Все активные филиалы уже привязаны</p>
               )}
             </div>
           ) : null}
         </section>
 
-        <section className="rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="text-sm font-semibold text-slate-900">Тренеры</h2>
+        <section className="rounded-card border border-line bg-white p-5">
+          <h2 className="text-sm font-semibold text-ink">Тренеры</h2>
           <ul className="mt-3 flex flex-col gap-2">
             {group.data.trainers.length === 0 ? (
-              <li className="text-sm text-slate-500">Тренеры не назначены</li>
+              <li className="text-sm text-muted">Тренеры не назначены</li>
             ) : (
               group.data.trainers.map((trainer) => (
                 <li
                   key={trainer.trainerId}
                   className="flex items-center justify-between gap-2 text-sm"
                 >
-                  <span className="text-slate-900">
+                  <span className="text-ink">
                     {trainer.displayName}
                     {trainer.isPrimary ? (
                       <span className="ml-2 rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700">
@@ -191,7 +191,7 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
                       <input type="hidden" name="trainerId" value={trainer.trainerId} />
                       <button
                         type="submit"
-                        className="text-xs text-slate-500 underline hover:text-red-700"
+                        className="text-xs text-muted underline hover:text-red-700"
                       >
                         Снять
                       </button>
@@ -203,22 +203,22 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
           </ul>
 
           {canManage ? (
-            <div className="mt-4 border-t border-slate-100 pt-4">
+            <div className="mt-4 border-t border-line pt-4">
               {availableTrainers.length > 0 ? (
                 <AssignTrainerForm groupId={group.data.id} trainers={availableTrainers} />
               ) : (
-                <p className="text-xs text-slate-500">Все активные тренеры уже назначены</p>
+                <p className="text-xs text-muted">Все активные тренеры уже назначены</p>
               )}
             </div>
           ) : null}
         </section>
       </div>
 
-      <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5">
-        <h2 className="text-sm font-semibold text-slate-900">Состав</h2>
+      <section className="mt-6 rounded-card border border-line bg-white p-5">
+        <h2 className="text-sm font-semibold text-ink">Состав</h2>
 
         <table className="mt-3 w-full text-left text-sm">
-          <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+          <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
             <tr>
               <th className="py-2">Спортсмен</th>
               <th className="py-2">Статус</th>
@@ -229,18 +229,18 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
           <tbody>
             {group.data.members.length === 0 ? (
               <tr>
-                <td colSpan={4} className="py-4 text-sm text-slate-500">
+                <td colSpan={4} className="py-4 text-sm text-muted">
                   В группе пока никого нет
                 </td>
               </tr>
             ) : (
               group.data.members.map((member) => (
-                <tr key={member.athleteId} className="border-b border-slate-100 last:border-0">
-                  <td className="py-2 font-medium text-slate-900">
+                <tr key={member.athleteId} className="border-b border-line last:border-0">
+                  <td className="py-2 font-medium text-ink">
                     {member.lastName} {member.firstName}
                   </td>
-                  <td className="py-2 text-slate-600">{member.status}</td>
-                  <td className="py-2 text-slate-600">{member.joinedAt}</td>
+                  <td className="py-2 text-muted">{member.status}</td>
+                  <td className="py-2 text-muted">{member.joinedAt}</td>
                   <td className="py-2 text-right">
                     {canManage ? (
                       <form action={endMembershipAction}>
@@ -248,7 +248,7 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
                         <input type="hidden" name="athleteId" value={member.athleteId} />
                         <button
                           type="submit"
-                          className="text-xs text-slate-500 underline hover:text-red-700"
+                          className="text-xs text-muted underline hover:text-red-700"
                         >
                           Завершить членство
                         </button>
@@ -262,16 +262,16 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
         </table>
 
         {canManage ? (
-          <div className="mt-4 border-t border-slate-100 pt-4">
+          <div className="mt-4 border-t border-line pt-4">
             <AddMemberForm groupId={group.data.id} />
           </div>
         ) : null}
       </section>
 
       {canManage && group.data.isActive ? (
-        <section className="mt-6 rounded-xl border border-red-100 bg-red-50/50 p-5">
-          <h2 className="text-sm font-semibold text-slate-900">Архивирование</h2>
-          <p className="mt-1 text-xs text-slate-600">
+        <section className="mt-6 rounded-card border border-red-100 bg-red-50/50 p-5">
+          <h2 className="text-sm font-semibold text-ink">Архивирование</h2>
+          <p className="mt-1 text-xs text-muted">
             Группа исчезнет из справочников, но история членства сохранится.
           </p>
           <form action={archiveGroupAction} className="mt-3">

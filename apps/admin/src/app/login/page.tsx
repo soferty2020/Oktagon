@@ -15,11 +15,11 @@ export default async function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-100 p-6">
-      <div className="flex w-full max-w-sm flex-col gap-6 rounded-xl bg-white p-8 shadow-sm">
+    <main className="flex min-h-screen items-center justify-center bg-canvas p-6">
+      <div className="flex w-full max-w-sm flex-col gap-6 rounded-card bg-white p-8 shadow-sm">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">OCTAGON</h1>
-          <p className="mt-1 text-sm text-slate-500">Вход в панель управления клубом</p>
+          <h1 className="text-xl font-semibold text-ink">OCTAGON</h1>
+          <p className="mt-1 text-sm text-muted">Вход в панель управления клубом</p>
         </div>
         <LoginForm />
       </div>

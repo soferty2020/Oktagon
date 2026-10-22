@@ -7,8 +7,8 @@ import { grantPermissionAction, type PermissionFormState } from '@/app/users/act
 const initialState: PermissionFormState = {};
 
 const inputClass =
-  'rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500';
-const labelClass = 'flex flex-col gap-1 text-xs font-medium text-slate-600';
+  'rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent';
+const labelClass = 'flex flex-col gap-1 text-xs font-medium text-muted';
 
 /**
  * Выдача индивидуального права (B5).
@@ -29,7 +29,7 @@ export function GrantPermissionForm({
 
   if (available.length === 0) {
     return (
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         Все права каталога уже доступны пользователю через роль или выданы лично
       </p>
     );
@@ -60,13 +60,13 @@ export function GrantPermissionForm({
         <button
           type="submit"
           disabled={pending}
-          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
         >
           {pending ? '…' : 'Выдать'}
         </button>
       </div>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         Без срока право действует бессрочно.
       </p>
 

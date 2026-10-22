@@ -11,8 +11,8 @@ import {
 const initialState: AttendanceFormState = {};
 
 const inputClass =
-  'rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500';
-const labelClass = 'flex flex-col gap-1 text-xs font-medium text-slate-600';
+  'rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent';
+const labelClass = 'flex flex-col gap-1 text-xs font-medium text-muted';
 
 /**
  * Отметка спортсмена.
@@ -48,7 +48,7 @@ export function MarkForm({
           name="comment"
           placeholder="комментарий"
           maxLength={500}
-          className="w-32 rounded-md border border-slate-300 px-2 py-1 text-xs outline-none focus:border-slate-500"
+          className="w-32 rounded-md border border-line px-2 py-1 text-xs outline-none focus:border-accent"
         />
         {statuses.map((status) => (
           <button
@@ -60,7 +60,7 @@ export function MarkForm({
             className={`rounded-md px-2 py-1 text-xs font-medium disabled:opacity-60 ${
               current === status.value
                 ? status.active
-                : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                : 'border border-line bg-white text-ink hover:bg-canvas'
             }`}
           >
             {status.label}
@@ -88,7 +88,7 @@ export function ReportAbsenceForm({
   const [state, formAction, pending] = useActionState(reportAbsenceAction, initialState);
 
   if (athletes.length === 0) {
-    return <p className="text-xs text-slate-500">Все спортсмены уже предупредили об отсутствии</p>;
+    return <p className="text-xs text-muted">Все спортсмены уже предупредили об отсутствии</p>;
   }
 
   return (
@@ -116,7 +116,7 @@ export function ReportAbsenceForm({
         <button
           type="submit"
           disabled={pending}
-          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
         >
           {pending ? '…' : 'Сообщить'}
         </button>

@@ -127,14 +127,14 @@ export default async function AttendancePage({
         description="Сводка по группе за период: кто ходит, кто пропускает и где нет отметок."
       />
 
-      <div className="mb-6 flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5">
+      <div className="mb-6 flex flex-col gap-4 rounded-card border border-line bg-white p-5">
         <form action="/attendance" className="flex flex-wrap items-end gap-2">
-          <label className="flex min-w-48 flex-col gap-1 text-xs font-medium text-slate-600">
+          <label className="flex min-w-48 flex-col gap-1 text-xs font-medium text-muted">
             Группа
             <select
               name="groupId"
               defaultValue={selectedGroupId}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+              className="rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent"
             >
               {groups.length === 0 ? <option value="">групп нет</option> : null}
               {groups.map((group) => (
@@ -145,29 +145,29 @@ export default async function AttendancePage({
             </select>
           </label>
 
-          <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+          <label className="flex flex-col gap-1 text-xs font-medium text-muted">
             С
             <input
               type="date"
               name="from"
               defaultValue={rangeFrom}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+              className="rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent"
             />
           </label>
 
-          <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+          <label className="flex flex-col gap-1 text-xs font-medium text-muted">
             По
             <input
               type="date"
               name="to"
               defaultValue={rangeTo}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+              className="rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent"
             />
           </label>
 
           <button
             type="submit"
-            className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            className="rounded-md border border-line bg-white px-4 py-2 text-sm text-ink hover:bg-canvas"
           >
             Показать
           </button>
@@ -178,13 +178,13 @@ export default async function AttendancePage({
           <div className="flex flex-wrap gap-2 text-xs">
             <Link
               href={periodHref(selectedGroupId, currentMonthRange())}
-              className="rounded-full bg-slate-100 px-3 py-1 text-slate-700 hover:bg-slate-200"
+              className="rounded-full bg-canvas px-3 py-1 text-ink hover:bg-line"
             >
               Текущий месяц
             </Link>
             <Link
               href={periodHref(selectedGroupId, previousMonthRange())}
-              className="rounded-full bg-slate-100 px-3 py-1 text-slate-700 hover:bg-slate-200"
+              className="rounded-full bg-canvas px-3 py-1 text-ink hover:bg-line"
             >
               Прошлый месяц
             </Link>
@@ -208,9 +208,9 @@ export default async function AttendancePage({
       ) : null}
 
       {rows.length > 0 ? (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+        <div className="overflow-x-auto rounded-card border border-line bg-white">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+            <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
               <tr>
                 <th className="px-4 py-3">Спортсмен</th>
                 <th className="px-4 py-3 text-right">Занятий</th>
@@ -223,20 +223,20 @@ export default async function AttendancePage({
             </thead>
             <tbody>
               {rows.map((row) => (
-                <tr key={row.athleteId} className="border-b border-slate-100 last:border-0">
-                  <td className="px-4 py-3 font-medium text-slate-900">{row.name}</td>
-                  <td className="px-4 py-3 text-right text-slate-600">{row.total}</td>
+                <tr key={row.athleteId} className="border-b border-line last:border-0">
+                  <td className="px-4 py-3 font-medium text-ink">{row.name}</td>
+                  <td className="px-4 py-3 text-right text-muted">{row.total}</td>
                   <td className="px-4 py-3 text-right text-emerald-700">{row.present}</td>
                   <td className="px-4 py-3 text-right text-red-700">{row.absent}</td>
                   <td className="px-4 py-3 text-right text-amber-700">{row.excused}</td>
-                  <td className="px-4 py-3 text-right text-slate-500">{row.unmarked}</td>
-                  <td className="px-4 py-3 text-right font-medium text-slate-900">
+                  <td className="px-4 py-3 text-right text-muted">{row.unmarked}</td>
+                  <td className="px-4 py-3 text-right font-medium text-ink">
                     {percentage(row.present, row.marked)}
                   </td>
                 </tr>
               ))}
 
-              <tr className="bg-slate-50 text-xs text-slate-600">
+              <tr className="bg-canvas text-xs text-muted">
                 <td className="px-4 py-3 font-medium">Итого по группе</td>
                 <td className="px-4 py-3 text-right">{totals.total}</td>
                 <td className="px-4 py-3 text-right">{totals.present}</td>
@@ -253,7 +253,7 @@ export default async function AttendancePage({
       ) : null}
 
       {selectedGroupName ? (
-        <p className="mt-3 text-xs text-slate-500">
+        <p className="mt-3 text-xs text-muted">
           Группа «{selectedGroupName}», период {rangeFrom} — {rangeTo}. Процент считается от
           отмеченных занятий: занятие без отметки не занижает показатель, а показывается отдельно.
         </p>

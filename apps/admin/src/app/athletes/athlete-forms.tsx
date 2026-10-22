@@ -12,10 +12,10 @@ import {
 const initialState: AthleteFormState = {};
 
 const inputClass =
-  'rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500';
-const labelClass = 'flex flex-col gap-1 text-xs font-medium text-slate-600';
+  'rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent';
+const labelClass = 'flex flex-col gap-1 text-xs font-medium text-muted';
 const buttonClass =
-  'rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+  'rounded-md bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
 
 const STATUSES = ['ACTIVE', 'FROZEN', 'ARCHIVED'] as const;
 const GENDERS = ['MALE', 'FEMALE', 'UNSPECIFIED'] as const;
@@ -34,7 +34,7 @@ function StateMessages({ state }: { state: AthleteFormState }) {
         </p>
       ) : null}
       {state.createdId ? (
-        <p className="rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <p className="rounded-md bg-canvas px-3 py-2 text-xs text-muted">
           Карточка: <span className="font-mono">{state.createdId}</span>
         </p>
       ) : null}
@@ -55,9 +55,9 @@ export function CreateAthleteForm() {
   return (
     <form
       action={formAction}
-      className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5"
+      className="flex flex-col gap-3 rounded-card border border-line bg-white p-5"
     >
-      <h2 className="text-sm font-semibold text-slate-900">Новый спортсмен</h2>
+      <h2 className="text-sm font-semibold text-ink">Новый спортсмен</h2>
 
       <label className={labelClass}>
         Фамилия
@@ -127,9 +127,9 @@ export function EditAthleteForm({ athlete }: { athlete: AthleteValues }) {
   return (
     <form
       action={formAction}
-      className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5"
+      className="flex flex-col gap-3 rounded-card border border-line bg-white p-5"
     >
-      <h2 className="text-sm font-semibold text-slate-900">Карточка</h2>
+      <h2 className="text-sm font-semibold text-ink">Карточка</h2>
       <input type="hidden" name="athleteId" value={athlete.id} />
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -259,7 +259,7 @@ export function LinkAccountForm({
         </button>
       </div>
 
-      <label className="flex items-center gap-2 text-xs text-slate-600">
+      <label className="flex items-center gap-2 text-xs text-muted">
         <input type="checkbox" name="isPrimary" />
         основной аккаунт
       </label>

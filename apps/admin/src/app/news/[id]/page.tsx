@@ -85,7 +85,7 @@ export default async function NewsPostPage({ params }: { params: Promise<{ id: s
             : `черновик создан ${formatMoment(data.createdAt)}`
         }`}
         actions={
-          <Link href="/news" className="text-sm text-slate-500 hover:text-slate-900">
+          <Link href="/news" className="text-sm text-muted hover:text-ink">
             ← Все новости
           </Link>
         }
@@ -100,11 +100,11 @@ export default async function NewsPostPage({ params }: { params: Promise<{ id: s
         </div>
       ) : null}
 
-      <article className="rounded-xl border border-slate-200 bg-white p-5">
-        <p className="whitespace-pre-line text-sm text-slate-700">{data.body}</p>
+      <article className="rounded-card border border-line bg-white p-5">
+        <p className="whitespace-pre-line text-sm text-ink">{data.body}</p>
 
         {data.canEdit && !data.archivedAt ? (
-          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
+          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4">
             {data.status === 'DRAFT' ? <PublishNewsForm postId={data.id} /> : null}
             <ArchiveNewsForm postId={data.id} />
           </div>
@@ -112,9 +112,9 @@ export default async function NewsPostPage({ params }: { params: Promise<{ id: s
       </article>
 
       {data.canEdit && !data.archivedAt ? (
-        <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="text-sm font-semibold text-slate-900">Изменить новость</h2>
-          <p className="mt-1 text-xs text-slate-500">
+        <section className="mt-6 rounded-card border border-line bg-white p-5">
+          <h2 className="text-sm font-semibold text-ink">Изменить новость</h2>
+          <p className="mt-1 text-xs text-muted">
             Доступно автору и тем, у кого есть право «news.edit».
           </p>
           <div className="mt-3">
@@ -123,36 +123,36 @@ export default async function NewsPostPage({ params }: { params: Promise<{ id: s
         </section>
       ) : null}
 
-      <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5">
-        <h2 className="text-sm font-semibold text-slate-900">Комментарии: {data.commentsCount}</h2>
+      <section className="mt-6 rounded-card border border-line bg-white p-5">
+        <h2 className="text-sm font-semibold text-ink">Комментарии: {data.commentsCount}</h2>
 
         {canComment ? (
           <div className="mt-3">
             <CommentForm postId={data.id} />
           </div>
         ) : (
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-muted">
             Комментировать можно только опубликованную новость.
           </p>
         )}
 
         <ul className="mt-4 flex flex-col gap-3">
           {data.comments.length === 0 ? (
-            <li className="text-sm text-slate-500">Комментариев пока нет</li>
+            <li className="text-sm text-muted">Комментариев пока нет</li>
           ) : (
             data.comments.map((comment) => (
               <li
                 key={comment.id}
                 className={
                   comment.isDeleted
-                    ? 'rounded-lg border border-slate-100 bg-slate-50 p-3'
-                    : 'rounded-lg border border-slate-200 p-3'
+                    ? 'rounded-card border border-line bg-canvas p-3'
+                    : 'rounded-card border border-line p-3'
                 }
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p className="text-xs font-medium text-slate-700">
+                  <p className="text-xs font-medium text-ink">
                     {comment.author.lastName} {comment.author.firstName}
-                    <span className="ml-2 font-normal text-slate-400">
+                    <span className="ml-2 font-normal text-muted">
                       {formatMoment(comment.createdAt)}
                     </span>
                   </p>
@@ -164,9 +164,9 @@ export default async function NewsPostPage({ params }: { params: Promise<{ id: s
                 {comment.isDeleted ? (
                   // Текст удаленного не показывается: в ветке остается только след,
                   // что комментарий был, иначе ответы на него теряют смысл.
-                  <p className="mt-1 text-xs italic text-slate-400">Комментарий удален</p>
+                  <p className="mt-1 text-xs italic text-muted">Комментарий удален</p>
                 ) : (
-                  <p className="mt-1 whitespace-pre-line text-sm text-slate-700">{comment.body}</p>
+                  <p className="mt-1 whitespace-pre-line text-sm text-ink">{comment.body}</p>
                 )}
               </li>
             ))

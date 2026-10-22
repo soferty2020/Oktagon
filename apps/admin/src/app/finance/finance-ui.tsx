@@ -14,14 +14,14 @@ import type { MembershipPeriodStatus } from '@octagon/contracts';
  */
 
 export const inputClass =
-  'rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500';
+  'rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent';
 export const smallInputClass =
-  'rounded-md border border-slate-300 px-2 py-1 text-xs outline-none focus:border-slate-500';
-export const labelClass = 'flex flex-col gap-1 text-xs font-medium text-slate-600';
+  'rounded-md border border-line px-2 py-1 text-xs outline-none focus:border-accent';
+export const labelClass = 'flex flex-col gap-1 text-xs font-medium text-muted';
 export const buttonClass =
-  'rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-60';
+  'rounded-md bg-accent px-3 py-2 text-sm font-medium text-white disabled:opacity-60';
 export const smallButtonClass =
-  'rounded-md border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-60';
+  'rounded-md border border-line bg-white px-3 py-1 text-xs text-ink hover:bg-canvas disabled:opacity-60';
 
 /**
  * Подписи статуса периода.
@@ -43,7 +43,7 @@ export function PeriodStatusBadge({ status }: { status: MembershipPeriodStatus }
   const badge = PERIOD_STATUS[status];
   return (
     <span
-      className={`rounded-full px-2 py-1 text-xs ${badge?.className ?? 'bg-slate-100 text-slate-600'}`}
+      className={`rounded-full px-2 py-1 text-xs ${badge?.className ?? 'bg-canvas text-muted'}`}
     >
       {badge?.label ?? status}
     </span>
@@ -82,7 +82,7 @@ export function StateMessages({ state }: { state: FinanceFormState }) {
 
 /** Подпись группы полей внутри формы. */
 export function SubHeading({ children }: { children: React.ReactNode }) {
-  return <p className="text-xs font-medium text-slate-600">{children}</p>;
+  return <p className="text-xs font-medium text-muted">{children}</p>;
 }
 
 /**

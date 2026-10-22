@@ -7,7 +7,7 @@ import { deleteMessageAction, sendMessageAction, type ChatFormState } from '@/ap
 const initialState: ChatFormState = {};
 
 const inputClass =
-  'w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500';
+  'w-full rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent';
 
 /**
  * Отправка сообщения.
@@ -22,7 +22,7 @@ export function MessageForm({ conversationId }: { conversationId: string }) {
   return (
     <form action={formAction} className="flex flex-col gap-2">
       <input type="hidden" name="conversationId" value={conversationId} />
-      <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+      <label className="flex flex-col gap-1 text-xs font-medium text-muted">
         Сообщение
         <textarea name="body" required rows={2} maxLength={4000} className={inputClass} />
       </label>
@@ -36,7 +36,7 @@ export function MessageForm({ conversationId }: { conversationId: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+        className="self-start rounded-md bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
       >
         {pending ? 'Отправка…' : 'Отправить'}
       </button>
@@ -63,7 +63,7 @@ export function DeleteMessageForm({
     >
       <input type="hidden" name="messageId" value={messageId} />
       <input type="hidden" name="conversationId" value={conversationId} />
-      <button type="submit" className="text-xs text-slate-400 underline hover:text-red-700">
+      <button type="submit" className="text-xs text-muted underline hover:text-red-700">
         Удалить
       </button>
     </form>

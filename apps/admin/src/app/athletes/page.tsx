@@ -53,9 +53,9 @@ export default async function AthletesPage() {
       ) : null}
 
       <div className={canEdit ? 'grid gap-6 lg:grid-cols-[2fr_1fr]' : ''}>
-        <div className="rounded-xl border border-slate-200 bg-white">
+        <div className="rounded-card border border-line bg-white">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+            <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
               <tr>
                 <th className="px-4 py-3">ФИО</th>
                 <th className="px-4 py-3">Дата рождения</th>
@@ -66,20 +66,20 @@ export default async function AthletesPage() {
             <tbody>
               {result.ok && result.data.length > 0 ? (
                 result.data.map((athlete) => (
-                  <tr key={athlete.id} className="border-b border-slate-100 last:border-0">
+                  <tr key={athlete.id} className="border-b border-line last:border-0">
                     <td className="px-4 py-3">
                       <Link
                         href={`/athletes/${athlete.id}`}
-                        className="font-medium text-slate-900 underline decoration-slate-300 hover:decoration-slate-900"
+                        className="font-medium text-ink underline decoration-line hover:decoration-accent"
                       >
                         {athlete.lastName} {athlete.firstName}
                         {athlete.middleName ? ` ${athlete.middleName}` : ''}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{athlete.birthDate ?? '—'}</td>
-                    <td className="px-4 py-3 text-slate-600">{athlete.phone ?? '—'}</td>
+                    <td className="px-4 py-3 text-muted">{athlete.birthDate ?? '—'}</td>
+                    <td className="px-4 py-3 text-muted">{athlete.phone ?? '—'}</td>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">
+                      <span className="rounded-full bg-canvas px-2 py-1 text-xs text-muted">
                         {athlete.status}
                       </span>
                     </td>

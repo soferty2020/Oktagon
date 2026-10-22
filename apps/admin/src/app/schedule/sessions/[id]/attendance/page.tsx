@@ -84,7 +84,7 @@ export default async function SessionAttendancePage({
         actions={
           <Link
             href="/schedule/sessions"
-            className="text-sm text-slate-500 hover:text-slate-900"
+            className="text-sm text-muted hover:text-ink"
           >
             ← Все занятия
           </Link>
@@ -98,7 +98,7 @@ export default async function SessionAttendancePage({
       ) : null}
 
       {withAbsence.length > 0 ? (
-        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+        <div className="mb-4 rounded-card border border-amber-200 bg-amber-50 p-4">
           <p className="text-xs font-medium text-amber-800">
             Предупреждения об отсутствии ({withAbsence.length}): это слова родителя, итог
             подтверждает тренер
@@ -128,9 +128,9 @@ export default async function SessionAttendancePage({
         </div>
       ) : null}
 
-      <section className="rounded-xl border border-slate-200 bg-white p-5">
+      <section className="rounded-card border border-line bg-white p-5">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+          <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
             <tr>
               <th className="py-2">Спортсмен</th>
               <th className="py-2">Статус</th>
@@ -140,15 +140,15 @@ export default async function SessionAttendancePage({
           <tbody>
             {total === 0 ? (
               <tr>
-                <td colSpan={3} className="py-4 text-sm text-slate-500">
+                <td colSpan={3} className="py-4 text-sm text-muted">
                   На дату занятия в группе не было спортсменов. Если это неожиданно,
                   проверьте состав группы: журнал строится по членству на дату занятия.
                 </td>
               </tr>
             ) : (
               data.roster.map((entry) => (
-                <tr key={entry.athleteId} className="border-b border-slate-100 last:border-0">
-                  <td className="py-2 font-medium text-slate-900">
+                <tr key={entry.athleteId} className="border-b border-line last:border-0">
+                  <td className="py-2 font-medium text-ink">
                     {entry.lastName} {entry.firstName}
                     {entry.plannedAbsence ? (
                       <span className="ml-2 rounded-full bg-amber-50 px-2 py-1 text-xs text-amber-700">
@@ -156,10 +156,10 @@ export default async function SessionAttendancePage({
                       </span>
                     ) : null}
                   </td>
-                  <td className="py-2 text-slate-600">
+                  <td className="py-2 text-muted">
                     {entry.attendance ? STATUS_LABELS[entry.attendance.status] : 'не отмечен'}
                     {entry.attendance?.comment ? (
-                      <span className="block text-xs text-slate-400">
+                      <span className="block text-xs text-muted">
                         {entry.attendance.comment}
                       </span>
                     ) : null}
@@ -181,11 +181,11 @@ export default async function SessionAttendancePage({
       </section>
 
       {canEdit ? (
-        <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="text-sm font-semibold text-slate-900">
+        <section className="mt-6 rounded-card border border-line bg-white p-5">
+          <h2 className="text-sm font-semibold text-ink">
             Сообщить о планируемом отсутствии
           </h2>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-muted">
             Обычно это делает родитель из приложения. Предупреждение не заменяет отметку: итог
             ставит тренер.
           </p>

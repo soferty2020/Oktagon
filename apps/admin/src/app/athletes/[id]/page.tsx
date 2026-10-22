@@ -92,7 +92,7 @@ export default async function AthletePage({ params }: { params: Promise<{ id: st
         }`}
         description={`Статус: ${athlete.data.status} · создан ${athlete.data.createdAt.slice(0, 10)}`}
         actions={
-          <Link href="/athletes" className="text-sm text-slate-500 hover:text-slate-900">
+          <Link href="/athletes" className="text-sm text-muted hover:text-ink">
             ← Все спортсмены
           </Link>
         }
@@ -104,14 +104,14 @@ export default async function AthletePage({ params }: { params: Promise<{ id: st
         <Notice>Карточка доступна только для просмотра: нет права «athletes.edit».</Notice>
       )}
 
-      <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5">
-        <h2 className="text-sm font-semibold text-slate-900">Связанные аккаунты</h2>
-        <p className="mt-1 text-xs text-slate-500">
+      <section className="mt-6 rounded-card border border-line bg-white p-5">
+        <h2 className="text-sm font-semibold text-ink">Связанные аккаунты</h2>
+        <p className="mt-1 text-xs text-muted">
           Через аккаунт родитель видит своего спортсмена в приложении.
         </p>
 
         <table className="mt-3 w-full text-left text-sm">
-          <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+          <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
             <tr>
               <th className="py-2">Email</th>
               <th className="py-2">Кем является</th>
@@ -122,16 +122,16 @@ export default async function AthletePage({ params }: { params: Promise<{ id: st
           <tbody>
             {athlete.data.linkedAccounts.length === 0 ? (
               <tr>
-                <td colSpan={4} className="py-4 text-sm text-slate-500">
+                <td colSpan={4} className="py-4 text-sm text-muted">
                   Связанных аккаунтов нет
                 </td>
               </tr>
             ) : (
               athlete.data.linkedAccounts.map((account) => (
-                <tr key={account.userId} className="border-b border-slate-100 last:border-0">
-                  <td className="py-2 text-slate-900">{account.email}</td>
-                  <td className="py-2 text-slate-600">{account.relation}</td>
-                  <td className="py-2 text-slate-600">{account.isPrimary ? 'да' : 'нет'}</td>
+                <tr key={account.userId} className="border-b border-line last:border-0">
+                  <td className="py-2 text-ink">{account.email}</td>
+                  <td className="py-2 text-muted">{account.relation}</td>
+                  <td className="py-2 text-muted">{account.isPrimary ? 'да' : 'нет'}</td>
                   <td className="py-2 text-right">
                     {canEdit ? (
                       <form action={unlinkAccountAction}>
@@ -139,7 +139,7 @@ export default async function AthletePage({ params }: { params: Promise<{ id: st
                         <input type="hidden" name="userId" value={account.userId} />
                         <button
                           type="submit"
-                          className="text-xs text-slate-500 underline hover:text-red-700"
+                          className="text-xs text-muted underline hover:text-red-700"
                         >
                           Снять связь
                         </button>
@@ -153,7 +153,7 @@ export default async function AthletePage({ params }: { params: Promise<{ id: st
         </table>
 
         {canEdit ? (
-          <div className="mt-4 border-t border-slate-100 pt-4">
+          <div className="mt-4 border-t border-line pt-4">
             {!canViewUsers ? (
               <Notice>
                 Чтобы связать аккаунт, нужен доступ к списку пользователей (право
@@ -162,7 +162,7 @@ export default async function AthletePage({ params }: { params: Promise<{ id: st
             ) : availableUsers.length > 0 ? (
               <LinkAccountForm athleteId={athlete.data.id} users={availableUsers} />
             ) : (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted">
                 Свободных аккаунтов нет: все активные пользователи уже связаны
               </p>
             )}
@@ -171,9 +171,9 @@ export default async function AthletePage({ params }: { params: Promise<{ id: st
       </section>
 
       {canEdit && athlete.data.status !== 'ARCHIVED' ? (
-        <section className="mt-6 rounded-xl border border-red-100 bg-red-50/50 p-5">
-          <h2 className="text-sm font-semibold text-slate-900">Архивирование</h2>
-          <p className="mt-1 text-xs text-slate-600">
+        <section className="mt-6 rounded-card border border-red-100 bg-red-50/50 p-5">
+          <h2 className="text-sm font-semibold text-ink">Архивирование</h2>
+          <p className="mt-1 text-xs text-muted">
             Карточка исчезнет из справочников, статус станет ARCHIVED, история
             сохранится.
           </p>

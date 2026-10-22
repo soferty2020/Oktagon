@@ -14,12 +14,12 @@ import {
 const initialState: TrainerFormState = {};
 
 const inputClass =
-  'w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500';
-const labelClass = 'flex flex-col gap-1 text-xs font-medium text-slate-600';
+  'w-full rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent';
+const labelClass = 'flex flex-col gap-1 text-xs font-medium text-muted';
 const buttonClass =
-  'rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+  'rounded-md bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
 const secondaryButtonClass =
-  'rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-60';
+  'rounded-md border border-line bg-white px-3 py-1.5 text-xs text-ink hover:bg-canvas disabled:opacity-60';
 
 function StateMessages({ state }: { state: TrainerFormState }) {
   return (
@@ -45,11 +45,11 @@ export function CreateTrainerForm() {
   return (
     <form
       action={formAction}
-      className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5"
+      className="flex flex-col gap-3 rounded-card border border-line bg-white p-5"
     >
       <div>
-        <h2 className="text-sm font-semibold text-slate-900">Новый тренер</h2>
-        <p className="mt-1 text-xs text-slate-500">
+        <h2 className="text-sm font-semibold text-ink">Новый тренер</h2>
+        <p className="mt-1 text-xs text-muted">
           Профиль можно завести без аккаунта: вход в систему нужен не всем тренерам. Аккаунт
           привязывается отдельно и дает доступ к чатам групп и занятиям.
         </p>
@@ -129,7 +129,7 @@ export function EditTrainerForm({
         />
       </label>
 
-      <label className="flex items-center gap-2 text-xs text-slate-600">
+      <label className="flex items-center gap-2 text-xs text-muted">
         <input type="checkbox" name="isActive" defaultChecked={trainer.isActive} />
         активен (неактивный тренер не предлагается в расписании)
       </label>
@@ -161,7 +161,7 @@ export function LinkAccountForm({
 
   if (accounts.length === 0) {
     return (
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         Нет свободных аккаунтов сотрудников. Пригласите пользователя с ролью STAFF — тогда его можно
         будет привязать.
       </p>
@@ -211,7 +211,7 @@ export function UnlinkAccountForm({ trainerId }: { trainerId: string }) {
       }}
     >
       <input type="hidden" name="trainerId" value={trainerId} />
-      <button type="submit" className="text-xs text-slate-500 underline hover:text-red-700">
+      <button type="submit" className="text-xs text-muted underline hover:text-red-700">
         Снять связь
       </button>
     </form>
@@ -234,7 +234,7 @@ export function ArchiveTrainerForm({ trainerId }: { trainerId: string }) {
       }}
     >
       <input type="hidden" name="trainerId" value={trainerId} />
-      <button type="submit" className="text-xs text-slate-500 underline hover:text-red-700">
+      <button type="submit" className="text-xs text-muted underline hover:text-red-700">
         Архивировать
       </button>
     </form>

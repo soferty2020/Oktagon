@@ -29,11 +29,11 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
   const preview = await apiFetch<UserInvitePreview>(`/auth/invites/${encodeURIComponent(token)}`);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-100 p-6">
-      <div className="flex w-full max-w-lg flex-col gap-6 rounded-xl bg-white p-8 shadow-sm">
+    <main className="flex min-h-screen items-center justify-center bg-canvas p-6">
+      <div className="flex w-full max-w-lg flex-col gap-6 rounded-card bg-white p-8 shadow-sm">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">OCTAGON</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-xl font-semibold text-ink">OCTAGON</h1>
+          <p className="mt-1 text-sm text-muted">
             {preview.ok
               ? 'Задайте пароль и заполните профиль — аккаунт создастся сразу.'
               : 'Приглашение недействительно'}
@@ -42,7 +42,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
 
         {preview.ok ? (
           <>
-            <p className="rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600">
+            <p className="rounded-md bg-canvas px-3 py-2 text-xs text-muted">
               Приглашение действует до {preview.data.expiresAt.slice(0, 10)}.
             </p>
             <AcceptInviteForm token={token} email={preview.data.email} role={preview.data.role} />
@@ -52,7 +52,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
             <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
               {describePreviewError(preview.error.code, preview.error.message)}
             </p>
-            <Link href="/login" className="text-sm text-slate-600 underline hover:text-slate-900">
+            <Link href="/login" className="text-sm text-muted underline hover:text-ink">
               Перейти ко входу
             </Link>
           </div>

@@ -13,35 +13,35 @@ export function BranchForm() {
   return (
     <form
       action={formAction}
-      className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5"
+      className="flex flex-col gap-3 rounded-card border border-line bg-white p-5"
     >
-      <h2 className="text-sm font-semibold text-slate-900">Новый филиал</h2>
+      <h2 className="text-sm font-semibold text-ink">Новый филиал</h2>
 
       <label className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-slate-600">Название</span>
+        <span className="text-xs font-medium text-muted">Название</span>
         <input
           name="name"
           required
           maxLength={200}
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+          className="rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent"
         />
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-slate-600">Адрес</span>
+        <span className="text-xs font-medium text-muted">Адрес</span>
         <input
           name="address"
           maxLength={500}
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+          className="rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent"
         />
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-slate-600">Телефон</span>
+        <span className="text-xs font-medium text-muted">Телефон</span>
         <input
           name="phone"
           maxLength={32}
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+          className="rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent"
         />
       </label>
 
@@ -59,7 +59,7 @@ export function BranchForm() {
       <button
         type="submit"
         disabled={pending}
-        className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+        className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
       >
         {pending ? 'Сохранение…' : 'Создать филиал'}
       </button>

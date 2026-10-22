@@ -138,7 +138,7 @@ export function FullyPaidForm({
             ? 'Снять отметку «оплачен полностью»'
             : 'Отметить оплаченным полностью'}
       </button>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         {marked
           ? 'Отметка стоит: месяц считается оплаченным независимо от суммы.'
           : 'Ставится, когда расчеты шли вне системы и сумма в ней не совпадает с фактом.'}
@@ -187,13 +187,13 @@ export function PeriodRow({
   const movements = period.payments.filter((movement) => movement.kind === 'PAYMENT');
 
   return (
-    <details className="border-b border-slate-100 last:border-0">
+    <details className="border-b border-line last:border-0">
       <summary className="flex cursor-pointer flex-wrap items-center gap-3 px-4 py-3 text-sm">
-        <span className="w-36 font-medium text-slate-900">
+        <span className="w-36 font-medium text-ink">
           {formatMonth(period.year, period.month)}
         </span>
         <PeriodStatusBadge status={period.status} />
-        <span className="text-slate-600">
+        <span className="text-muted">
           ожидается {formatMoney(period.expectedAmount)} · зачтено {formatMoney(period.paidAmount)}
         </span>
         {period.refundedAmount > 0 ? (
@@ -209,15 +209,15 @@ export function PeriodRow({
             зачтено больше ожидаемого на {formatMoney(overpaid)}
           </span>
         ) : null}
-        <span className="ml-auto text-xs text-slate-400">
+        <span className="ml-auto text-xs text-muted">
           движений: {period.payments.length} · подробнее
         </span>
       </summary>
 
-      <div className="flex flex-col gap-4 bg-slate-50/60 px-4 py-4">
+      <div className="flex flex-col gap-4 bg-canvas/60 px-4 py-4">
         {period.note ? (
-          <p className="text-xs text-slate-600">
-            Заметка периода: <span className="text-slate-900">{period.note}</span>
+          <p className="text-xs text-muted">
+            Заметка периода: <span className="text-ink">{period.note}</span>
           </p>
         ) : null}
 
@@ -225,12 +225,12 @@ export function PeriodRow({
           <SubHeading>Движения средств</SubHeading>
 
           {period.payments.length === 0 ? (
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-muted">
               Поступлений нет: месяц считается неоплаченным.
             </p>
           ) : (
             <>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-muted">
                 Лента целиком: поступления и возвраты. Зачтено = поступления − возвраты (ADR-0010).
               </p>
 
@@ -248,8 +248,8 @@ export function PeriodRow({
                       key={movement.id}
                       className={
                         isRefund
-                          ? 'rounded-lg border border-amber-200 bg-amber-50/40 p-3'
-                          : 'rounded-lg border border-slate-200 bg-white p-3'
+                          ? 'rounded-card border border-amber-200 bg-amber-50/40 p-3'
+                          : 'rounded-card border border-line bg-white p-3'
                       }
                     >
                       <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -262,21 +262,21 @@ export function PeriodRow({
                         >
                           {isRefund ? 'возврат' : 'поступление'}
                         </span>
-                        <span className="font-medium text-slate-900">
+                        <span className="font-medium text-ink">
                           {isRefund ? '−' : '+'}
                           {formatMoney(movement.amount)}
                         </span>
-                        <span className="text-slate-600">
+                        <span className="text-muted">
                           {formatCalendarDate(movement.paidAt)}
                         </span>
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs text-muted">
                           {paymentMethodLabel(movement.method)}
                         </span>
                         {movement.comment ? (
-                          <span className="text-xs text-slate-500">{movement.comment}</span>
+                          <span className="text-xs text-muted">{movement.comment}</span>
                         ) : null}
                         {source ? (
-                          <span className="text-xs text-slate-500">
+                          <span className="text-xs text-muted">
                             по оплате от {formatCalendarDate(source.paidAt)} на{' '}
                             {formatMoney(source.amount)}
                           </span>
@@ -295,7 +295,7 @@ export function PeriodRow({
                       {canEdit && !isRefund ? (
                         <div className="mt-2 flex flex-col gap-2">
                           <details>
-                            <summary className="cursor-pointer text-xs text-slate-500 hover:text-slate-900">
+                            <summary className="cursor-pointer text-xs text-muted hover:text-ink">
                               Изменить оплату
                             </summary>
                             <div className="mt-2">
@@ -304,7 +304,7 @@ export function PeriodRow({
                           </details>
 
                           <details>
-                            <summary className="cursor-pointer text-xs text-slate-500 hover:text-slate-900">
+                            <summary className="cursor-pointer text-xs text-muted hover:text-ink">
                               Оформить возврат
                             </summary>
                             <div className="mt-2">
@@ -328,7 +328,7 @@ export function PeriodRow({
         </div>
 
         {canEdit ? (
-          <div className="flex flex-col gap-4 border-t border-slate-200 pt-4">
+          <div className="flex flex-col gap-4 border-t border-line pt-4">
             <RecordPaymentForm
               periodId={period.id}
               athleteId={athleteId}
@@ -356,7 +356,7 @@ export function PeriodRow({
             />
           </div>
         ) : (
-          <p className="border-t border-slate-200 pt-4 text-xs text-slate-500">
+          <p className="border-t border-line pt-4 text-xs text-muted">
             Доступен только просмотр: нет права «payments.edit».
           </p>
         )}
@@ -434,7 +434,7 @@ function ReturnWithoutPaymentForm({
           {pending ? '…' : 'Вернуть'}
         </button>
       </div>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         Не больше поступлений периода; доступно {formatMoney(available)}.
       </p>
 

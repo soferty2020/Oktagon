@@ -117,10 +117,10 @@ export default async function ChatsPage({
       ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
-        <section className="rounded-xl border border-slate-200 bg-white">
-          <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200 px-4 py-3">
-            <h2 className="text-sm font-semibold text-slate-900">Диалоги</h2>
-            <p className="text-xs text-slate-500">
+        <section className="rounded-card border border-line bg-white">
+          <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line px-4 py-3">
+            <h2 className="text-sm font-semibold text-ink">Диалоги</h2>
+            <p className="text-xs text-muted">
               Чаты групп появляются при первом обращении участника
             </p>
           </div>
@@ -139,15 +139,15 @@ export default async function ChatsPage({
               </li>
             ) : (
               conversations.data.map((conversation) => (
-                <li key={conversation.id} className="border-b border-slate-100 last:border-0">
+                <li key={conversation.id} className="border-b border-line last:border-0">
                   <Link
                     href={`/chats/${conversation.id}`}
-                    className="flex items-start justify-between gap-3 px-4 py-3 hover:bg-slate-50"
+                    className="flex items-start justify-between gap-3 px-4 py-3 hover:bg-canvas"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-slate-900">
+                      <p className="truncate text-sm font-medium text-ink">
                         {conversation.type === 'GROUP' ? (
-                          <span className="mr-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
+                          <span className="mr-2 rounded-full bg-canvas px-2 py-0.5 text-xs text-muted">
                             группа
                           </span>
                         ) : (
@@ -157,7 +157,7 @@ export default async function ChatsPage({
                         )}
                         {conversation.title}
                       </p>
-                      <p className="mt-1 truncate text-xs text-slate-500">
+                      <p className="mt-1 truncate text-xs text-muted">
                         {conversation.lastMessage
                           ? lastMessagePreview(conversation.lastMessage)
                           : 'Сообщений пока нет'}
@@ -166,11 +166,11 @@ export default async function ChatsPage({
 
                     <div className="shrink-0 text-right">
                       {conversation.unreadCount > 0 ? (
-                        <span className="rounded-full bg-slate-900 px-2 py-0.5 text-xs text-white">
+                        <span className="rounded-full bg-accent px-2 py-0.5 text-xs text-white">
                           {conversation.unreadCount}
                         </span>
                       ) : null}
-                      <p className="mt-1 text-xs text-slate-400">
+                      <p className="mt-1 text-xs text-muted">
                         {formatMoment(conversation.lastMessageAt ?? conversation.createdAt)}
                       </p>
                     </div>
@@ -183,9 +183,9 @@ export default async function ChatsPage({
 
         <div className="flex flex-col gap-4">
           {groups?.ok && groups.data.length > 0 ? (
-            <section className="rounded-xl border border-slate-200 bg-white p-4">
-              <h2 className="text-sm font-semibold text-slate-900">Чат группы</h2>
-              <p className="mt-1 text-xs text-slate-500">
+            <section className="rounded-card border border-line bg-white p-4">
+              <h2 className="text-sm font-semibold text-ink">Чат группы</h2>
+              <p className="mt-1 text-xs text-muted">
                 Доступен тренерам группы и представителям ее спортсменов.
               </p>
               <ul className="mt-3 flex flex-col gap-2">
@@ -195,7 +195,7 @@ export default async function ChatsPage({
                       <input type="hidden" name="groupId" value={group.id} />
                       <button
                         type="submit"
-                        className="w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-left text-xs text-slate-700 hover:bg-slate-50"
+                        className="w-full rounded-md border border-line bg-white px-3 py-1.5 text-left text-xs text-ink hover:bg-canvas"
                       >
                         {group.name}
                       </button>
@@ -207,9 +207,9 @@ export default async function ChatsPage({
           ) : null}
 
           {users?.ok ? (
-            <section className="rounded-xl border border-slate-200 bg-white p-4">
-              <h2 className="text-sm font-semibold text-slate-900">Личный диалог</h2>
-              <p className="mt-1 text-xs text-slate-500">
+            <section className="rounded-card border border-line bg-white p-4">
+              <h2 className="text-sm font-semibold text-ink">Личный диалог</h2>
+              <p className="mt-1 text-xs text-muted">
                 BR-012: диалог может начать и родитель, и тренер. Повторное открытие вернет ту же
                 переписку.
               </p>
@@ -222,10 +222,10 @@ export default async function ChatsPage({
                         <input type="hidden" name="participantId" value={candidate.id} />
                         <button
                           type="submit"
-                          className="w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-left text-xs text-slate-700 hover:bg-slate-50"
+                          className="w-full rounded-md border border-line bg-white px-3 py-1.5 text-left text-xs text-ink hover:bg-canvas"
                         >
                           {candidate.lastName} {candidate.firstName}
-                          <span className="ml-2 text-slate-400">{candidate.role}</span>
+                          <span className="ml-2 text-muted">{candidate.role}</span>
                         </button>
                       </form>
                     </li>

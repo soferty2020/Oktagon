@@ -67,9 +67,9 @@ export default async function GroupsPage() {
       />
 
       <div className={canManage ? 'grid gap-6 lg:grid-cols-[2fr_1fr]' : ''}>
-        <div className="rounded-xl border border-slate-200 bg-white">
+        <div className="rounded-card border border-line bg-white">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+            <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
               <tr>
                 <th className="px-4 py-3">Название</th>
                 <th className="px-4 py-3">Основной филиал</th>
@@ -80,28 +80,28 @@ export default async function GroupsPage() {
             <tbody>
               {groups.ok && groups.data.length > 0 ? (
                 groups.data.map((group) => (
-                  <tr key={group.id} className="border-b border-slate-100 last:border-0">
+                  <tr key={group.id} className="border-b border-line last:border-0">
                     <td className="px-4 py-3">
                       <Link
                         href={`/groups/${group.id}`}
-                        className="font-medium text-slate-900 underline decoration-slate-300 hover:decoration-slate-900"
+                        className="font-medium text-ink underline decoration-line hover:decoration-accent"
                       >
                         {group.name}
                       </Link>
                       {group.description ? (
-                        <span className="block text-xs text-slate-500">{group.description}</span>
+                        <span className="block text-xs text-muted">{group.description}</span>
                       ) : null}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-muted">
                       {group.primaryBranchName ?? 'не назначен'}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{group.activeMembersCount}</td>
+                    <td className="px-4 py-3 text-muted">{group.activeMembersCount}</td>
                     <td className="px-4 py-3">
                       <span
                         className={
                           group.isActive
                             ? 'rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700'
-                            : 'rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-500'
+                            : 'rounded-full bg-canvas px-2 py-1 text-xs text-muted'
                         }
                       >
                         {group.isActive ? 'активна' : 'неактивна'}

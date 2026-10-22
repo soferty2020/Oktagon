@@ -148,7 +148,7 @@ export default async function SessionsPage({
         title="Занятия"
         description="По умолчанию: неделя назад и месяц вперед. Время указано по часовому поясу клуба."
         actions={
-          <Link href="/schedule" className="text-sm text-slate-500 hover:text-slate-900">
+          <Link href="/schedule" className="text-sm text-muted hover:text-ink">
             ← Расписания
           </Link>
         }
@@ -164,9 +164,9 @@ export default async function SessionsPage({
       {!sessions.ok ? <Notice tone="error">{describeError(sessions.error)}</Notice> : null}
 
       {canEdit ? (
-        <section className="mb-6 rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="text-sm font-semibold text-slate-900">Добавить занятие вручную</h2>
-          <p className="mt-1 mb-3 text-xs text-slate-500">
+        <section className="mb-6 rounded-card border border-line bg-white p-5">
+          <h2 className="text-sm font-semibold text-ink">Добавить занятие вручную</h2>
+          <p className="mt-1 mb-3 text-xs text-muted">
             Для занятий задним числом (клуб работал до внедрения системы) и разовых занятий вне
             расписания. Шаблон расписания не меняется (BR-009).
           </p>
@@ -182,14 +182,14 @@ export default async function SessionsPage({
       <div className="flex flex-col gap-3">
         {sessions.ok
           ? sessions.data.map((session) => (
-              <article key={session.id} className="rounded-xl border border-slate-200 bg-white p-5">
+              <article key={session.id} className="rounded-card border border-line bg-white p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="font-medium text-slate-900">{session.groupName}</p>
-                    <p className="mt-1 text-sm text-slate-600">
+                    <p className="font-medium text-ink">{session.groupName}</p>
+                    <p className="mt-1 text-sm text-muted">
                       {formatLocal(session.startsAt)} — {formatLocal(session.endsAt, true)}
                     </p>
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-1 text-xs text-muted">
                       {session.hallName ?? 'зал не назначен'} ·{' '}
                       {session.trainerName ?? 'тренер не назначен'}
                     </p>
@@ -199,12 +199,12 @@ export default async function SessionsPage({
                     <span className={statusClass(session.status)}>
                       {statusLabel(session.status)}
                     </span>
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-muted">
                       {session.fromTemplate ? 'из расписания' : 'добавлено вручную'}
                     </span>
                     <Link
                       href={`/schedule/sessions/${session.id}/attendance`}
-                      className="text-xs text-slate-500 underline hover:text-slate-900"
+                      className="text-xs text-muted underline hover:text-ink"
                     >
                       Посещаемость
                     </Link>
@@ -212,22 +212,22 @@ export default async function SessionsPage({
                 </div>
 
                 {session.changeReason ? (
-                  <p className="mt-2 rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                  <p className="mt-2 rounded-md bg-canvas px-3 py-2 text-xs text-muted">
                     Причина: {session.changeReason}
                   </p>
                 ) : null}
 
                 {session.status === 'CANCELLED' ? null : (
-                  <div className="mt-4 flex flex-col gap-4 border-t border-slate-100 pt-4 lg:flex-row">
+                  <div className="mt-4 flex flex-col gap-4 border-t border-line pt-4 lg:flex-row">
                     {canEdit ? (
                       <div className="flex-1">
-                        <p className="mb-2 text-xs font-medium text-slate-600">Перенести</p>
+                        <p className="mb-2 text-xs font-medium text-muted">Перенести</p>
                         <MoveSessionForm sessionId={session.id} />
                       </div>
                     ) : null}
                     {canCancel ? (
                       <div className="flex-1">
-                        <p className="mb-2 text-xs font-medium text-slate-600">Отменить</p>
+                        <p className="mb-2 text-xs font-medium text-muted">Отменить</p>
                         <CancelSessionForm sessionId={session.id} />
                       </div>
                     ) : null}

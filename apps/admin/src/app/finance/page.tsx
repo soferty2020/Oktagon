@@ -117,7 +117,7 @@ export default async function FinancePage({
         actions={
           <Link
             href={`/finance/debtors?${monthQuery(year, month)}`}
-            className="text-sm text-slate-500 hover:text-slate-900"
+            className="text-sm text-muted hover:text-ink"
           >
             Все должники и освобождения →
           </Link>
@@ -127,10 +127,10 @@ export default async function FinancePage({
       <div className="flex flex-wrap items-end justify-between gap-4">
         <MonthPicker year={year} month={month} />
         <div className="flex flex-wrap gap-3 text-sm">
-          <Link href="/finance/freezes" className="text-slate-600 underline hover:text-slate-900">
+          <Link href="/finance/freezes" className="text-muted underline hover:text-ink">
             Заморозки
           </Link>
-          <Link href="/athletes" className="text-slate-600 underline hover:text-slate-900">
+          <Link href="/athletes" className="text-muted underline hover:text-ink">
             Спортсмены
           </Link>
         </div>
@@ -180,22 +180,22 @@ export default async function FinancePage({
         />
       </div>
 
-      <section className="mt-8 rounded-xl border border-slate-200 bg-white">
-        <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200 px-4 py-3">
-          <h2 className="text-sm font-semibold text-slate-900">Сравнение филиалов</h2>
-          <p className="text-xs text-slate-500">
+      <section className="mt-8 rounded-card border border-line bg-white">
+        <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line px-4 py-3">
+          <h2 className="text-sm font-semibold text-ink">Сравнение филиалов</h2>
+          <p className="text-xs text-muted">
             Выручка — по филиалу группы спортсмена; задолженность — по должникам филиала
           </p>
         </div>
 
         {branchRows.length === 0 ? (
-          <p className="px-4 py-5 text-sm text-slate-500">
+          <p className="px-4 py-5 text-sm text-muted">
             За {formatMonth(year, month)} нет ни движений средств, ни должников: сравнивать филиалы
             не по чему.
           </p>
         ) : (
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+            <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
               <tr>
                 <th className="px-4 py-3">Филиал</th>
                 <th className="px-4 py-3">Выручка</th>
@@ -209,17 +209,17 @@ export default async function FinancePage({
               {branchRows.map((branch) => (
                 <tr
                   key={branch.branchId ?? 'no-branch'}
-                  className="border-b border-slate-100 last:border-0"
+                  className="border-b border-line last:border-0"
                 >
                   <td className="px-4 py-3">
-                    <span className="font-medium text-slate-900">{branch.branchName}</span>
+                    <span className="font-medium text-ink">{branch.branchName}</span>
                     {branch.branchId === null ? (
-                      <span className="mt-1 block text-xs text-slate-500">
+                      <span className="mt-1 block text-xs text-muted">
                         филиал не назначен — суммы не отнесены к филиалам
                       </span>
                     ) : null}
                   </td>
-                  <td className="px-4 py-3 font-medium text-slate-900">
+                  <td className="px-4 py-3 font-medium text-ink">
                     {formatAmount(branch.revenue)}
                     <ScaleBar
                       value={branch.revenue}
@@ -227,15 +227,15 @@ export default async function FinancePage({
                       color={branch.revenue < 0 ? 'bg-red-400' : 'bg-emerald-500'}
                     />
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{formatAmount(branch.received)}</td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-muted">{formatAmount(branch.received)}</td>
+                  <td className="px-4 py-3 text-muted">
                     {branch.refunded > 0 ? (
                       <span className="text-amber-700">{formatAmount(branch.refunded)}</span>
                     ) : (
                       '—'
                     )}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{branch.debtors}</td>
+                  <td className="px-4 py-3 text-muted">{branch.debtors}</td>
                   <td className="px-4 py-3">
                     {branch.debt > 0 ? (
                       <>
@@ -253,22 +253,22 @@ export default async function FinancePage({
         )}
       </section>
 
-      <section className="mt-8 rounded-xl border border-slate-200 bg-white">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
-          <h2 className="text-sm font-semibold text-slate-900">
+      <section className="mt-8 rounded-card border border-line bg-white">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
+          <h2 className="text-sm font-semibold text-ink">
             Должники за {formatMonth(year, month)}
           </h2>
           {canEdit ? (
-            <span className="text-xs text-slate-500">Оплата вносится в карточке спортсмена</span>
+            <span className="text-xs text-muted">Оплата вносится в карточке спортсмена</span>
           ) : (
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-muted">
               Только просмотр: нет права «payments.edit»
             </span>
           )}
         </div>
 
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+          <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
             <tr>
               <th className="px-4 py-3">Спортсмен</th>
               <th className="px-4 py-3">Ожидается</th>
@@ -291,24 +291,24 @@ export default async function FinancePage({
               </tr>
             ) : (
               debtors.map((row) => (
-                <tr key={row.athleteId} className="border-b border-slate-100 last:border-0">
+                <tr key={row.athleteId} className="border-b border-line last:border-0">
                   <td className="px-4 py-3">
                     <Link
                       href={`/finance/athletes/${row.athleteId}?${monthQuery(year, month)}`}
-                      className="font-medium text-slate-900 underline decoration-slate-300 hover:decoration-slate-900"
+                      className="font-medium text-ink underline decoration-line hover:decoration-accent"
                     >
                       {row.lastName} {row.firstName}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-muted">
                     {row.expectedAmount === null ? (
                       <span className="text-amber-700">не задана</span>
                     ) : (
                       formatAmount(row.expectedAmount)
                     )}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{formatAmount(row.paidAmount)}</td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-muted">{formatAmount(row.paidAmount)}</td>
+                  <td className="px-4 py-3 text-muted">
                     {row.refundedAmount > 0 ? (
                       <span className="text-amber-700">{formatAmount(row.refundedAmount)}</span>
                     ) : (
@@ -325,7 +325,7 @@ export default async function FinancePage({
                   <td className="px-4 py-3 text-right text-xs">
                     <Link
                       href={`/finance/athletes/${row.athleteId}?${monthQuery(year, month)}`}
-                      className="text-slate-500 underline hover:text-slate-900"
+                      className="text-muted underline hover:text-ink"
                     >
                       Открыть период
                     </Link>
@@ -337,11 +337,11 @@ export default async function FinancePage({
         </table>
       </section>
 
-      <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5">
-        <h2 className="text-sm font-semibold text-slate-900">
+      <section className="mt-6 rounded-card border border-line bg-white p-5">
+        <h2 className="text-sm font-semibold text-ink">
           Как считается задолженность (BR-004)
         </h2>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-muted">
           Спортсмен попадает в должники, только если он активен, месяц не отмечен оплаченным
           вручную, в месяце уже была хотя бы одна тренировка его группы и он не в заморозке.
           Задолженность оценивается на начало месяца, поэтому заморозка освобождает от нее, только
@@ -366,18 +366,18 @@ function SummaryCard({
   tone?: 'default' | 'alert';
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
-      <p className="text-sm text-slate-500">{title}</p>
+    <div className="rounded-card border border-line bg-white p-5">
+      <p className="text-sm text-muted">{title}</p>
       <p
         className={
           tone === 'alert'
             ? 'mt-2 text-2xl font-semibold text-red-700'
-            : 'mt-2 text-2xl font-semibold text-slate-900'
+            : 'mt-2 text-2xl font-semibold text-ink'
         }
       >
         {value}
       </p>
-      <p className="mt-1 text-xs text-slate-500">{note}</p>
+      <p className="mt-1 text-xs text-muted">{note}</p>
     </div>
   );
 }
@@ -397,7 +397,7 @@ function ScaleBar({ value, max, color }: { value: number; max: number; color: st
   const share = Math.min(Math.abs(value) / max, 1);
 
   return (
-    <span className="mt-2 block h-1.5 w-full rounded-full bg-slate-100">
+    <span className="mt-2 block h-1.5 w-full rounded-full bg-canvas">
       <span
         className={`block h-1.5 rounded-full ${color}`}
         style={{ width: `${Math.round(share * 100)}%` }}

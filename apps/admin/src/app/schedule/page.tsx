@@ -73,17 +73,17 @@ export default async function SchedulePage() {
             templates.data.map((template) => (
               <article
                 key={template.id}
-                className="rounded-xl border border-slate-200 bg-white p-5"
+                className="rounded-card border border-line bg-white p-5"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <Link
                       href={`/schedule/${template.id}`}
-                      className="font-medium text-slate-900 underline decoration-slate-300 hover:decoration-slate-900"
+                      className="font-medium text-ink underline decoration-line hover:decoration-accent"
                     >
                       {template.groupName}
                     </Link>
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-1 text-xs text-muted">
                       {template.quarter} квартал {template.year} · {template.validFrom} —{' '}
                       {template.validTo} · слотов: {template.slots.length}
                     </p>
@@ -101,7 +101,7 @@ export default async function SchedulePage() {
                 <div className="mt-3">
                   <Link
                     href={`/schedule/sessions?groupId=${template.groupId}`}
-                    className="text-xs text-slate-500 underline hover:text-slate-900"
+                    className="text-xs text-muted underline hover:text-ink"
                   >
                     Занятия группы
                   </Link>
@@ -119,7 +119,7 @@ export default async function SchedulePage() {
           <div>
             <Link
               href="/schedule/sessions"
-              className="text-sm text-slate-600 underline hover:text-slate-900"
+              className="text-sm text-muted underline hover:text-ink"
             >
               Список занятий →
             </Link>

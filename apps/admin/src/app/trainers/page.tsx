@@ -123,19 +123,19 @@ export default async function TrainersPage() {
           ) : null}
 
           {list.map((trainer) => (
-            <article key={trainer.id} className="rounded-xl border border-slate-200 bg-white p-5">
+            <article key={trainer.id} className="rounded-card border border-line bg-white p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-base font-semibold text-slate-900">
+                  <h2 className="text-base font-semibold text-ink">
                     {trainer.displayName}
                     {!trainer.isActive ? (
-                      <span className="ml-2 rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">
+                      <span className="ml-2 rounded-full bg-canvas px-2 py-1 text-xs text-muted">
                         неактивен
                       </span>
                     ) : null}
                   </h2>
                   {trainer.phone ? (
-                    <p className="mt-1 text-xs text-slate-500">{trainer.phone}</p>
+                    <p className="mt-1 text-xs text-muted">{trainer.phone}</p>
                   ) : null}
                 </div>
 
@@ -152,14 +152,14 @@ export default async function TrainersPage() {
               </div>
 
               {trainer.bio ? (
-                <p className="mt-2 whitespace-pre-line text-sm text-slate-700">{trainer.bio}</p>
+                <p className="mt-2 whitespace-pre-line text-sm text-ink">{trainer.bio}</p>
               ) : null}
 
               {canManageAccounts ? (
-                <div className="mt-4 border-t border-slate-100 pt-4">
+                <div className="mt-4 border-t border-line pt-4">
                   {trainer.userId ? (
                     <div className="flex flex-wrap items-center gap-3">
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-muted">
                         Вход в систему разрешен. Снятие связи не удаляет профиль и историю занятий.
                       </p>
                       <UnlinkAccountForm trainerId={trainer.id} />
@@ -169,14 +169,14 @@ export default async function TrainersPage() {
                   )}
                 </div>
               ) : (
-                <p className="mt-3 text-xs text-slate-500">
+                <p className="mt-3 text-xs text-muted">
                   Привязка аккаунта требует права «users.manage».
                 </p>
               )}
 
               {canEditCard ? (
-                <details className="mt-4 border-t border-slate-100 pt-4">
-                  <summary className="cursor-pointer text-xs text-slate-500 hover:text-slate-900">
+                <details className="mt-4 border-t border-line pt-4">
+                  <summary className="cursor-pointer text-xs text-muted hover:text-ink">
                     Изменить карточку
                   </summary>
                   <div className="mt-3">
@@ -191,9 +191,9 @@ export default async function TrainersPage() {
           ))}
 
           {groups?.ok && groups.data.length > 0 ? (
-            <section className="rounded-xl border border-slate-200 bg-white p-5">
-              <h2 className="text-sm font-semibold text-slate-900">Группы клуба</h2>
-              <p className="mt-1 text-xs text-slate-500">
+            <section className="rounded-card border border-line bg-white p-5">
+              <h2 className="text-sm font-semibold text-ink">Группы клуба</h2>
+              <p className="mt-1 text-xs text-muted">
                 Тренер назначается на группу в ее карточке. Без аккаунта он не увидит занятия этой
                 группы.
               </p>
@@ -201,7 +201,7 @@ export default async function TrainersPage() {
                 {groups.data.map((group) => (
                   <li
                     key={group.id}
-                    className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700"
+                    className="rounded-full bg-canvas px-3 py-1 text-xs text-ink"
                   >
                     {group.name}
                   </li>

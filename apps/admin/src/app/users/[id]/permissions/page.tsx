@@ -84,62 +84,62 @@ export default async function UserPermissionsPage({
           data.scopeAllGroups ? 'все группы' : 'только назначенные'
         }`}
         actions={
-          <Link href="/users" className="text-sm text-slate-500 hover:text-slate-900">
+          <Link href="/users" className="text-sm text-muted hover:text-ink">
             ← Все пользователи
           </Link>
         }
       />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="text-sm font-semibold text-slate-900">
+        <section className="rounded-card border border-line bg-white p-5">
+          <h2 className="text-sm font-semibold text-ink">
             Права роли ({data.rolePermissions.length})
           </h2>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-muted">
             Определяются ролью и не отзываются по отдельности.
           </p>
           <ul className="mt-3 flex flex-col gap-1">
             {data.rolePermissions.length === 0 ? (
-              <li className="text-sm text-slate-500">
+              <li className="text-sm text-muted">
                 Роль не дает прав: доступ определяется только ресурсами
               </li>
             ) : (
               data.rolePermissions.map((code) => (
-                <li key={code} className="text-sm text-slate-700">
+                <li key={code} className="text-sm text-ink">
                   {labels[code] ?? code}
-                  <span className="ml-2 text-xs text-slate-400">{code}</span>
+                  <span className="ml-2 text-xs text-muted">{code}</span>
                 </li>
               ))
             )}
           </ul>
         </section>
 
-        <section className="rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="text-sm font-semibold text-slate-900">
+        <section className="rounded-card border border-line bg-white p-5">
+          <h2 className="text-sm font-semibold text-ink">
             Выдано лично ({data.grants.length})
           </h2>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-muted">
             Эти права можно отозвать, не меняя роль.
           </p>
 
           <ul className="mt-3 flex flex-col gap-2">
             {data.grants.length === 0 ? (
-              <li className="text-sm text-slate-500">Индивидуальных прав нет</li>
+              <li className="text-sm text-muted">Индивидуальных прав нет</li>
             ) : (
               data.grants.map((grant) => (
                 <li
                   key={grant.code}
                   className="flex items-center justify-between gap-2 text-sm"
                 >
-                  <span className="text-slate-700">
+                  <span className="text-ink">
                     {labels[grant.code] ?? grant.code}
-                    <span className="ml-2 text-xs text-slate-400">{grant.code}</span>
+                    <span className="ml-2 text-xs text-muted">{grant.code}</span>
                     {grant.expiresAt ? (
-                      <span className="ml-2 text-xs text-slate-500">
+                      <span className="ml-2 text-xs text-muted">
                         до {grant.expiresAt.slice(0, 10)}
                       </span>
                     ) : (
-                      <span className="ml-2 text-xs text-slate-400">бессрочно</span>
+                      <span className="ml-2 text-xs text-muted">бессрочно</span>
                     )}
                   </span>
                   <form action={revokePermissionAction}>
@@ -147,7 +147,7 @@ export default async function UserPermissionsPage({
                     <input type="hidden" name="code" value={grant.code} />
                     <button
                       type="submit"
-                      className="text-xs text-slate-500 underline hover:text-red-700"
+                      className="text-xs text-muted underline hover:text-red-700"
                     >
                       Отозвать
                     </button>
@@ -157,24 +157,24 @@ export default async function UserPermissionsPage({
             )}
           </ul>
 
-          <div className="mt-4 border-t border-slate-100 pt-4">
+          <div className="mt-4 border-t border-line pt-4">
             <GrantPermissionForm userId={data.userId} available={available} labels={labels} />
           </div>
         </section>
       </div>
 
-      <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5">
-        <h2 className="text-sm font-semibold text-slate-900">
+      <section className="mt-6 rounded-card border border-line bg-white p-5">
+        <h2 className="text-sm font-semibold text-ink">
           Итоговый набор прав ({data.effective.length})
         </h2>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-muted">
           Роль плюс действующие индивидуальные выдачи; именно это проверяет backend.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {data.effective.map((code) => (
             <span
               key={code}
-              className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700"
+              className="rounded-full bg-canvas px-3 py-1 text-xs text-ink"
             >
               {labels[code] ?? code}
             </span>

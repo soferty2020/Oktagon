@@ -15,12 +15,12 @@ import {
 const initialState: NewsFormState = {};
 
 const inputClass =
-  'w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500';
-const labelClass = 'flex flex-col gap-1 text-xs font-medium text-slate-600';
+  'w-full rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent';
+const labelClass = 'flex flex-col gap-1 text-xs font-medium text-muted';
 const buttonClass =
-  'rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+  'rounded-md bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
 const secondaryButtonClass =
-  'rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-60';
+  'rounded-md border border-line bg-white px-3 py-1.5 text-xs text-ink hover:bg-canvas disabled:opacity-60';
 
 function StateMessages({ state }: { state: NewsFormState }) {
   return (
@@ -47,11 +47,11 @@ export function CreateNewsForm() {
   return (
     <form
       action={formAction}
-      className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5"
+      className="flex flex-col gap-3 rounded-card border border-line bg-white p-5"
     >
       <div>
-        <h2 className="text-sm font-semibold text-slate-900">Новая публикация</h2>
-        <p className="mt-1 text-xs text-slate-500">
+        <h2 className="text-sm font-semibold text-ink">Новая публикация</h2>
+        <p className="mt-1 text-xs text-muted">
           По умолчанию сохраняется черновик: он виден только вам и тем, кто может править чужие
           новости. Публикация — отдельное решение.
         </p>
@@ -67,7 +67,7 @@ export function CreateNewsForm() {
         <textarea name="body" required rows={5} maxLength={10000} className={inputClass} />
       </label>
 
-      <label className="flex items-center gap-2 text-xs text-slate-600">
+      <label className="flex items-center gap-2 text-xs text-muted">
         <input
           type="checkbox"
           name="publish"
@@ -77,7 +77,7 @@ export function CreateNewsForm() {
         опубликовать сразу (иначе сохранится черновик)
       </label>
 
-      <label className="flex items-center gap-2 text-xs text-slate-600">
+      <label className="flex items-center gap-2 text-xs text-muted">
         <input type="checkbox" name="isPinned" />
         закрепить в ленте
       </label>
@@ -126,7 +126,7 @@ export function EditNewsForm({
         />
       </label>
 
-      <label className="flex items-center gap-2 text-xs text-slate-600">
+      <label className="flex items-center gap-2 text-xs text-muted">
         <input type="checkbox" name="isPinned" defaultChecked={post.isPinned} />
         закрепить в ленте
       </label>
@@ -210,7 +210,7 @@ export function DeleteCommentForm({ commentId, postId }: { commentId: string; po
     >
       <input type="hidden" name="commentId" value={commentId} />
       <input type="hidden" name="postId" value={postId} />
-      <button type="submit" className="text-xs text-slate-500 underline hover:text-red-700">
+      <button type="submit" className="text-xs text-muted underline hover:text-red-700">
         Удалить
       </button>
     </form>

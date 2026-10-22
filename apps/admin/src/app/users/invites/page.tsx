@@ -58,7 +58,7 @@ export default async function InvitesPage() {
         title="Приглашения"
         description="Саморегистрации нет: пользователь попадает в систему по приглашению администратора."
         actions={
-          <Link href="/users" className="text-sm text-slate-500 hover:text-slate-900">
+          <Link href="/users" className="text-sm text-muted hover:text-ink">
             ← Пользователи
           </Link>
         }
@@ -67,14 +67,14 @@ export default async function InvitesPage() {
       <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
         <InviteForm />
 
-        <section className="rounded-xl border border-slate-200 bg-white">
-          <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200 px-4 py-3">
-            <h2 className="text-sm font-semibold text-slate-900">Действующие приглашения</h2>
-            <p className="text-xs text-slate-500">Использованные и истекшие не показываются</p>
+        <section className="rounded-card border border-line bg-white">
+          <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line px-4 py-3">
+            <h2 className="text-sm font-semibold text-ink">Действующие приглашения</h2>
+            <p className="text-xs text-muted">Использованные и истекшие не показываются</p>
           </div>
 
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+            <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
               <tr>
                 <th className="px-4 py-3">Email</th>
                 <th className="px-4 py-3">Роль</th>
@@ -95,10 +95,10 @@ export default async function InvitesPage() {
                 </tr>
               ) : (
                 pending.map((invite) => (
-                  <tr key={invite.id} className="border-b border-slate-100 last:border-0">
-                    <td className="px-4 py-3 font-medium text-slate-900">{invite.email}</td>
-                    <td className="px-4 py-3 text-slate-600">{invite.role}</td>
-                    <td className="px-4 py-3 text-slate-600">
+                  <tr key={invite.id} className="border-b border-line last:border-0">
+                    <td className="px-4 py-3 font-medium text-ink">{invite.email}</td>
+                    <td className="px-4 py-3 text-muted">{invite.role}</td>
+                    <td className="px-4 py-3 text-muted">
                       {formatMoment(invite.expiresAt)}
                       {isExpiringSoon(invite.expiresAt) ? (
                         <span className="ml-2 rounded-full bg-amber-50 px-2 py-1 text-xs text-amber-700">
@@ -106,7 +106,7 @@ export default async function InvitesPage() {
                         </span>
                       ) : null}
                     </td>
-                    <td className="px-4 py-3 text-slate-500">{formatMoment(invite.createdAt)}</td>
+                    <td className="px-4 py-3 text-muted">{formatMoment(invite.createdAt)}</td>
                   </tr>
                 ))
               )}
@@ -114,7 +114,7 @@ export default async function InvitesPage() {
           </table>
 
           {pending.length > 0 ? (
-            <p className="border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
+            <p className="border-t border-line px-4 py-3 text-xs text-muted">
               Ссылку с токеном получить повторно нельзя: в базе хранится только ее хеш. Если ссылка
               потеряна, создайте приглашение заново — предыдущее будет погашено.
             </p>

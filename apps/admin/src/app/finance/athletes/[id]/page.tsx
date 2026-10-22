@@ -138,14 +138,14 @@ export default async function AthleteFinancePage({
           <div className="flex flex-col items-end gap-1 text-sm">
             <Link
               href={`/finance?${monthQuery(year, selected.month)}`}
-              className="text-slate-500 hover:text-slate-900"
+              className="text-muted hover:text-ink"
             >
               ← Финансы
             </Link>
-            <Link href="/finance/debtors" className="text-slate-500 hover:text-slate-900">
+            <Link href="/finance/debtors" className="text-muted hover:text-ink">
               Должники
             </Link>
-            <Link href={`/athletes/${id}`} className="text-slate-500 hover:text-slate-900">
+            <Link href={`/athletes/${id}`} className="text-muted hover:text-ink">
               Карточка спортсмена
             </Link>
           </div>
@@ -163,21 +163,21 @@ export default async function AthleteFinancePage({
         </div>
       ) : null}
 
-      <section className="rounded-xl border border-slate-200 bg-white">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+      <section className="rounded-card border border-line bg-white">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
           <div>
-            <h2 className="text-sm font-semibold text-slate-900">Расчетные периоды</h2>
-            <p className="mt-1 text-xs text-slate-500">
+            <h2 className="text-sm font-semibold text-ink">Расчетные периоды</h2>
+            <p className="mt-1 text-xs text-muted">
               Период заводится при первом обращении к месяцу: незаведенный месяц виден строкой
               «период не заведен», а не пропуском в списке.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 text-sm">
-            <span className="text-slate-600">
+            <span className="text-muted">
               за {year}: ожидается{' '}
-              <span className="font-medium text-slate-900">{formatAmount(expectedTotal)}</span>,
-              зачтено <span className="font-medium text-slate-900">{formatAmount(paidTotal)}</span>
+              <span className="font-medium text-ink">{formatAmount(expectedTotal)}</span>,
+              зачтено <span className="font-medium text-ink">{formatAmount(paidTotal)}</span>
               {refundedTotal > 0 ? (
                 <>
                   {', возвращено '}
@@ -208,7 +208,7 @@ export default async function AthleteFinancePage({
                 <Link
                   key={month.number}
                   href={`/finance/athletes/${id}?${monthQuery(year, month.number)}#${month.anchor}`}
-                  className="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700 hover:bg-slate-50"
+                  className="rounded-md border border-line bg-white px-3 py-1 text-xs text-ink hover:bg-canvas"
                 >
                   {month.name}
                 </Link>
@@ -234,13 +234,13 @@ export default async function AthleteFinancePage({
                 <div
                   key={`open-${month.number}`}
                   id={month.anchor}
-                  className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-4 py-3 text-sm last:border-0"
+                  className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3 text-sm last:border-0"
                 >
-                  <span className="w-36 text-slate-500">{formatMonth(year, month.number)}</span>
-                  <span className="text-xs text-slate-400">период не заведен</span>
+                  <span className="w-36 text-muted">{formatMonth(year, month.number)}</span>
+                  <span className="text-xs text-muted">период не заведен</span>
                   <Link
                     href={`/finance/athletes/${id}?${monthQuery(year, month.number)}`}
-                    className="ml-auto text-xs text-slate-500 underline hover:text-slate-900"
+                    className="ml-auto text-xs text-muted underline hover:text-ink"
                   >
                     Открыть период
                   </Link>
@@ -251,10 +251,10 @@ export default async function AthleteFinancePage({
         )}
       </section>
 
-      <section className="mt-6 rounded-xl border border-slate-200 bg-white">
-        <div className="border-b border-slate-200 px-4 py-3">
-          <h2 className="text-sm font-semibold text-slate-900">Заморозки</h2>
-          <p className="mt-1 text-xs text-slate-500">
+      <section className="mt-6 rounded-card border border-line bg-white">
+        <div className="border-b border-line px-4 py-3">
+          <h2 className="text-sm font-semibold text-ink">Заморозки</h2>
+          <p className="mt-1 text-xs text-muted">
             Заморозка — открытый период приостановления (BR-005). Начало и завершение можно внести
             задним числом: ее часто оформляют, когда спортсмен уже вернулся.
           </p>
@@ -277,8 +277,8 @@ export default async function AthleteFinancePage({
             ) : null}
 
             {canEditFreezes && openFreeze ? (
-              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50/60 p-3">
-                <p className="text-xs text-slate-700">
+              <div className="mb-4 rounded-card border border-amber-200 bg-amber-50/60 p-3">
+                <p className="text-xs text-ink">
                   Открытая заморозка с {formatCalendarDate(openFreeze.startedOn)}. Вторая
                   одновременная заморозка запрещена: сначала завершите текущую.
                 </p>
@@ -297,7 +297,7 @@ export default async function AthleteFinancePage({
             ) : null}
 
             <table className="mt-2 w-full text-left text-sm">
-              <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+              <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
                 <tr>
                   <th className="py-2">Начало</th>
                   <th className="py-2">Завершение</th>
@@ -308,26 +308,26 @@ export default async function AthleteFinancePage({
               <tbody>
                 {(freezes?.ok ? freezes.data : []).length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-4 text-sm text-slate-500">
+                    <td colSpan={4} className="py-4 text-sm text-muted">
                       Заморозок не было
                     </td>
                   </tr>
                 ) : (
                   (freezes?.ok ? freezes.data : []).map((freeze) => (
-                    <tr key={freeze.id} className="border-b border-slate-100 last:border-0">
-                      <td className="py-2 text-slate-900">
+                    <tr key={freeze.id} className="border-b border-line last:border-0">
+                      <td className="py-2 text-ink">
                         {formatCalendarDate(freeze.startedOn)}
                       </td>
-                      <td className="py-2 text-slate-600">
+                      <td className="py-2 text-muted">
                         {freeze.endedOn ? formatCalendarDate(freeze.endedOn) : 'не завершена'}
                       </td>
-                      <td className="py-2 text-slate-600">{freeze.reason ?? '—'}</td>
+                      <td className="py-2 text-muted">{freeze.reason ?? '—'}</td>
                       <td className="py-2">
                         <span
                           className={
                             freeze.isOpen
                               ? 'rounded-full bg-amber-50 px-2 py-1 text-xs text-amber-700'
-                              : 'rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600'
+                              : 'rounded-full bg-canvas px-2 py-1 text-xs text-muted'
                           }
                         >
                           {freeze.isOpen ? 'открыта' : 'завершена'}
@@ -342,11 +342,11 @@ export default async function AthleteFinancePage({
         )}
       </section>
 
-      <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5">
-        <h2 className="text-sm font-semibold text-slate-900">
+      <section className="mt-6 rounded-card border border-line bg-white p-5">
+        <h2 className="text-sm font-semibold text-ink">
           Почему нельзя выбрать статус периода
         </h2>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-muted">
           Статус выводится из суммы оплат и ручной отметки, а не вводится руками: иначе отметка
           «оплачено» расходилась бы с фактическими поступлениями. Ручная отметка «оплачен полностью»
           (BR-003) имеет приоритет — она ставится именно тогда, когда расчеты шли вне системы.
@@ -384,8 +384,8 @@ function YearLinks({ athleteId, year }: { athleteId: string; year: number }) {
           href={`/finance/athletes/${athleteId}?year=${value}`}
           className={
             value === year
-              ? 'rounded-md bg-slate-900 px-2 py-1 text-white'
-              : 'rounded-md border border-slate-300 bg-white px-2 py-1 text-slate-700 hover:bg-slate-50'
+              ? 'rounded-md bg-accent px-2 py-1 text-white'
+              : 'rounded-md border border-line bg-white px-2 py-1 text-ink hover:bg-canvas'
           }
         >
           {value}

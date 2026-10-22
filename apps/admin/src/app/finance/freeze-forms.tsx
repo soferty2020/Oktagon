@@ -98,7 +98,7 @@ export function CloseFreezeForm({
       <button type="submit" disabled={pending} className={buttonClass}>
         {pending ? '…' : 'Завершить заморозку'}
       </button>
-      <p className="w-full text-xs text-slate-500">
+      <p className="w-full text-xs text-muted">
         Начало: {formatCalendarDate(startedOn)}. Дату завершения можно указать задним числом.
       </p>
 

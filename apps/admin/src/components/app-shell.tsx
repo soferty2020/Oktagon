@@ -1,6 +1,7 @@
-import Link from 'next/link';
-
 import { logoutAction } from '@/app/actions';
+import { Icon, type IconName } from '@/components/icons';
+import { NavLink } from '@/components/nav-link';
+import { SectionTitle } from '@/components/section-title';
 import type { CurrentUser } from '@/lib/server/session';
 
 /**
@@ -13,34 +14,47 @@ import type { CurrentUser } from '@/lib/server/session';
 const NAVIGATION: readonly {
   href: string;
   label: string;
+  icon: IconName;
   requiredPermissions?: readonly string[];
 }[] = [
-  { href: '/', label: 'Обзор' },
-  { href: '/branches', label: 'Филиалы' },
-  { href: '/groups', label: 'Группы' },
-  { href: '/athletes', label: 'Спортсмены' },
+  { href: '/', label: 'Главная', icon: 'home' },
+  { href: '/athletes', label: 'Ученики', icon: 'athletes' },
+  { href: '/groups', label: 'Группы', icon: 'groups' },
   // Тренеры: карточка правится `branches.manage`, привязка аккаунта — `users.manage`.
   // Ссылка показывается тем, кто видит группы: без этого список тренеров не нужен.
-  { href: '/trainers', label: 'Тренеры', requiredPermissions: ['groups.view'] },
-  { href: '/schedule', label: 'Расписание' },
+  { href: '/trainers', label: 'Тренеры', icon: 'trainers', requiredPermissions: ['groups.view'] },
+  { href: '/branches', label: 'Филиалы и залы', icon: 'halls' },
+  { href: '/schedule', label: 'Расписание', icon: 'schedule' },
   // Посещаемость: сводка по группе за период. Отдельный раздел, потому что это
   // отчет для тренера и администратора, а не разметка конкретного занятия.
-  { href: '/attendance', label: 'Посещаемость', requiredPermissions: ['attendance.view'] },
-  // Новости без `requiredPermissions`: BR-011 — новости и комментарии видны всем
-  // пользователям клуба, поэтому раздел не скрывается ни от кого (ADR-0011).
-  { href: '/news', label: 'Новости' },
-  // Чаты требуют `chat.use`: это разрешение на функцию. Конкретная переписка
-  // доступна только участникам, и решает это backend (ADR-0011).
-  { href: '/chats', label: 'Чаты', requiredPermissions: ['chat.use'] },
+  {
+    href: '/attendance',
+    label: 'Посещаемость',
+    icon: 'attendance',
+    requiredPermissions: ['attendance.view'],
+  },
   {
     href: '/finance',
-    label: 'Финансы',
+    label: 'Оплаты',
+    icon: 'finance',
     requiredPermissions: ['payments.view', 'freezes.view'],
   },
-  { href: '/users', label: 'Пользователи' },
+  // Новости без `requiredPermissions`: BR-011 — новости и комментарии видны всем
+  // пользователям клуба, поэтому раздел не скрывается ни от кого (ADR-0011).
+  { href: '/news', label: 'Новости', icon: 'news' },
+  // Чаты требуют `chat.use`: это разрешение на функцию. Конкретная переписка
+  // доступна только участникам, и решает это backend (ADR-0011).
+  { href: '/chats', label: 'Чаты', icon: 'chats', requiredPermissions: ['chat.use'] },
+  { href: '/users', label: 'Пользователи', icon: 'users' },
 ];
 
-/** Каркас страницы админки: шапка с пользователем и навигация по разделам. */
+/**
+ * Каркас админки по макету: тёмный сайдбар с разделами и светлая шапка с
+ * пользователем.
+ *
+ * Сайдбар тёмный, чтобы рабочий интерфейс отличался от клиентского приложения;
+ * активный раздел выделяется оранжевым — тем же акцентом, что в мобильном.
+ */
 export function AppShell({ user, children }: { user: CurrentUser; children: React.ReactNode }) {
   const navigation = NAVIGATION.filter(
     (item) =>
@@ -48,47 +62,68 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
       item.requiredPermissions.some((code) => user.permissions.includes(code)),
   );
 
+  const displayName = `${user.firstName} ${user.lastName}`.trim() || user.email;
+  const roleLabel =
+    user.role === 'SUPERADMIN'
+      ? 'Администратор'
+      : user.role === 'STAFF'
+        ? 'Сотрудник'
+        : 'Участник';
+  const initial = (user.firstName || user.email).slice(0, 1).toUpperCase();
+
   return (
-    <div className="min-h-screen bg-slate-100">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
-          <div className="flex items-center gap-6">
-            <span className="text-sm font-semibold tracking-wide text-slate-900">OCTAGON</span>
-            <nav className="flex items-center gap-4">
-              {navigation.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="text-sm text-slate-600 hover:text-slate-900"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-slate-500">
-              {user.firstName} {user.lastName} · {user.role}
-            </span>
-            <form action={logoutAction}>
-              <button
-                type="submit"
-                className="rounded-md border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-50"
-              >
-                Выйти
-              </button>
-            </form>
-          </div>
+    <div className="min-h-screen bg-canvas">
+      <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col bg-ink md:flex">
+        <div className="flex items-center gap-2 px-6 py-6">
+          <span className="text-lg font-extrabold tracking-[0.18em] text-white">OCTAGON</span>
+          <span className="mb-0.5 h-[3px] w-6 rounded bg-accent" />
         </div>
-      </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
+        <nav className="flex-1 space-y-1 px-3 pb-6">
+          {navigation.map((item) => (
+            <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} />
+          ))}
+        </nav>
+
+        <div className="px-6 py-4 text-[11px] text-white/35">Версия 1.0.0</div>
+      </aside>
+
+      <div className="md:pl-60">
+        <header className="sticky top-0 z-10 border-b border-line bg-white">
+          <div className="flex h-16 items-center justify-between gap-4 px-6">
+            <SectionTitle />
+
+            <div className="flex items-center gap-4">
+              <div className="hidden items-center gap-3 sm:flex">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-soft text-sm font-semibold text-accent">
+                  {initial}
+                </span>
+                <div className="leading-tight">
+                  <p className="text-sm font-medium text-ink">{displayName}</p>
+                  <p className="text-xs text-muted">{roleLabel}</p>
+                </div>
+              </div>
+
+              <form action={logoutAction}>
+                <button
+                  type="submit"
+                  className="flex items-center gap-1.5 rounded-card border border-line px-3 py-1.5 text-sm text-ink transition hover:bg-canvas"
+                >
+                  <Icon name="logout" size={15} />
+                  Выйти
+                </button>
+              </form>
+            </div>
+          </div>
+        </header>
+
+        <main className="px-6 py-6">{children}</main>
+      </div>
     </div>
   );
 }
 
-/** Заголовок раздела с необязательным описанием. */
+/** Заголовок раздела с необязательным описанием и действиями. */
 export function PageHeader({
   title,
   description,
@@ -99,10 +134,10 @@ export function PageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="mb-6 flex items-start justify-between gap-4">
+    <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
       <div>
-        <h1 className="text-lg font-semibold text-slate-900">{title}</h1>
-        {description ? <p className="mt-1 text-sm text-slate-500">{description}</p> : null}
+        <h2 className="text-xl font-semibold text-ink">{title}</h2>
+        {description ? <p className="mt-1 text-sm text-muted">{description}</p> : null}
       </div>
       {actions}
     </div>
@@ -119,11 +154,11 @@ export function Notice({
 }) {
   const classes =
     tone === 'error'
-      ? 'border-red-200 bg-red-50 text-red-700'
-      : 'border-slate-200 bg-white text-slate-600';
+      ? 'border-danger/25 bg-danger/5 text-danger'
+      : 'border-line bg-white text-muted';
 
   return (
-    <div className={`rounded-lg border px-4 py-3 text-sm ${classes}`} role="status">
+    <div className={`rounded-card border px-4 py-3 text-sm ${classes}`} role="status">
       {children}
     </div>
   );

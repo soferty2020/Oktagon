@@ -201,7 +201,7 @@ export function VoidPaymentForm({
     >
       <input type="hidden" name="paymentId" value={paymentId} />
       <input type="hidden" name="athleteId" value={athleteId} />
-      <button type="submit" className="text-xs text-slate-500 underline hover:text-red-700">
+      <button type="submit" className="text-xs text-muted underline hover:text-red-700">
         Отменить оплату
       </button>
     </form>
@@ -241,7 +241,7 @@ export function RefundPaymentForm({
 
   if (available <= 0) {
     return (
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         По этой оплате возвращено все: оформить новый возврат нельзя.
       </p>
     );
@@ -288,7 +288,7 @@ export function RefundPaymentForm({
         </button>
       </div>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         Доступно к возврату: {formatMoney(available)}. Зачтенная сумма периода уменьшится.
       </p>
 
@@ -310,7 +310,7 @@ export function VoidRefundForm({ refundId, athleteId }: { refundId: string; athl
     >
       <input type="hidden" name="refundId" value={refundId} />
       <input type="hidden" name="athleteId" value={athleteId} />
-      <button type="submit" className="text-xs text-slate-500 underline hover:text-red-700">
+      <button type="submit" className="text-xs text-muted underline hover:text-red-700">
         Отменить возврат
       </button>
     </form>

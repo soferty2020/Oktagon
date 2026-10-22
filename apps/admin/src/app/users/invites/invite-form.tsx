@@ -7,10 +7,10 @@ import { createInviteAction, type InviteFormState } from '@/app/users/invites/ac
 const initialState: InviteFormState = {};
 
 const inputClass =
-  'rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500';
-const labelClass = 'flex flex-col gap-1 text-xs font-medium text-slate-600';
+  'rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent';
+const labelClass = 'flex flex-col gap-1 text-xs font-medium text-muted';
 const buttonClass =
-  'rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
+  'rounded-md bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
 
 /**
  * Приглашение пользователя.
@@ -34,10 +34,10 @@ export function InviteForm() {
   const inviteLink = state.token === undefined ? null : `${origin}/invite/${state.token}`;
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5">
+    <div className="flex flex-col gap-4 rounded-card border border-line bg-white p-5">
       <div>
-        <h2 className="text-sm font-semibold text-slate-900">Пригласить пользователя</h2>
-        <p className="mt-1 text-xs text-slate-500">
+        <h2 className="text-sm font-semibold text-ink">Пригласить пользователя</h2>
+        <p className="mt-1 text-xs text-muted">
           Письмо не отправляется: после создания появится ссылка, которую нужно передать
           приглашенному.
         </p>
@@ -70,11 +70,11 @@ export function InviteForm() {
       </form>
 
       {inviteLink ? (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
+        <div className="rounded-card border border-emerald-200 bg-emerald-50/60 p-3">
           <p className="text-xs font-medium text-emerald-900">
             Приглашение для {state.email} ({state.role}) создано
           </p>
-          <p className="mt-2 text-xs text-slate-600">
+          <p className="mt-2 text-xs text-muted">
             Ссылка показывается один раз: в базе хранится только хеш токена. Передайте ее
             приглашенному — он задаст пароль и войдет.
           </p>
@@ -84,12 +84,12 @@ export function InviteForm() {
               readOnly
               value={inviteLink}
               aria-label="Ссылка приглашения"
-              className="min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700"
+              className="min-w-0 flex-1 rounded-md border border-line bg-white px-2 py-1 text-xs text-ink"
             />
             <CopyLinkButton link={inviteLink} />
           </div>
 
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-muted">
             {state.expiresAt ? `Действует до ${formatExpiry(state.expiresAt)}. ` : ''}
             Если ссылка потеряна, создайте приглашение заново: предыдущее будет погашено.
           </p>
@@ -124,7 +124,7 @@ function CopyLinkButton({ link }: { link: string }) {
           setCopied(false);
         }
       }}
-      className="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700 hover:bg-slate-50"
+      className="rounded-md border border-line bg-white px-3 py-1 text-xs text-ink hover:bg-canvas"
     >
       {copied ? 'Скопировано' : 'Копировать'}
     </button>

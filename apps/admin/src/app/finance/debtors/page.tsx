@@ -75,7 +75,7 @@ export default async function DebtorsPage({
         actions={
           <Link
             href={`/finance?${monthQuery(year, month)}`}
-            className="text-sm text-slate-500 hover:text-slate-900"
+            className="text-sm text-muted hover:text-ink"
           >
             ← Финансы
           </Link>
@@ -88,10 +88,10 @@ export default async function DebtorsPage({
         <>
           <div className="flex flex-wrap items-end justify-between gap-4">
             <MonthPicker year={year} month={month} />
-            <p className="text-sm text-slate-600">
-              Должников: <span className="font-medium text-slate-900">{debtors.length}</span> ·
+            <p className="text-sm text-muted">
+              Должников: <span className="font-medium text-ink">{debtors.length}</span> ·
               недостает по ожидаемым суммам:{' '}
-              <span className="font-medium text-slate-900">{formatAmount(debtTotal)}</span>
+              <span className="font-medium text-ink">{formatAmount(debtTotal)}</span>
             </p>
           </div>
 
@@ -150,14 +150,14 @@ function DebtorTable({
   emptyText: string;
 }) {
   return (
-    <section className="mt-6 rounded-xl border border-slate-200 bg-white">
-      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200 px-4 py-3">
-        <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
-        <p className="text-xs text-slate-500">{hint}</p>
+    <section className="mt-6 rounded-card border border-line bg-white">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line px-4 py-3">
+        <h2 className="text-sm font-semibold text-ink">{title}</h2>
+        <p className="text-xs text-muted">{hint}</p>
       </div>
 
       <table className="w-full text-left text-sm">
-        <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+        <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
           <tr>
             <th className="px-4 py-3">Спортсмен</th>
             <th className="px-4 py-3">Ожидается</th>
@@ -170,30 +170,30 @@ function DebtorTable({
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={6} className="px-4 py-5 text-sm text-slate-500">
+              <td colSpan={6} className="px-4 py-5 text-sm text-muted">
                 {emptyText}
               </td>
             </tr>
           ) : (
             rows.map((row) => (
-              <tr key={row.athleteId} className="border-b border-slate-100 last:border-0">
+              <tr key={row.athleteId} className="border-b border-line last:border-0">
                 <td className="px-4 py-3">
                   <Link
                     href={`/finance/athletes/${row.athleteId}?${monthQuery(year, month)}`}
-                    className="font-medium text-slate-900 underline decoration-slate-300 hover:decoration-slate-900"
+                    className="font-medium text-ink underline decoration-line hover:decoration-accent"
                   >
                     {row.lastName} {row.firstName}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-muted">
                   {row.expectedAmount === null ? (
                     <span className="text-amber-700">не задана</span>
                   ) : (
                     formatAmount(row.expectedAmount)
                   )}
                 </td>
-                <td className="px-4 py-3 text-slate-600">{formatAmount(row.paidAmount)}</td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-muted">{formatAmount(row.paidAmount)}</td>
+                <td className="px-4 py-3 text-muted">
                   {row.refundedAmount > 0 ? (
                     <span className="text-amber-700">{formatAmount(row.refundedAmount)}</span>
                   ) : (
@@ -206,7 +206,7 @@ function DebtorTable({
                       {debtorExemptionLabel(null)}
                     </span>
                   ) : (
-                    <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">
+                    <span className="rounded-full bg-canvas px-2 py-1 text-xs text-muted">
                       {debtorExemptionLabel(row.reason)}
                     </span>
                   )}
@@ -214,7 +214,7 @@ function DebtorTable({
                 <td className="px-4 py-3 text-right text-xs">
                   <Link
                     href={`/finance/athletes/${row.athleteId}?${monthQuery(year, month)}`}
-                    className="text-slate-500 underline hover:text-slate-900"
+                    className="text-muted underline hover:text-ink"
                   >
                     Открыть период
                   </Link>

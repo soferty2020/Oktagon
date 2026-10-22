@@ -1,10 +1,60 @@
 @import 'tailwindcss';
 
 /**
- * Тема админки. Tailwind v4 настраивается здесь, а не в tailwind.config.js.
- * Палитра намеренно нейтральная: акцент — на данных, а не на оформлении
- * (docs/12-ui-guidelines.md).
+ * Тема админки по макету клуба.
+ *
+ * Tailwind v4 настраивается здесь, а не в tailwind.config.js. Оттенки те же, что в
+ * мобильном приложении (`apps/mobile/lib/design/tokens.dart`): акцент — оранжевый,
+ * тёмный — почти чёрный, фон — светло-серый. Одна палитра на две части продукта:
+ * сотрудник переходит между админкой и приложением, и цвета не должны спорить.
  */
 @theme {
-  --color-brand: oklch(0.45 0.13 250);
+  --color-ink: #0e0e10;
+  --color-ink-soft: #1a1a1e;
+  --color-accent: #ff6b00;
+  --color-accent-soft: #fff0e5;
+  --color-canvas: #f7f7f9;
+  --color-line: #ededf0;
+  --color-muted: #8a8a8f;
+  --color-success: #2e9e5b;
+  --color-danger: #e23b3b;
+  --color-warning: #ffa726;
+
+  --radius-card: 16px;
+}
+
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+/* Таблицы: одинаковый вид во всех разделах, чтобы строки не «прыгали» между
+   экранами. */
+.table-base {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.table-base th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--color-muted);
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-line);
+  white-space: nowrap;
+}
+
+.table-base td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--color-line);
+  vertical-align: middle;
+}
+
+.table-base tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-base tbody tr:hover {
+  background-color: color-mix(in srgb, var(--color-canvas) 60%, white);
 }

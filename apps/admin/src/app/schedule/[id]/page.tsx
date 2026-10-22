@@ -140,17 +140,17 @@ export default async function ScheduleTemplatePage({
           isPublished ? `опубликовано ${data.publishedAt?.slice(0, 10)}` : 'черновик'
         }`}
         actions={
-          <Link href="/schedule" className="text-sm text-slate-500 hover:text-slate-900">
+          <Link href="/schedule" className="text-sm text-muted hover:text-ink">
             ← Все расписания
           </Link>
         }
       />
 
-      <section className="rounded-xl border border-slate-200 bg-white p-5">
-        <h2 className="text-sm font-semibold text-slate-900">Слоты расписания</h2>
+      <section className="rounded-card border border-line bg-white p-5">
+        <h2 className="text-sm font-semibold text-ink">Слоты расписания</h2>
 
         <table className="mt-3 w-full text-left text-sm">
-          <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+          <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
             <tr>
               <th className="py-2">День</th>
               <th className="py-2">Время</th>
@@ -162,21 +162,21 @@ export default async function ScheduleTemplatePage({
           <tbody>
             {sortedSlots.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-4 text-sm text-slate-500">
+                <td colSpan={5} className="py-4 text-sm text-muted">
                   Слотов нет: расписание пустое, публиковать нечего
                 </td>
               </tr>
             ) : (
               sortedSlots.map((slot) => (
-                <tr key={slot.id} className="border-b border-slate-100 last:border-0">
-                  <td className="py-2 font-medium text-slate-900">
+                <tr key={slot.id} className="border-b border-line last:border-0">
+                  <td className="py-2 font-medium text-ink">
                     {WEEKDAY_LABELS[slot.weekday] ?? slot.weekday}
                   </td>
-                  <td className="py-2 text-slate-600">
+                  <td className="py-2 text-muted">
                     {slot.startTime}–{slot.endTime}
                   </td>
-                  <td className="py-2 text-slate-600">{slot.hallName ?? '—'}</td>
-                  <td className="py-2 text-slate-600">{slot.trainerName ?? '—'}</td>
+                  <td className="py-2 text-muted">{slot.hallName ?? '—'}</td>
+                  <td className="py-2 text-muted">{slot.trainerName ?? '—'}</td>
                   <td className="py-2 text-right">
                     {canEdit && !isPublished ? (
                       <form action={deleteSlotAction}>
@@ -184,7 +184,7 @@ export default async function ScheduleTemplatePage({
                         <input type="hidden" name="slotId" value={slot.id} />
                         <button
                           type="submit"
-                          className="text-xs text-slate-500 underline hover:text-red-700"
+                          className="text-xs text-muted underline hover:text-red-700"
                         >
                           Удалить
                         </button>
@@ -198,13 +198,13 @@ export default async function ScheduleTemplatePage({
         </table>
 
         {canEdit && !isPublished ? (
-          <div className="mt-5 border-t border-slate-100 pt-4">
+          <div className="mt-5 border-t border-line pt-4">
             <AddSlotForm templateId={data.id} halls={halls} trainers={trainerOptions} />
           </div>
         ) : null}
 
         {isPublished ? (
-          <div className="mt-5 border-t border-slate-100 pt-4">
+          <div className="mt-5 border-t border-line pt-4">
             <Notice>
               Расписание опубликовано: слоты зафиксированы. Изменения вносятся в отдельные
               занятия, чтобы не переписать уже созданное расписание.
@@ -214,9 +214,9 @@ export default async function ScheduleTemplatePage({
       </section>
 
       {canEdit ? (
-        <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="text-sm font-semibold text-slate-900">Занятия квартала</h2>
-          <p className="mt-1 text-xs text-slate-500">
+        <section className="mt-6 rounded-card border border-line bg-white p-5">
+          <h2 className="text-sm font-semibold text-ink">Занятия квартала</h2>
+          <p className="mt-1 text-xs text-muted">
             Занятия создаются только на будущие даты. Повторный запуск дублей не создаст.
           </p>
 
@@ -227,7 +227,7 @@ export default async function ScheduleTemplatePage({
                 <button
                   type="submit"
                   disabled={sortedSlots.length === 0}
-                  className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                  className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
                 >
                   Опубликовать расписание
                 </button>

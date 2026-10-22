@@ -93,19 +93,19 @@ export default async function ConversationPage({
           data.participants.length
         }`}
         actions={
-          <Link href="/chats" className="text-sm text-slate-500 hover:text-slate-900">
+          <Link href="/chats" className="text-sm text-muted hover:text-ink">
             ← Все чаты
           </Link>
         }
       />
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <section className="rounded-xl border border-slate-200 bg-white">
+        <section className="rounded-card border border-line bg-white">
           {data.olderCursor ? (
-            <div className="border-b border-slate-100 px-4 py-2 text-center">
+            <div className="border-b border-line px-4 py-2 text-center">
               <Link
                 href={`/chats/${data.id}?olderThan=${encodeURIComponent(data.olderCursor)}`}
-                className="text-xs text-slate-500 underline hover:text-slate-900"
+                className="text-xs text-muted underline hover:text-ink"
               >
                 Показать более старые сообщения
               </Link>
@@ -114,7 +114,7 @@ export default async function ConversationPage({
 
           <ul className="flex flex-col gap-3 p-4">
             {data.messages.length === 0 ? (
-              <li className="text-sm text-slate-500">Сообщений пока нет</li>
+              <li className="text-sm text-muted">Сообщений пока нет</li>
             ) : (
               data.messages.map((message) => {
                 const isOwn = message.sender.userId === user.id;
@@ -124,12 +124,12 @@ export default async function ConversationPage({
                     key={message.id}
                     className={isOwn ? 'flex flex-col items-end' : 'flex flex-col items-start'}
                   >
-                    <div className="flex items-baseline gap-2 text-xs text-slate-500">
-                      <span className="font-medium text-slate-700">
+                    <div className="flex items-baseline gap-2 text-xs text-muted">
+                      <span className="font-medium text-ink">
                         {isOwn ? 'Вы' : `${message.sender.lastName} ${message.sender.firstName}`}
                       </span>
                       {message.sender.role === 'TRAINER' ? (
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">
+                        <span className="rounded-full bg-canvas px-2 py-0.5 text-muted">
                           тренер
                         </span>
                       ) : null}
@@ -139,10 +139,10 @@ export default async function ConversationPage({
                     <div
                       className={
                         message.isDeleted
-                          ? 'mt-1 max-w-xl rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm italic text-slate-400'
+                          ? 'mt-1 max-w-xl rounded-card border border-line bg-canvas px-3 py-2 text-sm italic text-muted'
                           : isOwn
-                            ? 'mt-1 max-w-xl rounded-lg bg-slate-900 px-3 py-2 text-sm text-white'
-                            : 'mt-1 max-w-xl rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-800'
+                            ? 'mt-1 max-w-xl rounded-card bg-accent px-3 py-2 text-sm text-white'
+                            : 'mt-1 max-w-xl rounded-card bg-canvas px-3 py-2 text-sm text-ink'
                       }
                     >
                       {message.isDeleted ? (
@@ -165,27 +165,27 @@ export default async function ConversationPage({
             )}
           </ul>
 
-          <div className="border-t border-slate-100 p-4">
+          <div className="border-t border-line p-4">
             <MessageForm conversationId={data.id} />
           </div>
         </section>
 
-        <section className="rounded-xl border border-slate-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-slate-900">Участники</h2>
+        <section className="rounded-card border border-line bg-white p-4">
+          <h2 className="text-sm font-semibold text-ink">Участники</h2>
           <ul className="mt-3 flex flex-col gap-2">
             {data.participants.map((participant) => (
               <li key={participant.userId} className="flex items-center justify-between gap-2">
-                <span className="text-sm text-slate-700">
+                <span className="text-sm text-ink">
                   {participant.lastName} {participant.firstName}
                   {participant.userId === user.id ? (
-                    <span className="ml-1 text-xs text-slate-400">(вы)</span>
+                    <span className="ml-1 text-xs text-muted">(вы)</span>
                   ) : null}
                 </span>
                 <span
                   className={
                     participant.role === 'TRAINER'
-                      ? 'rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600'
-                      : 'rounded-full bg-slate-50 px-2 py-0.5 text-xs text-slate-500'
+                      ? 'rounded-full bg-canvas px-2 py-0.5 text-xs text-muted'
+                      : 'rounded-full bg-canvas px-2 py-0.5 text-xs text-muted'
                   }
                 >
                   {participant.role === 'TRAINER' ? 'тренер' : 'представитель'}
@@ -195,7 +195,7 @@ export default async function ConversationPage({
           </ul>
 
           {data.type === 'GROUP' ? (
-            <p className="mt-4 text-xs text-slate-500">
+            <p className="mt-4 text-xs text-muted">
               Состав чата группы пересчитывается по группе: тренеры и представители спортсменов с
               активным членством. {trainers.length === 0 ? 'Тренеров в чате нет.' : ''}
               Ушедший из группы теряет доступ.
