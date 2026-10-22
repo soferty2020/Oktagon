@@ -390,3 +390,93 @@ deploy` (schema-engine там доступен). В ограниченных с�
 - подключение ленивое: отсутствие Redis не мешает приложению подняться;
 - `GET /api/v1/health/ready` проверяет Redis, если задан `REDIS_URL`, и
   возвращает 503 при недоступности.
+
+## 12. Мобильное приложение (`apps/mobile`)
+
+Нужен Flutter SDK; в репозиторий он не входит (весит ~2.5 ГБ). Проект проверен на
+Flutter 3.47.7 / Dart 3.13.5 — эта же версия зафиксирована в CI.
+
+### Установка на Windows
+
+```powershell
+# версия из CI — та же, чтобы локальные проверки совпадали с серверными
+Invoke-WebRequest -Uri `
+  "https://storage.googleapis.com/flutter_infra_release/releases/stable/windows/flutter_windows_3.47.7-stable.zip" `
+  -OutFile "$env:TEMP\flutter.zip"
+Expand-Archive "$env:TEMP\flutter.zip" -DestinationPath .tools
+```
+
+`flutter doctor` покажет, чего не хватает. Для `analyze`, `test` и `build web`
+достаточно самого SDK; для APK нужен Android SDK, для iOS — macOS.
+
+### Если среда запрещает запись вне проекта
+
+Flutter по умолчанию пишет в `%LOCALAPPDATA%`, `%APPDATA%` и `%TEMP%`. Если эти
+каталоги недоступны, перенаправьте их внутрь проекта — иначе первый запуск
+падает с `Unable to 'pub upgrade' flutter tool`:
+
+```powershell
+$env:PUB_CACHE = "$PWD\.tools\pub-cache"
+$env:HOME = "$PWD\.tools\home"
+$env:TEMP = "$PWD\.tools\tmp"
+$env:TMP = "$PWD\.tools\tmp"
+$env:APPDATA = "$PWD\.tools\appdata"
+$env:LOCALAPPDATA = "$PWD\.tools\localappdata"
+```
+
+### Проверки
+
+```powershell
+cd apps/mobile
+flutter pub get
+flutter analyze
+flutter test
+flutter build web --release   # проверка компиляции без Android SDK
+```
+
+Скриншоты экранов для проверки дизайна (эталоны в `test/goldens`, только Windows):
+
+```powershell
+flutter test --update-goldens test/golden_screens_test.dart
+```
+
+### Демонстрационные данные
+
+Чтобы экраны показывали реальные данные, а не пустые состояния:
+
+```powershell
+node scripts/demo-data.mjs
+```
+
+Скрипт создает участника с известным паролем, спортсмена, группу, занятия с
+отметкой и два объявления. Требует запущенного API и `SUPERADMIN_*` в
+`apps/api/.env` (раздел 4). Скрипт идемпотентен по смыслу: каждый запуск создает
+новую пару «аккаунт-спортсмен» с уникальным email.
+
+## 13. Новая машина: чек-лист
+
+Что переносится через git и что нужно поставить заново.
+
+**В репозитории (приходит с `git clone`):** весь код, миграции, контракты,
+документация (ADR, беклог, дизайн, эти инструкции), скрипты проверок, CI.
+
+**Не в репозитории (создается локально):**
+
+| Что | Как восстановить |
+|---|---|
+| `.env` | `cp apps/api/.env.example apps/api/.env`, задать `SUPERADMIN_*` и секреты JWT |
+| PostgreSQL | раздел 3 (Docker или portable) |
+| Redis | раздел 3a |
+| Схема и справочники | раздел 5: миграции + `pnpm db:seed` |
+| `node_modules` | `pnpm install` (раздел 2) |
+| Flutter SDK | раздел 12 |
+| Демо-данные | `node scripts/demo-data.mjs` |
+
+Порядок: клон → `pnpm install` → `.env` → PostgreSQL/Redis → миграции → `db:seed`
+→ `pnpm --filter @octagon/api start:dev` → админка (`docs/27`, раздел 8) →
+Flutter (раздел 12).
+
+Состояние диалога с ассистентом **не переносится**: DSH хранит историю сессий
+локально (`~/.dsh`). Поэтому все решения записаны в репозиторий — в ADR
+(`docs/decisions`), беклог (`docs/19-backlog.md`) и комментарии в коде, а не
+остаются только в переписке.
