@@ -20,6 +20,7 @@ const TITLES: readonly { prefix: string; title: string }[] = [
   { prefix: '/chats', title: 'Чаты' },
   { prefix: '/users', title: 'Пользователи' },
   { prefix: '/invite', title: 'Приглашение' },
+  { prefix: '/settings', title: 'Настройки' },
 ];
 
 export function SectionTitle({ fallback = 'Главная' }: { fallback?: string }) {

@@ -46,6 +46,16 @@ const NAVIGATION: readonly {
   // доступна только участникам, и решает это backend (ADR-0011).
   { href: '/chats', label: 'Чаты', icon: 'chats', requiredPermissions: ['chat.use'] },
   { href: '/users', label: 'Пользователи', icon: 'users' },
+  // Настройки: хаб со ссылками на существующие разделы и, позже, собственные
+  // экраны (docs/26-admin-settings.md). Показывается тем, кому есть что там
+  // делать: управление филиалами, сотрудниками или правами. Аудит и финансовые
+  // правила внутри дополнительно закрыты ролью SUPERADMIN.
+  {
+    href: '/settings',
+    label: 'Настройки',
+    icon: 'settings',
+    requiredPermissions: ['branches.manage', 'users.manage', 'permissions.manage'],
+  },
 ];
 
 /**
