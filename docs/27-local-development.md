@@ -516,6 +516,25 @@ flutter build apk --release
 APK лежит в `build/app/outputs/flutter-apk/app-release.apk`. Первая сборка долгая
 (скачивается Gradle и зависимости, ~30 минут); последующие — несколько минут.
 
+**Адрес API в APK.** По умолчанию приложение обращается к `10.0.2.2:3000` — это
+адрес хост-машины из эмулятора Android. На реальном телефоне он не работает: там
+`10.0.2.2` — не ваша машина. Для устройства сборка делается с адресом в локальной
+сети:
+
+```powershell
+flutter build apk --release `
+  --dart-define=API_BASE_URL=http://192.168.54.45:3000/api/v1
+```
+
+Телефон должен быть в той же Wi-Fi сети, а API — запущен и не заблокирован
+брандмауэром Windows (для порта 3000 нужно разрешение на входящие подключения).
+
+**Сеть в манифесте.** В шаблоне Flutter разрешение `INTERNET` есть только в
+debug-манифесте: release-сборка без него не обратится к API. Оно добавлено в
+`android/app/src/main/AndroidManifest.xml` вместе с `usesCleartextTraffic`
+(локальный API работает по http, а Android 9+ блокирует такие запросы). Для
+production `usesCleartextTraffic` нужно убрать и перейти на https.
+
 **Подпись.** Без настроенного keystore release-APK подписывается debug-ключом
 (`CN=Android Debug`): на телефон установить можно, в Google Play — нельзя. Для
 публикации нужен свой keystore и `android/key.properties` (в git не коммитится).

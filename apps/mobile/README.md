@@ -55,7 +55,8 @@ $env:ANDROID_HOME     = "$PWD\.tools\android-sdk"
 $env:ANDROID_USER_HOME = "$PWD\.tools\android-home"
 $env:GRADLE_USER_HOME  = "$PWD\.tools\gradle-home"
 
-flutter build apk --release
+# Адрес API: для телефона — IP машины в локальной сети, для эмулятора 10.0.2.2
+flutter build apk --release --dart-define=API_BASE_URL=http://192.168.54.45:3000/api/v1
 ```
 
 Результат — `build/app/outputs/flutter-apk/app-release.apk`. Первая сборка
@@ -64,6 +65,11 @@ flutter build apk --release
 Без настроенного keystore APK подписывается debug-ключом: установить на телефон
 можно, опубликовать в Google Play — нельзя. Для публикации нужен свой keystore.
 В APK входят все архитектуры (49 МБ); `--split-per-abi` дает три файла по ~17 МБ.
+
+В release-манифесте (`android/app/src/main/AndroidManifest.xml`) добавлены
+`INTERNET` — в шаблоне Flutter оно есть только в debug — и
+`usesCleartextTraffic`, без которого Android блокирует http-запросы к локальному
+API. Для production cleartext нужно убрать и перейти на https.
 
 ## Структура
 

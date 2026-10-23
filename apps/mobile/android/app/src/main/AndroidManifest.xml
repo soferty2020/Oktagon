@@ -1,8 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Доступ в сеть нужен release-сборке: без него приложение не обратится к
+         API. В шаблоне Flutter это разрешение есть только в debug-манифесте, где
+         оно предназначено для hot reload. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <application
-        android:label="octagon_mobile"
+        android:label="OCTAGON"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true">
+        <!-- usesCleartextTraffic: локальный API работает по http, а Android 9+
+             блокирует такие запросы. Для production это нужно убрать и перейти на
+             https, иначе трафик клуба пойдёт открытым текстом. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
