@@ -18,6 +18,7 @@ class ChatsScreen extends StatefulWidget {
     required this.auth,
     required this.controller,
     required this.chatFactory,
+    this.now = DateTime.now,
   });
 
   final AuthController auth;
@@ -26,6 +27,10 @@ class ChatsScreen extends StatefulWidget {
   /// Переписка создается на каждый диалог: состояние одной не должно переходить
   /// в другую.
   final ChatController Function() chatFactory;
+
+  /// Источник текущего времени: в golden-тестах подменяется, иначе скриншот
+  /// зависит от дня запуска.
+  final DateTime Function() now;
 
   @override
   State<ChatsScreen> createState() => _ChatsScreenState();
@@ -129,6 +134,7 @@ class _ChatsScreenState extends State<ChatsScreen> {
               return _ConversationTile(
                 conversation: conversation,
                 onTap: () => _open(conversation),
+                now: widget.now,
               );
             },
           ),
@@ -139,10 +145,17 @@ class _ChatsScreenState extends State<ChatsScreen> {
 }
 
 class _ConversationTile extends StatelessWidget {
-  const _ConversationTile({required this.conversation, required this.onTap});
+  const _ConversationTile({
+    required this.conversation,
+    required this.onTap,
+    this.now = DateTime.now,
+  });
 
   final ChatConversation conversation;
   final VoidCallback onTap;
+
+  /// Время для подписи «вчера»; в тестах подменяется.
+  final DateTime Function() now;
 
   @override
   Widget build(BuildContext context) {
@@ -210,7 +223,7 @@ class _ConversationTile extends StatelessWidget {
                         ),
                         if (conversation.lastMessageAt != null)
                           Text(
-                            _shortTime(conversation.lastMessageAt!),
+                            _shortTime(conversation.lastMessageAt!, now: now()),
                             style: const TextStyle(
                               fontSize: 11,
                               color: AppColors.textTertiary,
@@ -319,9 +332,9 @@ class _ErrorView extends StatelessWidget {
   }
 }
 
-String _shortTime(DateTime value) {
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
+String _shortTime(DateTime value, {DateTime? now}) {
+  final current = now ?? DateTime.now();
+  final today = DateTime(current.year, current.month, current.day);
   final day = DateTime(value.year, value.month, value.day);
 
   if (day == today) {

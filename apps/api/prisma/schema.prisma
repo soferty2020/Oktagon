@@ -52,6 +52,28 @@ enum AthleteStatus {
   ARCHIVED
 }
 
+/**
+ * Пояса клуба (K3, BR-015): фиксированный набор, порядок утверждён клубом.
+ *
+ * Порядок задан значениями контракта (`BELT_GRADES`), а не порядком в enum:
+ * enum только ограничивает допустимые значения. CRUD через админку запрещён —
+ * набор меняется только кодом.
+ */
+enum BeltGrade {
+  WHITE
+  ORANGE
+  ORANGE_BLUE_STRIPE
+  BLUE
+  BLUE_YELLOW_STRIPE
+  YELLOW
+  YELLOW_GREEN_STRIPE
+  GREEN
+  GREEN_BROWN_STRIPE
+  BROWN
+  BROWN_GOLD_STRIPE
+  BLACK
+}
+
 enum Gender {
   MALE
   FEMALE
@@ -248,6 +270,10 @@ model Athlete {
   birthDate   DateTime?     @map("birth_date") @db.Date
   gender      Gender        @default(UNSPECIFIED)
   status      AthleteStatus @default(ACTIVE)
+  /// Текущий пояс (K3). NULL — пояс не присвоен: это не то же самое, что белый.
+  beltGrade   BeltGrade?    @map("belt_grade")
+  /// Дата присвоения пояса; у старых записей может отсутствовать.
+  beltAwardedAt DateTime?   @map("belt_awarded_at") @db.Date
   phone       String?
   email       String?
   notes       String?

@@ -127,6 +127,9 @@ export async function updateAthleteAction(
   const phone = optionalText(formData, 'phone');
   const email = optionalText(formData, 'email');
   const notes = optionalText(formData, 'notes');
+  // Пояс (K3): пустое значение очищает его, поэтому null, а не пропуск поля.
+  const beltGrade = optionalText(formData, 'beltGrade');
+  const beltAwardedAt = optionalText(formData, 'beltAwardedAt');
 
   const state = await withSession(
     (accessToken) =>
@@ -141,6 +144,8 @@ export async function updateAthleteAction(
           ...(phone ? { phone } : {}),
           ...(email ? { email } : {}),
           notes: notes ?? null,
+          beltGrade: beltGrade ?? null,
+          beltAwardedAt: beltAwardedAt ?? null,
           ...(status ? { status } : {}),
         },
       }),

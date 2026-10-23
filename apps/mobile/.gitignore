@@ -1,3 +1,8 @@
+/**/generated_plugin_registrant.dart
+
+# Артефакты golden-тестов: diff, master и test-образы при падении.
+# Они пересоздаются при каждом запуске и не должны попадать в историю.
+test/failures/
 # Miscellaneous
 *.class
 *.log

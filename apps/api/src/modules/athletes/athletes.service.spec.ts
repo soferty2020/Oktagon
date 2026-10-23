@@ -1,4 +1,4 @@
-import { PermissionCode } from '@octagon/contracts';
+import { AthleteStatus, BeltGrade, PermissionCode } from '@octagon/contracts';
 
 import { AuditService } from '../audit/audit.service';
 import { ResourceScopeService } from '../identity/resource-scope.service';
@@ -14,6 +14,8 @@ const athlete: AthleteRecord = {
   birthDate: new Date('2015-09-01T00:00:00.000Z'),
   gender: 'MALE',
   status: 'ACTIVE',
+  beltGrade: null,
+  beltAwardedAt: null,
   phone: '+7 700 111 22 33',
   email: 'ali@example.com',
   notes: 'заметка клуба',
@@ -168,11 +170,56 @@ describe('AthletesService', () => {
       expect(input.birthDate?.toISOString().slice(0, 10)).toBe('2015-09-01');
     });
 
+    it('передает пояс и дату присвоения в репозиторий', async () => {
+      // K3: пояс — часть карточки, но меняется только с правом athletes.edit.
+      await service.update('admin-1', 'athlete-1', {
+        beltGrade: BeltGrade.YELLOW,
+        beltAwardedAt: '2024-02-10',
+      });
+
+      const [id, input] = repository.update.mock.calls[0] as [
+        string,
+        { beltGrade: string; beltAwardedAt: Date },
+      ];
+      expect(id).toBe('athlete-1');
+      expect(input.beltGrade).toBe(BeltGrade.YELLOW);
+      expect(input.beltAwardedAt).toBeInstanceOf(Date);
+      expect(input.beltAwardedAt.toISOString().slice(0, 10)).toBe('2024-02-10');
+    });
+
+    it('не сбрасывает пояс при обновлении других полей', async () => {
+      // PATCH только со статусом не должен обнулять пояс: контроллер передает
+      // beltGrade как есть, без `?? null`.
+      await service.update('admin-1', 'athlete-1', { status: AthleteStatus.FROZEN });
+
+      const [, input] = repository.update.mock.calls[0] as [string, { beltGrade?: unknown }];
+      expect(input.beltGrade).toBeUndefined();
+    });
+
+    it('отдает пояс и дату в карточке', async () => {
+      repository.find.mockResolvedValue({
+        ...athlete,
+        beltGrade: BeltGrade.GREEN_BROWN_STRIPE,
+        beltAwardedAt: new Date('2023-05-01T00:00:00.000Z'),
+      });
+
+      const view = await service.get('admin-1', 'athlete-1');
+
+      expect(view.beltGrade).toBe(BeltGrade.GREEN_BROWN_STRIPE);
+      expect(view.beltAwardedAt).toBe('2023-05-01');
+    });
+
+    it('не подставляет белый пояс вместо отсутствующего', async () => {
+      const view = await service.get('admin-1', 'athlete-1');
+
+      expect(view.beltGrade).toBeNull();
+      expect(view.beltAwardedAt).toBeNull();
+    });
+
     it('архивирует мягко', async () => {
       await service.archive('admin-1', 'athlete-1');
 
-      expect(repository.archive).toHaveBeenCalledWith('athlete-1', expect.any(Date));
-      expect(audit.recordSafely).toHaveBeenCalledWith(
+      expect(repository.archive).toHaveBeenCalledWith('athlete-1', expect.any(Date));      expect(audit.recordSafely).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'athlete.archived' }),
       );
     });

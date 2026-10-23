@@ -6,6 +6,7 @@
  */
 
 import type { AthleteStatus, PermissionCode, UserRole, UserStatus } from './domain';
+import type { BeltGrade } from './belt-grades';
 import {
   FINANCIAL_PERMISSION_CODES,
   PERMISSION_CODES,
@@ -54,6 +55,10 @@ export interface LinkedAthlete {
   middleName: string | null;
   birthDate: string | null;
   status: AthleteStatus;
+  /** Текущий пояс (K3); `null` — не присвоен. */
+  beltGrade: BeltGrade | null;
+  /** Дата присвоения пояса (YYYY-MM-DD). */
+  beltAwardedAt: string | null;
   /** Связь с аккаунтом: SELF, PARENT, GUARDIAN. */
   relation: string;
   isPrimary: boolean;

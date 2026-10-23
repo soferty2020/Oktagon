@@ -211,6 +211,10 @@ export function toLinkedAthlete(record: LinkedAthleteRecord): LinkedAthlete {
     middleName: record.middleName,
     birthDate: record.birthDate ? record.birthDate.toISOString().slice(0, 10) : null,
     status: record.status,
+    beltGrade: record.beltGrade,
+    beltAwardedAt: record.beltAwardedAt
+      ? record.beltAwardedAt.toISOString().slice(0, 10)
+      : null,
     relation: record.relation,
     isPrimary: record.isPrimary,
   };

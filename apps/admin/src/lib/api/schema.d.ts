@@ -1151,6 +1151,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/belt-grades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Фиксированный справочник поясов
+         * @description Набор фиксирован (BR-015): эндпоинтов создания, изменения и удаления нет
+         *     намеренно. Порядок в ответе — порядок ступеней, утвержденный клубом.
+         *     Доступно всем аутентифицированным: справочник не содержит персональных
+         *     данных и нужен и админке, и мобильному приложению.
+         */
+        get: operations["listBeltGrades"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/audit": {
         parameters: {
             query?: never;
@@ -1828,6 +1851,26 @@ export interface components {
         AthleteStatus: "ACTIVE" | "FROZEN" | "ARCHIVED";
         /** @enum {string} */
         Gender: "MALE" | "FEMALE" | "UNSPECIFIED";
+        /**
+         * @description Пояс из фиксированного набора (BR-015). `null` — не присвоен; это не
+         *     белый пояс, а отсутствие данных. Порядок ступеней задан справочником.
+         * @enum {string|null}
+         */
+        BeltGrade: "WHITE" | "ORANGE" | "ORANGE_BLUE_STRIPE" | "BLUE" | "BLUE_YELLOW_STRIPE" | "YELLOW" | "YELLOW_GREEN_STRIPE" | "GREEN" | "GREEN_BROWN_STRIPE" | "BROWN" | "BROWN_GOLD_STRIPE" | "BLACK" | null;
+        BeltGradeView: {
+            code: components["schemas"]["BeltGrade"];
+            /** @example Жёлтый с зелёной полоской */
+            label: string;
+            /** @description Ступень; 1 — младший пояс */
+            order: number;
+            /**
+             * @description Цвет основы в hex
+             * @example #FFD400
+             */
+            color: string;
+            /** @description Цвет полоски; null у поясов без полоски */
+            stripeColor: string | null;
+        };
         LivenessReport: {
             /** @enum {string} */
             status: "ok";
@@ -1941,6 +1984,9 @@ export interface components {
              */
             birthDate?: string | null;
             status: components["schemas"]["AthleteStatus"];
+            beltGrade?: components["schemas"]["BeltGrade"];
+            /** Format: date */
+            beltAwardedAt?: string | null;
             /**
              * @description Тип связи аккаунта со спортсменом
              * @example PARENT
@@ -2152,6 +2198,9 @@ export interface components {
             birthDate?: string | null;
             gender: components["schemas"]["Gender"];
             status: components["schemas"]["AthleteStatus"];
+            beltGrade?: components["schemas"]["BeltGrade"];
+            /** Format: date */
+            beltAwardedAt?: string | null;
             phone?: string | null;
             /** Format: email */
             email?: string | null;
@@ -6312,6 +6361,27 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
+        };
+    };
+    listBeltGrades: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Пояса по возрастанию ступени */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BeltGradeView"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
         };
     };
     listAuditRecords: {

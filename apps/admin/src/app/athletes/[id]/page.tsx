@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
+import { beltGradeLabel } from '@octagon/contracts';
+
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
@@ -11,6 +13,15 @@ export const metadata = {
   title: 'Спортсмен — OCTAGON',
 };
 
+/** Дата без времени: пояс присваивается днем, часовой пояс не важен. */
+function formatDate(value: string): string {
+  return new Date(value).toLocaleDateString('ru-RU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
+
 interface AthleteDetails {
   id: string;
   firstName: string;
@@ -19,6 +30,8 @@ interface AthleteDetails {
   birthDate: string | null;
   gender: string;
   status: string;
+  beltGrade: string | null;
+  beltAwardedAt: string | null;
   phone: string | null;
   email: string | null;
   notes: string | null;
@@ -90,7 +103,14 @@ export default async function AthletePage({ params }: { params: Promise<{ id: st
         title={`${athlete.data.lastName} ${athlete.data.firstName}${
           athlete.data.middleName ? ` ${athlete.data.middleName}` : ''
         }`}
-        description={`Статус: ${athlete.data.status} · создан ${athlete.data.createdAt.slice(0, 10)}`}
+        description={[
+          `Статус: ${athlete.data.status}`,
+          `Пояс: ${beltGradeLabel(athlete.data.beltGrade) ?? 'не указан'}`,
+          athlete.data.beltAwardedAt ? `с ${formatDate(athlete.data.beltAwardedAt)}` : null,
+          `создан ${athlete.data.createdAt.slice(0, 10)}`,
+        ]
+          .filter(Boolean)
+          .join(' · ')}
         actions={
           <Link href="/athletes" className="text-sm text-muted hover:text-ink">
             ← Все спортсмены

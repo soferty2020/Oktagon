@@ -2785,6 +2785,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
 
+  /belt-grades:
+    get:
+      tags: [belt-grades]
+      summary: Фиксированный справочник поясов
+      description: |
+        Набор фиксирован (BR-015): эндпоинтов создания, изменения и удаления нет
+        намеренно. Порядок в ответе — порядок ступеней, утвержденный клубом.
+        Доступно всем аутентифицированным: справочник не содержит персональных
+        данных и нужен и админке, и мобильному приложению.
+      operationId: listBeltGrades
+      responses:
+        '200':
+          description: Пояса по возрастанию ступени
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BeltGradeView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+
   /audit:
     get:
       tags: [audit]
@@ -4394,6 +4416,47 @@ components:
       type: string
       enum: [MALE, FEMALE, UNSPECIFIED]
 
+    BeltGrade:
+      type: string
+      nullable: true
+      description: |
+        Пояс из фиксированного набора (BR-015). `null` — не присвоен; это не
+        белый пояс, а отсутствие данных. Порядок ступеней задан справочником.
+      enum:
+        - WHITE
+        - ORANGE
+        - ORANGE_BLUE_STRIPE
+        - BLUE
+        - BLUE_YELLOW_STRIPE
+        - YELLOW
+        - YELLOW_GREEN_STRIPE
+        - GREEN
+        - GREEN_BROWN_STRIPE
+        - BROWN
+        - BROWN_GOLD_STRIPE
+        - BLACK
+
+    BeltGradeView:
+      type: object
+      required: [code, label, order, color, stripeColor]
+      properties:
+        code:
+          $ref: '#/components/schemas/BeltGrade'
+        label:
+          type: string
+          example: Жёлтый с зелёной полоской
+        order:
+          type: integer
+          description: Ступень; 1 — младший пояс
+        color:
+          type: string
+          description: Цвет основы в hex
+          example: '#FFD400'
+        stripeColor:
+          type: string
+          nullable: true
+          description: Цвет полоски; null у поясов без полоски
+
     LivenessReport:
       type: object
       required: [status, service, environment, timestamp]
@@ -4599,6 +4662,12 @@ components:
           description: Календарная дата без времени
         status:
           $ref: '#/components/schemas/AthleteStatus'
+        beltGrade:
+          $ref: '#/components/schemas/BeltGrade'
+        beltAwardedAt:
+          type: string
+          format: date
+          nullable: true
         relation:
           type: string
           description: Тип связи аккаунта со спортсменом
@@ -4985,6 +5054,12 @@ components:
           $ref: '#/components/schemas/Gender'
         status:
           $ref: '#/components/schemas/AthleteStatus'
+        beltGrade:
+          $ref: '#/components/schemas/BeltGrade'
+        beltAwardedAt:
+          type: string
+          format: date
+          nullable: true
         phone:
           type: string
           nullable: true

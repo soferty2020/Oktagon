@@ -13,7 +13,7 @@ import {
   hasPermission,
 } from '@octagon/contracts';
 
-import { AthleteStatus, type Gender } from '../../../generated/prisma';
+import { AthleteStatus, type BeltGrade, type Gender } from '../../../generated/prisma';
 import { ApiException } from '../../shared/api-exception';
 import { PermissionResolver } from '../../shared/permissions.guard';
 import { AuditService } from '../audit/audit.service';
@@ -256,6 +256,9 @@ function toUpdateRecord(input: UpdateAthleteInput): UpdateAthleteRecordInput {
     lastName: input.lastName,
     middleName: input.middleName,
     gender: input.gender as Gender | undefined,
+    // Значения контракта и Prisma-клиента совпадают: набор ограничен
+    // @IsEnum(BeltGrade) в DTO и фиксированным справочником BELT_GRADES.
+    beltGrade: input.beltGrade as BeltGrade | null | undefined,
     phone: input.phone,
     email: input.email,
     notes: input.notes,
@@ -265,6 +268,14 @@ function toUpdateRecord(input: UpdateAthleteInput): UpdateAthleteRecordInput {
   const birthDate = parseCalendarDate(input.birthDate);
   if (birthDate !== undefined) {
     record.birthDate = birthDate;
+  }
+
+  // Дата присвоения может прийти без пояса (старая запись) и наоборот: это
+  // независимые поля, и связывать их валидацией значило бы запретить
+  // «пояс известен, дата нет».
+  const beltAwardedAt = parseCalendarDate(input.beltAwardedAt);
+  if (beltAwardedAt !== undefined) {
+    record.beltAwardedAt = beltAwardedAt;
   }
 
   return record;
@@ -279,6 +290,12 @@ function toAthleteView(athlete: AthleteRecord, canViewContacts: boolean): Athlet
     birthDate: athlete.birthDate ? athlete.birthDate.toISOString().slice(0, 10) : null,
     gender: athlete.gender,
     status: athlete.status,
+    // Поясом не считается отсутствие значения: `null` доходит до клиента и
+    // показывается как «не указан», а не как белый пояс.
+    beltGrade: athlete.beltGrade,
+    beltAwardedAt: athlete.beltAwardedAt
+      ? athlete.beltAwardedAt.toISOString().slice(0, 10)
+      : null,
     phone: athlete.phone,
     email: athlete.email,
     createdAt: athlete.createdAt.toISOString(),

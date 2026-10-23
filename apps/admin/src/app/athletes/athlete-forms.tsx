@@ -2,6 +2,8 @@
 
 import { useActionState } from 'react';
 
+import { BELT_GRADES } from '@octagon/contracts';
+
 import {
   createAthleteAction,
   linkAccountAction,
@@ -115,6 +117,8 @@ interface AthleteValues {
   middleName: string | null;
   birthDate: string | null;
   status: string;
+  beltGrade: string | null;
+  beltAwardedAt: string | null;
   phone: string | null;
   email: string | null;
   notes: string | null;
@@ -199,6 +203,27 @@ export function EditAthleteForm({ athlete }: { athlete: AthleteValues }) {
               </option>
             ))}
           </select>
+        </label>
+        <label className={labelClass}>
+          Пояс
+          {/* Пустое значение — «не присвоен»: белый пояс выбирается осознанно. */}
+          <select name="beltGrade" defaultValue={athlete.beltGrade ?? ''} className={inputClass}>
+            <option value="">не указан</option>
+            {BELT_GRADES.map((grade) => (
+              <option key={grade.code} value={grade.code}>
+                {grade.order}. {grade.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className={labelClass}>
+          Дата присвоения пояса
+          <input
+            type="date"
+            name="beltAwardedAt"
+            defaultValue={athlete.beltAwardedAt ?? ''}
+            className={inputClass}
+          />
         </label>
       </div>
 

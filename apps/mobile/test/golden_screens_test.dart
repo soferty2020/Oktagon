@@ -95,6 +95,8 @@ FakeApiClient buildClient() {
         'middleName': null,
         'birthDate': '2015-04-12',
         'status': 'ACTIVE',
+        'beltGrade': 'YELLOW',
+        'beltAwardedAt': '2024-02-10',
         'relation': 'PARENT',
         'isPrimary': true,
       },
@@ -345,7 +347,7 @@ void main() {
     await home.load('token');
 
     await tester.pumpWidget(
-      wrap(MemberHomeContent(auth: auth, controller: home)),
+      wrap(MemberHomeContent(auth: auth, controller: home, now: () => now)),
     );
     await tester.pumpAndSettle();
 
@@ -377,6 +379,7 @@ void main() {
           athleteName: 'Дамир Демо',
           groupId: 'group-1',
           refreshKey: 'group-1',
+          now: () => now,
         ),
       ),
     );
@@ -442,6 +445,7 @@ void main() {
                 auth: auth,
                 controller: chats,
                 chatFactory: () => ChatController(repository: ChatRepository(client: client)),
+      now: () => now,
               ),
             ),
           ),

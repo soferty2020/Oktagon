@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { AthleteStatus, MembershipState, UserRole, UserStatus } from '../../../generated/prisma';
-// Обычный импорт: PrismaService — DI-токен, он должен попасть в метаданные
-// конструктора (emitDecoratorMetadata).
+import { AthleteStatus, BeltGrade, MembershipState, UserRole, UserStatus } from '../../../generated/prisma';
+// РћР±С‹С‡РЅС‹Р№ РёРјРїРѕСЂС‚: PrismaService вЂ” DI-С‚РѕРєРµРЅ, РѕРЅ РґРѕР»Р¶РµРЅ РїРѕРїР°СЃС‚СЊ РІ РјРµС‚Р°РґР°РЅРЅС‹Рµ
+// РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂР° (emitDecoratorMetadata).
 import { PrismaService } from '../../prisma/prisma.service';
 
 /**
- * Снимок пользователя для слоя identity: только поля профиля плюс выданные
- * лично права. Пароль и токены сюда не попадают (ADR-0007, п.4).
+ * РЎРЅРёРјРѕРє РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РґР»СЏ СЃР»РѕСЏ identity: С‚РѕР»СЊРєРѕ РїРѕР»СЏ РїСЂРѕС„РёР»СЏ РїР»СЋСЃ РІС‹РґР°РЅРЅС‹Рµ
+ * Р»РёС‡РЅРѕ РїСЂР°РІР°. РџР°СЂРѕР»СЊ Рё С‚РѕРєРµРЅС‹ СЃСЋРґР° РЅРµ РїРѕРїР°РґР°СЋС‚ (ADR-0007, Рї.4).
  */
 export interface UserProfileRecord {
   id: string;
@@ -21,7 +21,7 @@ export interface UserProfileRecord {
   grants: GrantRecord[];
 }
 
-/** Индивидуальная выдача права. */
+/** РРЅРґРёРІРёРґСѓР°Р»СЊРЅР°СЏ РІС‹РґР°С‡Р° РїСЂР°РІР°. */
 export interface GrantRecord {
   code: string;
   description: string;
@@ -38,11 +38,14 @@ export interface LinkedAthleteRecord {
   middleName: string | null;
   birthDate: Date | null;
   status: AthleteStatus;
+  /** Текущий пояс (K3); `null` — не присвоен. */
+  beltGrade: BeltGrade | null;
+  beltAwardedAt: Date | null;
   relation: string;
   isPrimary: boolean;
 }
 
-/** Пользователь в списке админки. */
+/** РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ РІ СЃРїРёСЃРєРµ Р°РґРјРёРЅРєРё. */
 export interface UserListRecord {
   id: string;
   email: string;
@@ -64,7 +67,7 @@ export interface ListUsersRecordQuery {
   take: number;
 }
 
-/** Результат выдачи права. */
+/** Р РµР·СѓР»СЊС‚Р°С‚ РІС‹РґР°С‡Рё РїСЂР°РІР°. */
 export interface GrantPermissionRecord {
   code: string;
   description: string;
@@ -75,44 +78,44 @@ export interface GrantPermissionRecord {
 }
 
 /**
- * Доступ к данным identity.
+ * Р”РѕСЃС‚СѓРї Рє РґР°РЅРЅС‹Рј identity.
  *
- * Абстрактный класс, а не интерфейс: служит DI-токеном NestJS и одновременно
- * описывает контракт. Благодаря этому слой identity не зависит от Prisma
- * напрямую, а бизнес-логику можно тестировать без БД
- * (docs/13-architecture.md — изоляция внешних зависимостей).
+ * РђР±СЃС‚СЂР°РєС‚РЅС‹Р№ РєР»Р°СЃСЃ, Р° РЅРµ РёРЅС‚РµСЂС„РµР№СЃ: СЃР»СѓР¶РёС‚ DI-С‚РѕРєРµРЅРѕРј NestJS Рё РѕРґРЅРѕРІСЂРµРјРµРЅРЅРѕ
+ * РѕРїРёСЃС‹РІР°РµС‚ РєРѕРЅС‚СЂР°РєС‚. Р‘Р»Р°РіРѕРґР°СЂСЏ СЌС‚РѕРјСѓ СЃР»РѕР№ identity РЅРµ Р·Р°РІРёСЃРёС‚ РѕС‚ Prisma
+ * РЅР°РїСЂСЏРјСѓСЋ, Р° Р±РёР·РЅРµСЃ-Р»РѕРіРёРєСѓ РјРѕР¶РЅРѕ С‚РµСЃС‚РёСЂРѕРІР°С‚СЊ Р±РµР· Р‘Р”
+ * (docs/13-architecture.md вЂ” РёР·РѕР»СЏС†РёСЏ РІРЅРµС€РЅРёС… Р·Р°РІРёСЃРёРјРѕСЃС‚РµР№).
  */
 export abstract class IdentityRepository {
   abstract findProfile(userId: string): Promise<UserProfileRecord | null>;
   abstract listLinkedAthletes(userId: string): Promise<LinkedAthleteRecord[]>;
-  /** Список пользователей для админки: фильтры, пагинация и общее количество. */
+  /** РЎРїРёСЃРѕРє РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РґР»СЏ Р°РґРјРёРЅРєРё: С„РёР»СЊС‚СЂС‹, РїР°РіРёРЅР°С†РёСЏ Рё РѕР±С‰РµРµ РєРѕР»РёС‡РµСЃС‚РІРѕ. */
   abstract listUsers(
     query: ListUsersRecordQuery,
   ): Promise<{ items: UserListRecord[]; total: number }>;
-  /** Идентификаторы спортсменов, которые занимаются в группах тренера. */
+  /** РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂС‹ СЃРїРѕСЂС‚СЃРјРµРЅРѕРІ, РєРѕС‚РѕСЂС‹Рµ Р·Р°РЅРёРјР°СЋС‚СЃСЏ РІ РіСЂСѓРїРїР°С… С‚СЂРµРЅРµСЂР°. */
   abstract listCoachedAthleteIds(trainerUserId: string): Promise<string[]>;
-  /** Группы, которые ведет сотрудник (активные назначения). */
+  /** Р“СЂСѓРїРїС‹, РєРѕС‚РѕСЂС‹Рµ РІРµРґРµС‚ СЃРѕС‚СЂСѓРґРЅРёРє (Р°РєС‚РёРІРЅС‹Рµ РЅР°Р·РЅР°С‡РµРЅРёСЏ). */
   abstract listStaffGroupIds(userId: string): Promise<string[]>;
   /**
-   * Группы связанных спортсменов (ADR-0013).
+   * Р“СЂСѓРїРїС‹ СЃРІСЏР·Р°РЅРЅС‹С… СЃРїРѕСЂС‚СЃРјРµРЅРѕРІ (ADR-0013).
    *
-   * Нужны участнику: матрица прав обещает ему «own schedule» и «own attendance»,
-   * а без списка групп его спортсменов scope не может ответить, видна ли группа.
+   * РќСѓР¶РЅС‹ СѓС‡Р°СЃС‚РЅРёРєСѓ: РјР°С‚СЂРёС†Р° РїСЂР°РІ РѕР±РµС‰Р°РµС‚ РµРјСѓ В«own scheduleВ» Рё В«own attendanceВ»,
+   * Р° Р±РµР· СЃРїРёСЃРєР° РіСЂСѓРїРї РµРіРѕ СЃРїРѕСЂС‚СЃРјРµРЅРѕРІ scope РЅРµ РјРѕР¶РµС‚ РѕС‚РІРµС‚РёС‚СЊ, РІРёРґРЅР° Р»Рё РіСЂСѓРїРїР°.
    */
   abstract listLinkedGroupIds(userId: string): Promise<string[]>;
 
-  /** Каталог permissions: проверка, что код существует. */
+  /** РљР°С‚Р°Р»РѕРі permissions: РїСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РєРѕРґ СЃСѓС‰РµСЃС‚РІСѓРµС‚. */
   abstract findPermissionByCode(
     code: string,
   ): Promise<{ code: string; description: string; isFinancial: boolean } | null>;
-  /** Выдает право (upsert): повторная выдача обновляет срок и автора. */
+  /** Р’С‹РґР°РµС‚ РїСЂР°РІРѕ (upsert): РїРѕРІС‚РѕСЂРЅР°СЏ РІС‹РґР°С‡Р° РѕР±РЅРѕРІР»СЏРµС‚ СЃСЂРѕРє Рё Р°РІС‚РѕСЂР°. */
   abstract grantPermission(input: {
     userId: string;
     code: string;
     grantedById: string;
     expiresAt: Date | null;
   }): Promise<GrantPermissionRecord>;
-  /** Отзывает право. Возвращает автора прежней выдачи либо null, если ее нет. */
+  /** РћС‚Р·С‹РІР°РµС‚ РїСЂР°РІРѕ. Р’РѕР·РІСЂР°С‰Р°РµС‚ Р°РІС‚РѕСЂР° РїСЂРµР¶РЅРµР№ РІС‹РґР°С‡Рё Р»РёР±Рѕ null, РµСЃР»Рё РµРµ РЅРµС‚. */
   abstract revokePermission(input: {
     userId: string;
     code: string;
@@ -120,10 +123,10 @@ export abstract class IdentityRepository {
 }
 
 /**
- * Условие «выдача действует»: бессрочная либо с непрошедшим сроком.
+ * РЈСЃР»РѕРІРёРµ В«РІС‹РґР°С‡Р° РґРµР№СЃС‚РІСѓРµС‚В»: Р±РµСЃСЃСЂРѕС‡РЅР°СЏ Р»РёР±Рѕ СЃ РЅРµРїСЂРѕС€РµРґС€РёРј СЃСЂРѕРєРѕРј.
  *
- * Проверяется при каждом чтении: иначе истекшая выдача продолжала бы давать
- * права (ADR-0006). Без `as const`: Prisma ожидает изменяемый массив условий.
+ * РџСЂРѕРІРµСЂСЏРµС‚СЃСЏ РїСЂРё РєР°Р¶РґРѕРј С‡С‚РµРЅРёРё: РёРЅР°С‡Рµ РёСЃС‚РµРєС€Р°СЏ РІС‹РґР°С‡Р° РїСЂРѕРґРѕР»Р¶Р°Р»Р° Р±С‹ РґР°РІР°С‚СЊ
+ * РїСЂР°РІР° (ADR-0006). Р‘РµР· `as const`: Prisma РѕР¶РёРґР°РµС‚ РёР·РјРµРЅСЏРµРјС‹Р№ РјР°СЃСЃРёРІ СѓСЃР»РѕРІРёР№.
  */
 function activeGrantFilter(): {
   OR: Array<{ expiresAt: null } | { expiresAt: { gt: Date } }>;
@@ -197,6 +200,8 @@ export class PrismaIdentityRepository extends IdentityRepository {
             middleName: true,
             birthDate: true,
             status: true,
+            beltGrade: true,
+            beltAwardedAt: true,
           },
         },
       },
@@ -209,6 +214,8 @@ export class PrismaIdentityRepository extends IdentityRepository {
       middleName: link.athlete.middleName,
       birthDate: link.athlete.birthDate,
       status: link.athlete.status,
+      beltGrade: link.athlete.beltGrade,
+      beltAwardedAt: link.athlete.beltAwardedAt,
       relation: link.relation,
       isPrimary: link.isPrimary,
     }));
@@ -293,8 +300,8 @@ export class PrismaIdentityRepository extends IdentityRepository {
   }
 
   async listLinkedGroupIds(userId: string): Promise<string[]> {
-    // Только активные членства: спортсмен, ушедший из группы, не должен
-    // оставлять родителю доступ к ее расписанию (ADR-0013).
+    // РўРѕР»СЊРєРѕ Р°РєС‚РёРІРЅС‹Рµ С‡Р»РµРЅСЃС‚РІР°: СЃРїРѕСЂС‚СЃРјРµРЅ, СѓС€РµРґС€РёР№ РёР· РіСЂСѓРїРїС‹, РЅРµ РґРѕР»Р¶РµРЅ
+    // РѕСЃС‚Р°РІР»СЏС‚СЊ СЂРѕРґРёС‚РµР»СЋ РґРѕСЃС‚СѓРї Рє РµРµ СЂР°СЃРїРёСЃР°РЅРёСЋ (ADR-0013).
     const memberships = await this.prisma.db.groupMembership.findMany({
       where: {
         state: MembershipState.ACTIVE,
@@ -330,7 +337,7 @@ export class PrismaIdentityRepository extends IdentityRepository {
         grantedById: input.grantedById,
         expiresAt: input.expiresAt,
       },
-      // Повторная выдача обновляет срок и автора: так продлевают временный доступ.
+      // РџРѕРІС‚РѕСЂРЅР°СЏ РІС‹РґР°С‡Р° РѕР±РЅРѕРІР»СЏРµС‚ СЃСЂРѕРє Рё Р°РІС‚РѕСЂР°: С‚Р°Рє РїСЂРѕРґР»РµРІР°СЋС‚ РІСЂРµРјРµРЅРЅС‹Р№ РґРѕСЃС‚СѓРї.
       update: {
         grantedById: input.grantedById,
         grantedAt: new Date(),

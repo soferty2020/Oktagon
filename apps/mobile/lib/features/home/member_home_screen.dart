@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../design/tokens.dart';
 import '../athletes/athlete_models.dart';
+import '../athletes/belt_grades.dart';
 import '../attendance/attendance_repository.dart';
 import '../auth/auth_controller.dart';
 import '../news/news_repository.dart';
@@ -21,10 +22,15 @@ class MemberHomeContent extends StatefulWidget {
     this.onOpenSchedule,
     this.onOpenNews,
     this.onOpenAttendance,
+    this.now = DateTime.now,
   });
 
   final AuthController auth;
   final MemberHomeController controller;
+
+  /// Источник текущего времени: в golden-тестах подменяется, иначе скриншот
+  /// зависит от дня запуска.
+  final DateTime Function() now;
 
   /// Переходы на другие вкладки: быстрые действия дублируют нижнюю навигацию,
   /// но экономят один тап — по макету они и есть главный способ перехода.
@@ -108,6 +114,11 @@ class _MemberHomeContentState extends State<MemberHomeContent> {
                 onSelect: controller.select,
               ),
 
+              if (controller.selected != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                _BeltLine(athlete: controller.selected!),
+              ],
+
               if (error != null) ...[
                 const SizedBox(height: AppSpacing.md),
                 _InlineError(message: error, onRetry: controller.retry),
@@ -117,6 +128,7 @@ class _MemberHomeContentState extends State<MemberHomeContent> {
               _NextSessionCard(
                 session: controller.nextSession,
                 onOpenSchedule: widget.onOpenSchedule,
+                now: widget.now,
               ),
 
               const SizedBox(height: AppSpacing.lg),
@@ -148,12 +160,48 @@ class _MemberHomeContentState extends State<MemberHomeContent> {
   }
 }
 
+/// Пояс выбранного спортсмена (K3).
+///
+/// Показывается только когда пояс присвоен: «не указан» на главной было бы
+/// шумом, а отсутствие данных — не то, ради чего родитель открывает приложение.
+class _BeltLine extends StatelessWidget {
+  const _BeltLine({required this.athlete});
+
+  final LinkedAthlete athlete;
+
+  @override
+  Widget build(BuildContext context) {
+    final description = beltDescription(athlete.beltGrade, athlete.beltAwardedAt);
+    if (description == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Row(
+      children: [
+        const Icon(
+          Icons.military_tech_outlined,
+          size: 16,
+          color: AppColors.textSecondary,
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        Text(
+          description,
+          style: const TextStyle(
+            fontSize: 13,
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// Переключатель спортсменов (H2).
 ///
 /// Показывается только если спортсменов больше одного: при одном выборе
 /// переключатель занимал бы место зря.
-class _AthleteSwitcher extends StatelessWidget {
-  const _AthleteSwitcher({
+class _AthleteSwitcher extends StatelessWidget {  const _AthleteSwitcher({
     required this.athletes,
     required this.selected,
     required this.onSelect,
@@ -238,10 +286,17 @@ class _AthleteChip extends StatelessWidget {
 /// Оранжевая заливка и белый текст по макету: это самое важное, что участник
 /// хочет узнать, открыв приложение.
 class _NextSessionCard extends StatelessWidget {
-  const _NextSessionCard({required this.session, this.onOpenSchedule});
+  const _NextSessionCard({
+    required this.session,
+    this.onOpenSchedule,
+    this.now = DateTime.now,
+  });
 
   final TrainingSession? session;
   final VoidCallback? onOpenSchedule;
+
+  /// Текущее время для подписи «Сегодня»/«Завтра».
+  final DateTime Function() now;
 
   @override
   Widget build(BuildContext context) {
@@ -294,7 +349,7 @@ class _NextSessionCard extends StatelessWidget {
             )
           else ...[
             Text(
-              _relativeDay(current.startsAt),
+              _relativeDay(current.startsAt, now: now()),
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 22,
@@ -723,9 +778,9 @@ class _EmptyState extends StatelessWidget {
 }
 
 /// «Сегодня», «Завтра» или дата с днем недели.
-String _relativeDay(DateTime value) {
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
+String _relativeDay(DateTime value, {DateTime? now}) {
+  final current = now ?? DateTime.now();
+  final today = DateTime(current.year, current.month, current.day);
   final day = DateTime(value.year, value.month, value.day);
   final difference = day.difference(today).inDays;
 

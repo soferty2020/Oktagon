@@ -11,6 +11,8 @@ class LinkedAthlete {
     required this.status,
     required this.relation,
     required this.isPrimary,
+    this.beltGrade,
+    this.beltAwardedAt,
   });
 
   final String id;
@@ -20,6 +22,12 @@ class LinkedAthlete {
 
   /// `ACTIVE`, `FROZEN`, `ARCHIVED`.
   final String status;
+
+  /// Текущий пояс (K3): код из справочника, `null` — не присвоен.
+  final String? beltGrade;
+
+  /// Дата присвоения пояса в формате `YYYY-MM-DD`.
+  final String? beltAwardedAt;
 
   /// Связь с аккаунтом: `SELF`, `PARENT`, `GUARDIAN`.
   final String relation;
@@ -45,6 +53,8 @@ class LinkedAthlete {
       status: (json['status'] as String?) ?? 'ACTIVE',
       relation: (json['relation'] as String?) ?? 'PARENT',
       isPrimary: json['isPrimary'] == true,
+      beltGrade: json['beltGrade'] as String?,
+      beltAwardedAt: json['beltAwardedAt'] as String?,
     );
   }
 }

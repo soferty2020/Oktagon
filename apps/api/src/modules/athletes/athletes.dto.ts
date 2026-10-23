@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { AthleteStatus, Gender } from '@octagon/contracts';
+import { AthleteStatus, BeltGrade, Gender } from '@octagon/contracts';
 import {
   IsBoolean,
   IsDateString,
@@ -10,6 +10,7 @@ import {
   IsUUID,
   MaxLength,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 
 /** Спортсмены (C4). */
@@ -70,9 +71,7 @@ export class UpdateAthleteDto {
   @IsString()
   @MinLength(1)
   @MaxLength(100)
-  firstName?: string;
-
-  @ApiPropertyOptional({ maxLength: 100 })
+  firstName?: string;  @ApiPropertyOptional({ maxLength: 100 })
   @IsOptional()
   @IsString()
   @MinLength(1)
@@ -112,6 +111,26 @@ export class UpdateAthleteDto {
   @IsString()
   @MaxLength(2000)
   notes?: string;
+
+  @ApiPropertyOptional({
+    enum: Object.values(BeltGrade),
+    nullable: true,
+    description: 'Текущий пояс (K3); null очищает значение',
+  })
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsEnum(BeltGrade)
+  beltGrade?: BeltGrade | null;
+
+  @ApiPropertyOptional({
+    example: '2024-02-10',
+    nullable: true,
+    description: 'Дата присвоения пояса, YYYY-MM-DD',
+  })
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsDateString()
+  beltAwardedAt?: string | null;
 
   @ApiPropertyOptional({
     enum: Object.values(AthleteStatus),

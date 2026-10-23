@@ -69,6 +69,8 @@ describe('ResourceScopeService', () => {
           middleName: null,
           birthDate: null,
           status: 'ACTIVE',
+          beltGrade: null,
+          beltAwardedAt: null,
           relation: 'PARENT',
           isPrimary: true,
         },

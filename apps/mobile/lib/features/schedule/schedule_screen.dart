@@ -23,6 +23,7 @@ class ScheduleScreen extends StatefulWidget {
     required this.athleteName,
     required this.groupId,
     required this.refreshKey,
+    this.now = DateTime.now,
   });
 
   final AuthController auth;
@@ -34,6 +35,10 @@ class ScheduleScreen extends StatefulWidget {
 
   /// Имя выбранного спортсмена: по нему видно, чье расписание открыто.
   final String athleteName;
+
+  /// Источник текущего времени: в тестах подменяется, чтобы скриншот не зависел
+  /// от дня запуска.
+  final DateTime Function() now;
 
   /// Группа выбранного спортсмена; `null`, если группы нет.
   final String? groupId;
@@ -50,8 +55,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   /// первый день с занятиями (или сегодня, если занятий нет).
   DateTime? _selectedDate;
 
-  static DateTime _today() {
-    final now = DateTime.now();
+  DateTime _today() {
+    final now = widget.now();
     return DateTime(now.year, now.month, now.day);
   }
 
@@ -179,7 +184,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   /// Предупредить можно только о будущем занятии: писать «ребенка не будет» на
   /// прошедшую тренировку бессмысленно, а тренер уже поставил отметку.
   bool _canReportAbsence(TrainingSession session) {
-    return widget.athleteId != null && session.startsAt.isAfter(DateTime.now());
+    return widget.athleteId != null && session.startsAt.isAfter(widget.now());
   }
 
   Future<void> _reportAbsence(TrainingSession session) async {

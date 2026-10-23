@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AthleteStatus, Gender } from '../../../generated/prisma';
+import { AthleteStatus, BeltGrade, Gender } from '../../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 
 export interface AthleteRecord {
@@ -10,6 +10,9 @@ export interface AthleteRecord {
   birthDate: Date | null;
   gender: Gender;
   status: AthleteStatus;
+  /** Текущий пояс (K3); `null` — не присвоен. */
+  beltGrade: BeltGrade | null;
+  beltAwardedAt: Date | null;
   phone: string | null;
   email: string | null;
   notes: string | null;
@@ -41,6 +44,8 @@ export interface UpdateAthleteInput {
   middleName?: string | null;
   birthDate?: Date | null;
   gender?: Gender;
+  beltGrade?: BeltGrade | null;
+  beltAwardedAt?: Date | null;
   phone?: string | null;
   email?: string | null;
   notes?: string | null;
@@ -86,6 +91,8 @@ const ATHLETE_SELECT = {
   birthDate: true,
   gender: true,
   status: true,
+  beltGrade: true,
+  beltAwardedAt: true,
   phone: true,
   email: true,
   notes: true,
