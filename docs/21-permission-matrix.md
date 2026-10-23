@@ -23,3 +23,13 @@ STAFF capabilities may be extended explicitly:
 
 ## Enforcement
 Проверяются одновременно capability и resource scope. Наличие permission не дает автоматического доступа к чужому филиалу/группе, если scope не расширен.
+
+## Settings-specific hard constraints
+
+- SUPERADMIN: журнал действий и изменение правил задолженности — только этот базовый статус; индивидуальные grants не расширяют доступ к этим операциям.
+- STAFF: разрешенные общие настройки и управление филиалами — только с соответствующим permission и scope.
+- MEMBER: административные настройки недоступны.
+- Belt catalog: read-only для всех разрешенных интерфейсов.
+- Secrets/infra configuration: вне admin API.
+
+Подробности: [26-admin-settings.md](26-admin-settings.md).
