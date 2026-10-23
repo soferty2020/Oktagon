@@ -1151,6 +1151,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Журнал действий с фильтрами
+         * @description Только чтение: эндпоинтов изменения и удаления записей нет — журнал,
+         *     который можно править, не является журналом. Доступен только
+         *     суперадминистратору: право просмотра аудита не делегируется через
+         *     индивидуальные grants (docs/26-admin-settings.md).
+         *
+         *     Значения `before`/`after` приходят с маской вместо контактов, токенов и
+         *     паролей: по записи видно, что поле менялось, но не видно значения.
+         */
+        get: operations["listAuditRecords"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/settings/club": {
         parameters: {
             query?: never;
@@ -2719,6 +2745,36 @@ export interface components {
             athleteId: string;
             /** @example Поездка с семьей */
             reason?: string;
+        };
+        /**
+         * @description Запись журнала. `before`/`after` уже отредактированы: чувствительные поля
+         *     заменены маской, а не вырезаны.
+         */
+        AuditRecordView: {
+            /** Format: uuid */
+            id: string;
+            action: string;
+            entityType: string;
+            entityId: string | null;
+            actor: {
+                /** Format: uuid */
+                id: string;
+                email: string;
+                firstName: string;
+                lastName: string;
+            } | null;
+            before: unknown;
+            after: unknown;
+            ipAddress: string | null;
+            requestId: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AuditRecordPage: {
+            items: components["schemas"]["AuditRecordView"][];
+            /** @description Курсор следующей страницы; null — история закончилась */
+            nextCursor: string | null;
+            total: number;
         };
         /** @description Безопасные параметры клуба; секретов здесь быть не может. */
         ClubProfileView: {
@@ -6248,6 +6304,49 @@ export interface operations {
             };
             401: components["responses"]["Unauthenticated"];
             /** @description Нет права `attendance.view` или спортсмен вне доступа (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listAuditRecords: {
+        parameters: {
+            query?: {
+                actorUserId?: string;
+                /** @description Действие из словаря аудита, например `settings.club_updated` */
+                action?: string;
+                entityType?: string;
+                entityId?: string;
+                /** @description Начало периода, ISO-8601; включительно */
+                from?: string;
+                /** @description Конец периода, ISO-8601; исключительно */
+                to?: string;
+                limit?: number;
+                /** @description Идентификатор последней записи предыдущей страницы */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Записи от новых к старым, курсор следующей страницы */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditRecordPage"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Не суперадминистратор (`FORBIDDEN`); право не делегируется */
             403: {
                 headers: {
                     [name: string]: unknown;

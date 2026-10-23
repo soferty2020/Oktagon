@@ -147,6 +147,39 @@ export type AuditEntityType = (typeof AuditEntityType)[keyof typeof AuditEntityT
 export const AUDIT_ENTITY_TYPES: readonly AuditEntityType[] = Object.values(AuditEntityType);
 
 /**
+ * Запись аудита для просмотра в админке (K6).
+ *
+ * Значения `before`/`after` уже отредактированы: чувствительные поля (контакты,
+ * токены, пароли) заменены на маску, а не вырезаны — по форме записи видно, что
+ * поле менялось, но не видно значения.
+ */
+export interface AuditRecordView {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  actor: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+  } | null;
+  before: unknown;
+  after: unknown;
+  ipAddress: string | null;
+  requestId: string | null;
+  createdAt: string;
+}
+
+/** Страница журнала: курсорная пагинация, менять и удалять записи нельзя. */
+export interface AuditRecordPage {
+  items: AuditRecordView[];
+  /** Курсор следующей страницы; `null` — история закончилась. */
+  nextCursor: string | null;
+  total: number;
+}
+
+/**
  * Контекст запроса, попадающий в аудит: кто, откуда и в рамках какого запроса
  * выполнил действие.
  */

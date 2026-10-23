@@ -78,7 +78,7 @@ const CATEGORIES: readonly SettingsCategory[] = [
     title: 'Журнал действий',
     description: 'Кто и что изменил: фильтры и значения до/после.',
     icon: 'shield',
-    pending: 'K6',
+    href: '/settings/audit',
     superadminOnly: true,
   },
   {

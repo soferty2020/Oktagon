@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import type { AuditEvent, Paginated } from '@octagon/contracts';
+import type { AuditEvent, AuditRecordPage, AuditRecordView, Paginated } from '@octagon/contracts';
 import { Prisma, type AuditLog } from '../../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RequestContextService } from '../../shared/request-context.service';
@@ -11,6 +11,12 @@ export interface AuditListQuery {
   entityType?: string;
   entityId?: string;
   actorUserId?: string;
+  /** Действие из словаря аудита, например `settings.club_updated`. */
+  action?: string;
+  /** Начало периода, ISO-8601; включительно. */
+  from?: string;
+  /** Конец периода, ISO-8601; исключительно. */
+  to?: string;
   limit?: number;
   cursor?: string;
 }
@@ -88,11 +94,7 @@ export class AuditService {
   /** История изменений сущности — для карточки в админке. */
   async list(query: AuditListQuery): Promise<Paginated<AuditLog>> {
     const limit = Math.min(Math.max(query.limit ?? DEFAULT_LIMIT, 1), MAX_LIMIT);
-    const where = {
-      ...(query.entityType ? { entityType: query.entityType } : {}),
-      ...(query.entityId ? { entityId: query.entityId } : {}),
-      ...(query.actorUserId ? { actorUserId: query.actorUserId } : {}),
-    };
+    const where = this.buildWhere(query);
 
     const [items, total] = await Promise.all([
       this.prisma.db.auditLog.findMany({
@@ -114,6 +116,125 @@ export class AuditService {
       },
     };
   }
+
+  /**
+   * Журнал действий для админки (K6).
+   *
+   * Отличия от `list`: подтягивается актор (в интерфейсе нужно имя, а не id) и
+   * значения before/after проходят через redaction. Отдельный метод, а не флаг:
+   * `list` используется карточками сущностей, где актор не нужен, и лишний join
+   * там был бы напрасной работой.
+   */
+  async listForView(query: AuditListQuery): Promise<AuditRecordPage> {
+    const limit = Math.min(Math.max(query.limit ?? DEFAULT_LIMIT, 1), MAX_LIMIT);
+    const where = this.buildWhere(query);
+
+    const [rows, total] = await Promise.all([
+      this.prisma.db.auditLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
+        select: {
+          id: true,
+          action: true,
+          entityType: true,
+          entityId: true,
+          beforeJson: true,
+          afterJson: true,
+          ipAddress: true,
+          requestId: true,
+          createdAt: true,
+          actor: { select: { id: true, email: true, firstName: true, lastName: true } },
+        },
+      }),
+      this.prisma.db.auditLog.count({ where }),
+    ]);
+
+    const items: AuditRecordView[] = rows.map((row) => ({
+      id: row.id,
+      action: row.action,
+      entityType: row.entityType,
+      entityId: row.entityId,
+      actor: row.actor,
+      before: redact(row.beforeJson),
+      after: redact(row.afterJson),
+      ipAddress: row.ipAddress,
+      requestId: row.requestId,
+      createdAt: row.createdAt.toISOString(),
+    }));
+
+    // Курсор берется по последней записи страницы: клиент не знает внутренних
+    // смещений, и при добавлении новых записей страницы не «съезжают».
+    const nextCursor = rows.length === limit ? rows[rows.length - 1].id : null;
+
+    return { items, nextCursor, total };
+  }
+
+  private buildWhere(query: AuditListQuery): Prisma.AuditLogWhereInput {
+    const from = query.from ? new Date(query.from) : null;
+    const to = query.to ? new Date(query.to) : null;
+
+    return {
+      ...(query.entityType ? { entityType: query.entityType } : {}),
+      ...(query.entityId ? { entityId: query.entityId } : {}),
+      ...(query.actorUserId ? { actorUserId: query.actorUserId } : {}),
+      ...(query.action ? { action: query.action } : {}),
+      ...(from || to
+        ? {
+            createdAt: {
+              ...(from ? { gte: from } : {}),
+              ...(to ? { lt: to } : {}),
+            },
+          }
+        : {}),
+    };
+  }
+}
+
+/**
+ * Поля, значения которых нельзя показывать в журнале.
+ *
+ * Сравнение по нижнему регистру: в JSON встречаются `passwordHash` и
+ * `password_hash`, и оба должны маскироваться. Контакты тоже скрываются:
+ * журнал читает только суперадминистратор, но персональные данные не должны
+ * размножаться по экранам без необходимости.
+ */
+const SENSITIVE_KEYS = new Set([
+  'password',
+  'passwordhash',
+  'password_hash',
+  'token',
+  'accesstoken',
+  'access_token',
+  'refreshtoken',
+  'refresh_token',
+  'phone',
+  'email',
+]);
+
+const REDACTED = '•••';
+
+/**
+ * Маскирует чувствительные значения, сохраняя форму объекта.
+ *
+ * Поле не вырезается, а заменяется маской: по записи должно быть видно, что
+ * значение менялось, — иначе журнал теряет смысл для аудита.
+ */
+function redact(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => redact(item));
+  }
+
+  if (value && typeof value === 'object') {
+    const result: Record<string, unknown> = {};
+    for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+      result[key] = SENSITIVE_KEYS.has(key.toLowerCase()) ? REDACTED : redact(item);
+    }
+    return result;
+  }
+
+  return value;
 }
 
 /** Явное значение события имеет приоритет над контекстом запроса. */
