@@ -105,6 +105,10 @@ export const AuditAction = {
   CONVERSATION_MEMBER_ADDED: 'chat.member_added',
   CONVERSATION_MEMBER_REMOVED: 'chat.member_removed',
   MESSAGE_DELETED: 'chat.message_deleted',
+
+  // Настройки клуба (docs/26-admin-settings.md: изменения настроек аудируются)
+  SETTINGS_CLUB_UPDATED: 'settings.club_updated',
+  SETTINGS_CLUB_VIEWED: 'settings.club_viewed',
 } as const;
 export type AuditAction = (typeof AuditAction)[keyof typeof AuditAction];
 
@@ -136,6 +140,7 @@ export const AuditEntityType = {
   NEWS_COMMENT: 'NewsComment',
   CONVERSATION: 'Conversation',
   MESSAGE: 'Message',
+  CLUB_PROFILE: 'ClubProfile',
 } as const;
 export type AuditEntityType = (typeof AuditEntityType)[keyof typeof AuditEntityType];
 

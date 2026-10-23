@@ -14,3 +14,4 @@ export * from './attendance';
 export * from './finance';
 export * from './news';
 export * from './chat';
+export * from './settings';

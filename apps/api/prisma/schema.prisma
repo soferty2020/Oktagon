@@ -743,3 +743,30 @@ model AuditLog {
   @@index([createdAt])
   @@map("audit_logs")
 }
+
+// ---------------------------------------------------------------------------
+// Settings (docs/26-admin-settings.md)
+// ---------------------------------------------------------------------------
+
+/**
+ * Профиль клуба: единственная строка с фиксированным идентификатором.
+ *
+ * Секреты и параметры инфраструктуры здесь не хранятся: документ прямо запрещает
+ * выносить их в админку. Часовой пояс — IANA-имя: по нему считаются даты занятий
+ * и платежей, поэтому опечатка в нем испортила бы все расписание.
+ */
+model ClubProfile {
+  id        String   @id @default("default") @db.VarChar(16)
+  name      String   @db.VarChar(200)
+  /// Ссылка на логотип. Загрузки файлов в MVP нет: хранится URL или ключ ассета.
+  logoUrl   String?  @map("logo_url") @db.VarChar(500)
+  phone     String?  @db.VarChar(32)
+  email     String?  @db.VarChar(200)
+  address   String?  @db.VarChar(500)
+  /// IANA-имя часового пояса: по нему клуб считает даты занятий и платежей.
+  timezone  String   @db.VarChar(64)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("club_profile")
+}

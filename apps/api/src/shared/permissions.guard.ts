@@ -33,6 +33,15 @@ export const RequirePermissions = (...permissions: PermissionCode[]): CustomDeco
  */
 export abstract class PermissionResolver {
   abstract getPermissions(userId: string): Promise<UserPermissions>;
+
+  /**
+   * Роль пользователя.
+   *
+   * Нужна там, где доступ определяется ролью, а не правом: журнал действий и
+   * финансовые правила доступны только суперадминистратору независимо от
+   * индивидуальных grants (docs/26-admin-settings.md).
+   */
+  abstract getRole(userId: string): Promise<string>;
 }
 
 type RequestWithUser = Request & {

@@ -1151,6 +1151,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/settings/club": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Профиль клуба
+         * @description Только безопасные параметры: название, логотип, контакты и часовой пояс.
+         *     Секреты и параметры инфраструктуры через этот эндпоинт не отдаются
+         *     (docs/26-admin-settings.md).
+         */
+        get: operations["getClubProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Изменить профиль клуба
+         * @description Частичное обновление: передаются только измененные поля. Изменение
+         *     записывается в аудит вместе со старым и новым значением. Доступен только
+         *     суперадминистратору — проверяется роль, а не отдельное право.
+         */
+        patch: operations["updateClubProfile"];
+        trace?: never;
+    };
     "/athletes/{id}/membership-periods": {
         parameters: {
             query?: never;
@@ -2691,6 +2719,28 @@ export interface components {
             athleteId: string;
             /** @example Поездка с семьей */
             reason?: string;
+        };
+        /** @description Безопасные параметры клуба; секретов здесь быть не может. */
+        ClubProfileView: {
+            name: string;
+            /** @description Абсолютная ссылка; загрузки файлов в MVP нет */
+            logoUrl: string | null;
+            phone: string | null;
+            email: string | null;
+            address: string | null;
+            /** @description IANA-имя, например Asia/Almaty */
+            timezone: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        /** @description Все поля необязательны: передаются только измененные. `null` очищает поле. */
+        UpdateClubProfileInput: {
+            name?: string;
+            logoUrl?: string | null;
+            phone?: string | null;
+            email?: string | null;
+            address?: string | null;
+            timezone?: string;
         };
         /** @description Отметка спортсмена на конкретном занятии. */
         AthleteAttendanceHistoryEntry: {
@@ -6198,6 +6248,83 @@ export interface operations {
             };
             401: components["responses"]["Unauthenticated"];
             /** @description Нет права `attendance.view` или спортсмен вне доступа (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getClubProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Профиль клуба */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubProfileView"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Не суперадминистратор (`FORBIDDEN`); право не делегируется */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    updateClubProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateClubProfileInput"];
+            };
+        };
+        responses: {
+            /** @description Сохраненный профиль */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubProfileView"];
+                };
+            };
+            /**
+             * @description Некорректное значение (`VALIDATION_FAILED`): пустое название,
+             *     неизвестный часовой пояс, смещение вместо IANA-имени, неверный email
+             *     или относительная ссылка на логотип
+             */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Не суперадминистратор (`FORBIDDEN`) */
             403: {
                 headers: {
                     [name: string]: unknown;

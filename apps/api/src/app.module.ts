@@ -21,6 +21,7 @@ import { GroupsModule } from './modules/groups';
 import { IdentityModule } from './modules/identity';
 import { NewsModule } from './modules/news';
 import { SchedulingModule } from './modules/scheduling';
+import { SettingsModule } from './modules/settings';
 
 /**
  * Корневой модуль API: модульный монолит (docs/13-architecture.md, ADR-0001).
@@ -64,6 +65,9 @@ import { SchedulingModule } from './modules/scheduling';
     // Communication
     NewsModule,
     ChatModule,
+
+    // Settings (docs/26-admin-settings.md)
+    SettingsModule,
 
     // Analytics
     AnalyticsModule,

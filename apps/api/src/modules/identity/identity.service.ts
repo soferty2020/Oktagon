@@ -58,6 +58,16 @@ export class IdentityService {
     return toProfile(record).permissions;
   }
 
+  /**
+   * Роль пользователя для проверок по роли (SuperadminGuard).
+   *
+   * Читается из базы, а не из токена: снятие роли должно действовать сразу.
+   */
+  async getRole(userId: string): Promise<string> {
+    const record = await this.requireProfile(userId);
+    return record.role;
+  }
+
   /** Базовый набор прав роли, без индивидуальных выдач. */
   async getRolePermissions(userId: string): Promise<PermissionCode[]> {
     const record = await this.requireProfile(userId);

@@ -44,7 +44,7 @@ const CATEGORIES: readonly SettingsCategory[] = [
     title: 'Клуб',
     description: 'Название, контакты и часовой пояс клуба.',
     icon: 'settings',
-    pending: 'K1',
+    href: '/settings/club',
     superadminOnly: true,
   },
   {

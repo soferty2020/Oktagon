@@ -2785,6 +2785,69 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
 
+  /settings/club:
+    get:
+      tags: [settings]
+      summary: Профиль клуба
+      description: |
+        Только безопасные параметры: название, логотип, контакты и часовой пояс.
+        Секреты и параметры инфраструктуры через этот эндпоинт не отдаются
+        (docs/26-admin-settings.md).
+      operationId: getClubProfile
+      responses:
+        '200':
+          description: Профиль клуба
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClubProfileView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Не суперадминистратор (`FORBIDDEN`); право не делегируется
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    patch:
+      tags: [settings]
+      summary: Изменить профиль клуба
+      description: |
+        Частичное обновление: передаются только измененные поля. Изменение
+        записывается в аудит вместе со старым и новым значением. Доступен только
+        суперадминистратору — проверяется роль, а не отдельное право.
+      operationId: updateClubProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateClubProfileInput'
+      responses:
+        '200':
+          description: Сохраненный профиль
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClubProfileView'
+        '400':
+          description: |
+            Некорректное значение (`VALIDATION_FAILED`): пустое название,
+            неизвестный часовой пояс, смещение вместо IANA-имени, неверный email
+            или относительная ссылка на логотип
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Не суперадминистратор (`FORBIDDEN`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
   /athletes/{id}/membership-periods:
     get:
       tags: [finance]
@@ -5893,6 +5956,67 @@ components:
           type: string
           maxLength: 500
           example: Поездка с семьей
+
+    ClubProfileView:
+      type: object
+      description: Безопасные параметры клуба; секретов здесь быть не может.
+      required: [name, logoUrl, phone, email, address, timezone, updatedAt]
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        logoUrl:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: Абсолютная ссылка; загрузки файлов в MVP нет
+        phone:
+          type: string
+          nullable: true
+          maxLength: 32
+        email:
+          type: string
+          nullable: true
+          maxLength: 200
+        address:
+          type: string
+          nullable: true
+          maxLength: 500
+        timezone:
+          type: string
+          maxLength: 64
+          description: IANA-имя, например Asia/Almaty
+        updatedAt:
+          type: string
+          format: date-time
+
+    UpdateClubProfileInput:
+      type: object
+      description: |
+        Все поля необязательны: передаются только измененные. `null` очищает поле.
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        logoUrl:
+          type: string
+          nullable: true
+          maxLength: 500
+        phone:
+          type: string
+          nullable: true
+          maxLength: 32
+        email:
+          type: string
+          nullable: true
+          maxLength: 200
+        address:
+          type: string
+          nullable: true
+          maxLength: 500
+        timezone:
+          type: string
+          maxLength: 64
 
     AthleteAttendanceHistoryEntry:
       type: object
