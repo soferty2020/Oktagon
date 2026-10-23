@@ -454,6 +454,75 @@ flutter test
 flutter build web --release   # проверка компиляции без Android SDK
 ```
 
+### Сборка APK
+
+Нужны JDK 17 и Android SDK; в репозиторий они не входят.
+
+**JDK 17** (Temurin):
+
+```powershell
+Invoke-WebRequest -Uri `
+  'https://api.adoptium.net/v3/binary/latest/17/ga/windows/x64/jdk/hotspot/normal/eclipse' `
+  -OutFile .tools\downloads\jdk17.zip
+Expand-Archive .tools\downloads\jdk17.zip -DestinationPath .tools\jdk-temp
+Move-Item (Get-ChildItem .tools\jdk-temp -Directory)[0].FullName .tools\jdk
+```
+
+**Android command-line tools**:
+
+```powershell
+Invoke-WebRequest -Uri `
+  'https://dl.google.com/android/repository/commandlinetools-win-11076708_latest.zip' `
+  -OutFile .tools\downloads\cmdline-tools.zip
+Expand-Archive .tools\downloads\cmdline-tools.zip -DestinationPath .tools\android-sdk
+```
+
+Архив распаковывается в `cmdline-tools/bin`, а `sdkmanager` ожидает
+`cmdline-tools/latest/bin`: содержимое нужно переместить в `latest`.
+
+**Переменные окружения.** Без `ANDROID_USER_HOME` sdkmanager пытается писать кэш в
+`%USERPROFILE%\.android` и падает с `NoSuchFileException`, а список пакетов
+остается пустым — `Failed to download any source lists`. Поэтому:
+
+```powershell
+$env:JAVA_HOME = "$PWD\.tools\jdk"
+$env:ANDROID_SDK_ROOT = "$PWD\.tools\android-sdk"
+$env:ANDROID_HOME = "$PWD\.tools\android-sdk"
+$env:ANDROID_USER_HOME = "$PWD\.tools\android-home"
+$env:GRADLE_USER_HOME = "$PWD\.tools\gradle-home"
+```
+
+**Пакеты SDK:**
+
+```powershell
+$sdkmanager = ".tools\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat"
+("y`n" * 80) | & $sdkmanager --sdk_root="$env:ANDROID_SDK_ROOT" --licenses
+& $sdkmanager --sdk_root="$env:ANDROID_SDK_ROOT" `
+  "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+```
+
+Лицензии принимаются в `ANDROID_USER_HOME`: если принять их без этой переменной,
+установка пакетов пройдет с сообщением «licenses were not accepted».
+
+**Сборка:**
+
+```powershell
+cd apps/mobile
+flutter config --android-sdk "$env:ANDROID_SDK_ROOT"
+flutter config --jdk-dir "$env:JAVA_HOME"
+flutter build apk --release
+```
+
+APK лежит в `build/app/outputs/flutter-apk/app-release.apk`. Первая сборка долгая
+(скачивается Gradle и зависимости, ~30 минут); последующие — несколько минут.
+
+**Подпись.** Без настроенного keystore release-APK подписывается debug-ключом
+(`CN=Android Debug`): на телефон установить можно, в Google Play — нельзя. Для
+публикации нужен свой keystore и `android/key.properties` (в git не коммитится).
+
+**Размер.** 49 МБ — потому что в APK все архитектуры. Три отдельных файла
+(`--split-per-abi`) весят примерно по 17 МБ.
+
 Скриншоты экранов для проверки дизайна (эталоны в `test/goldens`, только Windows):
 
 ```powershell

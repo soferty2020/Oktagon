@@ -41,7 +41,29 @@ flutter test --update-goldens test/golden_screens_test.dart test/golden_trainer_
 шрифт подменяется тестовым, и сравнение теряет смысл (в CI шаг пропускается).
 
 `flutter build web` используется для проверки компиляции в окружениях без
-Android SDK. Для сборки APK нужен Android SDK, для iOS — macOS с Xcode.
+Android SDK.
+
+## Сборка APK
+
+Нужны JDK 17 и Android SDK; как их поставить — в `docs/27-local-development.md`,
+раздел 12.
+
+```powershell
+$env:JAVA_HOME       = "$PWD\.tools\jdk"
+$env:ANDROID_SDK_ROOT = "$PWD\.tools\android-sdk"
+$env:ANDROID_HOME     = "$PWD\.tools\android-sdk"
+$env:ANDROID_USER_HOME = "$PWD\.tools\android-home"
+$env:GRADLE_USER_HOME  = "$PWD\.tools\gradle-home"
+
+flutter build apk --release
+```
+
+Результат — `build/app/outputs/flutter-apk/app-release.apk`. Первая сборка
+скачивает Gradle и зависимости (~30 минут), последующие занимают несколько минут.
+
+Без настроенного keystore APK подписывается debug-ключом: установить на телефон
+можно, опубликовать в Google Play — нельзя. Для публикации нужен свой keystore.
+В APK входят все архитектуры (49 МБ); `--split-per-abi` дает три файла по ~17 МБ.
 
 ## Структура
 
