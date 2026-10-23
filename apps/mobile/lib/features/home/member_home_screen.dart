@@ -162,8 +162,8 @@ class _MemberHomeContentState extends State<MemberHomeContent> {
 
 /// Пояс выбранного спортсмена (K3).
 ///
-/// Показывается только когда пояс присвоен: «не указан» на главной было бы
-/// шумом, а отсутствие данных — не то, ради чего родитель открывает приложение.
+/// Показывается всегда: белый пояс — это ступень, с которой начинают, а не
+/// отсутствие данных, поэтому скрывать строку нечего.
 class _BeltLine extends StatelessWidget {
   const _BeltLine({required this.athlete});
 
@@ -172,9 +172,6 @@ class _BeltLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final description = beltDescription(athlete.beltGrade, athlete.beltAwardedAt);
-    if (description == null) {
-      return const SizedBox.shrink();
-    }
 
     return Row(
       children: [

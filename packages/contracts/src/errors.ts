@@ -35,6 +35,12 @@ export const ApiErrorCode = {
   /** Срок действия выдачи уже истек. */
   PERMISSION_EXPIRES_IN_PAST: 'PERMISSION_EXPIRES_IN_PAST',
 
+  // настройки (K5, ADR-0014)
+  /** Версия правил долга с такой датой вступления уже существует. */
+  DEBT_RULES_VERSION_CONFLICT: 'DEBT_RULES_VERSION_CONFLICT',
+  /** Дату вступления нельзя ставить в прошлое: история не пересчитывается. */
+  DEBT_RULES_EFFECTIVE_IN_PAST: 'DEBT_RULES_EFFECTIVE_IN_PAST',
+
   // club structure / groups
   BRANCH_ARCHIVED: 'BRANCH_ARCHIVED',
   BRANCH_NOT_FOUND: 'BRANCH_NOT_FOUND',
@@ -222,6 +228,8 @@ export const API_ERROR_HTTP_STATUS: Readonly<Record<ApiErrorCode, number>> = {
   PERMISSION_IS_ROLE_BASED: 409,
   PERMISSION_NOT_GRANTED: 404,
   PERMISSION_EXPIRES_IN_PAST: 400,
+  DEBT_RULES_VERSION_CONFLICT: 409,
+  DEBT_RULES_EFFECTIVE_IN_PAST: 400,
 
   BRANCH_ARCHIVED: 409,
   BRANCH_NOT_FOUND: 404,

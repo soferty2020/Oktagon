@@ -30,7 +30,7 @@ interface AthleteDetails {
   birthDate: string | null;
   gender: string;
   status: string;
-  beltGrade: string | null;
+  beltGrade: string;
   beltAwardedAt: string | null;
   phone: string | null;
   email: string | null;
@@ -105,7 +105,7 @@ export default async function AthletePage({ params }: { params: Promise<{ id: st
         }`}
         description={[
           `Статус: ${athlete.data.status}`,
-          `Пояс: ${beltGradeLabel(athlete.data.beltGrade) ?? 'не указан'}`,
+          `Пояс: ${beltGradeLabel(athlete.data.beltGrade) ?? athlete.data.beltGrade}`,
           athlete.data.beltAwardedAt ? `с ${formatDate(athlete.data.beltAwardedAt)}` : null,
           `создан ${athlete.data.createdAt.slice(0, 10)}`,
         ]

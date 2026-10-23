@@ -114,13 +114,11 @@ export class UpdateAthleteDto {
 
   @ApiPropertyOptional({
     enum: Object.values(BeltGrade),
-    nullable: true,
-    description: 'Текущий пояс (K3); null очищает значение',
+    description: 'Текущий пояс (K3); по умолчанию белый, очистить нельзя',
   })
   @IsOptional()
-  @ValidateIf((_, value) => value !== null)
   @IsEnum(BeltGrade)
-  beltGrade?: BeltGrade | null;
+  beltGrade?: BeltGrade;
 
   @ApiPropertyOptional({
     example: '2024-02-10',

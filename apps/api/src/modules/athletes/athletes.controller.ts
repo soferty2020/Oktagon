@@ -104,8 +104,8 @@ export class AthletesController {
       middleName: dto.middleName ?? null,
       birthDate: dto.birthDate ?? null,
       gender: dto.gender,
-      // Пояс передается как есть, без `?? null`: PATCH только со статусом не
-      // должен сбрасывать пояс спортсмена.
+      // Пояс передается как есть: PATCH только со статусом не должен менять пояс,
+      // а очистить его нельзя — белый остается значением по умолчанию.
       beltGrade: dto.beltGrade,
       beltAwardedAt: dto.beltAwardedAt,
       phone: dto.phone ?? null,

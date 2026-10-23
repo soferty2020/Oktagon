@@ -16,3 +16,4 @@ export * from './finance';
 export * from './news';
 export * from './chat';
 export * from './settings';
+export * from './debt-rules';

@@ -71,7 +71,7 @@ const CATEGORIES: readonly SettingsCategory[] = [
     title: 'Финансовые правила',
     description: 'Правила расчёта задолженности. Действует BR-004 до утверждения новых.',
     icon: 'sliders',
-    pending: 'K5',
+    href: '/settings/finance',
     superadminOnly: true,
   },
   {

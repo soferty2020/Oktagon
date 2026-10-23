@@ -15,12 +15,15 @@ import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swa
 import {
   PermissionCode,
   type DebtorSummary,
+  type DebtRulesPreview,
   type FinanceSummary,
   type MembershipPeriodView,
 } from '@octagon/contracts';
 
 import { AuthGuard, CurrentUser, type AuthenticatedUser } from '../../shared/auth-stub';
 import { PermissionsGuard, RequirePermissions } from '../../shared/permissions.guard';
+import { SuperadminGuard } from '../../shared/superadmin.guard';
+import { DebtRulesQueryDto, PreviewDebtRulesDto, toTolerance } from '../settings/debt-rules.dto';
 import {
   MarkFullyPaidDto,
   PeriodQueryDto,
@@ -227,6 +230,42 @@ export class DebtsController {
     @Query() query: PeriodQueryDto,
   ): Promise<DebtorSummary[]> {
     return this.finance.listDebtors(user.id, query.year, query.month);
+  }
+}
+
+/**
+ * Предпросмотр новых правил долга (K5, ADR-0014).
+ *
+ * Живет в финансах, а не в настройках: чтобы посчитать «до» и «после», нужен
+ * доступ к периодам, заморозкам и занятиям — то есть к данным финансов. Сами
+ * версии правил настраиваются в `/settings/finance/debt-rules`.
+ *
+ * Доступ только суперадминистратору: preview показывает суммы по спортсменам.
+ */
+@ApiTags('finance')
+@ApiBearerAuth()
+@UseGuards(AuthGuard, SuperadminGuard)
+@Controller('finance/debt-rules')
+export class DebtRulesPreviewController {
+  constructor(private readonly finance: FinanceService) {}
+
+  @Post('preview')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Сравнить действующее правило с предлагаемым' })
+  @ApiOkResponse({ description: 'Сколько должников станет и перестанет ими быть' })
+  preview(
+    @Body() dto: PreviewDebtRulesDto,
+    @Query() query: DebtRulesQueryDto,
+  ): Promise<DebtRulesPreview> {
+    const month = query.month ?? new Date().toISOString().slice(0, 7);
+
+    return this.finance.previewDebtRules(month, {
+      useFullyPaidMark: dto.config.useFullyPaidMark,
+      noTrainingPolicy: dto.config.noTrainingPolicy,
+      freezePolicy: dto.config.freezePolicy,
+      expectedMissing: dto.config.expectedMissing,
+      partialTolerance: toTolerance(dto.config.partialTolerance),
+    });
   }
 }
 

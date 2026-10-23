@@ -14,7 +14,7 @@ const athlete: AthleteRecord = {
   birthDate: new Date('2015-09-01T00:00:00.000Z'),
   gender: 'MALE',
   status: 'ACTIVE',
-  beltGrade: null,
+  beltGrade: 'WHITE',
   beltAwardedAt: null,
   phone: '+7 700 111 22 33',
   email: 'ali@example.com',
@@ -209,10 +209,12 @@ describe('AthletesService', () => {
       expect(view.beltAwardedAt).toBe('2023-05-01');
     });
 
-    it('не подставляет белый пояс вместо отсутствующего', async () => {
+    it('отдает белый пояс как значение по умолчанию', async () => {
+      // Белый — ступень, с которой начинают, а не отсутствие данных: поле всегда
+      // заполнено, и дата присвоения может быть неизвестна.
       const view = await service.get('admin-1', 'athlete-1');
 
-      expect(view.beltGrade).toBeNull();
+      expect(view.beltGrade).toBe(BeltGrade.WHITE);
       expect(view.beltAwardedAt).toBeNull();
     });
 

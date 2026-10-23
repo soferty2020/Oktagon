@@ -1200,6 +1200,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/settings/finance/debt-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Действующие правила расчета задолженности
+         * @description Версия, действовавшая в указанном месяце (наибольшая `effective_from` ≤
+         *     месяца). По умолчанию — текущий месяц. Только суперадминистратор.
+         */
+        get: operations["getDebtRules"];
+        put?: never;
+        /**
+         * Новая версия правил
+         * @description Дата вступления не может быть в прошлом: история не пересчитывается
+         *     (ADR-0014). Одна версия на месяц. Изменение пишется в аудит.
+         */
+        post: operations["createDebtRules"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/settings/finance/debt-rules/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** История версий правил */
+        get: operations["listDebtRulesVersions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/finance/debt-rules/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Сравнить действующее правило с предлагаемым
+         * @description Обязательный шаг перед сохранением: правило меняет финансовую картину
+         *     месяца. Возвращает, сколько спортсменов станет должниками и перестанет
+         *     ими быть, и как изменится суммарная задолженность.
+         */
+        post: operations["previewDebtRules"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/settings/club": {
         parameters: {
             query?: never;
@@ -1852,11 +1917,12 @@ export interface components {
         /** @enum {string} */
         Gender: "MALE" | "FEMALE" | "UNSPECIFIED";
         /**
-         * @description Пояс из фиксированного набора (BR-015). `null` — не присвоен; это не
-         *     белый пояс, а отсутствие данных. Порядок ступеней задан справочником.
-         * @enum {string|null}
+         * @description Пояс из фиксированного набора (BR-015). Белый — значение по умолчанию:
+         *     пояс есть у каждого спортсмена, очистить его нельзя. Порядок ступеней
+         *     задан справочником.
+         * @enum {string}
          */
-        BeltGrade: "WHITE" | "ORANGE" | "ORANGE_BLUE_STRIPE" | "BLUE" | "BLUE_YELLOW_STRIPE" | "YELLOW" | "YELLOW_GREEN_STRIPE" | "GREEN" | "GREEN_BROWN_STRIPE" | "BROWN" | "BROWN_GOLD_STRIPE" | "BLACK" | null;
+        BeltGrade: "WHITE" | "ORANGE" | "ORANGE_BLUE_STRIPE" | "BLUE" | "BLUE_YELLOW_STRIPE" | "YELLOW" | "YELLOW_GREEN_STRIPE" | "GREEN" | "GREEN_BROWN_STRIPE" | "BROWN" | "BROWN_GOLD_STRIPE" | "BLACK";
         BeltGradeView: {
             code: components["schemas"]["BeltGrade"];
             /** @example Жёлтый с зелёной полоской */
@@ -2198,7 +2264,7 @@ export interface components {
             birthDate?: string | null;
             gender: components["schemas"]["Gender"];
             status: components["schemas"]["AthleteStatus"];
-            beltGrade?: components["schemas"]["BeltGrade"];
+            beltGrade: components["schemas"]["BeltGrade"];
             /** Format: date */
             beltAwardedAt?: string | null;
             phone?: string | null;
@@ -2824,6 +2890,68 @@ export interface components {
             /** @description Курсор следующей страницы; null — история закончилась */
             nextCursor: string | null;
             total: number;
+        };
+        /**
+         * @description Допустимая недоплата: либо сумма, либо процент, либо ничего. Заполнение
+         *     обоих значений одновременно запрещено CHECK-ограничением в БД.
+         */
+        DebtTolerance: {
+            /** @enum {string} */
+            kind: "NONE" | "FIXED" | "PERCENT";
+            /** @description Только для FIXED */
+            amount?: number;
+            /** @description Только для PERCENT */
+            percent?: number;
+        };
+        DebtRulesConfig: {
+            /** @description Учитывать ручную отметку «полностью оплачен» (BR-003) */
+            useFullyPaidMark: boolean;
+            /** @enum {string} */
+            noTrainingPolicy: "EXEMPT" | "DEBTOR";
+            /** @enum {string} */
+            freezePolicy: "EXEMPT_MONTH" | "NONE";
+            /** @enum {string} */
+            expectedMissing: "DEBTOR" | "NOT_DEBTOR";
+            partialTolerance: components["schemas"]["DebtTolerance"];
+        };
+        DebtRulesVersion: components["schemas"]["DebtRulesConfig"] & {
+            version: number;
+            /**
+             * Format: date
+             * @description Первое число месяца действия
+             */
+            effectiveFrom: string;
+            createdBy: {
+                /** Format: uuid */
+                id?: string;
+                email?: string;
+            } | null;
+            /** Format: date-time */
+            createdAt: string;
+            note: string | null;
+            /** @description Версия BR-004; эталон регрессии */
+            isDefault: boolean;
+        };
+        CreateDebtRulesInput: components["schemas"]["DebtRulesConfig"] & {
+            /** @description Месяц вступления; прошлое запрещено */
+            effectiveFrom: string;
+            note?: string;
+        };
+        DebtRulesPreview: {
+            effectiveFrom: string;
+            debtorsBefore: number;
+            debtorsAfter: number;
+            /** @description null — есть должники без ожидаемой суммы */
+            debtBefore: number | null;
+            debtAfter: number | null;
+            changed: {
+                /** Format: uuid */
+                athleteId: string;
+                name: string;
+                wasDebtor: boolean;
+                willBeDebtor: boolean;
+                outstanding: number | null;
+            }[];
         };
         /** @description Безопасные параметры клуба; секретов здесь быть не может. */
         ClubProfileView: {
@@ -6424,6 +6552,138 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ApiError"];
                 };
+            };
+        };
+    };
+    getDebtRules: {
+        parameters: {
+            query?: {
+                month?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Версия правил */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DebtRulesVersion"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Не суперадминистратор (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    createDebtRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDebtRulesInput"];
+            };
+        };
+        responses: {
+            /** @description Созданная версия */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DebtRulesVersion"];
+                };
+            };
+            /**
+             * @description Некорректный месяц (`DEBT_RULES_EFFECTIVE_IN_PAST`) или допуск
+             *     (`VALIDATION_FAILED`)
+             */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Версия с такой датой уже есть (`DEBT_RULES_VERSION_CONFLICT`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listDebtRulesVersions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Версии от новых к старым */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DebtRulesVersion"][];
+                };
+            };
+        };
+    };
+    previewDebtRules: {
+        parameters: {
+            query?: {
+                month?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    config: components["schemas"]["DebtRulesConfig"];
+                };
+            };
+        };
+        responses: {
+            /** @description Сравнение до и после */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DebtRulesPreview"];
+                };
+            };
+            /** @description Не суперадминистратор (`FORBIDDEN`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

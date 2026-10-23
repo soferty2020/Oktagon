@@ -56,7 +56,8 @@ export interface LinkedAthlete {
   birthDate: string | null;
   status: AthleteStatus;
   /** Текущий пояс (K3); `null` — не присвоен. */
-  beltGrade: BeltGrade | null;
+  /** Белый пояс — значение по умолчанию: поле всегда заполнено. */
+  beltGrade: BeltGrade;
   /** Дата присвоения пояса (YYYY-MM-DD). */
   beltAwardedAt: string | null;
   /** Связь с аккаунтом: SELF, PARENT, GUARDIAN. */

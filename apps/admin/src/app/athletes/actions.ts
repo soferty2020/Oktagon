@@ -144,7 +144,7 @@ export async function updateAthleteAction(
           ...(phone ? { phone } : {}),
           ...(email ? { email } : {}),
           notes: notes ?? null,
-          beltGrade: beltGrade ?? null,
+          beltGrade: beltGrade,
           beltAwardedAt: beltAwardedAt ?? null,
           ...(status ? { status } : {}),
         },

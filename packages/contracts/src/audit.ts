@@ -108,6 +108,7 @@ export const AuditAction = {
 
   // Настройки клуба (docs/26-admin-settings.md: изменения настроек аудируются)
   SETTINGS_CLUB_UPDATED: 'settings.club_updated',
+  SETTINGS_DEBT_RULES_UPDATED: 'settings.debt_rules_updated',
   SETTINGS_CLUB_VIEWED: 'settings.club_viewed',
 } as const;
 export type AuditAction = (typeof AuditAction)[keyof typeof AuditAction];
@@ -141,6 +142,7 @@ export const AuditEntityType = {
   CONVERSATION: 'Conversation',
   MESSAGE: 'Message',
   CLUB_PROFILE: 'ClubProfile',
+  DEBT_RULE: 'DebtRule',
 } as const;
 export type AuditEntityType = (typeof AuditEntityType)[keyof typeof AuditEntityType];
 

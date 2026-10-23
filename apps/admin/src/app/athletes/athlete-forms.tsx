@@ -117,7 +117,7 @@ interface AthleteValues {
   middleName: string | null;
   birthDate: string | null;
   status: string;
-  beltGrade: string | null;
+  beltGrade: string;
   beltAwardedAt: string | null;
   phone: string | null;
   email: string | null;
@@ -206,9 +206,8 @@ export function EditAthleteForm({ athlete }: { athlete: AthleteValues }) {
         </label>
         <label className={labelClass}>
           Пояс
-          {/* Пустое значение — «не присвоен»: белый пояс выбирается осознанно. */}
-          <select name="beltGrade" defaultValue={athlete.beltGrade ?? ''} className={inputClass}>
-            <option value="">не указан</option>
+          {/* Белый — значение по умолчанию; очистить пояс нельзя. */}
+          <select name="beltGrade" defaultValue={athlete.beltGrade} className={inputClass}>
             {BELT_GRADES.map((grade) => (
               <option key={grade.code} value={grade.code}>
                 {grade.order}. {grade.label}

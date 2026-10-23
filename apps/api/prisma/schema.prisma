@@ -187,6 +187,7 @@ model User {
   conversationMember ConversationMember[]
   messages           Message[]
   auditLogs          AuditLog[]
+  debtRulesCreated   DebtRule[]         @relation("DebtRuleCreatedBy")
 
   @@index([role, status])
   @@index([archivedAt])
@@ -270,8 +271,9 @@ model Athlete {
   birthDate   DateTime?     @map("birth_date") @db.Date
   gender      Gender        @default(UNSPECIFIED)
   status      AthleteStatus @default(ACTIVE)
-  /// Текущий пояс (K3). NULL — пояс не присвоен: это не то же самое, что белый.
-  beltGrade   BeltGrade?    @map("belt_grade")
+  /// Текущий пояс (K3). Белый — значение по умолчанию: пояс есть у каждого
+  /// спортсмена с момента заведения карточки.
+  beltGrade   BeltGrade     @default(WHITE) @map("belt_grade")
   /// Дата присвоения пояса; у старых записей может отсутствовать.
   beltAwardedAt DateTime?   @map("belt_awarded_at") @db.Date
   phone       String?
@@ -773,6 +775,80 @@ model AuditLog {
 // ---------------------------------------------------------------------------
 // Settings (docs/26-admin-settings.md)
 // ---------------------------------------------------------------------------
+
+/**
+ * Правила расчета задолженности (K5, ADR-0014, BR-014).
+ *
+ * Версии, а не «текущие настройки»: задолженность считается за конкретный месяц,
+ * и отчет за октябрь должен считаться по октябрьским правилам даже если в ноябре
+ * их изменили. Действует версия с наибольшим `effectiveFrom`, не превышающим
+ * расчетный месяц.
+ *
+ * Версия 1 создается миграцией и воспроизводит BR-004: дефолт — часть контракта,
+ * а не «еще не настроено».
+ */
+model DebtRule {
+  id String @id @default(uuid()) @db.Uuid
+
+  /// Монотонный номер версии; уникален, чтобы историю нельзя было переписать.
+  version Int @unique
+
+  /// Первое число месяца, с которого действует версия. Уникально: одна версия
+  /// на месяц, иначе было бы неясно, какая из них действует.
+  effectiveFrom DateTime @unique @map("effective_from") @db.Date
+
+  /// Учитывать ручную отметку «полностью оплачен» (BR-003).
+  useFullyPaidMark Boolean @default(true) @map("use_fully_paid_mark")
+
+  noTrainingPolicy DebtNoTrainingPolicy @default(EXEMPT) @map("no_training_policy")
+  freezePolicy     DebtFreezePolicy     @default(EXEMPT_MONTH) @map("freeze_policy")
+  expectedMissing  DebtExpectedMissing  @default(DEBTOR) @map("expected_missing")
+
+  toleranceKind    DebtToleranceKind @default(NONE) @map("tolerance_kind")
+  /// Допуск в тенге; null, если допуск не задан суммой.
+  toleranceAmount  Decimal?          @map("tolerance_amount") @db.Decimal(12, 2)
+  /// Допуск в процентах от ожидаемой суммы; null, если не задан процентом.
+  tolerancePercent Decimal?          @map("tolerance_percent") @db.Decimal(5, 2)
+
+  note        String?   @db.VarChar(500)
+  createdById String?   @map("created_by_id") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  createdBy User? @relation("DebtRuleCreatedBy", fields: [createdById], references: [id])
+
+  @@index([effectiveFrom])
+  @@map("debt_rules")
+}
+
+/// Что делать, если в месяце не было ни одной тренировки группы.
+enum DebtNoTrainingPolicy {
+  /// Не считать должником (BR-004).
+  EXEMPT
+  DEBTOR
+}
+
+/// Освобождает ли заморозка от задолженности за месяц.
+enum DebtFreezePolicy {
+  /// Заморозка снимает долг за весь месяц (BR-004).
+  EXEMPT_MONTH
+  NONE
+}
+
+/// Как поступать с незаданной ожидаемой суммой.
+enum DebtExpectedMissing {
+  /// Считать должником: клуб еще не решил, сколько брать (BR-004).
+  DEBTOR
+  NOT_DEBTOR
+}
+
+/// Вид допустимой недоплаты.
+enum DebtToleranceKind {
+  NONE
+  /// Абсолютная сумма в тенге.
+  FIXED
+  /// Процент от ожидаемой суммы.
+  PERCENT
+}
 
 /**
  * Профиль клуба: единственная строка с фиксированным идентификатором.

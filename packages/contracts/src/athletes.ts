@@ -23,7 +23,8 @@ export interface AthleteView {
    * Текущий пояс (K3). `null` — пояс не присвоен; это не «белый пояс», а
    * отсутствие данных.
    */
-  beltGrade: BeltGrade | null;
+  /** Белый пояс — значение по умолчанию: поле всегда заполнено. */
+  beltGrade: BeltGrade;
   /** Дата присвоения пояса (YYYY-MM-DD); может отсутствовать у старых записей. */
   beltAwardedAt: string | null;
   /** Контакты: только при праве `athletes.contacts.view` (docs/15-security.md). */
@@ -62,10 +63,12 @@ export interface UpdateAthleteInput {
   birthDate?: string | null;
   gender?: string;
   /**
-   * Пояс (K3). `null` очищает значение; менять может только `athletes.edit`.
-   * Кю и даны здесь не хранятся — это атрибут аттестаций.
+   * Пояс (K3). Менять может только `athletes.edit`.
+   *
+   * Очистить пояс нельзя: белый — это ступень, а не отсутствие данных. Кю и даны
+   * здесь не хранятся — это атрибут аттестаций.
    */
-  beltGrade?: BeltGrade | null;
+  beltGrade?: BeltGrade;
   /** Дата присвоения (YYYY-MM-DD); `null` очищает. */
   beltAwardedAt?: string | null;
   phone?: string | null;

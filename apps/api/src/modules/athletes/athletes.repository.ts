@@ -10,8 +10,8 @@ export interface AthleteRecord {
   birthDate: Date | null;
   gender: Gender;
   status: AthleteStatus;
-  /** Текущий пояс (K3); `null` — не присвоен. */
-  beltGrade: BeltGrade | null;
+  /** Текущий пояс (K3); белый — значение по умолчанию. */
+  beltGrade: BeltGrade;
   beltAwardedAt: Date | null;
   phone: string | null;
   email: string | null;
@@ -44,7 +44,7 @@ export interface UpdateAthleteInput {
   middleName?: string | null;
   birthDate?: Date | null;
   gender?: Gender;
-  beltGrade?: BeltGrade | null;
+  beltGrade?: BeltGrade;
   beltAwardedAt?: Date | null;
   phone?: string | null;
   email?: string | null;

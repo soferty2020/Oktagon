@@ -1,6 +1,9 @@
+import { DEFAULT_DEBT_RULES } from '@octagon/contracts';
+
 import { AuditService } from '../audit/audit.service';
 import type { FreezeRepository } from '../freezes/freezes.repository';
 import { ResourceScopeService } from '../identity/resource-scope.service';
+import { DebtRulesService } from '../settings/debt-rules.service';
 import type {
   FinanceRepository,
   MembershipPeriodRecord,
@@ -56,6 +59,7 @@ describe('FinanceService', () => {
   let freezes: { listFrozenAthleteIds: jest.Mock };
   let scope: { assertAthleteAccess: jest.Mock };
   let audit: { recordSafely: jest.Mock };
+  let debtRules: { getConfigForDate: jest.Mock };
   let service: FinanceService;
 
   beforeEach(() => {
@@ -111,12 +115,18 @@ describe('FinanceService', () => {
     freezes = { listFrozenAthleteIds: jest.fn().mockResolvedValue([]) };
     scope = { assertAthleteAccess: jest.fn().mockResolvedValue({ allowed: true }) };
     audit = { recordSafely: jest.fn().mockResolvedValue(null) };
+    // Правила долга по умолчанию — BR-004: существующие тесты должны проходить
+    // без изменений, это и есть проверка отсутствия регрессии (K5).
+    debtRules = {
+      getConfigForDate: jest.fn().mockResolvedValue(DEFAULT_DEBT_RULES),
+    };
 
     service = new FinanceService(
       repository,
       freezes as unknown as FreezeRepository,
       scope as unknown as ResourceScopeService,
       audit as unknown as AuditService,
+      debtRules as unknown as DebtRulesService,
     );
   });
 

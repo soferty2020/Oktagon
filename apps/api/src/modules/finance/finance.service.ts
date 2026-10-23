@@ -7,6 +7,8 @@ import {
   PaymentKind,
   type BranchFinanceSummary,
   type DebtorSummary,
+  type DebtRulesConfig,
+  type DebtRulesPreview,
   type FinanceSummary,
   type FinanceTotals,
   type MembershipPeriodView,
@@ -29,6 +31,8 @@ import { AuditService } from '../audit/audit.service';
 // должны попасть в метаданные конструктора (emitDecoratorMetadata).
 import { FreezeRepository } from '../freezes/freezes.repository';
 import { ResourceScopeService } from '../identity/resource-scope.service';
+import { evaluateDebt, type DebtFacts } from '../settings/debt-calculator';
+import { DebtRulesService } from '../settings/debt-rules.service';
 import { FinanceRepository } from './finance.repository';
 import type { MembershipPeriodRecord, PaymentRecord } from './finance.repository';
 
@@ -62,6 +66,9 @@ export class FinanceService {
     private readonly freezes: FreezeRepository,
     private readonly scope: ResourceScopeService,
     private readonly audit: AuditService,
+    // Правила долга приходят из настроек: финансы знают, как считать, но не
+    // решают, каким правилом (K5, ADR-0014).
+    private readonly debtRules: DebtRulesService,
   ) {}
 
   // --- Расчетные периоды ---------------------------------------------------
@@ -490,6 +497,90 @@ export class FinanceService {
     this.assertMonth(month);
 
     const from = new Date(Date.UTC(year, month - 1, 1));
+    const facts = await this.collectDebtFacts(year, month);
+    const config = await this.debtRules.getConfigForDate(from);
+
+    const summaries: DebtorSummary[] = facts.map((fact) => {
+      // Правило одно и то же для списка и для preview (K5, ADR-0014): иначе
+      // администратор увидел бы в предпросмотре одно, а после сохранения другое.
+      const decision = evaluateDebt(config, fact);
+
+      return {
+        athleteId: fact.athleteId,
+        firstName: fact.firstName,
+        lastName: fact.lastName,
+        year,
+        month,
+        paidAmount: fact.paidAmount,
+        refundedAmount: fact.refundedAmount,
+        expectedAmount: fact.expectedAmount,
+        isDebtor: decision.isDebtor,
+        reason: decision.reason as DebtorExemption | null,
+      };
+    });
+
+    // Должники сверху: список нужен прежде всего для работы с ними.
+    return summaries.sort(
+      (a, b) =>
+        Number(b.isDebtor) - Number(a.isDebtor) ||
+        a.lastName.localeCompare(b.lastName) ||
+        a.firstName.localeCompare(b.firstName),
+    );
+  }
+
+  /**
+   * Сравнение действующего правила с предлагаемым (K5, ADR-0014).
+   *
+   * Считается то же самое, что и список должников, но дважды: по текущей версии
+   * и по новой. Preview — обязательный шаг перед сохранением, потому что правило
+   * меняет финансовую картину месяца.
+   */
+  async previewDebtRules(month: string, config: DebtRulesConfig): Promise<DebtRulesPreview> {
+    const [yearString, monthString] = month.split('-');
+    const year = Number(yearString);
+    const monthNumber = Number(monthString);
+    this.assertMonth(monthNumber);
+
+    const from = new Date(Date.UTC(year, monthNumber - 1, 1));
+    const facts = await this.collectDebtFacts(year, monthNumber);
+    const current = await this.debtRules.getConfigForDate(from);
+
+    const before = facts.map((fact) => ({ fact, decision: evaluateDebt(current, fact) }));
+    const after = facts.map((fact) => ({ fact, decision: evaluateDebt(config, fact) }));
+
+    const changed = before
+      .map((entry, index) => ({ entry, next: after[index] }))
+      .filter(({ entry, next }) => entry.decision.isDebtor !== next.decision.isDebtor)
+      .slice(0, 20)
+      .map(({ entry, next }) => ({
+        athleteId: entry.fact.athleteId,
+        name: `${entry.fact.lastName} ${entry.fact.firstName}`.trim(),
+        wasDebtor: entry.decision.isDebtor,
+        willBeDebtor: next.decision.isDebtor,
+        outstanding: next.decision.outstanding,
+      }));
+
+    return {
+      effectiveFrom: month,
+      debtorsBefore: before.filter((entry) => entry.decision.isDebtor).length,
+      debtorsAfter: after.filter((entry) => entry.decision.isDebtor).length,
+      debtBefore: sumOutstanding(before),
+      debtAfter: sumOutstanding(after),
+      changed,
+    };
+  }
+
+  /**
+   * Факты по спортсменам за месяц: данные, а не правила.
+   *
+   * Собраны отдельно от решения, чтобы один и тот же набор можно было оценить
+   * двумя конфигурациями (preview) и чтобы тесты проверяли чистое правило.
+   */
+  private async collectDebtFacts(
+    year: number,
+    month: number,
+  ): Promise<Array<DebtFacts & { refundedAmount: number }>> {
+    const from = new Date(Date.UTC(year, month - 1, 1));
     const to = new Date(Date.UTC(year, month, 1));
 
     const [athletes, memberships, frozenIds, existingPeriods] = await Promise.all([
@@ -503,78 +594,39 @@ export class FinanceService {
     const frozen = new Set(frozenIds);
     const periodByAthlete = new Map(existingPeriods.map((period) => [period.athleteId, period]));
 
-    const summaries: DebtorSummary[] = [];
+    const facts: Array<DebtFacts & { refundedAmount: number }> = [];
 
     for (const athlete of athletes) {
-      // Условие 1: спортсмен активен. Заморозка карточки (FROZEN) — тоже
-      // основание не считать его должником: занятия приостановлены.
+      // Спортсмен должен быть активен: заморозка карточки (FROZEN) — тоже
+      // основание не считать его должником, занятия приостановлены.
       if (athlete.status !== PrismaAthleteStatus.ACTIVE) {
         continue;
       }
-      // Рассматриваются только те, у кого в этом месяце было членство: иначе
-      // список заполнился бы всеми спортсменами клуба.
+      // Только те, у кого в этом месяце было членство: иначе список заполнился бы
+      // всеми спортсменами клуба.
       if (!memberIds.has(athlete.athleteId)) {
         continue;
       }
 
       const period = periodByAthlete.get(athlete.athleteId) ?? null;
-      // Нетто: возвращенные деньги не считаются оплатой (ADR-0010).
-      const paidAmount = period?.paidAmount ?? 0;
-      const refundedAmount = period?.refundedAmount ?? 0;
 
-      let reason: DebtorExemption | null = null;
-
-      if (period?.fullyPaidMarkedAt) {
-        // Условие 2: месяц отмечен как полностью оплаченный (BR-003).
-        reason = DebtorExemption.MARKED_FULLY_PAID;
-      } else if (frozen.has(athlete.athleteId)) {
-        // Условие 4: спортсмен в заморозке на соответствующую дату. Проверяется
-        // раньше тренировок: заморозка — это решение клуба, и причина «нет
-        // занятий» вводила бы в заблуждение, если спортсмен на паузе.
-        reason = DebtorExemption.FROZEN;
-      } else if (!(await this.finance.hasGroupTrainingInMonth(athlete.athleteId, from, to))) {
-        // Условие 3: в месяце еще не было ни одной тренировки группы.
-        reason = DebtorExemption.NO_TRAININGS_YET;
-      }
-
-      // Задолженность — это не только «нет оснований не считать должником», но и
-      // наличие недоплаты. Без этой проверки должником оставался и тот, кто внес
-      // всю ожидаемую сумму: список требовал бы денег с уже оплативших.
-      //
-      // Правило BR-004 перечисляет четыре условия, но не называет пятое — что
-      // взыскивать есть что. Это не пятое условие, а смысл слова «должен»:
-      // оснований не считать должником нет И остаток положительный.
-      //
-      // Ожидаемая сумма не задана — спортсмен остается должником: клуб еще не
-      // решил, сколько с него брать (BR-002: сумма вводится вручную), и такая
-      // карточка как раз требует внимания администратора. Это отдельно
-      // отмечается в сводке (`debtorsWithoutExpected`).
-      const expected = period?.expectedAmount ?? null;
-      // `paidAmount` уже нетто (поступления минус возвраты, ADR-0010), поэтому
-      // возвраты здесь повторно не вычитаются.
-      const outstanding = expected === null ? null : Number(expected) - paidAmount;
-
-      summaries.push({
+      facts.push({
         athleteId: athlete.athleteId,
         firstName: athlete.firstName,
         lastName: athlete.lastName,
-        year,
-        month,
-        paidAmount,
-        refundedAmount,
-        expectedAmount: period?.expectedAmount ?? null,
-        isDebtor: reason === null && (outstanding === null || outstanding > 0),
-        reason,
+        fullyPaidMarked: Boolean(period?.fullyPaidMarkedAt),
+        frozen: frozen.has(athlete.athleteId),
+        hasTrainings: await this.finance.hasGroupTrainingInMonth(athlete.athleteId, from, to),
+        // Ожидаемая сумма не задана — `null`, а не ноль: правило трактует это
+        // отдельным случаем (ADR-0014).
+        expectedAmount: period?.expectedAmount == null ? null : Number(period.expectedAmount),
+        // `paidAmount` уже нетто (поступления минус возвраты, ADR-0010).
+        paidAmount: period?.paidAmount ?? 0,
+        refundedAmount: period?.refundedAmount ?? 0,
       });
     }
 
-    // Должники сверху: список нужен прежде всего для работы с ними.
-    return summaries.sort(
-      (a, b) =>
-        Number(b.isDebtor) - Number(a.isDebtor) ||
-        a.lastName.localeCompare(b.lastName) ||
-        a.firstName.localeCompare(b.firstName),
-    );
+    return facts;
   }
 
   // --- Сводка за месяц (F8) -------------------------------------------------
@@ -876,4 +928,26 @@ function toPeriodView(period: MembershipPeriodRecord): MembershipPeriodView {
     note: period.note,
     payments: period.payments.map(toPaymentView),
   };
+}
+
+/**
+ * Суммарная задолженность по списку решений.
+ *
+ * `null`, если хотя бы у одного должника не задана ожидаемая сумма: сложить
+ * известные остатки и показать меньшее число значило бы скрыть неопределенность.
+ */
+function sumOutstanding(entries: Array<{ decision: { isDebtor: boolean; outstanding: number | null } }>): number | null {
+  let total = 0;
+
+  for (const entry of entries) {
+    if (!entry.decision.isDebtor) {
+      continue;
+    }
+    if (entry.decision.outstanding === null) {
+      return null;
+    }
+    total += entry.decision.outstanding;
+  }
+
+  return Math.round(total * 100) / 100;
 }

@@ -22,9 +22,9 @@ const Map<String, String> beltLabels = {
   'BLACK': 'Чёрный',
 };
 
-/// Подпись пояса; `null`, если пояс не присвоен или код неизвестен.
-String? beltLabel(String? code) {
-  if (code == null || code.isEmpty) {
+/// Подпись пояса; `null`, если код неизвестен.
+String? beltLabel(String code) {
+  if (code.isEmpty) {
     return null;
   }
   return beltLabels[code];
@@ -33,11 +33,8 @@ String? beltLabel(String? code) {
 /// Строка для интерфейса: «Жёлтый пояс, с 10.02.2024».
 ///
 /// Дата необязательна: у старых карточек пояс мог быть заведен без неё.
-String? beltDescription(String? code, String? awardedAt) {
-  final label = beltLabel(code);
-  if (label == null) {
-    return null;
-  }
+String beltDescription(String code, String? awardedAt) {
+  final label = beltLabel(code) ?? code;
 
   final formatted = _formatDate(awardedAt);
   return formatted == null ? '$label пояс' : '$label пояс, с $formatted';

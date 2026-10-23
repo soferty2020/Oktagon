@@ -258,7 +258,7 @@ function toUpdateRecord(input: UpdateAthleteInput): UpdateAthleteRecordInput {
     gender: input.gender as Gender | undefined,
     // Значения контракта и Prisma-клиента совпадают: набор ограничен
     // @IsEnum(BeltGrade) в DTO и фиксированным справочником BELT_GRADES.
-    beltGrade: input.beltGrade as BeltGrade | null | undefined,
+    beltGrade: input.beltGrade as BeltGrade | undefined,
     phone: input.phone,
     email: input.email,
     notes: input.notes,
@@ -290,8 +290,7 @@ function toAthleteView(athlete: AthleteRecord, canViewContacts: boolean): Athlet
     birthDate: athlete.birthDate ? athlete.birthDate.toISOString().slice(0, 10) : null,
     gender: athlete.gender,
     status: athlete.status,
-    // Поясом не считается отсутствие значения: `null` доходит до клиента и
-    // показывается как «не указан», а не как белый пояс.
+    // Пояс всегда заполнен: белый — значение по умолчанию, а не отсутствие данных.
     beltGrade: athlete.beltGrade,
     beltAwardedAt: athlete.beltAwardedAt
       ? athlete.beltAwardedAt.toISOString().slice(0, 10)

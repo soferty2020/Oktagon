@@ -38,8 +38,8 @@ export interface LinkedAthleteRecord {
   middleName: string | null;
   birthDate: Date | null;
   status: AthleteStatus;
-  /** Текущий пояс (K3); `null` — не присвоен. */
-  beltGrade: BeltGrade | null;
+  /** Текущий пояс (K3); белый — значение по умолчанию. */
+  beltGrade: BeltGrade;
   beltAwardedAt: Date | null;
   relation: string;
   isPrimary: boolean;
