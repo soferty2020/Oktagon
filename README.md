@@ -17,7 +17,8 @@
 | `packages/contracts` | TypeScript | доменные enum'ы, коды ошибок, контракты модулей |
 | `packages/config` | TypeScript | схемы конфигурации |
 
-План реализации и открытые решения: `docs/26-implementation-foundation.md`.
+План реализации и открытые решения: `docs/28-implementation-foundation.md`.
+Требования к разделу «Настройки»: `docs/26-admin-settings.md`.
 Запуск на локальной машине: `docs/27-local-development.md`.
 
 ## Требования
