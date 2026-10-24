@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
+import { StatusBadge } from '@/components/status-badge';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
 import { CreateAthleteForm } from './athlete-forms';
@@ -79,9 +80,7 @@ export default async function AthletesPage() {
                     <td className="px-4 py-3 text-muted">{athlete.birthDate ?? '—'}</td>
                     <td className="px-4 py-3 text-muted">{athlete.phone ?? '—'}</td>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-canvas px-2 py-1 text-xs text-muted">
-                        {athlete.status}
-                      </span>
+                      <StatusBadge value={athlete.status} />
                     </td>
                   </tr>
                 ))

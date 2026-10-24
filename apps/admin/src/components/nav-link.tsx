@@ -3,24 +3,18 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { Icon, type IconName } from '@/components/icons';
-
 /**
- * Пункт боковой навигации с подсветкой активного раздела.
+ * Пункт боковой навигации.
  *
- * Отдельный клиентский компонент, потому что активный раздел знает только
- * браузер: в серверном компоненте `usePathname` недоступен. Оранжевая заливка
- * активного пункта — по макету.
+ * По макету пункты идут без иконок: подписи читаются быстрее, а иконки в
+ * двадцати пунктах превращались в шум. Активный раздел — светлая плашка на
+ * тёмном сайдбаре с оранжевой полосой слева; заливка акцентом осталась в
+ * мобильном приложении, где пунктов мало и нужен сильный акцент.
+ *
+ * Клиентский компонент: активный раздел знает только браузер, в серверном
+ * `usePathname` недоступен.
  */
-export function NavLink({
-  href,
-  label,
-  icon,
-}: {
-  href: string;
-  label: string;
-  icon: IconName;
-}) {
+export function NavLink({ href, label }: { href: string; label: string }) {
   const pathname = usePathname();
   const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href);
 
@@ -30,12 +24,11 @@ export function NavLink({
       aria-current={isActive ? 'page' : undefined}
       className={
         isActive
-          ? 'flex items-center gap-3 rounded-card bg-accent px-3 py-2.5 text-sm font-medium text-white'
-          : 'flex items-center gap-3 rounded-card px-3 py-2.5 text-sm text-white/70 transition hover:bg-white/5 hover:text-white'
+          ? 'flex items-center rounded-md border-l-2 border-accent bg-white/10 px-3 py-2.5 text-sm font-medium text-white'
+          : 'flex items-center rounded-md border-l-2 border-transparent px-3 py-2.5 text-sm text-white/70 transition hover:bg-white/5 hover:text-white'
       }
     >
-      <Icon name={icon} size={18} />
-      <span>{label}</span>
+      {label}
     </Link>
   );
 }

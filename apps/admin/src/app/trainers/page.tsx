@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
+import { statusLabel } from '@/components/status-badge';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
 import {
@@ -103,7 +104,7 @@ export default async function TrainersPage() {
     )
     .map((candidate) => ({
       id: candidate.id,
-      label: `${candidate.lastName} ${candidate.firstName} — ${candidate.email} (${candidate.role})`,
+      label: `${candidate.lastName} ${candidate.firstName} — ${candidate.email} (${statusLabel(candidate.role)})`,
     }));
 
   const list = trainers.ok ? trainers.data : [];

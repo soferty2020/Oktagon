@@ -20,12 +20,27 @@
   --color-danger: #e23b3b;
   --color-warning: #ffa726;
 
-  --radius-card: 16px;
+  --radius-card: 12px;
+  /* Controls по макету UI Kit: кнопки и поля скруглены меньше карточек. */
+  --radius-control: 10px;
 }
 
 body {
   background-color: var(--color-canvas);
   color: var(--color-ink);
+}
+
+/**
+ * Единый видимый фокус.
+ *
+ * Раньше во всём приложении был только `focus:` — подсветка появлялась и от
+ * мыши, и от клавиатуры, поэтому по клавиатуре было не понять, где находишься.
+ * `:focus-visible` показывает обводку только там, где она нужна, и не требует
+ * повторять классы на каждой кнопке.
+ */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 /* Таблицы: одинаковый вид во всех разделах, чтобы строки не «прыгали» между

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
+import { statusLabel } from '@/components/status-badge';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { PERMISSIONS, describePermission } from '@/lib/permissions';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
@@ -80,7 +81,7 @@ export default async function UserPermissionsPage({
     <AppShell user={currentUser}>
       <PageHeader
         title={`${data.lastName} ${data.firstName}`}
-        description={`${data.email} · роль ${data.role} · доступ: ${
+        description={`${data.email} · роль ${statusLabel(data.role)} · доступ: ${
           data.scopeAllGroups ? 'все группы' : 'только назначенные'
         }`}
         actions={

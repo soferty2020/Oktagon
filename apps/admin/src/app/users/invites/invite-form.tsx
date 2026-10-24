@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from 'react';
 
 import { createInviteAction, type InviteFormState } from '@/app/users/invites/actions';
+import { statusLabel } from '@/components/status-badge';
 
 const initialState: InviteFormState = {};
 
@@ -72,7 +73,7 @@ export function InviteForm() {
       {inviteLink ? (
         <div className="rounded-card border border-emerald-200 bg-emerald-50/60 p-3">
           <p className="text-xs font-medium text-emerald-900">
-            Приглашение для {state.email} ({state.role}) создано
+            Приглашение для {state.email} ({statusLabel(state.role ?? '')}) создано
           </p>
           <p className="mt-2 text-xs text-muted">
             Ссылка показывается один раз: в базе хранится только хеш токена. Передайте ее

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
+import { StatusBadge } from '@/components/status-badge';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
 import { archiveGroupAction, endMembershipAction, unassignTrainerAction, unlinkBranchAction } from '../actions';
@@ -239,7 +240,9 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
                   <td className="py-2 font-medium text-ink">
                     {member.lastName} {member.firstName}
                   </td>
-                  <td className="py-2 text-muted">{member.status}</td>
+                  <td className="py-2">
+                    <StatusBadge value={member.status} />
+                  </td>
                   <td className="py-2 text-muted">{member.joinedAt}</td>
                   <td className="py-2 text-right">
                     {canManage ? (

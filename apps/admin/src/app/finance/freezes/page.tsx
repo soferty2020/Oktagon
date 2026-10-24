@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
+import { statusLabel } from '@/components/status-badge';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { formatCalendarDate } from '@/lib/money';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
@@ -119,7 +120,7 @@ export default async function FreezesPage({
                 <option key={athlete.id} value={athlete.id}>
                   {athlete.lastName} {athlete.firstName}
                   {athlete.middleName ? ` ${athlete.middleName}` : ''}
-                  {athlete.status === 'ACTIVE' ? '' : ` · ${athlete.status}`}
+                  {athlete.status === 'ACTIVE' ? '' : ` · ${statusLabel(athlete.status)}`}
                 </option>
               ))}
             </select>

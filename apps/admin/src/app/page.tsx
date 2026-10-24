@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
-import { AppShell, Notice } from '@/components/app-shell';
+import { AppShell, Notice, PageHeader } from '@/components/app-shell';
 import { BarChart, Donut } from '@/components/charts';
 import { Icon, type IconName } from '@/components/icons';
 import { apiFetch, describeError } from '@/lib/api/client';
@@ -128,18 +128,19 @@ export default async function DashboardPage() {
 
   return (
     <AppShell user={user}>
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-        <p className="text-sm text-muted">
-          Состояние клуба: ученики, занятия, финансы месяца
-        </p>
-        <Link
-          href="/schedule/sessions"
-          className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
-        >
-          <Icon name="plus" size={16} />
-          Быстрое действие
-        </Link>
-      </div>
+      <PageHeader
+        title="Обзор клуба"
+        description="Состояние клуба: ученики, занятия, финансы месяца"
+        actions={
+          <Link
+            href="/schedule/sessions"
+            className="inline-flex items-center gap-1.5 rounded-control bg-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+          >
+            <Icon name="plus" size={16} />
+            Быстрое действие
+          </Link>
+        }
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
@@ -302,19 +303,6 @@ export default async function DashboardPage() {
           )}
         </section>
 
-        <section className="rounded-card border border-line bg-white p-5">
-          <h2 className="text-sm font-semibold text-ink">Права пользователя</h2>
-          <p className="mt-1 text-sm text-muted">
-            Роль {user.role}, прав: {user.permissions.length}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {user.permissions.map((code) => (
-              <span key={code} className="rounded-full bg-canvas px-3 py-1 text-xs text-muted">
-                {code}
-              </span>
-            ))}
-          </div>
-        </section>
       </div>
 
       {!athletes.ok && !groups.ok && !trainers.ok ? (

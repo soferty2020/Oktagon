@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
+import { StatusBadge } from '@/components/status-badge';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
 import { openDirectChatAction, openGroupChatAction } from './actions';
@@ -225,7 +226,9 @@ export default async function ChatsPage({
                           className="w-full rounded-md border border-line bg-white px-3 py-1.5 text-left text-xs text-ink hover:bg-canvas"
                         >
                           {candidate.lastName} {candidate.firstName}
-                          <span className="ml-2 text-muted">{candidate.role}</span>
+                          <span className="ml-2">
+                            <StatusBadge value={candidate.role} />
+                          </span>
                         </button>
                       </form>
                     </li>

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
+import { StatusBadge } from '@/components/status-badge';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
 import { InviteForm } from './invite-form';
@@ -97,7 +98,9 @@ export default async function InvitesPage() {
                 pending.map((invite) => (
                   <tr key={invite.id} className="border-b border-line last:border-0">
                     <td className="px-4 py-3 font-medium text-ink">{invite.email}</td>
-                    <td className="px-4 py-3 text-muted">{invite.role}</td>
+                    <td className="px-4 py-3">
+                      <StatusBadge value={invite.role} />
+                    </td>
                     <td className="px-4 py-3 text-muted">
                       {formatMoment(invite.expiresAt)}
                       {isExpiringSoon(invite.expiresAt) ? (

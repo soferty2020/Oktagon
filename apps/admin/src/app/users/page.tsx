@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
+import { StatusBadge } from '@/components/status-badge';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
 
@@ -86,17 +87,11 @@ export default async function UsersPage() {
                     </span>
                     <span className="block text-xs text-muted">{candidate.email}</span>
                   </td>
-                  <td className="px-4 py-3 text-muted">{candidate.role}</td>
                   <td className="px-4 py-3">
-                    <span
-                      className={
-                        candidate.status === 'ACTIVE'
-                          ? 'rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700'
-                          : 'rounded-full bg-canvas px-2 py-1 text-xs text-muted'
-                      }
-                    >
-                      {candidate.status}
-                    </span>
+                    <StatusBadge value={candidate.role} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <StatusBadge value={candidate.status} />
                   </td>
                   <td className="px-4 py-3 text-muted">
                     {candidate.scopeAllGroups ? 'все группы' : 'только назначенные'}
