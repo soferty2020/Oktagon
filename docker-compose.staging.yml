@@ -117,6 +117,9 @@ services:
       NGINX_ENVSUBST_FILTER: '^(ADMIN_HOST|API_HOST)$$'
     volumes:
       - ./infra/nginx/staging.conf.template:/etc/nginx/templates/staging.conf.template:ro
+      # Гасит default.conf из образа: иначе он перехватывает 80 (отдает заглушку
+      # вместо редиректа на HTTPS) и ломает ACME-челлендж.
+      - ./infra/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - ./infra/nginx/certs:/etc/nginx/certs:ro
       # ACME-челлендж: certbot кладет файл, nginx его отдает. Без этого
       # Let's Encrypt не сможет подтвердить владение доменом.
