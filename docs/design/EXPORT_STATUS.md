@@ -1,31 +1,40 @@
 # Figma export status — 2026-10-25
 
-## Export completed locally; GitHub binary upload pending
+## Экспорт опубликован
 
-The user supplied a ZIP export from Figma containing **37 PNG screens**. The archive has been validated (37 images with expected desktop, tablet, mobile, dialog and state dimensions) and repackaged as `OCTAGON_DeepSeek_Harness_Design_Package.zip` with normalized English paths and a `manifest.json`.
+Архив `OCTAGON — Admin UI Design.zip` разложен в репозиторий:
 
-**Important:** The PNG files are not yet committed to GitHub. The connected GitHub file-write interface accepts UTF-8 text and does not transfer local binary files directly; the runtime also has no direct GitHub network access. Do not claim screenshots are present in `docs/design/screenshots/` until committed and verified.
+- `docs/design/screenshots/` — 37 PNG;
+- `docs/design/screenshots/manifest.json` — соответствие «файл → исходный путь».
 
-## DeepSeek Harness handoff
+Имена приведены к латинице и kebab-case: исходные русские пути с пробелами
+неудобны в ссылках и скриптах.
 
-The agent platform is **DeepSeek Harness** (not Hermes) and does not currently have Figma access.
+## Состав
 
-To publish the screenshots:
-1. Download the prepared archive from the ChatGPT conversation.
-2. Unzip it locally.
-3. Copy the `screenshots/` directory into the repository at `docs/design/screenshots/`.
-4. Commit and push the 37 PNG files.
-5. Keep `manifest.json` as `docs/design/screenshots/manifest.json` or in `docs/design/`.
-6. Verify the links in GitHub and then tell the lead agent to read `docs/design/README.md` and `docs/design/implementation.md`.
+| Категория | Файлов |
+|---|---|
+desktop (списки, карточки, финансы, расписание, настройки) | 19 |
+detail (карточка тренера, права, филиал, редактор новости) | 4 |
+диалоги (спортсмен, группа, перенос, оплата, заморозка) | 5 |
+состояния (пусто, ошибка, отмена, загрузка, успех) | 5 |
+мобильный админ | 6 |
+планшет | 1 |
+UI Kit | 1 |
+**итого** | **37** |
 
-## Inventory
-- desktop: 19 screenshots
-- dialogs: 5
-- states: 5
-- mobile: 6
-- tablet: 1
-- design-system: 1
-- desktop detail screens are included within desktop count (see archive manifest)
+## Что это разблокировало
 
-## Restrictions
-No unapproved logo asset. Do not mistake placeholder values in the screenshots for live data. No code changes in this export task.
+- `docs/design/gap-matrix.md` переписан по официальному экспорту: системные
+  отличия дизайн-языка и матрица по 9 экранам;
+- официальная версия макета проще ранних картинок: заявок, уведомлений и
+  спарклайнов в ней нет, поэтому «новых модулей» в scope не осталось;
+- before-скриншоты текущего состояния лежат в `docs/design/before/`.
+
+## Ограничения
+
+- Логотип в макете — плейсхолдер `PLACE ORIGINAL ASSET`. Реконструированный
+  логотип не подставлять без одобрения владельца.
+- Значения в макетах — иллюстративные, за живые данные не принимать.
+- Прямой доступ к Figma у агента отсутствует (SPA без контента, API — 403);
+  источником служит этот экспорт, как требует `implementation.md` п.3.
