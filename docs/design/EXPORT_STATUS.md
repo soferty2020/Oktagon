@@ -19,7 +19,7 @@ To publish the screenshots:
 6. Verify the links in GitHub and then tell the lead agent to read `docs/design/README.md` and `docs/design/implementation.md`.
 
 ## Inventory
-- desktop: 17 screenshots
+- desktop: 19 screenshots
 - dialogs: 5
 - states: 5
 - mobile: 6
