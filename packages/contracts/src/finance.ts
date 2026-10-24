@@ -238,3 +238,29 @@ export interface CloseFreezeInput {
   /** Дату завершения тоже можно указать задним числом (BR-005). */
   endedOn: string;
 }
+
+/**
+ * Точка динамики за месяц (C: отчёты клуба).
+ *
+ * Выручка считается по датам движений, задолженность — по расчётному месяцу:
+ * это разные вопросы («сколько денег прошло» и «сколько должны»), и сводить их в
+ * одно число значило бы смешивать факт и ожидание.
+ */
+export interface FinanceDynamicsPoint {
+  year: number;
+  /** 1..12 */
+  month: number;
+  received: number;
+  refunded: number;
+  revenue: number;
+  debtors: number;
+  /** Должники без заданной ожидаемой суммы: долг по ним не считается. */
+  debtorsWithoutExpected: number;
+  /** Недостает по ожидаемым суммам; `null`, если есть должники без ожидания. */
+  debt: number | null;
+}
+
+/** Динамика за несколько месяцев: от старых к новым. */
+export interface FinanceDynamics {
+  points: FinanceDynamicsPoint[];
+}

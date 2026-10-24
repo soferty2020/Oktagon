@@ -9,13 +9,16 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiProduces, ApiTags } from '@nestjs/swagger';
+import type { Response } from 'express';
 import {
   PermissionCode,
   type DebtorSummary,
   type DebtRulesPreview,
+  type FinanceDynamics,
   type FinanceSummary,
   type MembershipPeriodView,
 } from '@octagon/contracts';
@@ -25,6 +28,8 @@ import { PermissionsGuard, RequirePermissions } from '../../shared/permissions.g
 import { SuperadminGuard } from '../../shared/superadmin.guard';
 import { DebtRulesQueryDto, PreviewDebtRulesDto, toTolerance } from '../settings/debt-rules.dto';
 import {
+  DynamicsQueryDto,
+  ExportPeriodQueryDto,
   MarkFullyPaidDto,
   PeriodQueryDto,
   RecordPaymentDto,
@@ -231,6 +236,23 @@ export class DebtsController {
   ): Promise<DebtorSummary[]> {
     return this.finance.listDebtors(user.id, query.year, query.month);
   }
+
+  @Get('export')
+  @RequirePermissions(PermissionCode.PaymentsView)
+  @ApiOperation({ summary: 'Выгрузка списка должников за месяц в CSV' })
+  @ApiProduces('text/csv')
+  @ApiOkResponse({ description: 'CSV с BOM и разделителем ; для Excel' })
+  async export(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: PeriodQueryDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<string> {
+    const file = await this.finance.exportDebtorsCsv(user.id, query.year, query.month);
+
+    response.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    response.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
+    return file.content;
+  }
 }
 
 /**
@@ -294,5 +316,32 @@ export class FinanceSummaryController {
     @Query() query: PeriodQueryDto,
   ): Promise<FinanceSummary> {
     return this.finance.summary(user.id, query.year, query.month);
+  }
+
+  @Get('dynamics')
+  @RequirePermissions(PermissionCode.PaymentsView)
+  @ApiOperation({ summary: 'Динамика выручки и задолженности за несколько месяцев' })
+  @ApiOkResponse({ description: 'Точки от старых к новым; выручка по движениям, долг по месяцам' })
+  dynamics(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: DynamicsQueryDto,
+  ): Promise<FinanceDynamics> {
+    return this.finance.dynamics(user.id, query.year, query.month, query.months ?? 6);
+  }
+
+  @Get('payments/export')
+  @RequirePermissions(PermissionCode.PaymentsView)
+  @ApiOperation({ summary: 'Выгрузка движений средств в CSV' })
+  @ApiOkResponse({ description: 'CSV с BOM и разделителем ; для Excel' })
+  async exportPayments(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: ExportPeriodQueryDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<string> {
+    const file = await this.finance.exportPaymentsCsv(user.id, query.from, query.to);
+
+    response.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    response.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
+    return file.content;
   }
 }

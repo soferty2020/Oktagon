@@ -3,6 +3,7 @@ import { PaymentMethod } from '@octagon/contracts';
 import { Type } from 'class-transformer';
 import {
   IsBoolean,
+  IsDateString,
   IsEnum,
   IsInt,
   IsNumber,
@@ -181,4 +182,26 @@ export class AthleteIdParamDto {
   @ApiProperty({ format: 'uuid' })
   @IsUUID()
   athleteId!: string;
+}
+
+/** Динамика за несколько месяцев (C: отчёты клуба). */
+export class DynamicsQueryDto extends PeriodQueryDto {
+  @ApiPropertyOptional({ minimum: 1, maximum: 12, default: 6, description: 'Сколько месяцев показать' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(12)
+  months?: number;
+}
+
+/** Период выгрузки движений средств. */
+export class ExportPeriodQueryDto {
+  @ApiProperty({ example: '2026-10-01' })
+  @IsDateString()
+  from!: string;
+
+  @ApiProperty({ example: '2026-11-01' })
+  @IsDateString()
+  to!: string;
 }

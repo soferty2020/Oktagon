@@ -49,6 +49,20 @@ export interface BillingAthleteRecord {
   status: AthleteStatus;
 }
 
+/** Движение средств для выгрузки: строка будущего CSV. */
+export interface PaymentExportRecord {
+  id: string;
+  paidAt: Date;
+  kind: PaymentKind;
+  amount: number;
+  method: string | null;
+  athleteLastName: string;
+  athleteFirstName: string;
+  groupName: string | null;
+  /** Комментарий к оплате; в выгрузке помогает бухгалтеру. */
+  note: string | null;
+}
+
 /**
  * Доступ к финансам.
  *
@@ -170,6 +184,14 @@ export abstract class FinanceRepository {
     from: Date,
     to: Date,
   ): Promise<{ kind: PaymentKind; amount: number; branchId: string | null }[]>;
+
+  /**
+   * Движения за период с деталями для выгрузки в CSV.
+   *
+   * Отдельный метод, а не расширение `listMovementsInRange`: сводке нужны только
+   * суммы, и тянуть имена и способы оплаты на каждый месяц было бы лишней работой.
+   */
+  abstract listPaymentsForExport(from: Date, to: Date): Promise<PaymentExportRecord[]>;
   /**
    * Основной филиал каждого спортсмена: `null` — филиал не назначен.
    *
@@ -551,6 +573,45 @@ export class PrismaFinanceRepository extends FinanceRepository {
       kind: movement.kind,
       amount: Number(movement.amount),
       branchId: movement.athlete.memberships[0]?.group.branches[0]?.branchId ?? null,
+    }));
+  }
+
+  async listPaymentsForExport(from: Date, to: Date): Promise<PaymentExportRecord[]> {
+    const movements = await this.prisma.db.paymentTransaction.findMany({
+      where: { paidAt: { gte: from, lt: to } },
+      orderBy: { paidAt: 'asc' },
+      select: {
+        id: true,
+        paidAt: true,
+        kind: true,
+        amount: true,
+        method: true,
+        comment: true,
+        athlete: {
+          select: {
+            firstName: true,
+            lastName: true,
+            memberships: {
+              where: { state: 'ACTIVE' },
+              orderBy: { joinedAt: 'desc' },
+              take: 1,
+              select: { group: { select: { name: true } } },
+            },
+          },
+        },
+      },
+    });
+
+    return movements.map((movement) => ({
+      id: movement.id,
+      paidAt: movement.paidAt,
+      kind: movement.kind,
+      amount: Number(movement.amount),
+      method: movement.method,
+      athleteLastName: movement.athlete.lastName,
+      athleteFirstName: movement.athlete.firstName,
+      groupName: movement.athlete.memberships[0]?.group.name ?? null,
+      note: movement.comment,
     }));
   }
 

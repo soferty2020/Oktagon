@@ -6,8 +6,9 @@ import { apiFetch, describeError } from '@/lib/api/client';
 import { formatAmount, formatMonth } from '@/lib/money';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
 import { PeriodStatusBadge } from './finance-ui';
-import { monthQuery, parseYearMonth } from './finance-shared';
+import { isoMonthEnd, isoMonthStart, monthQuery, parseYearMonth } from './finance-shared';
 import { MonthPicker } from './month-picker';
+import { DynamicsTable, type DynamicsPoint } from './dynamics';
 
 export const metadata = {
   title: 'Финансы — OCTAGON',
@@ -79,12 +80,16 @@ export default async function FinancePage({
   const canView = user.permissions.includes('payments.view');
   const canEdit = user.permissions.includes('payments.edit');
 
-  const [summary, debts] = canView
+  const [summary, debts, dynamics] = canView
     ? await Promise.all([
         apiFetch<FinanceSummary>(`/finance/summary?${monthQuery(year, month)}`, { accessToken }),
         apiFetch<DebtorSummary[]>(`/debts?${monthQuery(year, month)}`, { accessToken }),
+        apiFetch<{ points: DynamicsPoint[] }>(
+          `/finance/dynamics?${monthQuery(year, month)}&months=6`,
+          { accessToken },
+        ),
       ])
-    : [null, null];
+    : [null, null, null];
 
   if (!canView) {
     return (
@@ -126,13 +131,26 @@ export default async function FinancePage({
 
       <div className="flex flex-wrap items-end justify-between gap-4">
         <MonthPicker year={year} month={month} />
-        <div className="flex flex-wrap gap-3 text-sm">
+        <div className="flex flex-wrap items-center gap-3 text-sm">
           <Link href="/finance/freezes" className="text-muted underline hover:text-ink">
             Заморозки
           </Link>
           <Link href="/athletes" className="text-muted underline hover:text-ink">
             Спортсмены
           </Link>
+          {/* Скачивание через серверный роут: он читает сессию из cookie. */}
+          <a
+            href={`/api/export/debts?${monthQuery(year, month)}`}
+            className="rounded-md border border-line px-2 py-1 text-muted hover:text-ink"
+          >
+            Должники CSV
+          </a>
+          <a
+            href={`/api/export/payments?from=${isoMonthStart(year, month)}&to=${isoMonthEnd(year, month)}`}
+            className="rounded-md border border-line px-2 py-1 text-muted hover:text-ink"
+          >
+            Оплаты CSV
+          </a>
         </div>
       </div>
 
@@ -144,6 +162,12 @@ export default async function FinancePage({
       {debts && !debts.ok ? (
         <div className="mt-4">
           <Notice tone="error">{describeError(debts.error)}</Notice>
+        </div>
+      ) : null}
+
+      {dynamics?.ok && dynamics.data.points.length > 0 ? (
+        <div className="mt-6">
+          <DynamicsTable points={dynamics.data.points} />
         </div>
       ) : null}
 

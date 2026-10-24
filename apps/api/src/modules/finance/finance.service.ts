@@ -9,6 +9,8 @@ import {
   type DebtorSummary,
   type DebtRulesConfig,
   type DebtRulesPreview,
+  type FinanceDynamics,
+  type FinanceDynamicsPoint,
   type FinanceSummary,
   type FinanceTotals,
   type MembershipPeriodView,
@@ -648,6 +650,161 @@ export class FinanceService {
    * попадает в отдельную строку «Филиал не назначен»: приписать его суммы
    * первому филиалу значило бы показать чужие деньги как свои.
    */
+  /**
+   * Динамика за несколько месяцев (C: отчёты клуба).
+   *
+   * Выручка и задолженность считаются по тем же правилам, что и сводка за один
+   * месяц: деньги — по датам движений, долг — по расчётному месяцу. Иначе график
+   * показывал бы другую картину, чем соседняя таблица.
+   *
+   * Ограничение в 12 месяцев: больше — это уже не «динамика», а выгрузка, для
+   * которой есть CSV.
+   */
+  async dynamics(
+    callerUserId: string,
+    year: number,
+    month: number,
+    months: number,
+  ): Promise<FinanceDynamics> {
+    this.assertMonth(month);
+    const count = Math.min(Math.max(Math.floor(months), 1), 12);
+    const points: FinanceDynamicsPoint[] = [];
+
+    for (let offset = count - 1; offset >= 0; offset -= 1) {
+      const cursor = new Date(Date.UTC(year, month - 1 - offset, 1));
+      const pointYear = cursor.getUTCFullYear();
+      const pointMonth = cursor.getUTCMonth() + 1;
+      const next = new Date(Date.UTC(pointYear, pointMonth, 1));
+
+      const [debtors, movements] = await Promise.all([
+        this.listDebtors(callerUserId, pointYear, pointMonth),
+        this.finance.listMovementsInRange(cursor, next),
+      ]);
+
+      let received = 0;
+      let refunded = 0;
+      for (const movement of movements) {
+        if (movement.kind === PaymentKind.REFUND) {
+          refunded += movement.amount;
+        } else {
+          received += movement.amount;
+        }
+      }
+
+      const debtorRows = debtors.filter((row) => row.isDebtor);
+      const withoutExpected = debtorRows.filter((row) => row.expectedAmount === null).length;
+
+      // Сумма долга не считается, если есть должники без ожидаемой суммы:
+      // сложить известные остатки значило бы скрыть неопределенность.
+      const debt =
+        withoutExpected > 0
+          ? null
+          : debtorRows.reduce(
+              (sum, row) => sum + (Number(row.expectedAmount ?? 0) - row.paidAmount),
+              0,
+            );
+
+      points.push({
+        year: pointYear,
+        month: pointMonth,
+        received,
+        refunded,
+        revenue: received - refunded,
+        debtors: debtorRows.length,
+        debtorsWithoutExpected: withoutExpected,
+        debt: debt === null ? null : Math.round(debt * 100) / 100,
+      });
+    }
+
+    return { points };
+  }
+
+  /**
+   * Выгрузка должников за месяц в CSV.
+   *
+   * Включаются все спортсмены месяца, а не только должники: бухгалтеру нужны и
+   * освобожденные, чтобы вопрос «почему с этого не взяли» не возвращался.
+   */
+  async exportDebtorsCsv(
+    callerUserId: string,
+    year: number,
+    month: number,
+  ): Promise<{ filename: string; content: string }> {
+    const debtors = await this.listDebtors(callerUserId, year, month);
+
+    const rows: string[][] = [
+      ['Спортсмен', 'Должник', 'Основание', 'Ожидается', 'Оплачено', 'Остаток'],
+    ];
+
+    for (const row of debtors) {
+      const expected = row.expectedAmount === null ? '' : String(row.expectedAmount);
+      const outstanding =
+        row.expectedAmount === null ? '' : String(Number(row.expectedAmount) - row.paidAmount);
+
+      rows.push([
+        `${row.lastName} ${row.firstName}`.trim(),
+        row.isDebtor ? 'да' : 'нет',
+        row.reason ?? '',
+        expected,
+        String(row.paidAmount),
+        outstanding,
+      ]);
+    }
+
+    return {
+      filename: `debtors-${year}-${String(month).padStart(2, '0')}.csv`,
+      content: toCsv(rows),
+    };
+  }
+
+  /** Выгрузка движений средств за период в CSV. */
+  async exportPaymentsCsv(
+    callerUserId: string,
+    from: string,
+    to: string,
+  ): Promise<{ filename: string; content: string }> {
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+
+    if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime())) {
+      throw new ApiException(
+        'VALIDATION_FAILED' satisfies ApiErrorCode,
+        'Некорректный период: нужны даты в формате YYYY-MM-DD',
+      );
+    }
+    if (fromDate >= toDate) {
+      throw new ApiException(
+        'VALIDATION_FAILED' satisfies ApiErrorCode,
+        'Начало периода должно быть раньше конца',
+      );
+    }
+
+    // Право проверяет контроллер (payments.view): выгрузка — те же финансовые
+    // данные, только в файле, и отдельного права на нее нет.
+    const movements = await this.finance.listPaymentsForExport(fromDate, toDate);
+
+    const rows: string[][] = [
+      ['Дата', 'Тип', 'Спортсмен', 'Группа', 'Сумма', 'Способ', 'Комментарий'],
+    ];
+
+    for (const movement of movements) {
+      rows.push([
+        movement.paidAt.toISOString().slice(0, 10),
+        movement.kind === PaymentKind.REFUND ? 'Возврат' : 'Поступление',
+        `${movement.athleteLastName} ${movement.athleteFirstName}`.trim(),
+        movement.groupName ?? '',
+        String(movement.amount),
+        movement.method ?? '',
+        movement.note ?? '',
+      ]);
+    }
+
+    return {
+      filename: `payments-${from}-${to}.csv`,
+      content: toCsv(rows),
+    };
+  }
+
   async summary(callerUserId: string, year: number, month: number): Promise<FinanceSummary> {
     this.assertMonth(month);
 
@@ -950,4 +1107,16 @@ function sumOutstanding(entries: Array<{ decision: { isDebtor: boolean; outstand
   }
 
   return Math.round(total * 100) / 100;
+}
+/**
+ * CSV для Excel: точка с запятой как разделитель и BOM.
+ *
+ * Русская локаль Excel ждет `;`, а не `,`; BOM нужен, чтобы кириллица не
+ * превратилась в кракозябры при двойном клике по файлу.
+ */
+function toCsv(rows: string[][]): string {
+  const escape = (value: string): string =>
+    /[";\n\r]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+
+  return `\uFEFF${rows.map((row) => row.map(escape).join(';')).join('\r\n')}\r\n`;
 }

@@ -1290,6 +1290,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/finance/dynamics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Динамика выручки и задолженности по месяцам
+         * @description Выручка считается по датам движений, задолженность — по расчётному месяцу:
+         *     это разные вопросы, и сводить их в одно число нельзя. Точки идут от
+         *     старых к новым, не более 12 месяцев.
+         */
+        get: operations["getFinanceDynamics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/debts/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Выгрузка должников за месяц в CSV
+         * @description Включает всех спортсменов месяца, а не только должников: бухгалтеру нужны
+         *     и освобожденные. BOM и разделитель `;` — для Excel в русской локали.
+         */
+        get: operations["exportDebtors"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/finance/payments/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Выгрузка движений средств в CSV */
+        get: operations["exportPayments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/finance/debt-rules/preview": {
         parameters: {
             query?: never;
@@ -3036,6 +3096,18 @@ export interface components {
                 willBeDebtor: boolean;
                 outstanding: number | null;
             }[];
+        };
+        FinanceDynamicsPoint: {
+            year: number;
+            month: number;
+            received: number;
+            refunded: number;
+            /** @description Поступления минус возвраты за месяц */
+            revenue: number;
+            debtors: number;
+            debtorsWithoutExpected: number;
+            /** @description null — есть должники без ожидаемой суммы */
+            debt: number | null;
         };
         /** @description Безопасные параметры клуба; секретов здесь быть не может. */
         ClubProfileView: {
@@ -6840,6 +6912,106 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["DebtRulesVersion"][];
                 };
+            };
+        };
+    };
+    getFinanceDynamics: {
+        parameters: {
+            query: {
+                year: number;
+                month: number;
+                months?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Точки динамики */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        points: components["schemas"]["FinanceDynamicsPoint"][];
+                    };
+                };
+            };
+            /** @description Нет права `payments.view` (BR-010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    exportDebtors: {
+        parameters: {
+            query: {
+                year: number;
+                month: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV-файл */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            /** @description Нет права `payments.view` */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    exportPayments: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV-файл */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            /** @description Некорректный или перевёрнутый период */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Нет права `payments.view` */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

@@ -3056,6 +3056,113 @@ paths:
                 items:
                   $ref: '#/components/schemas/DebtRulesVersion'
 
+  /finance/dynamics:
+    get:
+      tags: [finance]
+      summary: Динамика выручки и задолженности по месяцам
+      description: |
+        Выручка считается по датам движений, задолженность — по расчётному месяцу:
+        это разные вопросы, и сводить их в одно число нельзя. Точки идут от
+        старых к новым, не более 12 месяцев.
+      operationId: getFinanceDynamics
+      parameters:
+        - name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+        - name: months
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+            default: 6
+      responses:
+        '200':
+          description: Точки динамики
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [points]
+                properties:
+                  points:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FinanceDynamicsPoint'
+        '403':
+          description: Нет права `payments.view` (BR-010)
+
+  /debts/export:
+    get:
+      tags: [finance]
+      summary: Выгрузка должников за месяц в CSV
+      description: |
+        Включает всех спортсменов месяца, а не только должников: бухгалтеру нужны
+        и освобожденные. BOM и разделитель `;` — для Excel в русской локали.
+      operationId: exportDebtors
+      parameters:
+        - name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+      responses:
+        '200':
+          description: CSV-файл
+          content:
+            text/csv:
+              schema:
+                type: string
+        '403':
+          description: Нет права `payments.view`
+
+  /finance/payments/export:
+    get:
+      tags: [finance]
+      summary: Выгрузка движений средств в CSV
+      operationId: exportPayments
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: CSV-файл
+          content:
+            text/csv:
+              schema:
+                type: string
+        '400':
+          description: Некорректный или перевёрнутый период
+        '403':
+          description: Нет права `payments.view`
+
   /finance/debt-rules/preview:
     post:
       tags: [finance]
@@ -6559,6 +6666,32 @@ components:
               outstanding:
                 type: number
                 nullable: true
+
+    FinanceDynamicsPoint:
+      type: object
+      required: [year, month, received, refunded, revenue, debtors, debtorsWithoutExpected, debt]
+      properties:
+        year:
+          type: integer
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        received:
+          type: number
+        refunded:
+          type: number
+        revenue:
+          type: number
+          description: Поступления минус возвраты за месяц
+        debtors:
+          type: integer
+        debtorsWithoutExpected:
+          type: integer
+        debt:
+          type: number
+          nullable: true
+          description: null — есть должники без ожидаемой суммы
 
     ClubProfileView:
       type: object

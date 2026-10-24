@@ -138,3 +138,13 @@ export function parseCalendarDate(raw: string): { value: string | null; error?: 
   }
   return { value: trimmed };
 }
+
+/** Начало месяца в ISO-формате: для выгрузки движений. */
+export function isoMonthStart(year: number, month: number): string {
+  return `${year}-${String(month).padStart(2, '0')}-01`;
+}
+
+/** Начало следующего месяца в ISO: период выгрузки `[from, to)`. */
+export function isoMonthEnd(year: number, month: number): string {
+  return new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 10);
+}
