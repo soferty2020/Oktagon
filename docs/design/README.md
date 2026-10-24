@@ -27,4 +27,14 @@ Figma — источник визуальной композиции и слое
 4. Scheduling, attendance, finance, settings.
 5. Responsive refinements and states.
 
+## Состояние аудита
+
+Аудит проведен, результат — [gap-matrix.md](gap-matrix.md): инвентарь компонентов,
+замер по 29 маршрутам (32 таблицы, 84 формы, 200 полей), карта покрытия
+`screens.md`, план переиспользования, батчи A–E, критерии приемки и риски прав.
+Before-скриншоты — [before/](before/).
+
+**Блокер:** экспорт скриншотов Figma. По `implementation.md` п.3 агент не
+выдумывает внешний вид; матрица по 30 экранам будет дополнена после экспорта.
+
 См. `tokens.md`, `screens.md`, `components.md`, `implementation.md`.
