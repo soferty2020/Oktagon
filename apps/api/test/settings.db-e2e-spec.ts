@@ -294,7 +294,7 @@ describe('Настройки: доступ, аудит, справочник (db
       // месяц могла быть создана раньше.
       await prisma.db.debtRule.deleteMany({ where: { effectiveFrom: next } });
 
-      const created = await request(app.getHttpServer())
+      await request(app.getHttpServer())
         .post('/api/v1/settings/finance/debt-rules')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
