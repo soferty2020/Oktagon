@@ -1115,8 +1115,10 @@ function sumOutstanding(entries: Array<{ decision: { isDebtor: boolean; outstand
  * превратилась в кракозябры при двойном клике по файлу.
  */
 function toCsv(rows: string[][]): string {
-  const escape = (value: string): string =>
+  // `escape` — имя глобальной функции; локальная переменная перекрыла бы её и
+  // сбивала бы читателя.
+  const escapeCell = (value: string): string =>
     /[";\n\r]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
 
-  return `\uFEFF${rows.map((row) => row.map(escape).join(';')).join('\r\n')}\r\n`;
+  return `\uFEFF${rows.map((row) => row.map(escapeCell).join(';')).join('\r\n')}\r\n`;
 }
