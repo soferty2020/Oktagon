@@ -51,6 +51,10 @@ set -a; . ./.env.staging; set +a
 
 : "${ADMIN_HOST:?задайте ADMIN_HOST в .env.staging}"
 : "${API_HOST:?задайте API_HOST в .env.staging}"
+# Let's Encrypt просит почту для уведомлений об истечении. По умолчанию берем
+# email администратора: отдельная переменная нужна, только если письма должны
+# идти в другое место.
+: "${TLS_EMAIL:=${SUPERADMIN_EMAIL:-}}"
 
 mkdir -p infra/certbot/www infra/nginx/certs
 
@@ -64,7 +68,10 @@ cp /etc/letsencrypt/live/${CERT_NAME}/privkey.pem /certs/api.key"
 
 ARGS=(--rm certbot)
 if [ "$COMMAND" = "issue" ]; then
+  # --non-interactive --agree-tos обязательны: без них certbot спрашивает
+  # согласие с ToS, а без терминала не получает ответа и висит до таймаута.
   ARGS+=(certonly --webroot -w /var/www/certbot --cert-name "$CERT_NAME")
+  ARGS+=(--non-interactive --agree-tos --email "$TLS_EMAIL")
   ARGS+=(-d "$ADMIN_HOST" -d "$API_HOST" --deploy-hook "$DEPLOY_HOOK")
 else
   # Hook сохранен в renewal-конфиге при выпуске: повторно он не нужен.
