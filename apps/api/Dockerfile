@@ -88,6 +88,10 @@ COPY --from=build --chown=octagon:octagon /repo/apps/api/node_modules ./apps/api
 # '@octagon/config'». Сборка их собирала, но в runtime они не копировались.
 COPY --from=build --chown=octagon:octagon /repo/packages ./packages
 COPY --from=build --chown=octagon:octagon /repo/apps/api/dist ./apps/api/dist
+# Prisma Client генерируется в apps/api/generated (output в schema.prisma), а не в
+# node_modules: без каталога dist/prisma/prisma.service.js падает на
+# «Cannot find module .../generated/prisma».
+COPY --from=build --chown=octagon:octagon /repo/apps/api/generated ./apps/api/generated
 COPY --from=build --chown=octagon:octagon /repo/apps/api/prisma ./apps/api/prisma
 COPY --from=build --chown=octagon:octagon /repo/apps/api/package.json ./apps/api/package.json
 
