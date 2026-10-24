@@ -138,8 +138,10 @@ cp infra/staging.env.example .env.staging
 ### 3. Сертификаты
 
 Сертификаты монтируются из `infra/nginx/certs` и в репозиторий не попадают.
-Для staging допустимы самоподписанные — браузер покажет предупреждение, но трафик
-будет шифрован:
+
+**Шаг 3а: временные самоподписанные.** Нужны, чтобы nginx поднялся до того, как
+существует настоящий сертификат: без файлов он не стартует. Браузер покажет
+предупреждение — это нормально для нескольких минут:
 
 ```bash
 mkdir -p infra/nginx/certs
@@ -151,8 +153,43 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
   -keyout infra/nginx/certs/api.key -out infra/nginx/certs/api.crt
 ```
 
-Для production — Let's Encrypt (certbot) с продлением; тогда `infra/nginx/certs`
-становится точкой монтирования архивов certbot.
+**Шаг 3б: настоящий сертификат (Let's Encrypt).** После того как nginx поднят и
+оба домена отвечают по HTTP:
+
+```bash
+# Проверка без обращения к Let's Encrypt (бережет лимиты: 5 неудач в час)
+./scripts/tls-renew.sh issue --dry-run
+
+# Выпуск
+./scripts/tls-renew.sh issue
+```
+
+Скрипт:
+
+- выпускает **один** сертификат на оба имени (SAN): админка и API живут на одном
+  домене, два отдельных сертификата добавили бы точку отказа при продлении;
+- проходит ACME-челлендж через `webroot`: nginx отдает файл из
+  `infra/certbot/www` по пути `/.well-known/acme-challenge/`;
+- копирует `fullchain.pem` и `privkey.pem` в `infra/nginx/certs/admin.*` и
+  `api.*` — шаблон nginx не знает про `cert-name`;
+- перезагружает nginx: файлы на диске уже новые, но открыты процессом старые.
+
+**Продление.** Сертификат Let's Encrypt живет 90 дней. Продление — в cron раз в
+сутки; `renew` ничего не делает, пока до истечения больше 30 дней:
+
+```bash
+15 3 * * * cd /srv/octagon && ./scripts/tls-renew.sh renew --quiet >> /var/log/octagon-tls.log 2>&1
+```
+
+Проверить, что продление настроено:
+
+```bash
+docker compose -f docker-compose.staging.yml --profile tls run --rm certbot certificates
+```
+
+**Про мобильное приложение.** Самоподписанный сертификат не годится: Android в
+release блокирует и cleartext-HTTP, и недоверенные сертификаты — APK просто не
+подключится. Для стенда, на который ставится APK, нужен сертификат из шага 3б.
 
 ### 4. Первый выкат
 

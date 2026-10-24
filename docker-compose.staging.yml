@@ -116,9 +116,31 @@ services:
     volumes:
       - ./infra/nginx/staging.conf.template:/etc/nginx/templates/staging.conf.template:ro
       - ./infra/nginx/certs:/etc/nginx/certs:ro
+      # ACME-челлендж: certbot кладет файл, nginx его отдает. Без этого
+      # Let's Encrypt не сможет подтвердить владение доменом.
+      - ./infra/certbot/www:/var/www/certbot:ro
     depends_on:
       - admin
       - api
+
+  # Let's Encrypt: выпуск и продление сертификатов.
+  #
+  # Профиль `tls` — сервис не поднимается при обычном `up -d`: он нужен только
+  # по команде. Порядок в docs/14-infrastructure.md: сначала nginx поднимается с
+  # самоподписанными сертификатами, затем certbot выпускает настоящий, скрипт
+  # tls-renew копирует его в infra/nginx/certs и перезагружает nginx.
+  #
+  # Сертификат один на оба имени (SAN): и админка, и API живут на одном домене,
+  # и два отдельных сертификата только добавляли бы точек отказа при продлении.
+  certbot:
+    image: certbot/certbot:latest
+    profiles: ['tls']
+    restart: 'no'
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      # Сюда certbot копирует выпущенное (через --deploy-hook), отсюда читает nginx.
+      - ./infra/nginx/certs:/certs
+      - ./infra/certbot/www:/var/www/certbot
 
   # Одноразовый сервис: применяет миграции и завершается. Запускается вручную
   # перед `up -d`, а не при каждом старте, чтобы падение миграции не крутило
@@ -156,3 +178,6 @@ services:
 volumes:
   postgres-data:
   redis-data:
+  # Сертификаты и служебное состояние certbot: живут между перезапусками,
+  # чтобы продление не выпускало дубликаты и не упиралось в лимиты Let's Encrypt.
+  letsencrypt:

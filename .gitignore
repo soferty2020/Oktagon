@@ -21,6 +21,8 @@ apps/api/generated/
 *.key
 # TLS-сертификаты staging: приватный ключ и цепочка не должны попасть в репозиторий
 infra/nginx/certs/
+# ACME-челлендж certbot: служебный веб-корень, в git не нужен.
+infra/certbot/
 
 # logs
 *.log
