@@ -184,7 +184,7 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 Проверить, что продление настроено:
 
 ```bash
-docker compose -f docker-compose.staging.yml --profile tls run --rm certbot certificates
+docker compose --env-file .env.staging -f docker-compose.staging.yml --profile tls run --rm certbot certificates
 ```
 
 **Про мобильное приложение.** Самоподписанный сертификат не годится: Android в
@@ -194,9 +194,9 @@ release блокирует и cleartext-HTTP, и недоверенные сер
 ### 4. Первый выкат
 
 ```bash
-docker compose -f docker-compose.staging.yml build
-docker compose -f docker-compose.staging.yml run --rm migrate   # миграции
-docker compose -f docker-compose.staging.yml up -d
+docker compose --env-file .env.staging -f docker-compose.staging.yml build
+docker compose --env-file .env.staging -f docker-compose.staging.yml --profile tools run --rm migrate   # миграции
+docker compose --env-file .env.staging -f docker-compose.staging.yml up -d
 ```
 
 Миграции вынесены в отдельный сервис намеренно: если применить их при старте
@@ -207,7 +207,7 @@ docker compose -f docker-compose.staging.yml up -d
 ```bash
 curl -fsS https://<API_HOST>/api/v1/health/ready   # база и Redis
 curl -fsS -o /dev/null -w '%{http_code}\n' https://<ADMIN_HOST>/login
-docker compose -f docker-compose.staging.yml ps    # все healthy
+docker compose --env-file .env.staging -f docker-compose.staging.yml ps    # все healthy
 ```
 
 ### 5. Первый администратор и справочники
@@ -217,7 +217,7 @@ docker compose -f docker-compose.staging.yml ps    # все healthy
 системе некому войти, а демо-учетка с локального стенда на сервер не переносится.
 
 `ash
-docker compose -f docker-compose.staging.yml run --rm seed
+docker compose --env-file .env.staging -f docker-compose.staging.yml --profile tools run --rm seed
 `
 
 Сервис идемпотентен: повторный запуск не создает дубликатов и не меняет пароль
@@ -231,9 +231,9 @@ docker compose -f docker-compose.staging.yml run --rm seed
 
 ```bash
 git pull
-docker compose -f docker-compose.staging.yml build
-docker compose -f docker-compose.staging.yml run --rm migrate   # до старта api
-docker compose -f docker-compose.staging.yml up -d
+docker compose --env-file .env.staging -f docker-compose.staging.yml build
+docker compose --env-file .env.staging -f docker-compose.staging.yml --profile tools run --rm migrate   # до старта api
+docker compose --env-file .env.staging -f docker-compose.staging.yml up -d
 ```
 
 Порядок важен: миграции применяются **до** запуска новой версии API. Обратный

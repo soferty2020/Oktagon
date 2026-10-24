@@ -19,7 +19,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-COMPOSE="docker compose -f docker-compose.staging.yml"
+COMPOSE="docker compose --env-file .env.staging -f docker-compose.staging.yml"
 CERT_NAME="octagon"
 
 usage() {

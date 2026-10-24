@@ -8,11 +8,13 @@
 # - все секреты берутся из `.env.staging` (в git не попадает);
 # - миграции вынесены в отдельный одноразовый сервис `migrate`.
 #
-# Запуск:
+# Запуск (`--env-file` обязателен: compose берет переменные интерполяции из `.env`
+# или из `--env-file`, а `env_file` внутри сервиса на `${POSTGRES_USER}` не влияет —
+# без флага сборка падает на «required variable POSTGRES_USER is missing»):
 #   cp infra/staging.env.example .env.staging   # заполнить секреты
-#   docker compose -f docker-compose.staging.yml build
-#   docker compose -f docker-compose.staging.yml run --rm migrate
-#   docker compose -f docker-compose.staging.yml up -d
+#   docker compose --env-file .env.staging -f docker-compose.staging.yml build
+#   docker compose --env-file .env.staging -f docker-compose.staging.yml run --rm migrate
+#   docker compose --env-file .env.staging -f docker-compose.staging.yml up -d
 
 name: octagon-staging
 
@@ -146,6 +148,9 @@ services:
   # перед `up -d`, а не при каждом старте, чтобы падение миграции не крутило
   # контейнер в цикле перезапуска.
   migrate:
+    # Профиль `tools`: обычный `up -d` не запускает миграции и seed. Иначе каждый
+    # `up` пытался бы применить уже примененные миграции и заново создать админа.
+    profiles: ['tools']
     build:
       context: .
       dockerfile: apps/api/Dockerfile
@@ -163,6 +168,7 @@ services:
   # Пароль приходит из SUPERADMIN_PASSWORD, а не из кода: демо-учетка не должна
   # попасть на сервер.
   seed:
+    profiles: ['tools']
     build:
       context: .
       dockerfile: apps/api/Dockerfile

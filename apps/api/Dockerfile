@@ -83,6 +83,10 @@ RUN addgroup -S octagon && adduser -S octagon -G octagon
 WORKDIR /repo
 COPY --from=build --chown=octagon:octagon /repo/node_modules ./node_modules
 COPY --from=build --chown=octagon:octagon /repo/apps/api/node_modules ./apps/api/node_modules
+# Workspace-пакеты обязательны: в node_modules/@octagon/* лежат симлинки на
+# /repo/packages/*, и без самих пакетов Node падал на «Cannot find module
+# '@octagon/config'». Сборка их собирала, но в runtime они не копировались.
+COPY --from=build --chown=octagon:octagon /repo/packages ./packages
 COPY --from=build --chown=octagon:octagon /repo/apps/api/dist ./apps/api/dist
 COPY --from=build --chown=octagon:octagon /repo/apps/api/prisma ./apps/api/prisma
 COPY --from=build --chown=octagon:octagon /repo/apps/api/package.json ./apps/api/package.json
