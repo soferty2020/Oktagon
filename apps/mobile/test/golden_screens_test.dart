@@ -18,6 +18,7 @@ import 'package:octagon_mobile/features/home/member_home_controller.dart';
 import 'package:octagon_mobile/features/home/member_home_screen.dart';
 import 'package:octagon_mobile/features/news/news_controller.dart';
 import 'package:octagon_mobile/features/news/news_repository.dart';
+import 'package:octagon_mobile/features/payments/payment_status_repository.dart';
 import 'package:octagon_mobile/features/news/news_screen.dart';
 import 'package:octagon_mobile/features/profile/profile_screen.dart';
 import 'package:octagon_mobile/features/schedule/schedule_controller.dart';
@@ -84,6 +85,14 @@ FakeApiClient buildClient() {
     'status': 'ACTIVE',
     'scopeAllGroups': false,
     'permissions': ['groups.view', 'schedule.view', 'attendance.view'],
+  };
+
+  client.responses['GET /me/athletes/athlete-1/payment-status'] = {
+    'year': 2026,
+    'month': 10,
+    'monthLabel': 'октябрь 2026',
+    'status': 'PAID',
+    'message': 'Оплата за октябрь 2026 внесена',
   };
 
   client.responses['GET /me/athletes'] = {
@@ -320,6 +329,7 @@ MemberHomeController buildHome(FakeApiClient client) {
     schedule: ScheduleRepository(client: client),
     attendance: AttendanceRepository(client: client),
     news: NewsRepository(client: client),
+    payments: PaymentStatusRepository(client: client),
     clock: () => now,
   );
 }

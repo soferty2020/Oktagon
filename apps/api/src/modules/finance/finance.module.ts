@@ -8,6 +8,7 @@ import {
   DebtsController,
   FinanceSummaryController,
   MembershipPeriodActionsController,
+  MePaymentStatusController,
   MembershipPeriodsController,
   PaymentsController,
   RefundsController,
@@ -34,7 +35,8 @@ import { FinanceService } from './finance.service';
 @Module({
   imports: [IdentityModule, FreezesModule, SettingsModule],
   controllers: [
-    MembershipPeriodsController,
+    MePaymentStatusController,
+  MembershipPeriodsController,
     MembershipPeriodActionsController,
     PaymentsController,
     RefundsController,

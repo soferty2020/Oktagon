@@ -18,6 +18,7 @@ import {
   PermissionCode,
   type DebtorSummary,
   type DebtRulesPreview,
+  type AthletePaymentStatusView,
   type FinanceDynamics,
   type FinanceSummary,
   type MembershipPeriodView,
@@ -35,6 +36,7 @@ import {
   RecordPaymentDto,
   RefundPaymentDto,
   UpdateMembershipPeriodDto,
+  PaymentStatusQueryDto,
   UpdatePaymentDto,
   YearQueryDto,
 } from './finance.dto';
@@ -343,5 +345,37 @@ export class FinanceSummaryController {
     response.setHeader('Content-Type', 'text/csv; charset=utf-8');
     response.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
     return file.content;
+  }
+}
+
+/**
+ * Статус оплаты глазами участника (B).
+ *
+ * Отдельный контроллер и отдельный путь: `/debts` отдаёт суммы и требует
+ * `payments.view`, а участнику нужен только факт и только по своим детям.
+ * Доступ проверяется связью аккаунта со спортсменом внутри сервиса.
+ */
+@ApiTags('me')
+@ApiBearerAuth()
+@UseGuards(AuthGuard)
+@Controller('me/athletes')
+export class MePaymentStatusController {
+  constructor(private readonly finance: FinanceService) {}
+
+  @Get(':athleteId/payment-status')
+  @ApiOperation({ summary: 'Статус оплаты за месяц для участника' })
+  @ApiOkResponse({ description: 'Оплачено, частично, не внесено, не требуется или уточните' })
+  status(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('athleteId') athleteId: string,
+    @Query() query: PaymentStatusQueryDto,
+  ): Promise<AthletePaymentStatusView> {
+    const now = new Date();
+    return this.finance.getAthletePaymentStatus(
+      user.id,
+      athleteId,
+      query.year ?? now.getUTCFullYear(),
+      query.month ?? now.getUTCMonth() + 1,
+    );
   }
 }

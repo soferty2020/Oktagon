@@ -17,6 +17,7 @@ import 'features/groups/group_repository.dart';
 import 'features/home/member_home_controller.dart';
 import 'features/news/news_controller.dart';
 import 'features/news/news_repository.dart';
+import 'features/payments/payment_status_repository.dart';
 import 'features/schedule/schedule_controller.dart';
 import 'features/schedule/schedule_repository.dart';
 import 'features/trainer/attendance_controller.dart';
@@ -53,6 +54,7 @@ void main() {
     schedule: ScheduleRepository(client: client),
     attendance: attendanceRepository,
     news: NewsRepository(client: client),
+    payments: PaymentStatusRepository(client: client),
   );
 
   final scheduleController = ScheduleController(

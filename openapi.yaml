@@ -3056,6 +3056,45 @@ paths:
                 items:
                   $ref: '#/components/schemas/DebtRulesVersion'
 
+  /me/athletes/{athleteId}/payment-status:
+    get:
+      tags: [me]
+      summary: Статус оплаты за месяц для участника
+      description: |
+        Только факт, без сумм: BR-010 закрывает финансы для MEMBER. Доступ — по
+        связи аккаунта со спортсменом: родитель видит статус только своих детей.
+      operationId: getAthletePaymentStatus
+      parameters:
+        - name: athleteId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: month
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+      responses:
+        '200':
+          description: Статус оплаты
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AthletePaymentStatusView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Спортсмен не связан с аккаунтом
+
   /finance/dynamics:
     get:
       tags: [finance]
@@ -6666,6 +6705,36 @@ components:
               outstanding:
                 type: number
                 nullable: true
+
+    AthletePaymentStatusView:
+      type: object
+      required: [athleteId, year, month, monthLabel, status, message]
+      description: |
+        Статус оплаты для участника. Сумм здесь нет намеренно: участник видит
+        только факт, а не деньги (BR-010).
+      properties:
+        athleteId:
+          type: string
+          format: uuid
+        year:
+          type: integer
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        monthLabel:
+          type: string
+          example: октябрь 2026
+        status:
+          type: string
+          enum: [PAID, PARTIAL, NOT_PAID, NOT_REQUIRED, UNKNOWN]
+          description: |
+            PAID — оплачено; PARTIAL — внесено частично; NOT_PAID — не внесено;
+            NOT_REQUIRED — платить не нужно (заморозка, отметка, нет занятий);
+            UNKNOWN — ожидаемая сумма не задана, нужно уточнить у администратора.
+        message:
+          type: string
+          example: Оплата за октябрь 2026 внесена
 
     FinanceDynamicsPoint:
       type: object

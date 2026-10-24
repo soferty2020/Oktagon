@@ -1,11 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
   ApiErrorCode,
+  AthletePaymentStatus,
   AuditAction,
   AuditEntityType,
   DebtorExemption,
   PaymentKind,
+  paymentMonthLabel,
+  paymentStatusMessage,
   type BranchFinanceSummary,
+  type AthletePaymentStatusView,
   type DebtorSummary,
   type DebtRulesConfig,
   type DebtRulesPreview,
@@ -634,22 +638,101 @@ export class FinanceService {
   // --- Сводка за месяц (F8) -------------------------------------------------
 
   /**
-   * Сводка финансов за месяц: деньги, задолженность и разбивка по филиалам.
+   * Статус оплаты глазами участника (B).
    *
-   * Два разных знаменателя считаются осознанно:
-   *
-   * - **выручка — по датам движений**: отчет о том, сколько денег прошло в этом
-   *   месяце, включая оплаты за прошлые периоды. Начисление за месяц и деньги,
-   *   полученные в месяце, — разные вопросы, и смешивать их нельзя: иначе
-   *   руководитель видел бы «выручку», которой в кассе не было;
-   * - **задолженность — по расчетному месяцу**: долг за сентябрь остается
-   *   сентябрьским, даже если его закрыли в октябре. Это решение BR-004, и
-   *   переносить его в отчет о движении денег не следует.
-   *
-   * Филиал берется у группы спортсмена. Спортсмен без группы или без филиала
-   * попадает в отдельную строку «Филиал не назначен»: приписать его суммы
-   * первому филиалу значило бы показать чужие деньги как свои.
+   * Суммы наружу не отдаются: BR-010 закрывает финансы для MEMBER, и решение
+   * продукта — показывать только факт. Доступ проверяется не правом, а связью
+   * аккаунта со спортсменом: родитель видит статус только своих детей.
    */
+  async getAthletePaymentStatus(
+    callerUserId: string,
+    athleteId: string,
+    year: number,
+    month: number,
+  ): Promise<AthletePaymentStatusView> {
+    this.assertMonth(month);
+    await this.scope.assertAthleteAccess(callerUserId, athleteId);
+
+    const monthLabel = paymentMonthLabel(year, month);
+    const fact = await this.collectAthleteFact(athleteId, year, month);
+
+    // Нет членства в месяце — платить не за что. Это не «оплачено» и не долг.
+    if (!fact) {
+      return {
+        athleteId,
+        year,
+        month,
+        monthLabel,
+        status: AthletePaymentStatus.NOT_REQUIRED,
+        message: paymentStatusMessage(AthletePaymentStatus.NOT_REQUIRED, year, month),
+      };
+    }
+
+    const config = await this.debtRules.getConfigForDate(new Date(Date.UTC(year, month - 1, 1)));
+    const decision = evaluateDebt(config, fact);
+
+    let status: AthletePaymentStatus;
+    if (decision.reason !== null) {
+      status = AthletePaymentStatus.NOT_REQUIRED;
+    } else if (fact.expectedAmount === null) {
+      // Сумма не задана: «должен» здесь вводило бы в заблуждение.
+      status = AthletePaymentStatus.UNKNOWN;
+    } else if (!decision.isDebtor) {
+      status = AthletePaymentStatus.PAID;
+    } else if (fact.paidAmount > 0) {
+      status = AthletePaymentStatus.PARTIAL;
+    } else {
+      status = AthletePaymentStatus.NOT_PAID;
+    }
+
+    return {
+      athleteId,
+      year,
+      month,
+      monthLabel,
+      status,
+      message: paymentStatusMessage(status, year, month),
+    };
+  }
+
+  /**
+   * Факты по одному спортсмену.
+   *
+   * Отдельно от `collectDebtFacts`: экран главной открывается на каждого
+   * спортсмена, и собирать список всего клуба ради одной карточки незачем.
+   */
+  private async collectAthleteFact(
+    athleteId: string,
+    year: number,
+    month: number,
+  ): Promise<(DebtFacts & { refundedAmount: number }) | null> {
+    const from = new Date(Date.UTC(year, month - 1, 1));
+    const to = new Date(Date.UTC(year, month, 1));
+
+    const [period, memberships, frozenIds, hasTrainings] = await Promise.all([
+      this.finance.findPeriod(athleteId, year, month),
+      this.finance.athleteIdsWithMembershipInMonth(from, to),
+      this.freezes.listFrozenAthleteIds(from),
+      this.finance.hasGroupTrainingInMonth(athleteId, from, to),
+    ]);
+
+    if (!memberships.some((membership) => membership.athleteId === athleteId)) {
+      return null;
+    }
+
+    return {
+      athleteId,
+      firstName: '',
+      lastName: '',
+      fullyPaidMarked: Boolean(period?.fullyPaidMarkedAt),
+      frozen: frozenIds.includes(athleteId),
+      hasTrainings,
+      expectedAmount: period?.expectedAmount == null ? null : Number(period.expectedAmount),
+      paidAmount: period?.paidAmount ?? 0,
+      refundedAmount: period?.refundedAmount ?? 0,
+    };
+  }
+
   /**
    * Динамика за несколько месяцев (C: отчёты клуба).
    *
@@ -805,6 +888,19 @@ export class FinanceService {
     };
   }
 
+  /**
+   * Сводка финансов за месяц: деньги, задолженность и разбивка по филиалам.
+   *
+   * Два разных знаменателя считаются осознанно:
+   *
+   * - **выручка — по датам движений**: сколько денег прошло в этом месяце, включая
+   *   оплаты за прошлые периоды;
+   * - **задолженность — по расчетному месяцу**: долг за сентябрь остается
+   *   сентябрьским, даже если его закрыли в октябре (BR-004).
+   *
+   * Филиал берется у группы спортсмена; спортсмен без филиала попадает в
+   * отдельную строку «Филиал не назначен».
+   */
   async summary(callerUserId: string, year: number, month: number): Promise<FinanceSummary> {
     this.assertMonth(month);
 

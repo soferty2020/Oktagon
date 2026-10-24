@@ -1290,6 +1290,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/athletes/{athleteId}/payment-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Статус оплаты за месяц для участника
+         * @description Только факт, без сумм: BR-010 закрывает финансы для MEMBER. Доступ — по
+         *     связи аккаунта со спортсменом: родитель видит статус только своих детей.
+         */
+        get: operations["getAthletePaymentStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/finance/dynamics": {
         parameters: {
             query?: never;
@@ -3096,6 +3117,27 @@ export interface components {
                 willBeDebtor: boolean;
                 outstanding: number | null;
             }[];
+        };
+        /**
+         * @description Статус оплаты для участника. Сумм здесь нет намеренно: участник видит
+         *     только факт, а не деньги (BR-010).
+         */
+        AthletePaymentStatusView: {
+            /** Format: uuid */
+            athleteId: string;
+            year: number;
+            month: number;
+            /** @example октябрь 2026 */
+            monthLabel: string;
+            /**
+             * @description PAID — оплачено; PARTIAL — внесено частично; NOT_PAID — не внесено;
+             *     NOT_REQUIRED — платить не нужно (заморозка, отметка, нет занятий);
+             *     UNKNOWN — ожидаемая сумма не задана, нужно уточнить у администратора.
+             * @enum {string}
+             */
+            status: "PAID" | "PARTIAL" | "NOT_PAID" | "NOT_REQUIRED" | "UNKNOWN";
+            /** @example Оплата за октябрь 2026 внесена */
+            message: string;
         };
         FinanceDynamicsPoint: {
             year: number;
@@ -6912,6 +6954,39 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["DebtRulesVersion"][];
                 };
+            };
+        };
+    };
+    getAthletePaymentStatus: {
+        parameters: {
+            query?: {
+                year?: number;
+                month?: number;
+            };
+            header?: never;
+            path: {
+                athleteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Статус оплаты */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AthletePaymentStatusView"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Спортсмен не связан с аккаунтом */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

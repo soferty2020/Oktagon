@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../design/tokens.dart';
 import '../athletes/athlete_models.dart';
 import '../athletes/belt_grades.dart';
+import '../payments/payment_status_models.dart';
 import '../attendance/attendance_repository.dart';
 import '../auth/auth_controller.dart';
 import '../news/news_repository.dart';
@@ -119,6 +120,11 @@ class _MemberHomeContentState extends State<MemberHomeContent> {
                 _BeltLine(athlete: controller.selected!),
               ],
 
+              if (controller.paymentStatus != null) ...[
+                const SizedBox(height: AppSpacing.xs),
+                _PaymentStatusLine(status: controller.paymentStatus!),
+              ],
+
               if (error != null) ...[
                 const SizedBox(height: AppSpacing.md),
                 _InlineError(message: error, onRetry: controller.retry),
@@ -160,6 +166,42 @@ class _MemberHomeContentState extends State<MemberHomeContent> {
   }
 }
 
+
+/// Статус оплаты за месяц (B).
+///
+/// Показывается только факт, без сумм: BR-010 закрывает финансы для участника, а
+/// решение продукта — отвечать на вопрос «я все сделал или нет».
+class _PaymentStatusLine extends StatelessWidget {
+  const _PaymentStatusLine({required this.status});
+
+  final PaymentStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final attention = status.status.isAttention;
+
+    return Row(
+      children: [
+        Icon(
+          attention ? Icons.error_outline : Icons.check_circle_outline,
+          size: 16,
+          color: attention ? AppColors.accent : AppColors.textSecondary,
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(
+          child: Text(
+            status.message,
+            style: TextStyle(
+              fontSize: 13,
+              color: attention ? AppColors.accent : AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
 /// Пояс выбранного спортсмена (K3).
 ///
 /// Показывается всегда: белый пояс — это ступень, с которой начинают, а не

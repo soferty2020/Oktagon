@@ -6,6 +6,8 @@ import '../athletes/athlete_repository.dart';
 import '../attendance/attendance_repository.dart';
 import '../groups/group_repository.dart';
 import '../news/news_repository.dart';
+import '../payments/payment_status_models.dart';
+import '../payments/payment_status_repository.dart';
 import '../schedule/schedule_models.dart';
 import '../schedule/schedule_repository.dart';
 
@@ -22,12 +24,14 @@ class MemberHomeController extends ChangeNotifier {
     required ScheduleRepository schedule,
     required AttendanceRepository attendance,
     required NewsRepository news,
+    required PaymentStatusRepository payments,
     DateTime Function()? clock,
   })  : _athleteRepository = athletes,
         _groups = groups,
         _schedule = schedule,
         _attendance = attendance,
         _news = news,
+        _payments = payments,
         _clock = clock ?? DateTime.now;
 
   final AthleteRepository _athleteRepository;
@@ -35,6 +39,7 @@ class MemberHomeController extends ChangeNotifier {
   final ScheduleRepository _schedule;
   final AttendanceRepository _attendance;
   final NewsRepository _news;
+  final PaymentStatusRepository _payments;
 
   /// Источник времени: подменяется в тестах, чтобы «ближайшее занятие» не
   /// зависело от даты запуска.
@@ -49,6 +54,7 @@ class MemberHomeController extends ChangeNotifier {
   TrainingSession? _nextSession;
   AthleteAttendance? _attendanceSummary;
   NewsPost? _latestNews;
+  PaymentStatus? _paymentStatus;
 
   bool get loading => _loading;
   String? get error => _error;
@@ -60,6 +66,7 @@ class MemberHomeController extends ChangeNotifier {
   TrainingSession? get nextSession => _nextSession;
   AthleteAttendance? get attendance => _attendanceSummary;
   NewsPost? get latestNews => _latestNews;
+  PaymentStatus? get paymentStatus => _paymentStatus;
 
   /// Загружает спортсменов и данные по основному.
   Future<void> load(String token) async {
@@ -131,10 +138,18 @@ class MemberHomeController extends ChangeNotifier {
       _nextSession = null;
       _attendanceSummary = null;
       _latestNews = null;
+      _paymentStatus = null;
       return;
     }
 
     _group = await _groups.currentForAthlete(token: token, athleteId: athlete.id);
+
+    // Статус оплаты не зависит от группы: показывается и без занятий.
+    _paymentStatus = await _payments.forAthlete(
+      token: token,
+      athleteId: athlete.id,
+      month: _clock(),
+    );
 
     final group = _group;
     if (group == null) {

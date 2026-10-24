@@ -205,3 +205,26 @@ export class ExportPeriodQueryDto {
   @IsDateString()
   to!: string;
 }
+/**
+ * Месяц статуса оплаты для участника.
+ *
+ * Необязателен: мобильное приложение по умолчанию показывает текущий месяц, и
+ * требовать его в каждом запросе значило бы дублировать логику даты на клиенте.
+ */
+export class PaymentStatusQueryDto {
+  @ApiPropertyOptional({ example: 2026 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(2000)
+  @Max(2100)
+  year?: number;
+
+  @ApiPropertyOptional({ example: 10, minimum: 1, maximum: 12 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(12)
+  month?: number;
+}

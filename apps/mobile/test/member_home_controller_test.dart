@@ -5,6 +5,7 @@ import 'package:octagon_mobile/features/attendance/attendance_repository.dart';
 import 'package:octagon_mobile/features/groups/group_repository.dart';
 import 'package:octagon_mobile/features/home/member_home_controller.dart';
 import 'package:octagon_mobile/features/news/news_repository.dart';
+import 'package:octagon_mobile/features/payments/payment_status_repository.dart';
 import 'package:octagon_mobile/features/schedule/schedule_repository.dart';
 
 import 'support/fake_api_client.dart';
@@ -59,6 +60,7 @@ MemberHomeController buildController(FakeApiClient client) {
     schedule: ScheduleRepository(client: client),
     attendance: AttendanceRepository(client: client),
     news: NewsRepository(client: client),
+    payments: PaymentStatusRepository(client: client),
     clock: () => now,
   );
 }
@@ -68,6 +70,18 @@ void main() {
 
   setUp(() {
     client = FakeApiClient();
+
+    // Статус оплаты запрашивается для каждого выбранного спортсмена: без ответа
+    // фейк падает, и тест проверял бы не то.
+    for (final id in ['athlete-1', 'athlete-2']) {
+      client.responses['GET /me/athletes/$id/payment-status'] = {
+        'year': 2026,
+        'month': 10,
+        'monthLabel': 'октябрь 2026',
+        'status': 'PAID',
+        'message': 'Оплата за октябрь 2026 внесена',
+      };
+    }
   });
 
   group('выбор спортсмена', () {
