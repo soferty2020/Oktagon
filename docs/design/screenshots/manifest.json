@@ -1,0 +1,190 @@
+{
+  "count": 37,
+  "files": [
+    {
+      "file": "dashboard-desktop-1440.png",
+      "source": "OCTAGON/Dashboard/Desktop 1440.png",
+      "bytes": 80385
+    },
+    {
+      "file": "athletes-list-desktop.png",
+      "source": "OCTAGON/Спортсмены/Desktop.png",
+      "bytes": 67716
+    },
+    {
+      "file": "athlete-detail-desktop-1440.png",
+      "source": "OCTAGON/Карточка спортсмена/Desktop 1440.png",
+      "bytes": 72030
+    },
+    {
+      "file": "create-athlete-desktop-1440.png",
+      "source": "OCTAGON/Создание спортсмена/Desktop 1440.png",
+      "bytes": 53587
+    },
+    {
+      "file": "groups-list-desktop-1440.png",
+      "source": "OCTAGON/Группы/Desktop 1440.png",
+      "bytes": 53563
+    },
+    {
+      "file": "group-detail-desktop-1440.png",
+      "source": "OCTAGON/Карточка группы/Desktop 1440.png",
+      "bytes": 61828
+    },
+    {
+      "file": "schedule-desktop.png",
+      "source": "OCTAGON/Расписание/Desktop.png",
+      "bytes": 55804
+    },
+    {
+      "file": "attendance-desktop-1440.png",
+      "source": "OCTAGON/Посещаемость/Desktop 1440.png",
+      "bytes": 61827
+    },
+    {
+      "file": "finance-desktop.png",
+      "source": "OCTAGON/Финансы/Desktop.png",
+      "bytes": 73182
+    },
+    {
+      "file": "news-desktop-1440.png",
+      "source": "OCTAGON/Новости/Desktop 1440.png",
+      "bytes": 59279
+    },
+    {
+      "file": "chats-desktop-1440.png",
+      "source": "OCTAGON/Чаты/Desktop 1440.png",
+      "bytes": 49082
+    },
+    {
+      "file": "settings-desktop-1440.png",
+      "source": "OCTAGON/Настройки/Desktop 1440.png",
+      "bytes": 60406
+    },
+    {
+      "file": "users-desktop-1440.png",
+      "source": "OCTAGON/Пользователи и права/Desktop 1440.png",
+      "bytes": 56358
+    },
+    {
+      "file": "trainers-desktop-1440.png",
+      "source": "OCTAGON/Тренеры/Desktop 1440.png",
+      "bytes": 49494
+    },
+    {
+      "file": "branches-desktop-1440.png",
+      "source": "OCTAGON/Филиалы и залы/Desktop 1440.png",
+      "bytes": 55100
+    },
+    {
+      "file": "trainer-detail-desktop.png",
+      "source": "OCTAGON/Detail/Карточка тренера.png",
+      "bytes": 70590
+    },
+    {
+      "file": "employee-permissions-desktop.png",
+      "source": "OCTAGON/Detail/Права сотрудника.png",
+      "bytes": 69699
+    },
+    {
+      "file": "branch-edit-desktop.png",
+      "source": "OCTAGON/Detail/Редактирование филиала.png",
+      "bytes": 55794
+    },
+    {
+      "file": "news-editor-desktop.png",
+      "source": "OCTAGON/Detail/Редактор новости.png",
+      "bytes": 64392
+    },
+    {
+      "file": "dialog-athlete.png",
+      "source": "OCTAGON/Dialog/Спортсмен.png",
+      "bytes": 26179
+    },
+    {
+      "file": "dialog-group.png",
+      "source": "OCTAGON/Dialog/Группа.png",
+      "bytes": 25454
+    },
+    {
+      "file": "dialog-reschedule.png",
+      "source": "OCTAGON/Dialog/Перенос тренировки.png",
+      "bytes": 23415
+    },
+    {
+      "file": "dialog-payment.png",
+      "source": "OCTAGON/Dialog/Оплата.png",
+      "bytes": 25786
+    },
+    {
+      "file": "dialog-freeze.png",
+      "source": "OCTAGON/Dialog/Заморозка.png",
+      "bytes": 29767
+    },
+    {
+      "file": "state-empty-list.png",
+      "source": "OCTAGON/State/Пустой список.png",
+      "bytes": 19459
+    },
+    {
+      "file": "state-form-error.png",
+      "source": "OCTAGON/State/Ошибка формы.png",
+      "bytes": 21669
+    },
+    {
+      "file": "state-cancel-confirm.png",
+      "source": "OCTAGON/State/Подтверждение отмены.png",
+      "bytes": 22826
+    },
+    {
+      "file": "state-loading.png",
+      "source": "OCTAGON/State/Загрузка.png",
+      "bytes": 12771
+    },
+    {
+      "file": "state-save-success.png",
+      "source": "OCTAGON/State/Успешное сохранение.png",
+      "bytes": 19253
+    },
+    {
+      "file": "mobile-overview.png",
+      "source": "OCTAGON/Mobile Admin/Обзор.png",
+      "bytes": 28863
+    },
+    {
+      "file": "mobile-schedule.png",
+      "source": "OCTAGON/Mobile Admin/Расписание.png",
+      "bytes": 30870
+    },
+    {
+      "file": "mobile-athletes.png",
+      "source": "OCTAGON/Mobile Admin/Спортсмены.png",
+      "bytes": 33014
+    },
+    {
+      "file": "mobile-attendance.png",
+      "source": "OCTAGON/Mobile Admin/Посещаемость.png",
+      "bytes": 28378
+    },
+    {
+      "file": "mobile-finance.png",
+      "source": "OCTAGON/Mobile Admin/Финансы.png",
+      "bytes": 31354
+    },
+    {
+      "file": "mobile-settings.png",
+      "source": "OCTAGON/Mobile Admin/Настройки.png",
+      "bytes": 30845
+    },
+    {
+      "file": "tablet-dashboard-1024.png",
+      "source": "OCTAGON/Tablet Admin/Dashboard 1024.png",
+      "bytes": 35728
+    },
+    {
+      "file": "ui-kit-foundations.png",
+      "source": "OCTAGON/UI Kit/Foundations.png",
+      "bytes": 26811
+    }
+  ]
+}
