@@ -33,6 +33,11 @@ Security review проведен на коммите `6521694` (эпик J). Н�
 | No secrets in repository | только `.env.example`; секреты не коммитятся | `git ls-files` |
 | Input validation on boundaries | `ValidationPipe` c `whitelist` и `forbidNonWhitelisted` | e2e |
 | Financial endpoints separately protected | `payments.view` / `payments.edit` (BR-010) | `check-acceptance.mjs` |
+| Settings only for SUPERADMIN | `SuperadminGuard` по роли, grants не делегируют | `settings.db-e2e-spec.ts` (403 для STAFF и MEMBER) |
+| Audit нельзя изменить | нет эндпоинтов изменения и удаления | `settings.db-e2e-spec.ts` (PATCH/DELETE → 404) |
+| Персональные данные в журнале замаскированы | `redact` в `AuditService.listForView` | `settings.db-e2e-spec.ts` («•••» вместо телефона) |
+| Справочник поясов неизменяем | только `GET /belt-grades` | `settings.db-e2e-spec.ts` (POST/DELETE → 404) |
+| Секретов в ответах настроек нет | контракт `ClubProfileView` | `settings.db-e2e-spec.ts` (точный набор полей) |
 | File upload validation | загрузки файлов в MVP нет | — |
 
 **Найдено и исправлено при проверке:**

@@ -12,6 +12,7 @@
     "build:admin": "pnpm --filter @octagon/admin build",
     "test": "pnpm --filter \"./packages/**\" test && pnpm --filter @octagon/api test",
     "test:e2e": "pnpm --filter @octagon/api test:e2e",
+    "test:e2e:db": "pnpm --filter @octagon/api test:e2e:db",
     "lint": "pnpm --filter @octagon/api lint && pnpm --filter @octagon/admin lint",
     "typecheck": "pnpm --filter \"./packages/**\" typecheck && pnpm --filter @octagon/api typecheck && pnpm --filter @octagon/admin typecheck",
     "openapi:validate": "node scripts/validate-openapi.mjs",

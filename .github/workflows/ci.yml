@@ -140,6 +140,14 @@ jobs:
       - name: E2E tests
         run: pnpm test:e2e
 
+      - name: E2E tests (database)
+        # Права, аудит и неизменяемость справочника проверяются только на живой
+        # БД: моки не воспроизводят guard-ы и маскировку (K7).
+        run: pnpm test:e2e:db
+        env:
+          TEST_DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+          TEST_REDIS_URL: ${{ env.TEST_REDIS_URL }}
+
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v4

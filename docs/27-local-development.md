@@ -262,7 +262,8 @@ curl http://localhost:3000/api/v1/health/ready
 pnpm build       # packages + api
 pnpm typecheck
 pnpm test        # unit-тесты
-pnpm test:e2e    # e2e (нужны PostgreSQL и Redis)
+pnpm test:e2e    # e2e без БД: контракт HTTP-ответов
+pnpm test:e2e:db # e2e на реальной БД: права, аудит, справочник (нужна octagon_test)
 pnpm lint        # Biome
 ```
 

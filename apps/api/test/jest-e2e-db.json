@@ -11,5 +11,6 @@
     "^@octagon/contracts$": "<rootDir>/../../packages/contracts/src/index.ts",
     "^@octagon/config$": "<rootDir>/../../packages/config/src/index.ts"
   },
-  "testTimeout": 30000
+  "testTimeout": 30000,
+  "forceExit": true
 }
