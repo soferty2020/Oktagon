@@ -125,8 +125,13 @@ services:
       # Let's Encrypt не сможет подтвердить владение доменом.
       - ./infra/certbot/www:/var/www/certbot:ro
     depends_on:
-      - admin
-      - api
+      # Только после здоровых admin и api: nginx резолвит имена upstream на старте,
+      # и при простом списке поднимался раньше, падал на «host not found in
+      # upstream "admin"» и крутился в перезапуске.
+      admin:
+        condition: service_healthy
+      api:
+        condition: service_healthy
 
   # Let's Encrypt: выпуск и продление сертификатов.
   #
