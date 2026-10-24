@@ -2,7 +2,7 @@
 
 These items must not block MVP unless explicitly promoted.
 
-- exact production hosting provider;
+- ~~exact production hosting provider~~ — решено: VPS FirstVDS, Ubuntu 24.04, Docker Compose (docs/14);
 - App Store / Google Play accounts;
 - final club timezone configuration;
 - email delivery provider for invites/password reset;
@@ -40,6 +40,6 @@ These items must not block MVP unless explicitly promoted.
 
 When resolved, update the relevant specification and add ADR when architectural.
 
-## Настройки — требуется решение перед реализацией K5
+## Настройки (решено)
 
-Утверждено: финансовые правила задолженности должны быть настраиваемыми суперадмином. Не утверждены конкретные варианты переключателей, поведение при частичной оплате и полной оплате, применение новых правил к прошлым месяцам, влияние заморозок и ретроактивных правок расписания. До решения действует BR-004. См. [26-admin-settings.md](26-admin-settings.md).
+Реализовано эпиком K и ADR-0014: версионируемые правила, предпросмотр, запрет effective_from в прошлом, дефолтная версия воспроизводит BR-004. Актуальное описание — [26-admin-settings.md](26-admin-settings.md).
