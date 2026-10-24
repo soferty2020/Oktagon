@@ -1,6 +1,6 @@
 {
   "name": "octagon",
-  "version": "0.0.0",
+  "version": "0.1.0-rc.1",
   "private": true,
   "description": "OCTAGON Club System - monorepo (NestJS API, Next.js admin, Flutter mobile)",
   "engines": {

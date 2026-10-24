@@ -1,6 +1,6 @@
 {
   "name": "@octagon/api",
-  "version": "0.0.0",
+  "version": "0.1.0-rc.1",
   "private": true,
   "description": "OCTAGON Club System backend - NestJS modular monolith (docs/13-architecture.md)",
   "scripts": {

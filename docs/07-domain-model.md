@@ -27,10 +27,11 @@ Core entities:
 - ConversationMember
 - Message
 - AuditLog
+- Certification
+- DebtRule
+- ClubProfile
 
 Future entities:
-- BeltGradeHistory
-- GradingEvent
 - Competition
 - Lead
 - SubscriptionPlan

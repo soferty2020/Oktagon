@@ -32,6 +32,9 @@ erDiagram
  USER ||--o{ USER_PERMISSION : grants
  PERMISSION ||--o{ USER_PERMISSION : defines
  USER ||--o{ AUDIT_LOG : acts
+ ATHLETE ||--o{ CERTIFICATION : certifies
+ USER ||--o{ CERTIFICATION : records
+ USER ||--o{ DEBT_RULE : creates
 ```
 
 ## Notes
@@ -40,3 +43,6 @@ erDiagram
 - MembershipPeriod идентифицируется athlete + year + month.
 - FreezePeriod хранит effective dates отдельно от created_at/updated_at.
 - TrainingSession — материализованный экземпляр занятия; изменения экземпляра не меняют ScheduleTemplate.
+- **Certification** — событие аттестации (дата, ступень кю/дан, присвоенный пояс). Текущий пояс в карточке — производное от последней аттестации; отмена пересчитывает его.
+- **DebtRule** — версии правил задолженности: действует версия с наибольшей `effective_from`, не превышающей расчетный месяц; прошлое менять нельзя (ADR-0014).
+- **ClubProfile** — единственная строка (CHECK на `id = 'default'`): название, контакты, часовой пояс и срок оплаты месяца. Секретов в таблице нет.

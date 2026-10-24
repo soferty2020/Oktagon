@@ -2,7 +2,7 @@ name: octagon_mobile
 description: "OCTAGON Club System — mobile app (docs/10-mobile-app.md)"
 publish_to: 'none'
 
-version: 0.1.0+1
+version: 0.1.0-rc.1+1
 
 environment:
   sdk: ^3.13.5

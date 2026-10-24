@@ -129,7 +129,8 @@ pnpm typecheck
 pnpm openapi:validate   # контракт не отстал от реализованных маршрутов
 pnpm format:check
 pnpm test        # unit-тесты
-pnpm test:e2e    # API e2e (нужна БД octagon_test)
+pnpm test:e2e    # API e2e без БД: контракт HTTP-ответов
+pnpm test:e2e:db # API e2e на реальной БД (octagon_test, Redis)
 pnpm build
 ```
 
@@ -164,3 +165,8 @@ Redis, затем выполняются lint, typecheck, unit-тесты, сб�
 - изменения схемы БД — только миграциями;
 - бизнес-логика и scope MVP не меняются без ADR (`docs/decisions/`);
 - секреты не попадают в git.
+
+## Релизы
+
+История изменений — в [CHANGELOG.md](CHANGELOG.md). Текущий релиз-кандидат:
+`v0.1.0-rc.1`. Типографика версии: `MAJOR.MINOR.PATCH[-rc.N]`.
