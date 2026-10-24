@@ -61,6 +61,20 @@ COPY apps/api/package.json ./apps/api/package.json
 WORKDIR /repo/apps/api
 CMD ["pnpm", "db:deploy"]
 
+# --- seed: справочные данные и первый суперадминистратор ---
+#
+# Отдельная стадия по той же причине, что и `migrate`: `db:seed` написан на
+# TypeScript (ts-node) и импортирует `src/modules/auth/password.service.ts`, чтобы
+# хешировать пароль тем же Argon2id, что и вход. В runtime-образе ни ts-node, ни
+# исходников нет, поэтому seed запускается из стадии сборки, где есть и то, и
+# другое, и сгенерированный Prisma Client.
+#
+# Стадия идемпотентна: повторный запуск не создает дубликатов, а пароль берется
+# из SUPERADMIN_PASSWORD и в логи не пишется.
+FROM build AS seed
+WORKDIR /repo/apps/api
+CMD ["pnpm", "db:seed"]
+
 # --- runtime ---
 FROM base AS runtime
 ENV NODE_ENV=production

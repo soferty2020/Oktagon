@@ -136,6 +136,23 @@ services:
         condition: service_healthy
     restart: 'no'
 
+  # Одноразовый сервис: справочники и первый суперадминистратор. Запускается
+  # вручную один раз после миграций; повторный запуск безопасен (upsert).
+  # Пароль приходит из SUPERADMIN_PASSWORD, а не из кода: демо-учетка не должна
+  # попасть на сервер.
+  seed:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: seed
+    env_file: .env.staging
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-octagon}?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+
 volumes:
   postgres-data:
   redis-data:
