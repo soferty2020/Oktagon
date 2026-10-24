@@ -167,7 +167,7 @@ describe('Настройки: доступ, аудит, справочник (db
 
       // В ответе только безопасные параметры: ни ключей, ни строк подключения.
       expect(Object.keys(response.body).sort()).toEqual(
-        ['address', 'email', 'logoUrl', 'name', 'phone', 'timezone', 'updatedAt'].sort(),
+        ['address', 'email', 'logoUrl', 'name', 'paymentDueDay', 'phone', 'timezone', 'updatedAt'].sort(),
       );
       expect(JSON.stringify(response.body)).not.toMatch(/secret|password|DATABASE_URL/i);
     });
