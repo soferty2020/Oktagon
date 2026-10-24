@@ -19,6 +19,7 @@ describe('SettingsService', () => {
     email: null,
     address: null,
     timezone: 'Asia/Almaty',
+    paymentDueDay: null,
     updatedAt: new Date('2026-10-23T10:00:00.000Z'),
   };
 
@@ -96,6 +97,39 @@ describe('SettingsService', () => {
     });
   });
 
+  describe('срок оплаты', () => {
+    it('сохраняет день оплаты', async () => {
+      const updated = await service.updateClubProfile('admin-1', { paymentDueDay: 10 });
+
+      expect(updated.paymentDueDay).toBe(10);
+    });
+
+    it('null убирает срок', async () => {
+      repository.findClubProfile.mockResolvedValue({ ...record, paymentDueDay: 10 });
+
+      const updated = await service.updateClubProfile('admin-1', { paymentDueDay: null });
+
+      expect(updated.paymentDueDay).toBeNull();
+    });
+
+    it('не меняет срок, если поле не передано', async () => {
+      repository.findClubProfile.mockResolvedValue({ ...record, paymentDueDay: 5 });
+
+      const updated = await service.updateClubProfile('admin-1', { phone: '+7 700 000 00 00' });
+
+      expect(updated.paymentDueDay).toBe(5);
+    });
+
+    it('отклоняет день вне 1..28', async () => {
+      // 28, а не 31: в феврале срока «30-е» не существует.
+      await expect(
+        service.updateClubProfile('admin-1', { paymentDueDay: 29 }),
+      ).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
+      await expect(
+        service.updateClubProfile('admin-1', { paymentDueDay: 0 }),
+      ).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
+    });
+  });
   describe('валидация', () => {
     it('отклоняет пустое название', async () => {
       await expect(service.updateClubProfile('admin-1', { name: '   ' })).rejects.toMatchObject({
@@ -154,7 +188,7 @@ describe('SettingsService', () => {
     expect(keys).not.toContain('jwtAccessSecret');
     expect(keys).not.toContain('databaseUrl');
     expect(keys.sort()).toEqual(
-      ['address', 'email', 'logoUrl', 'name', 'phone', 'timezone', 'updatedAt'].sort(),
+      ['address', 'email', 'logoUrl', 'name', 'paymentDueDay', 'phone', 'timezone', 'updatedAt'].sort(),
     );
   });
 });

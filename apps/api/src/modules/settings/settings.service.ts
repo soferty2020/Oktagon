@@ -73,6 +73,10 @@ export class SettingsService {
         input.address === undefined ? current.address : validateText(input.address, MAX_ADDRESS, 'Адрес'),
       timezone:
         input.timezone === undefined ? current.timezone : validateTimezone(input.timezone),
+      paymentDueDay:
+        input.paymentDueDay === undefined
+          ? current.paymentDueDay
+          : validateDueDay(input.paymentDueDay),
       updatedAt: current.updatedAt,
     };
 
@@ -83,6 +87,7 @@ export class SettingsService {
       email: next.email,
       address: next.address,
       timezone: next.timezone,
+      paymentDueDay: next.paymentDueDay,
     });
 
     // Аудит пишется и при отсутствии изменений: запись «кто открыл и сохранил»
@@ -109,6 +114,7 @@ export class SettingsService {
       email: null,
       address: null,
       timezone: this.config.get<string>('CLUB_TIMEZONE') ?? 'Asia/Almaty',
+      paymentDueDay: null,
       updatedAt: new Date(0).toISOString(),
     };
   }
@@ -122,6 +128,7 @@ function toView(record: ClubProfileRecord): ClubProfileView {
     email: record.email,
     address: record.address,
     timezone: record.timezone,
+    paymentDueDay: record.paymentDueDay,
     updatedAt: record.updatedAt.toISOString(),
   };
 }
@@ -233,4 +240,24 @@ function validateTimezone(value: string): string {
   }
 
   return trimmed;
+}
+
+/**
+ * День оплаты месяца: 1..28 или `null`.
+ *
+ * Верхняя граница 28, а не 31: в феврале срок «30-е» не существовал бы, и
+ * просрочка зависела бы от месяца. Клуб выбирает день, который есть в любом
+ * месяце.
+ */
+function validateDueDay(value: number | null): number | null {
+  if (value === null) {
+    return null;
+  }
+  if (!Number.isInteger(value) || value < 1 || value > 28) {
+    throw new ApiException(
+      'VALIDATION_FAILED' satisfies ApiErrorCode,
+      'День оплаты должен быть целым числом от 1 до 28',
+    );
+  }
+  return value;
 }

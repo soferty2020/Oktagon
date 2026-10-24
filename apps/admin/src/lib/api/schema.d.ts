@@ -3136,6 +3136,13 @@ export interface components {
              * @enum {string}
              */
             status: "PAID" | "PARTIAL" | "NOT_PAID" | "NOT_REQUIRED" | "UNKNOWN";
+            /**
+             * Format: date
+             * @description Срок оплаты месяца; null — клуб не задал срок
+             */
+            dueDate: string | null;
+            /** @description Срок прошел, а оплата не внесена (или внесена частично) */
+            overdue: boolean;
             /** @example Оплата за октябрь 2026 внесена */
             message: string;
         };
@@ -3161,6 +3168,11 @@ export interface components {
             address: string | null;
             /** @description IANA-имя, например Asia/Almaty */
             timezone: string;
+            /**
+             * @description День месяца, до которого нужно оплатить текущий месяц. null — срок не
+             *     задан, просрочка не считается. Максимум 28: в феврале срока «30-е» нет.
+             */
+            paymentDueDay: number | null;
             /** Format: date-time */
             updatedAt: string;
         };
@@ -3172,6 +3184,8 @@ export interface components {
             email?: string | null;
             address?: string | null;
             timezone?: string;
+            /** @description null убирает срок */
+            paymentDueDay?: number | null;
         };
         /** @description Отметка спортсмена на конкретном занятии. */
         AthleteAttendanceHistoryEntry: {

@@ -6708,7 +6708,7 @@ components:
 
     AthletePaymentStatusView:
       type: object
-      required: [athleteId, year, month, monthLabel, status, message]
+      required: [athleteId, year, month, monthLabel, status, dueDate, overdue, message]
       description: |
         Статус оплаты для участника. Сумм здесь нет намеренно: участник видит
         только факт, а не деньги (BR-010).
@@ -6732,6 +6732,14 @@ components:
             PAID — оплачено; PARTIAL — внесено частично; NOT_PAID — не внесено;
             NOT_REQUIRED — платить не нужно (заморозка, отметка, нет занятий);
             UNKNOWN — ожидаемая сумма не задана, нужно уточнить у администратора.
+        dueDate:
+          type: string
+          format: date
+          nullable: true
+          description: Срок оплаты месяца; null — клуб не задал срок
+        overdue:
+          type: boolean
+          description: Срок прошел, а оплата не внесена (или внесена частично)
         message:
           type: string
           example: Оплата за октябрь 2026 внесена
@@ -6765,7 +6773,7 @@ components:
     ClubProfileView:
       type: object
       description: Безопасные параметры клуба; секретов здесь быть не может.
-      required: [name, logoUrl, phone, email, address, timezone, updatedAt]
+      required: [name, logoUrl, phone, email, address, timezone, paymentDueDay, updatedAt]
       properties:
         name:
           type: string
@@ -6791,6 +6799,14 @@ components:
           type: string
           maxLength: 64
           description: IANA-имя, например Asia/Almaty
+        paymentDueDay:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 28
+          description: |
+            День месяца, до которого нужно оплатить текущий месяц. null — срок не
+            задан, просрочка не считается. Максимум 28: в феврале срока «30-е» нет.
         updatedAt:
           type: string
           format: date-time
@@ -6822,6 +6838,12 @@ components:
         timezone:
           type: string
           maxLength: 64
+        paymentDueDay:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 28
+          description: null убирает срок
 
     AthleteAttendanceHistoryEntry:
       type: object

@@ -17,6 +17,14 @@ export interface ClubProfileFormState {
  * Здесь достаточно передать токен и показать ошибку — скрывать кнопку в
  * интерфейсе защитой не является (docs/13-architecture.md).
  */
+function numberOrNull(value: FormDataEntryValue | null): number | null {
+  if (typeof value !== 'string' || value.trim() === '') {
+    return null;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 export async function updateClubProfileAction(
   _prev: ClubProfileFormState,
   formData: FormData,
@@ -52,6 +60,7 @@ export async function updateClubProfileAction(
       email: text('email'),
       address: text('address'),
       timezone: text('timezone') ?? '',
+      paymentDueDay: numberOrNull(formData.get('paymentDueDay')),
     },
   });
 

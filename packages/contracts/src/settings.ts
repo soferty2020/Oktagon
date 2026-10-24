@@ -17,6 +17,8 @@ export interface ClubProfileView {
   address: string | null;
   /** IANA-имя, например `Asia/Almaty`. */
   timezone: string;
+  /** День месяца, до которого нужно оплатить текущий месяц (1..28); `null` — срок не задан. */
+  paymentDueDay: number | null;
   updatedAt: string;
 }
 
@@ -34,4 +36,6 @@ export interface UpdateClubProfileInput {
   email?: string | null;
   address?: string | null;
   timezone?: string;
+  /** День оплаты 1..28; `null` убирает срок. */
+  paymentDueDay?: number | null;
 }

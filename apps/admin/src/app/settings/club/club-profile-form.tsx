@@ -14,6 +14,7 @@ export interface ClubProfileFormValues {
   email: string | null;
   address: string | null;
   timezone: string;
+  paymentDueDay: number | null;
 }
 
 /**
@@ -106,6 +107,22 @@ export function ClubProfileForm({ profile }: { profile: ClubProfileFormValues })
         </span>
       </label>
 
+      <label className="flex flex-col gap-1">
+        <span className="text-xs font-medium text-muted">Срок оплаты (день месяца)</span>
+        <input
+          name="paymentDueDay"
+          type="number"
+          min={1}
+          max={28}
+          defaultValue={profile.paymentDueDay ?? ''}
+          placeholder="например, 10"
+          className="rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent"
+        />
+        <span className="text-[11px] text-muted">
+          До этого числа нужно оплатить текущий месяц. Пусто — срок не задан, просрочка
+          не считается. Максимум 28: в феврале срока «30-е» не существует.
+        </span>
+      </label>
       {state.error ? (
         <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">
           {state.error}

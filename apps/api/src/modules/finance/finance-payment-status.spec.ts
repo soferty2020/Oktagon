@@ -4,6 +4,7 @@ import { AuditService } from '../audit/audit.service';
 import type { FreezeRepository } from '../freezes/freezes.repository';
 import { ResourceScopeService } from '../identity/resource-scope.service';
 import { DebtRulesService } from '../settings/debt-rules.service';
+import { SettingsService } from '../settings/settings.service';
 import type { FinanceRepository } from './finance.repository';
 import { FinanceService } from './finance.service';
 
@@ -48,6 +49,7 @@ describe('FinanceService: статус оплаты участника', () => {
     scope = { assertAthleteAccess: jest.fn().mockResolvedValue({ allowed: true }) };
     const audit = { recordSafely: jest.fn().mockResolvedValue(null) };
     const debtRules = { getConfigForDate: jest.fn().mockResolvedValue(DEFAULT_DEBT_RULES) };
+    const settings = { getClubProfile: jest.fn().mockResolvedValue({ paymentDueDay: null }) };
 
     service = new FinanceService(
       repository,
@@ -55,6 +57,7 @@ describe('FinanceService: статус оплаты участника', () => {
       scope as unknown as ResourceScopeService,
       audit as unknown as AuditService,
       debtRules as unknown as DebtRulesService,
+      settings as unknown as SettingsService,
     );
   });
 
@@ -87,6 +90,7 @@ describe('FinanceService: статус оплаты участника', () => {
     const freezes = { listFrozenAthleteIds: jest.fn().mockResolvedValue(['athlete-1']) };
     const audit = { recordSafely: jest.fn().mockResolvedValue(null) };
     const debtRules = { getConfigForDate: jest.fn().mockResolvedValue(DEFAULT_DEBT_RULES) };
+    const settings = { getClubProfile: jest.fn().mockResolvedValue({ paymentDueDay: null }) };
 
     service = new FinanceService(
       repository,
@@ -94,6 +98,7 @@ describe('FinanceService: статус оплаты участника', () => {
       scope as unknown as ResourceScopeService,
       audit as unknown as AuditService,
       debtRules as unknown as DebtRulesService,
+      settings as unknown as SettingsService,
     );
     repository.findPeriod.mockResolvedValue(period({ paidAmount: 0, status: 'UNPAID' }));
 
@@ -142,5 +147,68 @@ describe('FinanceService: статус оплаты участника', () => {
     const status = await service.getAthletePaymentStatus('user-1', 'athlete-1', 2026, 10);
 
     expect(status.monthLabel).toBe('октябрь 2026');
+  });
+  describe('срок оплаты', () => {
+    it('показывает дату, если клуб задал срок', async () => {
+      const settings = { getClubProfile: jest.fn().mockResolvedValue({ paymentDueDay: 10 }) };
+      const audit = { recordSafely: jest.fn().mockResolvedValue(null) };
+      const debtRules = { getConfigForDate: jest.fn().mockResolvedValue(DEFAULT_DEBT_RULES) };
+
+      service = new FinanceService(
+        repository,
+        { listFrozenAthleteIds: jest.fn().mockResolvedValue([]) } as unknown as FreezeRepository,
+        scope as unknown as ResourceScopeService,
+        audit as unknown as AuditService,
+        debtRules as unknown as DebtRulesService,
+        settings as unknown as SettingsService,
+      );
+      repository.findPeriod.mockResolvedValue(period({ paidAmount: 0, status: 'UNPAID' }));
+
+      const status = await service.getAthletePaymentStatus('user-1', 'athlete-1', 2026, 12);
+
+      expect(status.dueDate).toBe('2026-12-10');
+      expect(status.message).toContain('до 10.12.2026');
+    });
+
+    it('помечает просрочку, если срок прошел', async () => {
+      // Декабрь 2020: срок давно прошел.
+      const settings = { getClubProfile: jest.fn().mockResolvedValue({ paymentDueDay: 10 }) };
+      const audit = { recordSafely: jest.fn().mockResolvedValue(null) };
+      const debtRules = { getConfigForDate: jest.fn().mockResolvedValue(DEFAULT_DEBT_RULES) };
+
+      service = new FinanceService(
+        repository,
+        { listFrozenAthleteIds: jest.fn().mockResolvedValue([]) } as unknown as FreezeRepository,
+        scope as unknown as ResourceScopeService,
+        audit as unknown as AuditService,
+        debtRules as unknown as DebtRulesService,
+        settings as unknown as SettingsService,
+      );
+      repository.findPeriod.mockResolvedValue(period({ paidAmount: 0, status: 'UNPAID' }));
+
+      const status = await service.getAthletePaymentStatus('user-1', 'athlete-1', 2020, 12);
+
+      expect(status.overdue).toBe(true);
+      expect(status.message).toContain('просрочена');
+    });
+
+    it('оплаченный месяц не бывает просроченным', async () => {
+      const settings = { getClubProfile: jest.fn().mockResolvedValue({ paymentDueDay: 10 }) };
+      const audit = { recordSafely: jest.fn().mockResolvedValue(null) };
+      const debtRules = { getConfigForDate: jest.fn().mockResolvedValue(DEFAULT_DEBT_RULES) };
+
+      service = new FinanceService(
+        repository,
+        { listFrozenAthleteIds: jest.fn().mockResolvedValue([]) } as unknown as FreezeRepository,
+        scope as unknown as ResourceScopeService,
+        audit as unknown as AuditService,
+        debtRules as unknown as DebtRulesService,
+        settings as unknown as SettingsService,
+      );
+
+      const status = await service.getAthletePaymentStatus('user-1', 'athlete-1', 2020, 12);
+
+      expect(status.overdue).toBe(false);
+    });
   });
 });

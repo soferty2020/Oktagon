@@ -39,6 +39,7 @@ import { FreezeRepository } from '../freezes/freezes.repository';
 import { ResourceScopeService } from '../identity/resource-scope.service';
 import { evaluateDebt, type DebtFacts } from '../settings/debt-calculator';
 import { DebtRulesService } from '../settings/debt-rules.service';
+import { SettingsService } from '../settings/settings.service';
 import { FinanceRepository } from './finance.repository';
 import type { MembershipPeriodRecord, PaymentRecord } from './finance.repository';
 
@@ -75,6 +76,8 @@ export class FinanceService {
     // Правила долга приходят из настроек: финансы знают, как считать, но не
     // решают, каким правилом (K5, ADR-0014).
     private readonly debtRules: DebtRulesService,
+    // Срок оплаты — настройка клуба: сервис его применяет, но не хранит (K1).
+    private readonly settings: SettingsService,
   ) {}
 
   // --- Расчетные периоды ---------------------------------------------------
@@ -656,6 +659,11 @@ export class FinanceService {
     const monthLabel = paymentMonthLabel(year, month);
     const fact = await this.collectAthleteFact(athleteId, year, month);
 
+    // Срок оплаты — настройка клуба: без него сообщение просто не упоминает дату.
+    const profile = await this.settings.getClubProfile();
+    const dueDate =
+      profile.paymentDueDay === null ? null : formatDueDate(year, month, profile.paymentDueDay);
+
     // Нет членства в месяце — платить не за что. Это не «оплачено» и не долг.
     if (!fact) {
       return {
@@ -664,7 +672,9 @@ export class FinanceService {
         month,
         monthLabel,
         status: AthletePaymentStatus.NOT_REQUIRED,
-        message: paymentStatusMessage(AthletePaymentStatus.NOT_REQUIRED, year, month),
+        dueDate,
+        overdue: false,
+        message: paymentStatusMessage(AthletePaymentStatus.NOT_REQUIRED, year, month, { dueDate }),
       };
     }
 
@@ -685,13 +695,21 @@ export class FinanceService {
       status = AthletePaymentStatus.NOT_PAID;
     }
 
+    // Просрочка — только для неоплаченного: оплаченный месяц не бывает
+    // просроченным, даже если деньги пришли позже срока.
+    const unpaid =
+      status === AthletePaymentStatus.NOT_PAID || status === AthletePaymentStatus.PARTIAL;
+    const overdue = unpaid && dueDate !== null && isDueDatePassed(dueDate);
+
     return {
       athleteId,
       year,
       month,
       monthLabel,
       status,
-      message: paymentStatusMessage(status, year, month),
+      dueDate,
+      overdue,
+      message: paymentStatusMessage(status, year, month, { dueDate, overdue }),
     };
   }
 
@@ -1217,4 +1235,19 @@ function toCsv(rows: string[][]): string {
     /[";\n\r]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
 
   return `\uFEFF${rows.map((row) => row.map(escapeCell).join(';')).join('\r\n')}\r\n`;
+}
+/** Дата срока в ISO: `YYYY-MM-DD` для дня месяца. */
+function formatDueDate(year: number, month: number, day: number): string {
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+/**
+ * Прошел ли срок.
+ *
+ * Сравнение с концом дня срока: в день оплаты еще можно платить без просрочки,
+ * иначе утром 10-го родитель уже видел бы «просрочено».
+ */
+function isDueDatePassed(dueDate: string, now = new Date()): boolean {
+  const deadline = new Date(`${dueDate}T00:00:00.000Z`).getTime() + 24 * 60 * 60 * 1000;
+  return now.getTime() >= deadline;
 }

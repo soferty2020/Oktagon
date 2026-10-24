@@ -144,9 +144,11 @@ describe('Статус оплаты участника (db e2e)', () => {
     // Суммы наружу не отдаются: BR-010 закрывает финансы для MEMBER.
     expect(Object.keys(response.body).sort()).toEqual([
       'athleteId',
+      'dueDate',
       'message',
       'month',
       'monthLabel',
+      'overdue',
       'status',
       'year',
     ]);
@@ -159,6 +161,26 @@ describe('Статус оплаты участника (db e2e)', () => {
       .expect(403);
   });
 
+  it('показывает срок оплаты, заданный клубом', async () => {
+    const now = new Date();
+    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+
+    await prisma.db.clubProfile.upsert({
+      where: { id: 'default' },
+      update: { paymentDueDay: 10 },
+      create: { id: 'default', name: 'E2E', timezone: 'Asia/Almaty', paymentDueDay: 10 },
+    });
+
+    const response = await request(app.getHttpServer())
+      .get(`/api/v1/me/athletes/${ownAthleteId}/payment-status`)
+      .set('Authorization', `Bearer ${parentToken}`)
+      .expect(200);
+
+    expect(response.body.dueDate).toBe(`${now.getUTCFullYear()}-${month}-10`);
+    expect(response.body.overdue).toBe(false);
+
+    await prisma.db.clubProfile.update({ where: { id: 'default' }, data: { paymentDueDay: null } });
+  });
   it('без токена отвечает 401', async () => {
     await request(app.getHttpServer())
       .get(`/api/v1/me/athletes/${ownAthleteId}/payment-status`)

@@ -4,6 +4,7 @@ import { AuditService } from '../audit/audit.service';
 import type { FreezeRepository } from '../freezes/freezes.repository';
 import { ResourceScopeService } from '../identity/resource-scope.service';
 import { DebtRulesService } from '../settings/debt-rules.service';
+import { SettingsService } from '../settings/settings.service';
 import type { FinanceRepository } from './finance.repository';
 import { FinanceService } from './finance.service';
 
@@ -67,6 +68,7 @@ describe('FinanceService: отчёты', () => {
     const scope = { assertAthleteAccess: jest.fn().mockResolvedValue({ allowed: true }) };
     const audit = { recordSafely: jest.fn().mockResolvedValue(null) };
     const debtRules = { getConfigForDate: jest.fn().mockResolvedValue(DEFAULT_DEBT_RULES) };
+    const settings = { getClubProfile: jest.fn().mockResolvedValue({ paymentDueDay: null }) };
 
     service = new FinanceService(
       repository,
@@ -74,6 +76,7 @@ describe('FinanceService: отчёты', () => {
       scope as unknown as ResourceScopeService,
       audit as unknown as AuditService,
       debtRules as unknown as DebtRulesService,
+      settings as unknown as SettingsService,
     );
   });
 

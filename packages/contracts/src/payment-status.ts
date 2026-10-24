@@ -37,6 +37,11 @@ export interface AthletePaymentStatusView {
   /** Подпись месяца: «октябрь 2026». */
   monthLabel: string;
   status: AthletePaymentStatus;
+  /** Срок оплаты месяца (YYYY-MM-DD); 
+ull — клуб не задал срок. */
+  dueDate: string | null;
+  /** Срок прошел, а оплата не внесена (или внесена частично). */
+  overdue: boolean;
   /** Текст для интерфейса; сервер не навязывает формулировку, но подсказывает. */
   message: string;
 }
@@ -62,19 +67,41 @@ export function paymentMonthLabel(year: number, month: number): string {
 }
 
 /** Текст статуса: одна формулировка на все клиенты. */
-export function paymentStatusMessage(status: AthletePaymentStatus, year: number, month: number): string {
+export function paymentStatusMessage(
+  status: AthletePaymentStatus,
+  year: number,
+  month: number,
+  options: { dueDate?: string | null; overdue?: boolean } = {},
+): string {
   const label = paymentMonthLabel(year, month);
+  const due = formatDueDate(options.dueDate);
+
+  // Просрочка важнее формулировки: родитель должен видеть, что срок прошел, а не
+  // только «не внесено».
+  if (options.overdue && due) {
+    return `Оплата за ${label} просрочена: срок был до ${due}`;
+  }
 
   switch (status) {
     case AthletePaymentStatus.PAID:
       return `Оплата за ${label} внесена`;
     case AthletePaymentStatus.PARTIAL:
-      return `Оплата за ${label} внесена частично`;
+      return due
+        ? `Оплата за ${label} внесена частично, доплатить до ${due}`
+        : `Оплата за ${label} внесена частично`;
     case AthletePaymentStatus.NOT_PAID:
-      return `Оплата за ${label} не внесена`;
+      return due ? `Оплата за ${label} не внесена, оплатить до ${due}` : `Оплата за ${label} не внесена`;
     case AthletePaymentStatus.NOT_REQUIRED:
       return `Оплата за ${label} не требуется`;
     case AthletePaymentStatus.UNKNOWN:
       return `Оплата за ${label}: уточните у администратора`;
   }
+}
+
+/** `YYYY-MM-DD` → `ДД.ММ.ГГГГ`; `null`, если срока нет. */
+function formatDueDate(value: string | null | undefined): string | null {
+  if (!value || value.length < 10) {
+    return null;
+  }
+  return `${value.slice(8, 10)}.${value.slice(5, 7)}.${value.slice(0, 4)}`;
 }

@@ -910,6 +910,11 @@ model ClubProfile {
   address   String?  @db.VarChar(500)
   /// IANA-имя часового пояса: по нему клуб считает даты занятий и платежей.
   timezone  String   @db.VarChar(64)
+  /// День месяца, до которого нужно оплатить текущий месяц (1..28).
+  ///
+  /// NULL — срок не задан, просрочка не считается. Верхняя граница 28: иначе в
+  /// феврале срок «30-е» не существовал бы.
+  paymentDueDay Int? @map("payment_due_day")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

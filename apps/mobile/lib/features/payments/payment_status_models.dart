@@ -44,12 +44,20 @@ class PaymentStatus {
     required this.monthLabel,
     required this.status,
     required this.message,
+    this.dueDate,
+    this.overdue = false,
   });
 
   final int year;
   final int month;
   final String monthLabel;
   final AthletePaymentStatus status;
+
+  /// Срок оплаты месяца (YYYY-MM-DD); null — клуб не задал срок.
+  final String? dueDate;
+
+  /// Срок прошел, а оплата не внесена.
+  final bool overdue;
 
   /// Готовая подпись с сервера: одна формулировка на все клиенты.
   final String message;
@@ -61,6 +69,8 @@ class PaymentStatus {
       monthLabel: (json['monthLabel'] as String?) ?? '',
       status: AthletePaymentStatus.fromCode(json['status'] as String?),
       message: (json['message'] as String?) ?? '',
+      dueDate: json['dueDate'] as String?,
+      overdue: json['overdue'] == true,
     );
   }
 }

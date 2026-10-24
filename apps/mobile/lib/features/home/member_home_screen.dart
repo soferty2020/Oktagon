@@ -178,7 +178,9 @@ class _PaymentStatusLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final attention = status.status.isAttention;
+    // Просрочка важнее обычного «не внесено»: подсвечиваем так же, но текст уже
+    // содержит дату срока с сервера.
+    final attention = status.overdue || status.status.isAttention;
 
     return Row(
       children: [

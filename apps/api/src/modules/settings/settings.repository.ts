@@ -10,6 +10,7 @@ export interface ClubProfileRecord {
   email: string | null;
   address: string | null;
   timezone: string;
+  paymentDueDay: number | null;
   updatedAt: Date;
 }
 
@@ -20,6 +21,7 @@ export interface SaveClubProfileInput {
   email: string | null;
   address: string | null;
   timezone: string;
+  paymentDueDay: number | null;
 }
 
 /**
@@ -43,6 +45,7 @@ const PROFILE_SELECT = {
   email: true,
   address: true,
   timezone: true,
+  paymentDueDay: true,
   updatedAt: true,
 } as const;
 

@@ -4,6 +4,7 @@ import { AuditService } from '../audit/audit.service';
 import type { FreezeRepository } from '../freezes/freezes.repository';
 import { ResourceScopeService } from '../identity/resource-scope.service';
 import { DebtRulesService } from '../settings/debt-rules.service';
+import { SettingsService } from '../settings/settings.service';
 import type {
   FinanceRepository,
   MembershipPeriodRecord,
@@ -60,6 +61,7 @@ describe('FinanceService', () => {
   let scope: { assertAthleteAccess: jest.Mock };
   let audit: { recordSafely: jest.Mock };
   let debtRules: { getConfigForDate: jest.Mock };
+  let settings: { getClubProfile: jest.Mock };
   let service: FinanceService;
 
   beforeEach(() => {
@@ -120,6 +122,8 @@ describe('FinanceService', () => {
     debtRules = {
       getConfigForDate: jest.fn().mockResolvedValue(DEFAULT_DEBT_RULES),
     };
+    // Срок оплаты по умолчанию не задан: сообщения без даты.
+    settings = { getClubProfile: jest.fn().mockResolvedValue({ paymentDueDay: null }) };
 
     service = new FinanceService(
       repository,
@@ -127,6 +131,7 @@ describe('FinanceService', () => {
       scope as unknown as ResourceScopeService,
       audit as unknown as AuditService,
       debtRules as unknown as DebtRulesService,
+      settings as unknown as SettingsService,
     );
   });
 
