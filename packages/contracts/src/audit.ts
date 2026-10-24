@@ -42,6 +42,8 @@ export const AuditAction = {
   ATHLETE_CREATED: 'athlete.created',
   ATHLETE_UPDATED: 'athlete.updated',
   ATHLETE_ARCHIVED: 'athlete.archived',
+  ATHLETE_CERTIFIED: 'athlete.certified',
+  ATHLETE_CERTIFICATION_CANCELLED: 'athlete.certification_cancelled',
   ATHLETE_ACCOUNT_LINKED: 'athlete.account_linked',
   ATHLETE_ACCOUNT_UNLINKED: 'athlete.account_unlinked',
   /** Обращение к списку связанных спортсменов: контактные данные (docs/15-security.md). */
@@ -125,6 +127,7 @@ export const AuditEntityType = {
   HALL: 'Hall',
   TRAINER_PROFILE: 'TrainerProfile',
   ATHLETE: 'Athlete',
+  CERTIFICATION: 'Certification',
   USER_ATHLETE: 'UserAthlete',
   GROUP: 'Group',
   GROUP_BRANCH: 'GroupBranch',

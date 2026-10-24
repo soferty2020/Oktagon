@@ -8,6 +8,7 @@ import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
 import { archiveAthleteAction, unlinkAccountAction } from '../actions';
 import { EditAthleteForm, LinkAccountForm } from '../athlete-forms';
+import { CertificationsBlock, type CertificationValues } from '../certifications';
 
 export const metadata = {
   title: 'Спортсмен — OCTAGON',
@@ -67,11 +68,12 @@ export default async function AthletePage({ params }: { params: Promise<{ id: st
   // список доступен тому, кто управляет пользователями.
   const canViewUsers = user.permissions.includes('users.manage');
 
-  const [athlete, users] = await Promise.all([
+  const [athlete, users, certifications] = await Promise.all([
     apiFetch<AthleteDetails>(`/athletes/${id}`, { accessToken }),
     canEdit && canViewUsers
       ? apiFetch<{ data: UserView[] } | UserView[]>('/users', { accessToken })
       : null,
+    apiFetch<CertificationValues[]>(`/athletes/${id}/certifications`, { accessToken }),
   ]);
 
   if (!athlete.ok) {
@@ -116,6 +118,12 @@ export default async function AthletePage({ params }: { params: Promise<{ id: st
             ← Все спортсмены
           </Link>
         }
+      />
+
+      <CertificationsBlock
+        athleteId={athlete.data.id}
+        certifications={certifications.ok ? certifications.data : []}
+        canEdit={canEdit}
       />
 
       {canEdit ? (

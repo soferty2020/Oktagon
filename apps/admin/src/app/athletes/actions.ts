@@ -214,3 +214,58 @@ export async function unlinkAccountAction(formData: FormData): Promise<void> {
   );
   revalidatePath(`/athletes/${athleteId}`);
 }
+
+/** Новая аттестация: присваивает ступень и меняет текущий пояс (K8). */
+export async function createCertificationAction(
+  _prev: AthleteFormState,
+  formData: FormData,
+): Promise<AthleteFormState> {
+  const athleteId = String(formData.get('athleteId') ?? '');
+  if (!athleteId) {
+    return { error: 'Не указан спортсмен' };
+  }
+
+  const state = await withSession(
+    (accessToken) =>
+      apiFetch(`/athletes/${athleteId}/certifications`, {
+        accessToken,
+        method: 'POST',
+        body: {
+          certifiedOn: String(formData.get('certifiedOn') ?? '').trim(),
+          beltGrade: String(formData.get('beltGrade') ?? '').trim(),
+          stageKind: String(formData.get('stageKind') ?? 'KYU'),
+          stageNumber: Number(formData.get('stageNumber') ?? 0),
+          ...(String(formData.get('note') ?? '').trim()
+            ? { note: String(formData.get('note')).trim() }
+            : {}),
+        },
+      }),
+    'Аттестация добавлена',
+  );
+
+  if (!state.error) {
+    revalidatePath(`/athletes/${athleteId}`);
+  }
+  return state;
+}
+
+/** Отмена ошибочной аттестации: текущий пояс пересчитывается. */
+export async function cancelCertificationAction(formData: FormData): Promise<void> {
+  const athleteId = String(formData.get('athleteId') ?? '');
+  const certificationId = String(formData.get('certificationId') ?? '');
+
+  const user = await getCurrentUser();
+  const { accessToken } = await readTokens();
+  if (!user || !accessToken) {
+    return;
+  }
+
+  await apiFetch(`/certifications/${certificationId}`, {
+    accessToken,
+    method: 'DELETE',
+  });
+
+  if (athleteId) {
+    revalidatePath(`/athletes/${athleteId}`);
+  }
+}

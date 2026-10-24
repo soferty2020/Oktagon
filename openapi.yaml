@@ -2785,6 +2785,91 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
 
+  /athletes/{athleteId}/certifications:
+    get:
+      tags: [athletes]
+      summary: История аттестаций спортсмена
+      description: |
+        Аттестация — событие: дата, ступень (кю или дан) и присвоенный пояс.
+        Отдается от новых к старым.
+      operationId: listCertifications
+      parameters:
+        - name: athleteId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Аттестации спортсмена
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CertificationView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Нет права `athletes.view` или спортсмен вне scope
+    post:
+      tags: [athletes]
+      summary: Новая аттестация
+      description: |
+        Присваивает ступень и пояс и обновляет текущий пояс в карточке
+        спортсмена. Будущая дата отклоняется: аттестация — прошедшее событие.
+      operationId: createCertification
+      parameters:
+        - name: athleteId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCertificationInput'
+      responses:
+        '201':
+          description: Созданная аттестация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CertificationView'
+        '400':
+          description: |
+            Будущая дата, ступень вне 1..10 или пояс не из справочника
+            (`VALIDATION_FAILED`)
+        '403':
+          description: Нет права `athletes.edit`
+
+  /certifications/{id}:
+    delete:
+      tags: [athletes]
+      summary: Отменить ошибочную аттестацию
+      description: |
+        Удаляет запись и пересчитывает текущий пояс по последней оставшейся
+        аттестации; если записей не осталось — белый пояс.
+      operationId: cancelCertification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Запись удалена, текущий пояс пересчитан
+        '403':
+          description: Нет права `athletes.edit`
+        '404':
+          description: Аттестация не найдена
+
   /belt-grades:
     get:
       tags: [belt-grades]
@@ -4531,6 +4616,69 @@ components:
     Gender:
       type: string
       enum: [MALE, FEMALE, UNSPECIFIED]
+
+    CertificationView:
+      type: object
+      required: [id, athleteId, certifiedOn, beltGrade, stageKind, stageNumber, stageLabel, note, createdBy, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        athleteId:
+          type: string
+          format: uuid
+        certifiedOn:
+          type: string
+          format: date
+        beltGrade:
+          $ref: '#/components/schemas/BeltGrade'
+        stageKind:
+          type: string
+          enum: [KYU, DAN]
+        stageNumber:
+          type: integer
+          minimum: 1
+          maximum: 10
+        stageLabel:
+          type: string
+          example: 8 кю
+          description: Подпись ступени для интерфейса
+        note:
+          type: string
+          nullable: true
+        createdBy:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+              format: uuid
+            email:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateCertificationInput:
+      type: object
+      required: [certifiedOn, beltGrade, stageKind, stageNumber]
+      properties:
+        certifiedOn:
+          type: string
+          format: date
+          description: Дата аттестации; будущее запрещено
+        beltGrade:
+          $ref: '#/components/schemas/BeltGrade'
+        stageKind:
+          type: string
+          enum: [KYU, DAN]
+        stageNumber:
+          type: integer
+          minimum: 1
+          maximum: 10
+        note:
+          type: string
+          maxLength: 500
 
     BeltGrade:
       type: string

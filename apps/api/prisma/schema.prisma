@@ -188,6 +188,7 @@ model User {
   messages           Message[]
   auditLogs          AuditLog[]
   debtRulesCreated   DebtRule[]         @relation("DebtRuleCreatedBy")
+  certificationsCreated Certification[]  @relation("CertificationCreatedBy")
 
   @@index([role, status])
   @@index([archivedAt])
@@ -284,6 +285,7 @@ model Athlete {
   updatedAt   DateTime      @updatedAt @map("updated_at")
 
   userLinks         UserAthlete[]
+  certifications    Certification[]
   memberships       GroupMembership[]
   attendances       Attendance[]
   plannedAbsences   PlannedAbsence[]
@@ -848,6 +850,47 @@ enum DebtToleranceKind {
   FIXED
   /// Процент от ожидаемой суммы.
   PERCENT
+}
+
+/// Вид ступени аттестации (карате: кю до чёрного пояса, дан — после).
+enum CertificationStageKind {
+  KYU
+  DAN
+}
+
+/**
+ * Аттестация спортсмена: когда, на какую ступень и какой пояс присвоен.
+ *
+ * Пояс хранится и в карточке спортсмена (`beltGrade`), но аттестация — это
+ * событие с датой и ступенью, а карточка показывает только текущее состояние.
+ * История без событий отвечала бы на «какой пояс сейчас», но не на «какая
+ * ступень и когда получена».
+ *
+ * Создание аттестации обновляет текущий пояс спортсмена; отмена — пересчитывает
+ * его по последней оставшейся аттестации.
+ */
+model Certification {
+  id String @id @default(uuid()) @db.Uuid
+
+  athleteId String @map("athlete_id") @db.Uuid
+  /// Дата аттестации; будущие даты запрещены — это прошедшее событие.
+  certifiedOn DateTime @map("certified_on") @db.Date
+
+  beltGrade BeltGrade @map("belt_grade")
+  stageKind CertificationStageKind @default(KYU) @map("stage_kind")
+  /// Номер ступени: 1..10 для кю и для дана.
+  stageNumber Int @map("stage_number")
+
+  note String? @db.VarChar(500)
+
+  createdById String? @map("created_by_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  athlete   Athlete @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  createdBy User?   @relation("CertificationCreatedBy", fields: [createdById], references: [id])
+
+  @@index([athleteId, certifiedOn])
+  @@map("certifications")
 }
 
 /**

@@ -5,6 +5,12 @@ import { AthletesController } from './athletes.controller';
 import { AthletesRepository, PrismaAthletesRepository } from './athletes.repository';
 import { AthletesService } from './athletes.service';
 import { BeltGradesController } from './belt-grades.controller';
+import { CertificationCancelController, CertificationsController } from './certifications.controller';
+import {
+  CertificationsRepository,
+  PrismaCertificationsRepository,
+} from './certifications.repository';
+import { CertificationsService } from './certifications.service';
 
 /**
  * Спортсмены, связи с аккаунтами и справочник поясов (issues C4–C5, K3).
@@ -22,11 +28,14 @@ import { BeltGradesController } from './belt-grades.controller';
  */
 @Module({
   imports: [IdentityModule],
-  controllers: [AthletesController, BeltGradesController],
+  controllers: [AthletesController, BeltGradesController, CertificationsController, CertificationCancelController],
   providers: [
     AthletesService,
     PrismaAthletesRepository,
     { provide: AthletesRepository, useExisting: PrismaAthletesRepository },
+    CertificationsService,
+    PrismaCertificationsRepository,
+    { provide: CertificationsRepository, useExisting: PrismaCertificationsRepository },
   ],
   exports: [AthletesService],
 })

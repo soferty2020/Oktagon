@@ -1151,6 +1151,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/athletes/{athleteId}/certifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * История аттестаций спортсмена
+         * @description Аттестация — событие: дата, ступень (кю или дан) и присвоенный пояс.
+         *     Отдается от новых к старым.
+         */
+        get: operations["listCertifications"];
+        put?: never;
+        /**
+         * Новая аттестация
+         * @description Присваивает ступень и пояс и обновляет текущий пояс в карточке
+         *     спортсмена. Будущая дата отклоняется: аттестация — прошедшее событие.
+         */
+        post: operations["createCertification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/certifications/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Отменить ошибочную аттестацию
+         * @description Удаляет запись и пересчитывает текущий пояс по последней оставшейся
+         *     аттестации; если записей не осталось — белый пояс.
+         */
+        delete: operations["cancelCertification"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/belt-grades": {
         parameters: {
             query?: never;
@@ -1916,6 +1963,43 @@ export interface components {
         AthleteStatus: "ACTIVE" | "FROZEN" | "ARCHIVED";
         /** @enum {string} */
         Gender: "MALE" | "FEMALE" | "UNSPECIFIED";
+        CertificationView: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            athleteId: string;
+            /** Format: date */
+            certifiedOn: string;
+            beltGrade: components["schemas"]["BeltGrade"];
+            /** @enum {string} */
+            stageKind: "KYU" | "DAN";
+            stageNumber: number;
+            /**
+             * @description Подпись ступени для интерфейса
+             * @example 8 кю
+             */
+            stageLabel: string;
+            note: string | null;
+            createdBy: {
+                /** Format: uuid */
+                id?: string;
+                email?: string;
+            } | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        CreateCertificationInput: {
+            /**
+             * Format: date
+             * @description Дата аттестации; будущее запрещено
+             */
+            certifiedOn: string;
+            beltGrade: components["schemas"]["BeltGrade"];
+            /** @enum {string} */
+            stageKind: "KYU" | "DAN";
+            stageNumber: number;
+            note?: string;
+        };
         /**
          * @description Пояс из фиксированного набора (BR-015). Белый — значение по умолчанию:
          *     пояс есть у каждого спортсмена, очистить его нельзя. Порядок ступеней
@@ -6488,6 +6572,113 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ApiError"];
                 };
+            };
+        };
+    };
+    listCertifications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                athleteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Аттестации спортсмена */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CertificationView"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Нет права `athletes.view` или спортсмен вне scope */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    createCertification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                athleteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCertificationInput"];
+            };
+        };
+        responses: {
+            /** @description Созданная аттестация */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CertificationView"];
+                };
+            };
+            /**
+             * @description Будущая дата, ступень вне 1..10 или пояс не из справочника
+             *     (`VALIDATION_FAILED`)
+             */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Нет права `athletes.edit` */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    cancelCertification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Запись удалена, текущий пояс пересчитан */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Нет права `athletes.edit` */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Аттестация не найдена */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
