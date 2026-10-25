@@ -31,7 +31,7 @@ export class DebtToleranceDto {
   @IsIn(['NONE', 'FIXED', 'PERCENT'])
   kind!: 'NONE' | 'FIXED' | 'PERCENT';
 
-  @ApiPropertyOptional({ example: 1000, description: 'Допуск суммой, ₸; только для FIXED' })
+  @ApiPropertyOptional({ example: 1000, description: 'Допуск суммой, ₽; только для FIXED' })
   @IsOptional()
   @IsNumber()
   @Min(0)

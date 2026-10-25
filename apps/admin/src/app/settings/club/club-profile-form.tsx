@@ -50,7 +50,7 @@ export function ClubProfileForm({ profile }: { profile: ClubProfileFormValues })
           type="url"
           maxLength={500}
           defaultValue={profile.logoUrl ?? ''}
-          placeholder="https://cdn.octagon.kz/logo.png"
+          placeholder="https://example.com/logo.png"
           className="rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent"
         />
         <span className="text-[11px] text-muted">
@@ -70,7 +70,7 @@ export function ClubProfileForm({ profile }: { profile: ClubProfileFormValues })
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-muted">Email</span>
+          <span className="text-xs font-medium text-muted">Электронная почта</span>
           <input
             name="email"
             type="email"

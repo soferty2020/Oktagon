@@ -1,3 +1,4 @@
+import { describePermission } from '@/lib/permissions';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
@@ -61,7 +62,7 @@ export default async function AttendancePage({
     return (
       <AppShell user={user}>
         <PageHeader title="Посещаемость" />
-        <Notice>Раздел доступен с правом «attendance.view».</Notice>
+        <Notice>Раздел доступен с правом: {describePermission('attendance.view')}.</Notice>
       </AppShell>
     );
   }

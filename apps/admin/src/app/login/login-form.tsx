@@ -13,7 +13,7 @@ export function LoginForm() {
   return (
     <form action={formAction} className="flex w-full max-w-sm flex-col gap-4">
       <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium text-ink">Email</span>
+        <span className="text-sm font-medium text-ink">Электронная почта</span>
         <input
           type="email"
           name="email"

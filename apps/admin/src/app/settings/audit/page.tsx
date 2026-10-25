@@ -5,6 +5,8 @@ import { AppShell, Notice, PageHeader } from '@/components/app-shell';
 import { Icon } from '@/components/icons';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { AUDIT_ACTIONS, AUDIT_ENTITY_TYPES } from '@octagon/contracts';
+
+import { auditActionLabel, auditEntityLabel } from '@/lib/audit-labels';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
 
 export const metadata = {
@@ -108,7 +110,7 @@ export default async function AuditPage({
                 <option value="">Любое</option>
                 {AUDIT_ACTIONS.map((action) => (
                   <option key={action} value={action}>
-                    {action}
+                    {auditActionLabel(action)}
                   </option>
                 ))}
               </select>
@@ -124,7 +126,7 @@ export default async function AuditPage({
                 <option value="">Любая</option>
                 {AUDIT_ENTITY_TYPES.map((entity) => (
                   <option key={entity} value={entity}>
-                    {entity}
+                    {auditEntityLabel(entity)}
                   </option>
                 ))}
               </select>
@@ -196,11 +198,11 @@ export default async function AuditPage({
                         </td>
                         <td>
                           <span className="rounded-full bg-canvas px-2 py-0.5 text-xs">
-                            {record.action}
+                            {auditActionLabel(record.action)}
                           </span>
                         </td>
                         <td className="text-muted">
-                          {record.entityType}
+                          {auditEntityLabel(record.entityType)}
                           {record.entityId ? ` · ${record.entityId.slice(0, 8)}…` : ''}
                         </td>
                         <td className="text-muted">{record.ipAddress ?? '—'}</td>

@@ -106,7 +106,7 @@ export function describeDebtRules(config: DebtRulesConfig): string {
       ? 'без ожидаемой суммы должник'
       : 'без ожидаемой суммы не должник',
     config.partialTolerance.kind === 'FIXED'
-      ? `допуск ${config.partialTolerance.amount} ₸`
+      ? `допуск ${config.partialTolerance.amount} ₽`
       : config.partialTolerance.kind === 'PERCENT'
         ? `допуск ${config.partialTolerance.percent}%`
         : 'без допуска',

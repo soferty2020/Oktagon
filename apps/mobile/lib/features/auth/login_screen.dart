@@ -96,12 +96,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           validator: (value) {
                             final email = (value ?? '').trim();
                             if (email.isEmpty) {
-                              return 'Укажите email';
+                              return 'Укажите почту';
                             }
                             // Проверка на клиенте только для опечаток: настоящая
                             // валидация — на сервере.
                             if (!email.contains('@') || !email.contains('.')) {
-                              return 'Похоже, в email опечатка';
+                              return 'Похоже, в адресе почты опечатка';
                             }
                             return null;
                           },

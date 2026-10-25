@@ -1,3 +1,4 @@
+import { describePermission } from '@/lib/permissions';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
@@ -82,7 +83,7 @@ export default async function ChatsPage({
       <AppShell user={user}>
         <PageHeader title="Чаты" />
         <Notice>
-          Раздел доступен с правом «chat.use». Право открывает функцию: конкретная переписка
+          Раздел доступен с правом: {describePermission('chat.use')}. Право открывает функцию: конкретная переписка
           доступна только ее участникам.
         </Notice>
       </AppShell>
@@ -237,7 +238,7 @@ export default async function ChatsPage({
             </section>
           ) : (
             <Notice>
-              Список пользователей доступен с правом «users.manage». Личный диалог можно открыть из
+              Список пользователей доступен с правом: {describePermission('users.manage')}. Личный диалог можно открыть из
               карточки пользователя.
             </Notice>
           )}

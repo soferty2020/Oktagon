@@ -19,8 +19,8 @@ export default function ErrorPage({
       <div className="flex w-full max-w-md flex-col gap-4 rounded-card bg-white p-8 shadow-sm">
         <h1 className="text-lg font-semibold text-ink">Не удалось открыть раздел</h1>
         <p className="text-sm text-muted">
-          Проверьте, что backend API запущен и доступен по адресу из переменной
-          окружения <span className="font-mono text-xs">API_BASE_URL</span>.
+          Проверьте, что сервер доступен, и повторите. Если ошибка повторяется, сообщите
+          администратору.
         </p>
         {error.digest ? (
           <p className="text-xs text-muted">Код ошибки: {error.digest}</p>

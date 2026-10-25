@@ -1,3 +1,4 @@
+import { describePermission } from '@/lib/permissions';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
@@ -43,7 +44,7 @@ export default async function InvitesPage() {
       <AppShell user={user}>
         <PageHeader title="Приглашения" />
         <Notice>
-          Раздел доступен с правом «users.manage»: приглашение выдает доступ в систему.
+          Раздел доступен с правом: {describePermission('users.manage')}: приглашение выдает доступ в систему.
         </Notice>
       </AppShell>
     );
@@ -77,7 +78,7 @@ export default async function InvitesPage() {
           <table className="w-full text-left text-sm">
             <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
               <tr>
-                <th className="px-4 py-3">Email</th>
+                <th className="px-4 py-3">Электронная почта</th>
                 <th className="px-4 py-3">Роль</th>
                 <th className="px-4 py-3">Действует до</th>
                 <th className="px-4 py-3">Создано</th>

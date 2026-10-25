@@ -1,3 +1,4 @@
+import { describePermission } from '@/lib/permissions';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
@@ -79,7 +80,7 @@ export default async function FreezesPage({
       <AppShell user={user}>
         <PageHeader title="Заморозки" />
         <Notice tone="error">
-          Раздел доступен только с правом «freezes.view» (BR-010). Права выдаются в разделе
+          Раздел доступен только с правом: {describePermission('freezes.view')} (BR-010). Права выдаются в разделе
           «Пользователи».
         </Notice>
       </AppShell>
@@ -100,7 +101,7 @@ export default async function FreezesPage({
 
       {!canViewAthletes ? (
         <Notice tone="info">
-          Чтобы выбрать спортсмена, нужен доступ к справочнику спортсменов (право «athletes.view»).
+          Чтобы выбрать спортсмена, нужен доступ к справочнику спортсменов (право {describePermission('athletes.view')}).
           Откройте карточку спортсмена из раздела «Спортсмены» — заморозки видны и там.
         </Notice>
       ) : (
@@ -177,7 +178,7 @@ export default async function FreezesPage({
               ) : (
                 <div className="mt-3">
                   <Notice>
-                    Заморозки доступны только для просмотра: нет права «freezes.edit».
+                    Заморозки доступны только для просмотра: нет права: {describePermission('freezes.edit')}.
                   </Notice>
                 </div>
               )}

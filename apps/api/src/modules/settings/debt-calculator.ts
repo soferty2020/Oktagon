@@ -97,7 +97,7 @@ function resolveTolerance(config: DebtRulesConfig, expectedAmount: number): numb
     return tolerance.amount;
   }
   if (tolerance.kind === 'PERCENT') {
-    // Процент считается от ожидаемой суммы: 2% от 50 000 — это 1 000 ₸.
+    // Процент считается от ожидаемой суммы: 2% от 50 000 — это 1 000 ₽.
     return roundMoney((expectedAmount * tolerance.percent) / 100);
   }
   return 0;

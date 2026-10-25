@@ -1,5 +1,6 @@
 'use client';
 
+import { describePermission } from '@/lib/permissions';
 import { useActionState, useEffect, useId, useState } from 'react';
 
 import {
@@ -357,7 +358,7 @@ export function PeriodRow({
           </div>
         ) : (
           <p className="border-t border-line pt-4 text-xs text-muted">
-            Доступен только просмотр: нет права «payments.edit».
+            Доступен только просмотр: нет права: {describePermission('payments.edit')}.
           </p>
         )}
       </div>

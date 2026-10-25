@@ -1,3 +1,4 @@
+import { describePermission } from '@/lib/permissions';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
@@ -191,7 +192,7 @@ export default async function AthleteFinancePage({
 
         {!canViewPayments ? (
           <div className="p-4">
-            <Notice>Оплаты скрыты: нет права «payments.view» (BR-010).</Notice>
+            <Notice>Оплаты скрыты: нет права: {describePermission('payments.view')} (BR-010).</Notice>
           </div>
         ) : periods && !periods.ok ? (
           <div className="p-4">
@@ -262,7 +263,7 @@ export default async function AthleteFinancePage({
 
         {!canViewFreezes ? (
           <div className="p-4">
-            <Notice>Заморозки скрыты: нет права «freezes.view» (BR-010).</Notice>
+            <Notice>Заморозки скрыты: нет права: {describePermission('freezes.view')} (BR-010).</Notice>
           </div>
         ) : freezes && !freezes.ok ? (
           <div className="p-4">
@@ -293,7 +294,7 @@ export default async function AthleteFinancePage({
             ) : null}
 
             {!canEditFreezes ? (
-              <Notice>Заморозки доступны только для просмотра: нет права «freezes.edit».</Notice>
+              <Notice>Заморозки доступны только для просмотра: нет права: {describePermission('freezes.edit')}.</Notice>
             ) : null}
 
             <table className="mt-2 w-full text-left text-sm">

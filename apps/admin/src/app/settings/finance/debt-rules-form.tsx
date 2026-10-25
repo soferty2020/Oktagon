@@ -119,7 +119,7 @@ export function DebtRulesForm({
           </label>
 
           <label className={labelClass}>
-            Сумма допуска, ₸
+            Сумма допуска, ₽
             <input
               type="number"
               name="toleranceAmount"
@@ -232,5 +232,5 @@ function formatMoney(value: number | null): string {
   if (value === null) {
     return 'есть должники без суммы';
   }
-  return `${value.toLocaleString('ru-RU')} ₸`;
+  return `${value.toLocaleString('ru-RU')} ₽`;
 }

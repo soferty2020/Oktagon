@@ -22,10 +22,10 @@ export function formatMoney(value: number | null | undefined): string {
   return fraction === '00' ? `${sign}${grouped}` : `${sign}${grouped},${fraction}`;
 }
 
-/** Сумма с подписью единицы: «25 000 ₸». Валюта в MVP одна и не настраивается. */
+/** Сумма с подписью единицы: «25 000 ₽». Валюта в MVP одна и не настраивается. */
 export function formatAmount(value: number | null | undefined): string {
   const formatted = formatMoney(value);
-  return formatted === '—' ? formatted : `${formatted} ₸`;
+  return formatted === '—' ? formatted : `${formatted} ₽`;
 }
 
 export const MONTH_NAMES: readonly string[] = [

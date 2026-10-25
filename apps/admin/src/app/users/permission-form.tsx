@@ -48,7 +48,7 @@ export function GrantPermissionForm({
             </option>
             {available.map((code) => (
               <option key={code} value={code}>
-                {labels[code] ?? code} ({code})
+                {labels[code] ?? code}
               </option>
             ))}
           </select>

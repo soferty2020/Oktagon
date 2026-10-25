@@ -1,3 +1,4 @@
+import { describePermission } from '@/lib/permissions';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
@@ -96,7 +97,7 @@ export default async function FinancePage({
       <AppShell user={user}>
         <PageHeader title="Финансы" />
         <Notice tone="error">
-          Раздел доступен только с правом «payments.view» (BR-010). Права выдаются в разделе
+          Раздел доступен только с правом: {describePermission('payments.view')} (BR-010). Права выдаются в разделе
           «Пользователи».
         </Notice>
       </AppShell>
@@ -286,7 +287,7 @@ export default async function FinancePage({
             <span className="text-xs text-muted">Оплата вносится в карточке спортсмена</span>
           ) : (
             <span className="text-xs text-muted">
-              Только просмотр: нет права «payments.edit»
+              Только просмотр: нет права: {describePermission('payments.edit')}
             </span>
           )}
         </div>

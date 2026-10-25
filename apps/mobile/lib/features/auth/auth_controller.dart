@@ -96,7 +96,7 @@ class AuthController extends ChangeNotifier {
 String describeAuthError(ApiException error) {
   switch (error.code) {
     case 'INVALID_CREDENTIALS':
-      return 'Неверный email или пароль';
+      return 'Неверная почта или пароль';
     case 'USER_BLOCKED':
       return 'Учетная запись заблокирована. Обратитесь к администратору клуба.';
     case 'INVITE_INVALID':
@@ -106,7 +106,7 @@ String describeAuthError(ApiException error) {
     case 'NETWORK':
       return error.message;
     case 'VALIDATION_FAILED':
-      return 'Проверьте email и пароль: email должен быть адресом, пароль — не короче 8 символов.';
+      return 'Проверьте почту и пароль: адрес почты должен быть корректным, пароль — не короче 8 символов.';
     default:
       return error.message;
   }

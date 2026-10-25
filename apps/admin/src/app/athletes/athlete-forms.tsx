@@ -4,6 +4,8 @@ import { useActionState } from 'react';
 
 import { BELT_GRADES } from '@octagon/contracts';
 
+import { statusLabel } from '@/components/status-badge';
+
 import {
   createAthleteAction,
   linkAccountAction,
@@ -20,7 +22,7 @@ const buttonClass =
   'rounded-md bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-60';
 
 const STATUSES = ['ACTIVE', 'FROZEN', 'ARCHIVED'] as const;
-const GENDERS = ['MALE', 'FEMALE', 'UNSPECIFIED'] as const;
+const GENDERS = [['MALE', 'Мужской'], ['FEMALE', 'Женский'], ['UNSPECIFIED', 'Не указан']] as const;
 
 function StateMessages({ state }: { state: AthleteFormState }) {
   return (
@@ -81,9 +83,9 @@ export function CreateAthleteForm() {
         Пол
         <select name="gender" className={inputClass} defaultValue="">
           <option value="">не указан</option>
-          {GENDERS.map((gender) => (
-            <option key={gender} value={gender}>
-              {gender}
+          {GENDERS.map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
             </option>
           ))}
         </select>
@@ -199,7 +201,7 @@ export function EditAthleteForm({ athlete }: { athlete: AthleteValues }) {
           <select name="status" defaultValue={athlete.status} className={inputClass}>
             {STATUSES.map((status) => (
               <option key={status} value={status}>
-                {status}
+                {statusLabel(status)}
               </option>
             ))}
           </select>
@@ -276,7 +278,7 @@ export function LinkAccountForm({
         </label>
         <label className={labelClass}>
           Кем является
-          <input name="relation" placeholder="PARENT" maxLength={32} className={inputClass} />
+          <input name="relation" placeholder="например, родитель" maxLength={32} className={inputClass} />
         </label>
         <button type="submit" disabled={pending} className={buttonClass}>
           {pending ? '…' : 'Связать'}

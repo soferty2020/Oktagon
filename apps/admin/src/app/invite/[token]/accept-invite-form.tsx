@@ -56,7 +56,7 @@ export function AcceptInviteForm({
         ощущение, что адрес можно поменять.
       */}
       <div className={labelClass}>
-        <span className="text-sm font-medium text-ink">Email приглашения</span>
+        <span className="text-sm font-medium text-ink">Электронная почта приглашения</span>
         <span className="rounded-md border border-line bg-canvas px-3 py-2 text-ink">
           {email}
         </span>

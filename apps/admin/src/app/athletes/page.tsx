@@ -1,3 +1,4 @@
+import { describePermission } from '@/lib/permissions';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
@@ -49,7 +50,7 @@ export default async function AthletesPage() {
 
       {!canViewContacts ? (
         <div className="mb-4">
-          <Notice>Контактные данные скрыты: нет права «athletes.contacts.view».</Notice>
+          <Notice>Контактные данные скрыты: нет права: {describePermission('athletes.contacts.view')}.</Notice>
         </div>
       ) : null}
 

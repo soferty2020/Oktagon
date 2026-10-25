@@ -1,3 +1,4 @@
+import { describePermission } from '@/lib/permissions';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
@@ -133,7 +134,7 @@ export default async function SchedulePage() {
             defaultQuarter={quarter}
           />
         ) : (
-          <Notice>Раздел доступен только для просмотра: нет права «schedule.edit».</Notice>
+          <Notice>Раздел доступен только для просмотра: нет права: {describePermission('schedule.edit')}.</Notice>
         )}
       </div>
     </AppShell>

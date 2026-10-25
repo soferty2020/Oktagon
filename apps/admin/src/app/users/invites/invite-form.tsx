@@ -53,9 +53,9 @@ export function InviteForm() {
         <label className={labelClass}>
           Роль
           <select name="role" required defaultValue="STAFF" className={inputClass}>
-            <option value="MEMBER">MEMBER — родитель или взрослый спортсмен</option>
-            <option value="STAFF">STAFF — тренер или администратор</option>
-            <option value="SUPERADMIN">SUPERADMIN — руководитель</option>
+            <option value="MEMBER">Участник — родитель или взрослый спортсмен</option>
+            <option value="STAFF">Сотрудник — тренер или администратор</option>
+            <option value="SUPERADMIN">Руководитель клуба</option>
           </select>
         </label>
 

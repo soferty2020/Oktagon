@@ -1,3 +1,4 @@
+import { describePermission } from '@/lib/permissions';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
@@ -115,7 +116,7 @@ export default async function NewsPostPage({ params }: { params: Promise<{ id: s
         <section className="mt-6 rounded-card border border-line bg-white p-5">
           <h2 className="text-sm font-semibold text-ink">Изменить новость</h2>
           <p className="mt-1 text-xs text-muted">
-            Доступно автору и тем, у кого есть право «news.edit».
+            Доступно автору и тем, у кого есть право {describePermission('news.edit')}.
           </p>
           <div className="mt-3">
             <EditNewsForm post={data} />

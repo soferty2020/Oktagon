@@ -1,3 +1,4 @@
+import { describePermission } from '@/lib/permissions';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
@@ -83,7 +84,7 @@ export default async function DebtorsPage({
       />
 
       {!canView ? (
-        <Notice tone="error">Список доступен только с правом «payments.view» (BR-010).</Notice>
+        <Notice tone="error">Список доступен только с правом: {describePermission('payments.view')} (BR-010).</Notice>
       ) : (
         <>
           <div className="flex flex-wrap items-end justify-between gap-4">

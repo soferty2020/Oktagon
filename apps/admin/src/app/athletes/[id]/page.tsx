@@ -1,3 +1,4 @@
+import { describePermission } from '@/lib/permissions';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
@@ -129,7 +130,7 @@ export default async function AthletePage({ params }: { params: Promise<{ id: st
       {canEdit ? (
         <EditAthleteForm athlete={athlete.data} />
       ) : (
-        <Notice>Карточка доступна только для просмотра: нет права «athletes.edit».</Notice>
+        <Notice>Карточка доступна только для просмотра: нет права: {describePermission('athletes.edit')}.</Notice>
       )}
 
       <section className="mt-6 rounded-card border border-line bg-white p-5">
@@ -141,7 +142,7 @@ export default async function AthletePage({ params }: { params: Promise<{ id: st
         <table className="mt-3 w-full text-left text-sm">
           <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
             <tr>
-              <th className="py-2">Email</th>
+              <th className="py-2">Электронная почта</th>
               <th className="py-2">Кем является</th>
               <th className="py-2">Основной</th>
               <th className="py-2" />
@@ -185,7 +186,7 @@ export default async function AthletePage({ params }: { params: Promise<{ id: st
             {!canViewUsers ? (
               <Notice>
                 Чтобы связать аккаунт, нужен доступ к списку пользователей (право
-                «users.view»): без него выбрать аккаунт не из чего.
+                {describePermission('users.view')}): без него выбрать аккаунт не из чего.
               </Notice>
             ) : availableUsers.length > 0 ? (
               <LinkAccountForm athleteId={athlete.data.id} users={availableUsers} />

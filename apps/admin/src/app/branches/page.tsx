@@ -1,3 +1,4 @@
+import { describePermission } from '@/lib/permissions';
 import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
@@ -142,7 +143,7 @@ export default async function BranchesPage() {
         {canManage ? (
           <BranchForm />
         ) : (
-          <Notice>Раздел доступен только для просмотра: нет права «branches.manage».</Notice>
+          <Notice>Раздел доступен только для просмотра: нет права: {describePermission('branches.manage')}.</Notice>
         )}
       </div>
     </AppShell>

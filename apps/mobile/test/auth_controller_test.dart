@@ -45,7 +45,7 @@ void main() {
   test('неудачный вход оставляет на экране входа понятный текст', () async {
     client.errors['POST /auth/login'] = const ApiException(
       code: 'INVALID_CREDENTIALS',
-      message: 'Неверный email или пароль',
+      message: 'Неверная почта или пароль',
       statusCode: 401,
     );
 
@@ -54,7 +54,7 @@ void main() {
     expect(success, isFalse);
     expect(controller.status, AuthStatus.unauthenticated);
     // Текст свой, а не сообщение backend: пользователю нужнее действие.
-    expect(controller.error, 'Неверный email или пароль');
+    expect(controller.error, 'Неверная почта или пароль');
     expect(controller.busy, isFalse);
   });
 

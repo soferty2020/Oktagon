@@ -1,3 +1,4 @@
+import { describePermission } from '@/lib/permissions';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
@@ -47,7 +48,7 @@ export default async function UsersPage() {
     return (
       <AppShell user={user}>
         <PageHeader title="Пользователи" />
-        <Notice>Раздел доступен с правом «users.manage».</Notice>
+        <Notice>Раздел доступен с правом: {describePermission('users.manage')}.</Notice>
       </AppShell>
     );
   }

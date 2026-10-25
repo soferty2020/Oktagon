@@ -1,3 +1,4 @@
+import { describePermission } from '@/lib/permissions';
 import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
@@ -68,7 +69,7 @@ export default async function TrainersPage() {
     return (
       <AppShell user={user}>
         <PageHeader title="Тренеры" />
-        <Notice>Раздел доступен с правом «groups.view».</Notice>
+        <Notice>Раздел доступен с правом: {describePermission('groups.view')}.</Notice>
       </AppShell>
     );
   }
@@ -171,7 +172,7 @@ export default async function TrainersPage() {
                 </div>
               ) : (
                 <p className="mt-3 text-xs text-muted">
-                  Привязка аккаунта требует права «users.manage».
+                  Привязка аккаунта требует права {describePermission('users.manage')}.
                 </p>
               )}
 
