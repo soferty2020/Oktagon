@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { logoutAction } from '@/app/actions';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Icon } from '@/components/icons';
@@ -86,9 +87,16 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
   return (
     <div className="min-h-screen bg-canvas">
       <aside className="fixed inset-y-0 left-0 hidden w-[248px] flex-col bg-ink md:flex">
-        <div className="flex items-center gap-2 px-6 py-6">
-          <span className="text-lg font-extrabold tracking-[0.18em] text-white">OCTAGON</span>
-          <span className="mb-0.5 h-[3px] w-6 rounded bg-accent" />
+        <div className="px-5 py-5">
+          {/* Оригинальный логотип клуба: PNG с прозрачным фоном, вписывается по высоте.
+              Раньше здесь была текстовая надпись, потому что оригинального ассета не было. */}
+          <Image
+            src="/brand/octagon-logo.png"
+            alt="OCTAGON — каратэ-клуб"
+            width={1100}
+            height={307}
+            className="h-12 w-auto"
+          />
         </div>
 
         <nav className="flex-1 space-y-1 px-3 pb-6">

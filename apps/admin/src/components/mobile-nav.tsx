@@ -1,5 +1,7 @@
 'use client';
 
+import Image from 'next/image';
+
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -66,7 +68,13 @@ export function MobileNav({
             aria-label="Разделы"
           >
             <div className="flex items-center justify-between px-5 py-5">
-              <span className="text-base font-extrabold tracking-[0.18em] text-white">OCTAGON</span>
+              <Image
+                src="/brand/octagon-logo.png"
+                alt="OCTAGON — каратэ-клуб"
+            width={1100}
+            height={307}
+                className="h-8 w-auto"
+              />
               <button
                 type="button"
                 onClick={() => setOpen(false)}

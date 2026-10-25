@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useId, useState } from 'react';
 
+import { ConfirmButton } from '@/components/confirm-button';
 import {
   recordPaymentAction,
   refundPaymentAction,
@@ -191,19 +192,17 @@ export function VoidPaymentForm({
   athleteId: string;
 }) {
   return (
-    <form
-      action={voidPaymentAction}
-      onSubmit={(event) => {
-        if (!confirm('Отменить оплату? Запись будет удалена, период пересчитан.')) {
-          event.preventDefault();
-        }
-      }}
-    >
+    <form action={voidPaymentAction}>
       <input type="hidden" name="paymentId" value={paymentId} />
       <input type="hidden" name="athleteId" value={athleteId} />
-      <button type="submit" className="text-xs text-muted underline hover:text-red-700">
+      <ConfirmButton
+        confirmTitle="Отменить оплату?"
+        confirmText="Запись будет удалена, период пересчитан. Действие попадёт в журнал."
+        confirmLabel="Отменить оплату"
+        className="text-xs text-muted underline hover:text-red-700"
+      >
         Отменить оплату
-      </button>
+      </ConfirmButton>
     </form>
   );
 }
