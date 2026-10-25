@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
 import { EmptyState } from '@/components/empty-state';
 import { StatusBadge } from '@/components/status-badge';
+import { fieldClass, secondaryButtonClass } from '@/components/ui';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
 import { CreateAthleteForm } from './athlete-forms';
@@ -31,7 +32,14 @@ interface AthleteView {
  * `athletes.contacts.view`: фильтрация выполняется на backend, интерфейс лишь
  * показывает прочерк (docs/15-security.md).
  */
-export default async function AthletesPage() {
+export default async function AthletesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const params = await searchParams;
+  const query = (params.q ?? '').trim().toLowerCase();
+
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login');
@@ -41,6 +49,29 @@ export default async function AthletesPage() {
   const result = await apiFetch<AthleteView[]>('/athletes', { accessToken });
   const canViewContacts = user.permissions.includes('athletes.contacts.view');
   const canEdit = user.permissions.includes('athletes.edit');
+
+  // Поиск клиентский, по уже загруженному списку: серверного поиска в API нет.
+  // На большом клубе это ограничение, поэтому подпись честно говорит «в списке».
+  const rows = result.ok
+    ? result.data.filter((athlete) => {
+        if (!query) {
+          return true;
+        }
+
+        const haystack = [
+          athlete.lastName,
+          athlete.firstName,
+          athlete.middleName,
+          athlete.phone,
+          athlete.email,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+
+        return haystack.includes(query);
+      })
+    : [];
 
   return (
     <AppShell user={user}>
@@ -54,6 +85,24 @@ export default async function AthletesPage() {
           <Notice>Контактные данные скрыты: нет права: {describePermission('athletes.contacts.view')}.</Notice>
         </div>
       ) : null}
+
+      <form action="/athletes" className="mb-4 flex flex-wrap items-center gap-2">
+        <input
+          name="q"
+          defaultValue={params.q ?? ''}
+          placeholder="Поиск по имени или телефону"
+          className={`${fieldClass} max-w-sm bg-white`}
+          aria-label="Поиск спортсмена"
+        />
+        <button type="submit" className={`${secondaryButtonClass} bg-white`}>
+          Найти
+        </button>
+        {query ? (
+          <Link href="/athletes" className="text-sm text-accent hover:underline">
+            Сбросить
+          </Link>
+        ) : null}
+      </form>
 
       <div className={canEdit ? 'grid gap-6 lg:grid-cols-[2fr_1fr]' : ''}>
         {result.ok && result.data.length === 0 ? (
@@ -77,8 +126,8 @@ export default async function AthletesPage() {
                 </tr>
               </thead>
               <tbody>
-                {result.ok && result.data.length > 0 ? (
-                  result.data.map((athlete) => (
+                {result.ok && rows.length > 0 ? (
+                  rows.map((athlete) => (
                     <tr key={athlete.id} className="border-b border-line last:border-0">
                       <td className="px-4 py-3">
                         <Link
@@ -99,7 +148,7 @@ export default async function AthletesPage() {
                 ) : (
                   <tr>
                     <td colSpan={4} className="px-4 py-6">
-                      <Notice>{result.ok ? 'Спортсмены не найдены.' : describeError(result.error)}</Notice>
+                      <Notice>{result.ok ? 'Ничего не найдено по запросу.' : describeError(result.error)}</Notice>
                     </td>
                   </tr>
                 )}

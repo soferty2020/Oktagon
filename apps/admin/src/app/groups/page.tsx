@@ -18,6 +18,8 @@ interface GroupView {
   isActive: boolean;
   primaryBranchName: string | null;
   activeMembersCount: number;
+  /** API отдает тренеров группы; в таблице показывается первый как основной. */
+  trainers?: { id: string; displayName: string }[];
 }
 
 interface BranchView {
@@ -75,6 +77,7 @@ export default async function GroupsPage() {
               <tr>
                 <th className="px-4 py-3">Название</th>
                 <th className="px-4 py-3">Основной филиал</th>
+                <th className="px-4 py-3">Тренер</th>
                 <th className="px-4 py-3">Участников</th>
                 <th className="px-4 py-3">Статус</th>
               </tr>
@@ -96,6 +99,11 @@ export default async function GroupsPage() {
                     </td>
                     <td className="px-4 py-3 text-muted">
                       {group.primaryBranchName ?? 'не назначен'}
+                    </td>
+                    <td className="px-4 py-3 text-muted">
+                      {group.trainers && group.trainers.length > 0
+                        ? group.trainers.map((trainer) => trainer.displayName).join(', ')
+                        : 'не назначен'}
                     </td>
                     <td className="px-4 py-3 text-muted">{group.activeMembersCount}</td>
                     <td className="px-4 py-3">
