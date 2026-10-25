@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
+import { EmptyState } from '@/components/empty-state';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
 import { CreateNewsForm, PublishNewsForm } from './news-forms';
@@ -117,7 +118,13 @@ export default async function NewsPage({
           {!posts.ok ? <Notice tone="error">{describeError(posts.error)}</Notice> : null}
 
           {posts.ok && posts.data.length === 0 ? (
-            <Notice>Новостей пока нет. {canCreate ? 'Создайте первую — форма справа.' : ''}</Notice>
+            <div className="rounded-card border border-line bg-white">
+              <EmptyState
+                icon="news"
+                title="Новостей пока нет"
+                description="Опубликуйте объявление — оно появится у спортсменов и родителей."
+              />
+            </div>
           ) : null}
 
           {posts.ok

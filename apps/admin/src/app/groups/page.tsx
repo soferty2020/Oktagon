@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
+import { EmptyState } from '@/components/empty-state';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
 import { CreateGroupForm } from './group-forms';
@@ -111,12 +112,18 @@ export default async function GroupsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="px-4 py-6">
-                    <Notice>
-                      {groups.ok
-                        ? 'Групп пока нет либо они вне вашей зоны доступа.'
-                        : describeError(groups.error)}
-                    </Notice>
+                  <td colSpan={4} className="p-0">
+                    {groups.ok ? (
+                      <EmptyState
+                        icon="groups"
+                        title="Групп пока нет"
+                        description="Создайте группу справа: в неё записываются спортсмены и строится расписание."
+                      />
+                    ) : (
+                      <div className="px-4 py-6">
+                        <Notice tone="error">{describeError(groups.error)}</Notice>
+                      </div>
+                    )}
                   </td>
                 </tr>
               )}

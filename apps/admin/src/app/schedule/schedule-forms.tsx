@@ -1,5 +1,7 @@
 'use client';
 
+import { fieldClass } from '@/components/ui';
+
 import { useActionState } from 'react';
 
 import {
@@ -14,8 +16,7 @@ import {
 
 const initialState: ScheduleFormState = {};
 
-const inputClass =
-  'rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent';
+const inputClass = fieldClass;
 const labelClass = 'flex flex-col gap-1 text-xs font-medium text-muted';
 const buttonClass =
   'rounded-md bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-60';

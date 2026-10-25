@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
+import { EmptyState } from '@/components/empty-state';
 import { StatusBadge } from '@/components/status-badge';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
@@ -133,11 +134,12 @@ export default async function ChatsPage({
                 <Notice tone="error">{describeError(conversations.error)}</Notice>
               </li>
             ) : conversations.data.length === 0 ? (
-              <li className="px-4 py-6">
-                <Notice>
-                  Диалогов пока нет. Откройте чат группы или напишите пользователю — переписка
-                  появится здесь.
-                </Notice>
+              <li>
+                <EmptyState
+                  icon="chats"
+                  title="Диалогов пока нет"
+                  description="Откройте чат группы или напишите пользователю — переписка появится здесь."
+                />
               </li>
             ) : (
               conversations.data.map((conversation) => (

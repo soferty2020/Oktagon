@@ -1,5 +1,7 @@
 'use client';
 
+import { fieldClass } from '@/components/ui';
+
 import Link from 'next/link';
 import { useActionState } from 'react';
 
@@ -7,8 +9,7 @@ import { acceptInviteAction, type AcceptInviteState } from '@/app/users/invites/
 
 const initialState: AcceptInviteState = {};
 
-const inputClass =
-  'rounded-md border border-line px-3 py-2 text-ink outline-none focus:border-accent';
+const inputClass = fieldClass;
 const labelClass = 'flex flex-col gap-1';
 
 /**

@@ -1,5 +1,7 @@
 'use client';
 
+import { fieldClass } from '@/components/ui';
+
 import { useActionState } from 'react';
 
 import {
@@ -12,8 +14,7 @@ import {
 
 const initialState: FormState = {};
 
-const inputClass =
-  'w-full rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent';
+const inputClass = fieldClass;
 const labelClass = 'flex flex-col gap-1 text-xs font-medium text-muted';
 const secondaryButtonClass =
   'rounded-md border border-line bg-white px-3 py-1.5 text-xs text-ink hover:bg-canvas disabled:opacity-60';

@@ -1,13 +1,14 @@
 'use client';
 
+import { fieldClass } from '@/components/ui';
+
 import { useActionState } from 'react';
 
 import { deleteMessageAction, sendMessageAction, type ChatFormState } from '@/app/chats/actions';
 
 const initialState: ChatFormState = {};
 
-const inputClass =
-  'w-full rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent';
+const inputClass = fieldClass;
 
 /**
  * Отправка сообщения.

@@ -1,8 +1,11 @@
 'use client';
 
+import { fieldClass } from '@/components/ui';
+
 import { useEffect, useState } from 'react';
 
 import type { FinanceFormState } from '@/app/finance/actions';
+import { primaryButtonClass, secondaryButtonCompactClass } from '@/components/ui';
 import type { MembershipPeriodStatus } from '@octagon/contracts';
 
 /**
@@ -13,15 +16,11 @@ import type { MembershipPeriodStatus } from '@octagon/contracts';
  * стоят рядом на одной странице.
  */
 
-export const inputClass =
-  'rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent';
-export const smallInputClass =
-  'rounded-md border border-line px-2 py-1 text-xs outline-none focus:border-accent';
+export const inputClass = fieldClass;
+export const smallInputClass = fieldClass;
 export const labelClass = 'flex flex-col gap-1 text-xs font-medium text-muted';
-export const buttonClass =
-  'rounded-md bg-accent px-3 py-2 text-sm font-medium text-white disabled:opacity-60';
-export const smallButtonClass =
-  'rounded-md border border-line bg-white px-3 py-1 text-xs text-ink hover:bg-canvas disabled:opacity-60';
+export const buttonClass = primaryButtonClass;
+export const smallButtonClass = secondaryButtonCompactClass;
 
 /**
  * Подписи статуса периода.

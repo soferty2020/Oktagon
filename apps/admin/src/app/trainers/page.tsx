@@ -2,6 +2,7 @@ import { describePermission } from '@/lib/permissions';
 import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
+import { EmptyState } from '@/components/empty-state';
 import { statusLabel } from '@/components/status-badge';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
@@ -119,9 +120,13 @@ export default async function TrainersPage() {
           {!trainers.ok ? <Notice tone="error">{describeError(trainers.error)}</Notice> : null}
 
           {trainers.ok && list.length === 0 ? (
-            <Notice>
-              Тренеров пока нет. {canEditCard ? 'Добавьте первого — форма справа.' : ''}
-            </Notice>
+            <div className="rounded-card border border-line bg-white">
+              <EmptyState
+                icon="trainers"
+                title="Тренеров пока нет"
+                description="Профиль тренера нужен, чтобы назначать его на группы и занятия."
+              />
+            </div>
           ) : null}
 
           {list.map((trainer) => (

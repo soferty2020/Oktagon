@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
+import { EmptyState } from '@/components/empty-state';
 import { StatusBadge } from '@/components/status-badge';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
@@ -55,50 +56,56 @@ export default async function AthletesPage() {
       ) : null}
 
       <div className={canEdit ? 'grid gap-6 lg:grid-cols-[2fr_1fr]' : ''}>
-        <div className="rounded-card border border-line bg-white">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
-              <tr>
-                <th className="px-4 py-3">ФИО</th>
-                <th className="px-4 py-3">Дата рождения</th>
-                <th className="px-4 py-3">Телефон</th>
-                <th className="px-4 py-3">Статус</th>
-              </tr>
-            </thead>
-            <tbody>
-              {result.ok && result.data.length > 0 ? (
-                result.data.map((athlete) => (
-                  <tr key={athlete.id} className="border-b border-line last:border-0">
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/athletes/${athlete.id}`}
-                        className="font-medium text-ink underline decoration-line hover:decoration-accent"
-                      >
-                        {athlete.lastName} {athlete.firstName}
-                        {athlete.middleName ? ` ${athlete.middleName}` : ''}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-muted">{athlete.birthDate ?? '—'}</td>
-                    <td className="px-4 py-3 text-muted">{athlete.phone ?? '—'}</td>
-                    <td className="px-4 py-3">
-                      <StatusBadge value={athlete.status} />
+        {result.ok && result.data.length === 0 ? (
+          <div className="rounded-card border border-line bg-white">
+            <EmptyState
+              icon="athletes"
+              title="Спортсменов пока нет"
+              description="Заполните карточку справа: после этого спортсмена можно записать в группу и вести оплаты."
+            />
+          </div>
+        ) : (
+          <div className="rounded-card border border-line bg-white">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
+                <tr>
+                  <th className="px-4 py-3">ФИО</th>
+                  <th className="px-4 py-3">Дата рождения</th>
+                  <th className="px-4 py-3">Телефон</th>
+                  <th className="px-4 py-3">Статус</th>
+                </tr>
+              </thead>
+              <tbody>
+                {result.ok && result.data.length > 0 ? (
+                  result.data.map((athlete) => (
+                    <tr key={athlete.id} className="border-b border-line last:border-0">
+                      <td className="px-4 py-3">
+                        <Link
+                          href={`/athletes/${athlete.id}`}
+                          className="font-medium text-ink underline decoration-line hover:decoration-accent"
+                        >
+                          {athlete.lastName} {athlete.firstName}
+                          {athlete.middleName ? ` ${athlete.middleName}` : ''}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3 text-muted">{athlete.birthDate ?? '—'}</td>
+                      <td className="px-4 py-3 text-muted">{athlete.phone ?? '—'}</td>
+                      <td className="px-4 py-3">
+                        <StatusBadge value={athlete.status} />
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-6">
+                      <Notice>{result.ok ? 'Спортсмены не найдены.' : describeError(result.error)}</Notice>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={4} className="px-4 py-6">
-                    <Notice>
-                      {result.ok
-                        ? 'Спортсменов пока нет либо они вне вашей зоны доступа.'
-                        : describeError(result.error)}
-                    </Notice>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {canEdit ? <CreateAthleteForm /> : null}
       </div>

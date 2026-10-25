@@ -1,8 +1,8 @@
+import { fieldClass, primaryButtonClass } from '@/components/ui';
 import { CURRENT_YEAR } from './finance-shared';
 import { MONTH_NAMES } from '@/lib/money';
 
-const inputClass =
-  'rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent';
+const inputClass = fieldClass;
 
 /**
  * Выбор расчетного месяца.
@@ -41,10 +41,7 @@ export function MonthPicker({ year, month }: { year: number; month: number }) {
         </select>
       </label>
 
-      <button
-        type="submit"
-        className="rounded-md border border-line bg-white px-4 py-2 text-sm text-ink hover:bg-canvas"
-      >
+      <button type="submit" className={primaryButtonClass}>
         Показать
       </button>
     </form>
