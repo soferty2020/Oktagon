@@ -58,9 +58,12 @@ WORKDIR /app
 # Standalone-сборка кладет приложение в `apps/admin` (структура монорепозитория),
 # поэтому и запуск идет из этого пути.
 COPY --from=build --chown=nextjs:nodejs /repo/apps/admin/.next/standalone ./
-# Статику Next не включает в standalone: без этих двух копирований страницы
+# Статику Next не включает в standalone: без этих копирований страницы
 # открывались бы без стилей и клиентских скриптов.
 COPY --from=build --chown=nextjs:nodejs /repo/apps/admin/.next/static ./apps/admin/.next/static
+# Публичные файлы (логотип клуба) тоже вне standalone. Пропустили — и на проде
+# `/brand/octagon-logo.png` отдавал 404, а в сайдбаре была битая картинка.
+COPY --from=build --chown=nextjs:nodejs /repo/apps/admin/public ./apps/admin/public
 
 USER nextjs
 EXPOSE 3000
