@@ -90,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           textInputAction: TextInputAction.next,
                           enabled: !busy,
                           decoration: const InputDecoration(
-                            labelText: 'Email',
+                            labelText: 'Электронная почта',
                             prefixIcon: Icon(Icons.mail_outline),
                           ),
                           validator: (value) {
