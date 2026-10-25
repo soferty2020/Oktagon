@@ -6,7 +6,7 @@
 
 ## Что есть
 
-Десктоп (1440×960), 11 экранов в `screens.figcraft`:
+Десктоп (1440×960), 16 экранов в `screens.figcraft` и `sections.figcraft`:
 
 | Экран | Файл |
 |---|---|
@@ -14,6 +14,11 @@
 | Спортсмены | [export/Спортсмены.png](export/Спортсмены.png) |
 | Финансы | [export/Финансы.png](export/Финансы.png) |
 | Карточка спортсмена | [export/Карточка спортсмена.png](export/Карточка%20спортсмена.png) |
+| Группы | [export/Группы.png](export/Группы.png) |
+| Тренеры | [export/Тренеры.png](export/Тренеры.png) |
+| Филиалы и залы | [export/Филиалы.png](export/Филиалы.png) |
+| Расписание | [export/Расписание.png](export/Расписание.png) |
+| Посещаемость | [export/Посещаемость.png](export/Посещаемость.png) |
 | Диалог: спортсмен | [export/Диалог_ спортсмен.png](export/Диалог_%20спортсмен.png) |
 | Диалог: оплата | [export/Диалог_ оплата.png](export/Диалог_%20оплата.png) |
 | Диалог: заморозка | [export/Диалог_ заморозка.png](export/Диалог_%20заморозка.png) |
@@ -36,6 +41,10 @@
 node docs/design/figcraft/build-screens.mjs
 figcraft-cli run docs/design/figcraft/screens.json --out docs/design/figcraft/screens.figcraft
 figcraft-cli export docs/design/figcraft/screens.figcraft -o docs/design/figcraft/export
+
+node docs/design/figcraft/build-sections.mjs
+figcraft-cli run docs/design/figcraft/sections.json --out docs/design/figcraft/sections.figcraft
+figcraft-cli export docs/design/figcraft/sections.figcraft -o docs/design/figcraft/export
 
 node docs/design/figcraft/build-mobile.mjs
 figcraft-cli run docs/design/figcraft/mobile.json --out docs/design/figcraft/mobile.figcraft

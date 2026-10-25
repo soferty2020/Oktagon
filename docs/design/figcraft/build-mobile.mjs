@@ -164,7 +164,7 @@ const list = b.frame(journal, 16, 256, 358, 480, { fill: TOKENS.white, cornerRad
   }[row.tone];
 
   const chip = b.frame(list, 16, y + 26, 120, 28, { fill: tone.bg, cornerRadius: 14 }, `Статус: ${row.state}`);
-  b.text(chip, 0, 6, row.state, { fill: tone.fg, fontSize: 11, fontStyle: 'Medium', textAlign: 'center' }, 'Текст статуса');
+  b.text(chip, 0, 6, row.state, { fill: tone.fg, fontSize: 11, fontStyle: 'Medium', textAlign: 'center', width: 120 }, 'Текст статуса');
 
   if (index < 4) {
     b.rect(list, 16, y + 72, 326, 1, { fill: TOKENS.line }, 'Разделитель');

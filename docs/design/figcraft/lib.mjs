@@ -56,16 +56,23 @@ export function createBuilder() {
       props,
     });
 
-  const text = (parent, x, y, value, props = {}, name) =>
-    add('node.create', {
+  const text = (parent, x, y, value, props = {}, name) => {
+    // Ширина слоя — не свойство `node.set`, а параметр `node.create`. Без неё
+    // textAlign: center центрирует строку по её же ширине, и подпись в чипе
+    // остаётся у левого края; переносим width в нужное место.
+    const { width, ...rest } = props;
+
+    return add('node.create', {
       type: 'text',
       parent: ref(parent),
       x,
       y,
+      ...(width ? { width } : {}),
       text: value,
       name: name ?? value,
-      props: { fontFamily: 'Inter', ...props },
+      props: { fontFamily: 'Inter', ...rest },
     });
+  };
 
   const frame = (parent, x, y, width, height, props = {}, name) =>
     add('node.create', {
