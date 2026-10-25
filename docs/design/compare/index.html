@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>OCTAGON — макет против прода</title>
+<style>
+  body { font-family: Inter, system-ui, sans-serif; background: #F7F7F9; color: #0E0E10; margin: 0; padding: 32px; }
+  h1 { font-size: 22px; margin: 0 0 8px; }
+  p.hint { color: #8A8A8F; font-size: 14px; margin: 0 0 32px; }
+  section { margin-bottom: 40px; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  .pair { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+  figure { margin: 0; background: #fff; border: 1px solid #EDEDF0; border-radius: 12px; padding: 8px; }
+  figcaption { font-size: 12px; color: #8A8A8F; margin-bottom: 6px; }
+  img { display: block; max-width: 640px; height: auto; border-radius: 8px; }
+  .missing { color: #8A8A8F; font-size: 13px; }
+</style>
+</head>
+<body>
+<h1>OCTAGON — макет против прода</h1>
+<p class="hint">Слева рендер из генератора, справа фактический интерфейс. Оба 1440 px, поэтому сравнимы построчно.</p>
+
+    <section>
+      <h2>Дашборд</h2>
+      <div class="pair">
+        <figure><figcaption>Figma / FigCraft</figcaption><img src="design/Дашборд.png" alt="Дашборд — макет"></figure>
+        <figure><figcaption>Админка (прод)</figcaption><img src="prod/Дашборд.png" alt="Дашборд — прод"></figure>
+      </div>
+    </section>
+
+    <section>
+      <h2>Спортсмены</h2>
+      <div class="pair">
+        <figure><figcaption>Figma / FigCraft</figcaption><img src="design/Спортсмены.png" alt="Спортсмены — макет"></figure>
+        <figure><figcaption>Админка (прод)</figcaption><img src="prod/Спортсмены.png" alt="Спортсмены — прод"></figure>
+      </div>
+    </section>
+
+    <section>
+      <h2>Финансы</h2>
+      <div class="pair">
+        <figure><figcaption>Figma / FigCraft</figcaption><img src="design/Финансы.png" alt="Финансы — макет"></figure>
+        <figure><figcaption>Админка (прод)</figcaption><img src="prod/Финансы.png" alt="Финансы — прод"></figure>
+      </div>
+    </section>
+
+    <section>
+      <h2>Карточка спортсмена</h2>
+      <div class="pair">
+        <figure><figcaption>Figma / FigCraft</figcaption><img src="design/Карточка спортсмена.png" alt="Карточка спортсмена — макет"></figure>
+        <p class="missing">Скриншот прода не снят</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Диалог: спортсмен</h2>
+      <div class="pair">
+        <figure><figcaption>Figma / FigCraft</figcaption><img src="design/Диалог_ спортсмен.png" alt="Диалог: спортсмен — макет"></figure>
+        <p class="missing">Скриншот прода не снят</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Состояние: пусто</h2>
+      <div class="pair">
+        <figure><figcaption>Figma / FigCraft</figcaption><img src="design/Состояние_ пусто.png" alt="Состояние: пусто — макет"></figure>
+        <p class="missing">Скриншот прода не снят</p>
+      </div>
+    </section>
+</body>
+</html>

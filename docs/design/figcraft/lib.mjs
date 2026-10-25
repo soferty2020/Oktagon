@@ -145,11 +145,24 @@ export function createBuilder() {
     // Кнопка — фрейм, а не rectangle: прямоугольник не может содержать слой текста.
     const box = frame(parent, x, y, width, 40, { fill: TOKENS.accent, cornerRadius: 10 }, `Кнопка: ${label}`);
 
-    text(box, 16, 12, label, {
-      fill: TOKENS.white,
-      fontSize: 14,
-      fontStyle: 'Medium',
-    }, 'Текст кнопки');
+    // Текст по центру: ширина равна кнопке, иначе подпись прижимается влево и
+    // «Сохранить» в диалоге выглядит смещённым.
+    add('node.create', {
+      type: 'text',
+      parent: ref(box),
+      x: 0,
+      y: 12,
+      width,
+      text: label,
+      name: 'Текст кнопки',
+      props: {
+        fill: TOKENS.white,
+        fontSize: 14,
+        fontStyle: 'Medium',
+        fontFamily: 'Inter',
+        textAlign: 'center',
+      },
+    });
 
     return box;
   };
