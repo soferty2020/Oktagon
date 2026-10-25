@@ -95,7 +95,7 @@ export function CreateAthleteForm() {
         <input name="phone" maxLength={32} className={inputClass} />
       </label>
       <label className={labelClass}>
-        Email
+        Электронная почта
         <input type="email" name="email" maxLength={254} className={inputClass} />
       </label>
       <label className={labelClass}>
@@ -187,7 +187,7 @@ export function EditAthleteForm({ athlete }: { athlete: AthleteValues }) {
           />
         </label>
         <label className={labelClass}>
-          Email
+          Электронная почта
           <input
             type="email"
             name="email"

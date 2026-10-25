@@ -46,7 +46,7 @@ export function InviteForm() {
 
       <form action={formAction} className="flex flex-col gap-3">
         <label className={labelClass}>
-          Email
+          Электронная почта
           <input type="email" name="email" required maxLength={254} className={inputClass} />
         </label>
 

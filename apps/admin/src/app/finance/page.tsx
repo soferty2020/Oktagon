@@ -201,7 +201,7 @@ export default async function FinancePage({
         <SummaryCard
           title="Активных спортсменов"
           value={data === null ? '—' : String(data.activeAthletes)}
-          note="по карточкам со статусом ACTIVE"
+          note="по карточкам с активным статусом"
         />
       </div>
 
