@@ -275,5 +275,53 @@ b.text(branchForm, 20, 356, 'Залы', { fill: TOKENS.muted, fontSize: 12 }, '�
 const branchSave = b.frame(frame, 1104, 728, 304, 44, { fill: TOKENS.accent, cornerRadius: 10 }, 'Кнопка: Сохранить');
 b.text(branchSave, 0, 13, 'Сохранить', { fill: TOKENS.white, fontSize: 14, textAlign: 'center', width: 304 }, 'Текст кнопки');
 
+// ---------------------------------------------------------------------------
+// 10. Периоды месяца
+// ---------------------------------------------------------------------------
+frame = screen('Периоды', 'Финансы', 'Периоды', 'Все периоды: кто оплатил, кто частично, кто в долгу', undefined, GAP * 9);
+
+const periodSummary = b.card(frame, 272, 176, 1136, 120, 'Сводка за октябрь 2026');
+[
+  { label: 'Всего', value: '40', tone: 'ink' },
+  { label: 'Оплачено', value: '34', tone: 'success' },
+  { label: 'Частично', value: '2', tone: 'warning' },
+  { label: 'Долг', value: '4', tone: 'danger' },
+].forEach((item, index) => {
+  const x = 20 + index * 270;
+  b.text(periodSummary, x, 58, item.label, { fill: TOKENS.muted, fontSize: 12 }, item.label);
+  b.text(periodSummary, x, 78, item.value, {
+    fill: item.tone === 'success'
+      ? TOKENS.success
+      : item.tone === 'warning'
+        ? TOKENS.accent
+        : item.tone === 'danger'
+          ? TOKENS.danger
+          : TOKENS.ink,
+    fontSize: 22,
+    fontStyle: 'Bold',
+  }, 'Значение');
+});
+
+const periods = b.card(frame, 272, 328, 1136, 540, 'Периоды за октябрь 2026');
+['Спортсмен', 'Ожидается', 'Зачтено', 'Статус'].forEach((label, index) => {
+  b.text(periods, 20 + index * 280, 64, label, { fill: TOKENS.muted, fontSize: 12 }, `Колонка: ${label}`);
+});
+
+[
+  { name: 'Иванов Максим', expected: '5 000 ₽', paid: '5 000 ₽', status: 'Оплачен', tone: 'success' },
+  { name: 'Петров Алексей', expected: '5 000 ₽', paid: '5 000 ₽', status: 'Оплачен', tone: 'success' },
+  { name: 'Сидорова Анна', expected: '5 000 ₽', paid: '2 500 ₽', status: 'Частично', tone: 'warning' },
+  { name: 'Кузнецов Иван', expected: '5 000 ₽', paid: '0 ₽', status: 'Заморозка', tone: 'muted' },
+  { name: 'Смирнова Мария', expected: '5 000 ₽', paid: '0 ₽', status: 'Долг', tone: 'danger' },
+].forEach((row, index) => {
+  const y = 104 + index * 52;
+  b.rect(periods, 20, y + 38, 1096, 1, { fill: TOKENS.line }, 'Разделитель');
+
+  b.text(periods, 20, y, row.name, { fill: TOKENS.ink, fontSize: 13, fontStyle: 'Medium' }, 'Спортсмен');
+  b.text(periods, 300, y, row.expected, { fill: TOKENS.muted, fontSize: 13 }, 'Ожидается');
+  b.text(periods, 580, y, row.paid, { fill: TOKENS.ink, fontSize: 13 }, 'Зачтено');
+  b.badge(periods, 860, y - 4, row.status, row.tone);
+});
+
 const count = writeScenario(new URL('./admin.json', import.meta.url), b.steps);
-console.log(`  экранов: 9, шагов: ${count}`);
+console.log(`  экранов: 10, шагов: ${count}`);

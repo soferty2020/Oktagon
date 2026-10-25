@@ -125,7 +125,7 @@ export default async function FinancePage({
             href={`/finance/debtors?${monthQuery(year, month)}`}
             className="text-sm text-muted hover:text-ink"
           >
-            Все должники и освобождения →
+            Все периоды →
           </Link>
         }
       />
