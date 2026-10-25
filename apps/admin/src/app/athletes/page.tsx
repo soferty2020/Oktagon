@@ -66,7 +66,8 @@ export default async function AthletesPage() {
           </div>
         ) : (
           <div className="rounded-card border border-line bg-white">
-            <table className="w-full text-left text-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] text-left text-sm">
               <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
                 <tr>
                   <th className="px-4 py-3">ФИО</th>
@@ -104,6 +105,7 @@ export default async function AthletesPage() {
                 )}
               </tbody>
             </table>
+            </div>
           </div>
         )}
 

@@ -27,7 +27,8 @@ export type IconName =
   | 'belt'
   | 'sliders'
   | 'lock'
-  | 'clock';
+  | 'clock'
+  | 'menu';
 
 const PATHS: Record<IconName, string> = {
   home: 'M3 10.5 12 3l9 7.5M5.5 9.5V20h13V9.5',
@@ -59,6 +60,7 @@ const PATHS: Record<IconName, string> = {
   sliders: 'M4 7h10M18 7h2M4 17h4M12 17h8M16 4v6M8 14v6',
   lock: 'M6 11h12v10H6zM9 11V8a3 3 0 0 1 6 0v3',
   clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 7v5l3 2',
+  menu: 'M4 7h16M4 12h16M4 17h16',
 };
 
 export function Icon({

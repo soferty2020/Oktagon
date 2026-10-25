@@ -69,7 +69,8 @@ export default async function GroupsPage() {
 
       <div className={canManage ? 'grid gap-6 lg:grid-cols-[2fr_1fr]' : ''}>
         <div className="rounded-card border border-line bg-white">
-          <table className="w-full text-left text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-left text-sm">
             <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
               <tr>
                 <th className="px-4 py-3">Название</th>
@@ -129,6 +130,7 @@ export default async function GroupsPage() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
 
         {canManage ? (

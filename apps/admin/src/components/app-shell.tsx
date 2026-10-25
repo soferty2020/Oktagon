@@ -1,6 +1,7 @@
 import { logoutAction } from '@/app/actions';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Icon } from '@/components/icons';
+import { MobileNav } from '@/components/mobile-nav';
 import { NavLink } from '@/components/nav-link';
 import type { CurrentUser } from '@/lib/server/session';
 
@@ -101,8 +102,11 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
 
       <div className="md:pl-[248px]">
         <header className="sticky top-0 z-10 border-b border-line bg-white">
-          <div className="flex h-16 items-center justify-between gap-4 px-6">
-            <Breadcrumbs />
+          <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
+            <div className="flex min-w-0 items-center gap-2">
+              <MobileNav items={navigation} />
+              <Breadcrumbs />
+            </div>
 
             <div className="flex items-center gap-4">
               <div className="hidden items-center gap-3 sm:flex">
@@ -121,14 +125,14 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
                   className="flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-sm text-ink transition hover:bg-canvas"
                 >
                   <Icon name="logout" size={15} />
-                  Выйти
+                  <span className="hidden sm:inline">Выйти</span>
                 </button>
               </form>
             </div>
           </div>
         </header>
 
-        <main className="px-6 py-6">{children}</main>
+        <main className="px-4 py-4 sm:px-6 sm:py-6">{children}</main>
       </div>
     </div>
   );
