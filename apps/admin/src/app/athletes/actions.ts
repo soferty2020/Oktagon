@@ -9,6 +9,13 @@ export interface AthleteFormState {
   error?: string;
   success?: string;
   createdId?: string;
+  /**
+   * Ошибки по конкретным полям: имя поля → текст.
+   *
+   * Нужны, чтобы показать «Укажите имя» под полем, а не общей строкой над формой:
+   * общий блок заставляет искать, что именно не так, особенно в длинной карточке.
+   */
+  fieldErrors?: Record<string, string>;
 }
 
 /**
@@ -72,7 +79,17 @@ export async function createAthleteAction(
   const lastName = String(formData.get('lastName') ?? '').trim();
 
   if (!firstName || !lastName) {
-    return { error: 'Укажите имя и фамилию' };
+    // Ошибки по полям, а не одной строкой: в карточке из десяти полей общий блок
+    // заставляет искать, что именно не заполнено.
+    const fieldErrors: Record<string, string> = {};
+    if (!lastName) {
+      fieldErrors.lastName = 'Укажите фамилию';
+    }
+    if (!firstName) {
+      fieldErrors.firstName = 'Укажите имя';
+    }
+
+    return { error: 'Проверьте обязательные поля', fieldErrors };
   }
 
   const middleName = optionalText(formData, 'middleName');

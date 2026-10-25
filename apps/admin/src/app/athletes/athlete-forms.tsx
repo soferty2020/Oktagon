@@ -66,11 +66,35 @@ export function CreateAthleteForm() {
 
       <label className={labelClass}>
         Фамилия
-        <input name="lastName" required maxLength={100} className={inputClass} />
+        <input
+          name="lastName"
+          required
+          maxLength={100}
+          aria-invalid={state.fieldErrors?.lastName ? true : undefined}
+          aria-describedby={state.fieldErrors?.lastName ? 'lastName-error' : undefined}
+          className={inputClass}
+        />
+        {state.fieldErrors?.lastName ? (
+          <span id="lastName-error" className="text-xs text-danger">
+            {state.fieldErrors.lastName}
+          </span>
+        ) : null}
       </label>
       <label className={labelClass}>
         Имя
-        <input name="firstName" required maxLength={100} className={inputClass} />
+        <input
+          name="firstName"
+          required
+          maxLength={100}
+          aria-invalid={state.fieldErrors?.firstName ? true : undefined}
+          aria-describedby={state.fieldErrors?.firstName ? 'firstName-error' : undefined}
+          className={inputClass}
+        />
+        {state.fieldErrors?.firstName ? (
+          <span id="firstName-error" className="text-xs text-danger">
+            {state.fieldErrors.firstName}
+          </span>
+        ) : null}
       </label>
       <label className={labelClass}>
         Отчество
