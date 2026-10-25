@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
-import { BarChart, Donut } from '@/components/charts';
-import { Icon, type IconName } from '@/components/icons';
+import { PaidAgainstDebt, ProgressList } from '@/components/charts';
+import { Icon } from '@/components/icons';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { formatAmount, MONTH_NAMES } from '@/lib/money';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
@@ -30,21 +30,10 @@ interface TrainingSession {
   status: string;
 }
 
-interface Athlete {
-  id: string;
-  firstName: string;
-  lastName: string;
-  birthDate: string | null;
-}
-
 interface Group {
   id: string;
   name: string;
   activeMembersCount: number;
-}
-
-interface Branch {
-  id: string;
 }
 
 interface AttendanceEntry {
@@ -56,17 +45,14 @@ interface AttendanceEntry {
 /**
  * Главный экран админки по макету.
  *
- * Сводка клуба: сколько учеников, групп, тренеров и залов, финансы месяца,
- * посещаемость по группам, ближайшие занятия и дни рождения.
+ * Четыре KPI с подписью контекста, финансовая сводка полосой и посещаемость по
+ * группам. Финансовые блоки показываются только с `payments.view` (BR-010), а
+ * без права вместо них выводятся группы и тренеры: пустые «Выручка» и
+ * «Задолженность» выглядели бы как нули, а не как отсутствие доступа.
  *
  * Чего здесь нет и почему:
- * - **тренды в KPI-карточках** (в макете — мини-графики): API не отдает историю
- *   по дням, а рисовать фальшивую линию хуже, чем не рисовать;
- * - **уведомлений и заявок**: разделов нет в API;
- * - **посещаемости по дням недели**: сводка считается по группе за период, а не
- *   по дням, поэтому график построен по группам.
- *
- * Финансовая сводка показывается только с `payments.view` (BR-010).
+ * - **уведомлений и заявок** — разделов нет в API;
+ * - **посещаемости по дням недели** — сводка считается по группе за период.
  */
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -81,11 +67,10 @@ export default async function DashboardPage() {
   const month = now.getUTCMonth() + 1;
   const weekAhead = new Date(now.getTime() + 7 * 86_400_000);
 
-  const [athletes, groups, trainers, branches, finance, sessions] = await Promise.all([
-    apiFetch<Athlete[]>('/athletes', { accessToken }),
+  const [athletes, groups, trainers, finance, sessions] = await Promise.all([
+    apiFetch<unknown[]>('/athletes', { accessToken }),
     apiFetch<Group[]>('/groups', { accessToken }),
     apiFetch<unknown[]>('/trainers', { accessToken }),
-    apiFetch<Branch[]>('/branches', { accessToken }),
     canViewFinance
       ? apiFetch<FinanceSummary>(`/finance/summary?year=${year}&month=${month}`, { accessToken })
       : Promise.resolve(null),
@@ -97,40 +82,71 @@ export default async function DashboardPage() {
 
   const financeData = finance?.ok ? finance.data : null;
   const groupList = groups.ok ? groups.data : [];
-  const athleteList = athletes.ok ? athletes.data : [];
-
-  // Залы: отдельного `GET /halls` нет, залы принадлежат филиалам.
-  const hallsCount = branches.ok ? await countHalls(branches.data, accessToken) : null;
-
-  const stats: readonly {
-    label: string;
-    value: string;
-    icon: IconName;
-    href: string;
-  }[] = [
-    { label: 'Всего учеников', value: count(athletes), icon: 'athletes', href: '/athletes' },
-    { label: 'Активных групп', value: count(groups), icon: 'groups', href: '/groups' },
-    { label: 'Тренеров', value: count(trainers), icon: 'trainers', href: '/trainers' },
-    {
-      label: 'Залов',
-      value: hallsCount === null ? '—' : String(hallsCount),
-      icon: 'halls',
-      href: '/branches',
-    },
-  ];
 
   const upcoming = (sessions.ok ? sessions.data : [])
     .filter((session) => session.status !== 'CANCELLED')
     .slice(0, 5);
 
-  const birthdays = upcomingBirthdays(athleteList, 5);
   const attendanceByGroup = await loadAttendanceByGroup(groupList, accessToken);
+  const averageAttendance =
+    attendanceByGroup.items.length === 0
+      ? null
+      : Math.round(
+          attendanceByGroup.items.reduce((sum, item) => sum + item.value, 0) /
+            attendanceByGroup.items.length,
+        );
+
+  const received = Math.max(
+    (financeData?.totals.received ?? 0) - (financeData?.totals.refunded ?? 0),
+    0,
+  );
+  const debt = financeData?.debt ?? 0;
+
+  const stats: readonly KpiCardProps[] = canViewFinance
+    ? [
+        {
+          label: 'Спортсмены',
+          value: count(athletes),
+          note: 'активных карточек',
+          href: '/athletes',
+        },
+        {
+          label: 'Выручка',
+          value: formatAmount(received),
+          note: `${MONTH_NAMES[month - 1]} ${year}`,
+          href: '/finance',
+        },
+        {
+          label: 'Задолженность',
+          value: formatAmount(debt),
+          note: debt > 0 ? 'требует внимания' : 'долгов нет',
+          href: '/finance',
+          accent: debt > 0,
+        },
+        {
+          label: 'Посещаемость',
+          value: averageAttendance === null ? '—' : `${averageAttendance}%`,
+          note: 'за 30 дней',
+          href: '/attendance',
+        },
+      ]
+    : [
+        { label: 'Спортсмены', value: count(athletes), note: 'активных карточек', href: '/athletes' },
+        { label: 'Группы', value: count(groups), note: 'активных', href: '/groups' },
+        { label: 'Тренеры', value: count(trainers), note: 'профилей', href: '/trainers' },
+        {
+          label: 'Посещаемость',
+          value: averageAttendance === null ? '—' : `${averageAttendance}%`,
+          note: 'за 30 дней',
+          href: '/attendance',
+        },
+      ];
 
   return (
     <AppShell user={user}>
       <PageHeader
         title="Обзор клуба"
-        description="Состояние клуба: ученики, занятия, финансы месяца"
+        description="Состояние клуба: спортсмены, занятия, финансы месяца"
         actions={
           <Link
             href="/schedule/sessions"
@@ -144,48 +160,26 @@ export default async function DashboardPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Link
-            key={stat.label}
-            href={stat.href}
-            className="rounded-card border border-line bg-white p-5 transition hover:border-accent/40"
-          >
-            <span className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-accent-soft text-accent">
-              <Icon name={stat.icon} size={18} />
-            </span>
-            <p className="text-sm text-muted">{stat.label}</p>
-            <p className="mt-1 text-3xl font-extrabold text-ink">{stat.value}</p>
-          </Link>
+          <KpiCard key={stat.label} {...stat} />
         ))}
       </div>
 
-      {canViewFinance ? (
-        <div className="mt-4 grid gap-4 lg:grid-cols-3">
-          <Link
-            href="/finance"
-            className="rounded-card border border-line bg-white p-5 transition hover:border-accent/40"
-          >
-            <span className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-accent-soft text-accent">
-              <Icon name="finance" size={18} />
-            </span>
-            <p className="text-sm text-muted">Долги</p>
-            <p
-              className={
-                financeData && financeData.debt > 0
-                  ? 'mt-1 text-3xl font-extrabold text-danger'
-                  : 'mt-1 text-3xl font-extrabold text-ink'
-              }
-            >
-              {formatAmount(financeData?.debt ?? 0)}
-            </p>
-            <p className="mt-1 text-xs text-muted">
-              должников: {financeData?.debtors ?? 0}
-              {financeData && financeData.debtorsWithoutExpected > 0
-                ? ` (без ожидаемой суммы: ${financeData.debtorsWithoutExpected})`
-                : ''}
-            </p>
-          </Link>
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <section className="rounded-card border border-line bg-white p-5">
+          <div className="mb-4 flex items-baseline justify-between gap-2">
+            <h2 className="text-sm font-semibold text-ink">Посещаемость по группам</h2>
+            <span className="text-xs text-muted">за 30 дней</span>
+          </div>
 
-          <section className="rounded-card border border-line bg-white p-5 lg:col-span-2">
+          {attendanceByGroup.error ? (
+            <p className="text-sm text-danger">{attendanceByGroup.error}</p>
+          ) : (
+            <ProgressList items={attendanceByGroup.items} />
+          )}
+        </section>
+
+        {canViewFinance ? (
+          <section className="rounded-card border border-line bg-white p-5">
             <div className="mb-4 flex items-baseline justify-between gap-2">
               <h2 className="text-sm font-semibold text-ink">
                 Финансы за {MONTH_NAMES[month - 1]} {year}
@@ -198,118 +192,65 @@ export default async function DashboardPage() {
             {finance && !finance.ok ? (
               <p className="text-sm text-danger">{describeError(finance.error)}</p>
             ) : (
-              <Donut
-                centerValue={formatAmount(financeData?.totals.revenue ?? 0)}
-                centerLabel="выручка"
-                segments={[
-                  {
-                    label: 'Оплачено',
-                    value: Math.max(
-                      (financeData?.totals.received ?? 0) - (financeData?.totals.refunded ?? 0),
-                      0,
-                    ),
-                    color: 'var(--color-accent)',
-                  },
-                  {
-                    label: 'Возвраты',
-                    value: financeData?.totals.refunded ?? 0,
-                    color: 'var(--color-warning)',
-                  },
-                  {
-                    label: 'Долги',
-                    value: financeData?.debt ?? 0,
-                    color: 'var(--color-danger)',
-                  },
-                ]}
+              <PaidAgainstDebt
+                paid={received}
+                debt={debt}
+                paidText={formatAmount(received)}
+                debtText={formatAmount(debt)}
               />
             )}
+
+            {financeData && financeData.debtorsWithoutExpected > 0 ? (
+              <p className="mt-3 text-xs text-muted">
+                Должников без заданной суммы: {financeData.debtorsWithoutExpected} — долг не считается
+              </p>
+            ) : null}
           </section>
+        ) : null}
+      </div>
+
+      <section className="mt-4 rounded-card border border-line bg-white p-5">
+        <div className="mb-4 flex items-baseline justify-between gap-2">
+          <h2 className="text-sm font-semibold text-ink">Ближайшие тренировки</h2>
+          <Link href="/schedule" className="text-xs text-accent hover:underline">
+            Все
+          </Link>
         </div>
-      ) : null}
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-3">
-        <section className="rounded-card border border-line bg-white p-5 lg:col-span-2">
-          <div className="mb-4 flex items-baseline justify-between gap-2">
-            <h2 className="text-sm font-semibold text-ink">Посещаемость по группам</h2>
-            <span className="text-xs text-muted">за 30 дней</span>
+        {!sessions.ok ? (
+          <p className="text-sm text-danger">{describeError(sessions.error)}</p>
+        ) : upcoming.length === 0 ? (
+          <p className="text-sm text-muted">На неделю занятий не запланировано.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="table-base">
+              <thead>
+                <tr>
+                  <th>Время</th>
+                  <th>Группа</th>
+                  <th>Место</th>
+                  <th>Тренер</th>
+                </tr>
+              </thead>
+              <tbody>
+                {upcoming.map((session) => (
+                  <tr key={session.id}>
+                    <td className="font-semibold text-ink">{formatTime(session.startsAt)}</td>
+                    <td>{session.groupName}</td>
+                    <td className="text-muted">{session.hallName ?? '—'}</td>
+                    <td className="text-muted">{session.trainerName ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-
-          {attendanceByGroup.error ? (
-            <p className="text-sm text-danger">{attendanceByGroup.error}</p>
-          ) : (
-            <BarChart items={attendanceByGroup.items} />
-          )}
-        </section>
-
-        <section className="rounded-card border border-line bg-white p-5">
-          <div className="mb-4 flex items-baseline justify-between gap-2">
-            <h2 className="text-sm font-semibold text-ink">Ближайшие тренировки</h2>
-            <Link href="/schedule" className="text-xs text-accent hover:underline">
-              Все
-            </Link>
-          </div>
-
-          {!sessions.ok ? (
-            <p className="text-sm text-danger">{describeError(sessions.error)}</p>
-          ) : upcoming.length === 0 ? (
-            <p className="text-sm text-muted">На неделю занятий не запланировано.</p>
-          ) : (
-            <ul className="divide-y divide-line">
-              {upcoming.map((session) => (
-                <li key={session.id} className="flex items-start gap-3 py-2.5">
-                  <div className="min-w-14 text-sm font-semibold text-ink">
-                    {formatTime(session.startsAt)}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm text-ink">{session.groupName}</p>
-                    <p className="truncate text-xs text-muted">
-                      {[session.trainerName, session.hallName].filter(Boolean).join(' · ') ||
-                        'место не указано'}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
-
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <section className="rounded-card border border-line bg-white p-5">
-          <h2 className="mb-4 text-sm font-semibold text-ink">Дни рождения</h2>
-
-          {birthdays.length === 0 ? (
-            <p className="text-sm text-muted">В ближайшие две недели дней рождения нет.</p>
-          ) : (
-            <ul className="divide-y divide-line">
-              {birthdays.map((athlete) => (
-                <li key={athlete.id} className="flex items-center gap-3 py-2.5">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent">
-                    {athlete.firstName.slice(0, 1).toUpperCase()}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm text-ink">
-                      {athlete.lastName} {athlete.firstName}
-                    </p>
-                    <p className="text-xs text-muted">{athlete.age} лет</p>
-                  </div>
-                  <span className="flex items-center gap-1 text-xs text-muted">
-                    <Icon name="gift" size={14} />
-                    {athlete.when}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-      </div>
+        )}
+      </section>
 
       {!athletes.ok && !groups.ok && !trainers.ok ? (
         <div className="mt-4">
           <Notice tone="error">
-            Не удалось получить данные. Проверьте, что backend API запущен и доступен по адресу из
-            API_BASE_URL.
+            Не удалось получить данные. Проверьте, что сервер API запущен и доступен.
           </Notice>
         </div>
       ) : null}
@@ -317,37 +258,45 @@ export default async function DashboardPage() {
   );
 }
 
+/**
+ * KPI-карточка по макету: оранжевая полоса слева, значение и подпись контекста.
+ *
+ * Иконка в круге заменена полосой: в макете она выполняет ту же роль, но не
+ * требует отдельного набора иконок для каждого показателя.
+ */
+interface KpiCardProps {
+  label: string;
+  value: string;
+  note: string;
+  href: string;
+  accent?: boolean;
+}
+
+function KpiCard({ label, value, note, href, accent = false }: KpiCardProps) {
+  return (
+    <Link
+      href={href}
+      className="rounded-card border border-line bg-white p-5 transition hover:border-accent/40"
+    >
+      <div className="flex items-center gap-3">
+        <span className="h-4 w-0.5 rounded-full bg-accent" />
+        <span className="text-sm text-muted">{label}</span>
+      </div>
+      <p
+        className={
+          accent ? 'mt-3 text-3xl font-extrabold text-accent' : 'mt-3 text-3xl font-extrabold text-ink'
+        }
+      >
+        {value}
+      </p>
+      <p className="mt-1 text-xs text-muted">{note}</p>
+    </Link>
+  );
+}
+
 /** Количество записей: API отдает массивы, `meta.total` нет. */
 function count(result: { ok: boolean; data?: readonly unknown[] }): string {
   return result.ok && result.data ? String(result.data.length) : '—';
-}
-
-/**
- * Число залов по всем филиалам.
- *
- * Отдельного `GET /halls` нет: залы принадлежат филиалам. Запросы идут
- * параллельно; филиалов в клубе единицы, поэтому это дешевле, чем отдельный
- * агрегирующий метод в API.
- */
-async function countHalls(
-  branches: readonly Branch[],
-  accessToken: string | undefined,
-): Promise<number | null> {
-  if (branches.length === 0) {
-    return 0;
-  }
-
-  try {
-    const results = await Promise.all(
-      branches.map((branch) =>
-        apiFetch<unknown[]>(`/branches/${branch.id}/halls`, { accessToken }),
-      ),
-    );
-
-    return results.reduce((sum, result) => sum + (result.ok ? result.data.length : 0), 0);
-  } catch {
-    return null;
-  }
 }
 
 function formatTime(value: string): string {
@@ -415,56 +364,6 @@ async function loadAttendanceByGroup(
   return { items };
 }
 
-function shorten(name: string, limit = 14): string {
+function shorten(name: string, limit = 16): string {
   return name.length > limit ? `${name.slice(0, limit - 1)}…` : name;
-}
-
-/**
- * Ближайшие дни рождения: до двух недель вперед.
- *
- * Год рождения не важен для поздравления, поэтому сравнивается день и месяц.
- */
-function upcomingBirthdays(
-  athletes: readonly Athlete[],
-  limit: number,
-): { id: string; firstName: string; lastName: string; when: string; age: number }[] {
-  const today = new Date();
-  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-
-  const items: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    when: string;
-    age: number;
-    days: number;
-  }[] = [];
-
-  for (const athlete of athletes) {
-    if (!athlete.birthDate) {
-      continue;
-    }
-
-    const birth = new Date(athlete.birthDate);
-    const next = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
-    if (next.getTime() < todayStart) {
-      next.setFullYear(today.getFullYear() + 1);
-    }
-
-    const days = Math.round((next.getTime() - todayStart) / 86_400_000);
-    if (days > 14) {
-      continue;
-    }
-
-    items.push({
-      id: athlete.id,
-      firstName: athlete.firstName,
-      lastName: athlete.lastName,
-      when: `${next.getDate()} ${MONTH_NAMES[next.getMonth()].toLowerCase()}`,
-      age: next.getFullYear() - birth.getFullYear(),
-      days,
-    });
-  }
-
-  return items.sort((left, right) => left.days - right.days).slice(0, limit);
 }

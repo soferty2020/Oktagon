@@ -1,181 +1,92 @@
 /**
- * Графики дашборда.
+ * Финансовые и посещаемостные блоки дашборда.
  *
- * Нарисованы вручную в SVG, а не библиотекой: нужны три простых формы
- * (линия, столбцы, кольцо), а chart-библиотека добавила бы сотни килобайт и
- * клиентский JS туда, где достаточно серверного рендера.
+ * Раньше здесь были кольцевая диаграмма и столбцы, нарисованные в SVG. После
+ * перехода на канон макета они не нужны: финансовая сводка — одна полоса
+ * «оплачено против долга», посещаемость — прогресс-бары по строкам. Оба
+ * компонента рисуются обычной разметкой, без SVG и без клиентского JS.
  */
 
-/** Мини-график тренда: линия без осей. */
-export function Sparkline({
-  points,
-  width = 120,
-  height = 36,
-}: {
-  points: number[];
-  width?: number;
-  height?: number;
-}) {
-  if (points.length < 2) {
-    return <div className="h-9" />;
-  }
-
-  const max = Math.max(...points);
-  const min = Math.min(...points);
-  const span = max - min || 1;
-  const step = width / (points.length - 1);
-
-  const coords = points.map((value, index) => {
-    const x = index * step;
-    // Инвертированные координаты: в SVG ось Y растет вниз.
-    const y = height - ((value - min) / span) * (height - 4) - 2;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
-
-  return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
-      <polyline
-        points={coords.join(' ')}
-        fill="none"
-        stroke="var(--color-accent)"
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-/** Столбчатая диаграмма с подписями и значениями. */
-export function BarChart({
-  items,
-  height = 180,
-  format = (value: number) => `${value}%`,
-}: {
-  items: readonly { label: string; value: number }[];
-  height?: number;
-  format?: (value: number) => string;
-}) {
+/**
+ * Прогресс-бары по строкам: дорожка, заливка и процент справа.
+ *
+ * По макету посещаемость показана именно так, а не столбцами: значение читается
+ * сразу, а сравнивать строки удобнее по длине заливки.
+ */
+export function ProgressList({ items }: { items: readonly { label: string; value: number }[] }) {
   if (items.length === 0) {
-    return <p className="py-10 text-center text-sm text-muted">Нет данных за период</p>;
+    return <p className="text-sm text-muted">Нет данных за период.</p>;
   }
 
-  const max = Math.max(...items.map((item) => item.value), 1);
-
   return (
-    <div className="flex items-stretch gap-3" style={{ height }}>
-      {items.map((item) => {
-        // Минимальная высота 2%: нулевой столбец не должен выглядеть как
-        // отсутствие данных.
-        const ratio = Math.max(item.value / max, 0.02);
-        return (
-          <div key={item.label} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
-            <span className="text-[11px] font-medium text-ink">{format(item.value)}</span>
-            <div className="flex h-full w-full items-end">
-              <div
-                className="w-full rounded-t-md bg-accent"
-                style={{ height: `${ratio * 100}%`, opacity: item.value === 0 ? 0.25 : 1 }}
-              />
-            </div>
-            <span className="truncate text-[11px] text-muted">{item.label}</span>
-          </div>
-        );
-      })}
-    </div>
+    <ul className="space-y-4">
+      {items.map((item) => (
+        <li key={item.label} className="flex items-center gap-4">
+          <span className="w-32 shrink-0 truncate text-sm text-ink">{item.label}</span>
+          <span className="h-2 flex-1 overflow-hidden rounded-full bg-canvas">
+            <span
+              className="block h-full rounded-full bg-accent"
+              style={{ width: `${Math.min(Math.max(item.value, 0), 100)}%` }}
+            />
+          </span>
+          <span className="w-10 shrink-0 text-right text-xs text-muted">{item.value}%</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
-/** Кольцевая диаграмма с легендой. */
-export function Donut({
-  segments,
-  size = 168,
-  thickness = 20,
-  centerLabel,
-  centerValue,
+/**
+ * Полоса «оплачено против задолженности» с суммами и процентами.
+ *
+ * Заменяет кольцевую диаграмму: на макете финансовая сводка — одна полоса, и
+ * двух чисел достаточно, чтобы понять соотношение. Кольцо с тремя сегментами
+ * требовало легенды и занимало место.
+ */
+export function PaidAgainstDebt({
+  paid,
+  debt,
+  paidText,
+  debtText,
 }: {
-  segments: readonly { label: string; value: number; color: string }[];
-  size?: number;
-  thickness?: number;
-  centerLabel?: string;
-  centerValue?: string;
+  paid: number;
+  debt: number;
+  paidText: string;
+  debtText: string;
 }) {
-  const total = segments.reduce((sum, segment) => sum + segment.value, 0);
-  const radius = (size - thickness) / 2;
-  const circumference = 2 * Math.PI * radius;
-
-  let offset = 0;
+  const total = paid + debt;
+  const paidPercent = total === 0 ? 0 : Math.round((paid / total) * 100);
+  const debtPercent = total === 0 ? 0 : 100 - paidPercent;
 
   return (
-    <div className="flex flex-wrap items-center gap-6">
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
-        <g transform={`rotate(-90 ${size / 2} ${size / 2})`}>
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke="var(--color-line)"
-            strokeWidth={thickness}
-          />
-          {total > 0
-            ? segments.map((segment) => {
-                const length = (segment.value / total) * circumference;
-                const dash = `${length} ${circumference - length}`;
-                const element = (
-                  <circle
-                    key={segment.label}
-                    cx={size / 2}
-                    cy={size / 2}
-                    r={radius}
-                    fill="none"
-                    stroke={segment.color}
-                    strokeWidth={thickness}
-                    strokeDasharray={dash}
-                    strokeDashoffset={-offset}
-                    strokeLinecap="butt"
-                  />
-                );
-                offset += length;
-                return element;
-              })
-            : null}
-        </g>
-        {centerValue ? (
+    <div>
+      <div className="flex h-2.5 overflow-hidden rounded-full bg-canvas">
+        {total === 0 ? null : (
           <>
-            <text
-              x="50%"
-              y="47%"
-              textAnchor="middle"
-              className="fill-ink"
-              style={{ fontSize: 18, fontWeight: 700 }}
-            >
-              {centerValue}
-            </text>
-            <text
-              x="50%"
-              y="60%"
-              textAnchor="middle"
-              className="fill-muted"
-              style={{ fontSize: 11 }}
-            >
-              {centerLabel}
-            </text>
+            <span className="h-full bg-accent" style={{ width: `${paidPercent}%` }} />
+            <span className="h-full bg-danger" style={{ width: `${debtPercent}%` }} />
           </>
-        ) : null}
-      </svg>
+        )}
+      </div>
 
-      <ul className="space-y-2 text-sm">
-        {segments.map((segment) => (
-          <li key={segment.label} className="flex items-center gap-2">
-            <span
-              className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: segment.color }}
-              aria-hidden="true"
-            />
-            <span className="text-muted">{segment.label}</span>
-            <span className="font-medium text-ink">{segment.value.toLocaleString('ru-RU')}</span>
-          </li>
-        ))}
-      </ul>
+      <dl className="mt-4 space-y-2 text-sm">
+        <div className="flex items-baseline justify-between gap-3">
+          <dt className="text-muted">Оплачено</dt>
+          <dd className="text-right">
+            <span className="font-semibold text-ink">{paidText}</span>
+            <span className="ml-2 text-xs text-muted">{paidPercent}%</span>
+          </dd>
+        </div>
+        <div className="flex items-baseline justify-between gap-3">
+          <dt className="text-muted">Задолженность</dt>
+          <dd className="text-right">
+            <span className={debt > 0 ? 'font-semibold text-danger' : 'font-semibold text-ink'}>
+              {debtText}
+            </span>
+            <span className="ml-2 text-xs text-muted">{debtPercent}%</span>
+          </dd>
+        </div>
+      </dl>
     </div>
   );
 }

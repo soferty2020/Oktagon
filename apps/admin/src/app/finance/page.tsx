@@ -174,12 +174,12 @@ export default async function FinancePage({
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryCard
-          title="Выручка за месяц"
-          value={formatAmount(data?.totals.revenue ?? 0)}
+          title="Поступления"
+          value={formatAmount(data?.totals.received ?? 0)}
           note={
             data && data.totals.refunded > 0
-              ? `поступления ${formatAmount(data.totals.received)}, возвраты ${formatAmount(data.totals.refunded)}`
-              : 'поступления минус возвраты'
+              ? `возвраты ${formatAmount(data.totals.refunded)}`
+              : 'за выбранный месяц'
           }
         />
         <SummaryCard
@@ -193,15 +193,15 @@ export default async function FinancePage({
           tone={data && data.debt > 0 ? 'alert' : 'default'}
         />
         <SummaryCard
-          title="Должников"
-          value={String(data?.debtors ?? debtors.length)}
-          note={`с членством в месяце: ${rows.length}`}
-          tone={data && data.debtors > 0 ? 'alert' : 'default'}
+          title="Оплачено периодов"
+          value={String(rows.filter((row) => !row.isDebtor).length)}
+          note={`всего периодов: ${rows.length}`}
         />
         <SummaryCard
-          title="Активных спортсменов"
-          value={data === null ? '—' : String(data.activeAthletes)}
-          note="по карточкам с активным статусом"
+          title="Не оплачено"
+          value={String(data?.debtors ?? debtors.length)}
+          note={data && data.debtors > 0 ? 'требует внимания' : 'все оплачено'}
+          tone={data && data.debtors > 0 ? 'alert' : 'default'}
         />
       </div>
 
