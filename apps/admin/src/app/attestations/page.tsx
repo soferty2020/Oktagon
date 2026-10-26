@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
 import { EmptyState } from '@/components/empty-state';
-import { fieldClass, secondaryButtonClass } from '@/components/ui';
+import { secondaryButtonClass } from '@/components/ui';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { describePermission } from '@/lib/permissions';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
