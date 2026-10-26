@@ -23,6 +23,10 @@ describe('resolvePermissions', () => {
 
     expect(permissions.codes).toEqual([
       PermissionCode.AttendanceView,
+      // Мероприятия своих детей (#39): тоже scope, а не отдельное право на каждое
+      // событие. Самостоятельной записи у родителя нет — это правило API.
+      PermissionCode.AttestationsView,
+      PermissionCode.CompetitionsView,
       PermissionCode.GroupsView,
       PermissionCode.ScheduleView,
     ]);
