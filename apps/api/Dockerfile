@@ -58,6 +58,10 @@ COPY tsconfig.base.json ./
 COPY packages ./packages
 COPY apps/api/prisma ./apps/api/prisma
 COPY apps/api/package.json ./apps/api/package.json
+# Пакеты собираются здесь: `pnpm ranks:report` импортирует `@octagon/contracts`, а
+# в стадии migrate нет `dist` пакетов (`.dockerignore` его исключает). Без сборки
+# отчёт падал на «Cannot find module '@octagon/contracts'».
+RUN pnpm build:packages
 WORKDIR /repo/apps/api
 CMD ["pnpm", "db:deploy"]
 
