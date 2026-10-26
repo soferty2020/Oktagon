@@ -58,6 +58,10 @@ export interface LinkedAthlete {
   /** Текущий пояс (K3); `null` — не присвоен. */
   /** Белый пояс — значение по умолчанию: поле всегда заполнено. */
   beltGrade: BeltGrade;
+  /** Ступень из каталога (ADR-0012); пояс выводится из неё. */
+  rank: string | null;
+  /** Подпись ступени: «8 кю». */
+  rankLabel: string | null;
   /** Дата присвоения пояса (YYYY-MM-DD). */
   beltAwardedAt: string | null;
   /** Связь с аккаунтом: SELF, PARENT, GUARDIAN. */

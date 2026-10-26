@@ -7,7 +7,10 @@ import 'core/api_client.dart';
 import 'core/api_config.dart';
 import 'core/token_storage.dart';
 import 'features/athletes/athlete_repository.dart';
+import 'features/admin/trial_requests_screen.dart';
 import 'features/attendance/attendance_repository.dart';
+import 'features/attestations/attestation_controller.dart';
+import 'features/attestations/attestation_repository.dart';
 import 'features/auth/auth_controller.dart';
 import 'features/auth/auth_repository.dart';
 import 'features/chat/chat_controller.dart';
@@ -67,6 +70,14 @@ void main() {
 
   // Мероприятия ребёнка (#41): один запрос отдаёт аттестации и соревнования
   // своих спортсменов, уже отфильтрованные по правам и публикации.
+  // Аттестации и заявки: нужны тренеру в зале и руководителю на телефоне.
+  final attestationController = AttestationController(
+    repository: ApiAttestationRepository(client: client),
+  );
+  final trialRequestsController = TrialRequestsController(
+    repository: TrialRequestsRepository(client: client),
+  );
+
   final sportsController = SportsController(
     repository: ApiSportsRepository(client: client),
   );
@@ -97,6 +108,9 @@ void main() {
       trainerDayController: trainerDayController,
       trainerCalendarController: trainerCalendarController,
       trainerStudentsController: trainerStudentsController,
+      attestationController: attestationController,
+      trialRequestsController: trialRequestsController,
+      apiClient: client,
       attendanceFactory: () => AttendanceController(repository: trainerRepository),
       chatFactory: () => ChatController(repository: chatRepository),
     ),

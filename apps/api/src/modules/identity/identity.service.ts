@@ -14,6 +14,7 @@ import {
   type UserProfile,
   type UserView,
   canAccessAthlete,
+  rankLabel,
   resolvePermissions,
 } from '@octagon/contracts';
 
@@ -215,6 +216,8 @@ export function toLinkedAthlete(record: LinkedAthleteRecord): LinkedAthlete {
     beltAwardedAt: record.beltAwardedAt
       ? record.beltAwardedAt.toISOString().slice(0, 10)
       : null,
+    rank: record.rank,
+    rankLabel: rankLabel(record.rank),
     relation: record.relation,
     isPrimary: record.isPrimary,
   };

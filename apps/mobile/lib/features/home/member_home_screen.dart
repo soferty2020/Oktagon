@@ -204,10 +204,12 @@ class _PaymentStatusLine extends StatelessWidget {
     );
   }
 }
-/// Пояс выбранного спортсмена (K3).
+/// Ступень выбранного спортсмена (ADR-0012).
 ///
-/// Показывается всегда: белый пояс — это ступень, с которой начинают, а не
-/// отсутствие данных, поэтому скрывать строку нечего.
+/// Ступень — источник истины, пояс выводится из неё. Показываем ступень, потому
+/// что родителю важно «8 кю», а не «синий пояс»: пояс без номера не отличает
+/// 8 кю от 7 кю. Если ступень не определена (старые данные), показываем пояс —
+/// лучше приблизительно, чем пустая строка.
 class _BeltLine extends StatelessWidget {
   const _BeltLine({required this.athlete});
 
@@ -215,7 +217,8 @@ class _BeltLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final description = beltDescription(athlete.beltGrade, athlete.beltAwardedAt);
+    final description = athlete.rankLabel ??
+        beltDescription(athlete.beltGrade, athlete.beltAwardedAt);
 
     return Row(
       children: [

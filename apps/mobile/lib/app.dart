@@ -9,6 +9,9 @@ import 'features/chat/chats_controller.dart';
 import 'features/home/member_home_controller.dart';
 import 'features/news/news_controller.dart';
 import 'features/schedule/schedule_controller.dart';
+import 'features/admin/admin_shell.dart';
+import 'features/admin/trial_requests_screen.dart';
+import 'features/attestations/attestation_controller.dart';
 import 'features/shell/member_shell.dart';
 import 'features/sports/sports_controller.dart';
 import 'features/trainer/attendance_controller.dart';
@@ -35,6 +38,9 @@ class OctagonApp extends StatelessWidget {
     required this.trainerDayController,
     required this.trainerCalendarController,
     required this.trainerStudentsController,
+    required this.attestationController,
+    required this.trialRequestsController,
+    required this.apiClient,
     required this.attendanceFactory,
     required this.chatFactory,
   });
@@ -54,6 +60,15 @@ class OctagonApp extends StatelessWidget {
   final TrainerDayController trainerDayController;
   final TrainerCalendarController trainerCalendarController;
   final TrainerStudentsController trainerStudentsController;
+
+  /// Аттестации: нужны и тренеру (в зале), и руководителю.
+  final AttestationController attestationController;
+
+  /// Заявки на пробную: работа администратора.
+  final TrialRequestsController trialRequestsController;
+
+  /// Нужен экрану отчётов: сводка запрашивается напрямую.
+  final ApiClient apiClient;
 
   /// Фабрика журналов: у каждого занятия свой журнал, и состояние одного не
   /// должно переходить в другое.
@@ -87,6 +102,17 @@ class OctagonApp extends StatelessWidget {
   Widget _authenticatedScreen() {
     final role = authController.user?.role;
 
+    // Руководитель: заявки, аттестации, отчёты. Раньше он попадал в тренерский
+    // каркас просто потому, что условие было `if MEMBER else Trainer`.
+    if (role == 'SUPERADMIN') {
+      return AdminShell(
+        auth: authController,
+        attestations: attestationController,
+        trialRequests: trialRequestsController,
+        client: apiClient,
+      );
+    }
+
     if (role == 'MEMBER') {
       return MemberShell(
         auth: authController,
@@ -105,6 +131,7 @@ class OctagonApp extends StatelessWidget {
       day: trainerDayController,
       calendar: trainerCalendarController,
       students: trainerStudentsController,
+      attestations: attestationController,
       news: newsController,
       attendanceFactory: attendanceFactory,
     );

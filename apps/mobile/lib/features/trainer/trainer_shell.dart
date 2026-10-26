@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../app_theme.dart';
 import '../../design/tokens.dart';
+import '../attestations/attestation_controller.dart';
+import '../attestations/attestations_screen.dart';
 import '../auth/auth_controller.dart';
 import '../news/news_controller.dart';
 import '../news/news_screen.dart';
@@ -27,6 +29,7 @@ class TrainerShell extends StatefulWidget {
     required this.day,
     required this.calendar,
     required this.students,
+    required this.attestations,
     required this.news,
     required this.attendanceFactory,
   });
@@ -35,6 +38,10 @@ class TrainerShell extends StatefulWidget {
   final TrainerDayController day;
   final TrainerCalendarController calendar;
   final TrainerStudentsController students;
+
+  /// Аттестации: допуск и итог в зале. Раньше это было только в веб-админке,
+  /// хотя экзамен проходит там, где тренер стоит с телефоном.
+  final AttestationController attestations;
   final NewsController news;
 
   /// Журнал создается на каждое занятие: состояние одного журнала нельзя
@@ -98,6 +105,7 @@ class _TrainerShellState extends State<TrainerShell> {
             ),
             TrainerCalendarScreen(auth: widget.auth, controller: widget.calendar),
             TrainerStudentsScreen(auth: widget.auth, controller: widget.students),
+            AttestationsScreen(auth: widget.auth, controller: widget.attestations),
             TrainerMoreScreen(auth: widget.auth),
           ],
         ),
@@ -120,6 +128,11 @@ class _TrainerShellState extends State<TrainerShell> {
             icon: Icon(Icons.people_outline),
             selectedIcon: Icon(Icons.people),
             label: 'Ученики',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.sports_martial_arts_outlined),
+            selectedIcon: Icon(Icons.sports_martial_arts),
+            label: 'Аттестации',
           ),
           NavigationDestination(
             icon: Icon(Icons.more_horiz),

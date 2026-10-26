@@ -41,6 +41,8 @@ export interface LinkedAthleteRecord {
   /** Текущий пояс (K3); белый — значение по умолчанию. */
   beltGrade: BeltGrade;
   beltAwardedAt: Date | null;
+  /** Ступень из каталога (ADR-0012); пояс выводится из неё. */
+  rank: string | null;
   relation: string;
   isPrimary: boolean;
 }
@@ -202,6 +204,7 @@ export class PrismaIdentityRepository extends IdentityRepository {
             status: true,
             beltGrade: true,
             beltAwardedAt: true,
+            rank: true,
           },
         },
       },
@@ -216,6 +219,7 @@ export class PrismaIdentityRepository extends IdentityRepository {
       status: link.athlete.status,
       beltGrade: link.athlete.beltGrade,
       beltAwardedAt: link.athlete.beltAwardedAt,
+      rank: link.athlete.rank,
       relation: link.relation,
       isPrimary: link.isPrimary,
     }));

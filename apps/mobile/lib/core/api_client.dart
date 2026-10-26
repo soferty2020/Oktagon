@@ -31,6 +31,14 @@ abstract class ApiClient {
     Map<String, dynamic>? body,
     String? token,
   });
+
+  /// PATCH нужен для частичных изменений: допуск к экзамену и смена статуса
+  /// меняют одно поле и не должны требовать полного тела записи.
+  Future<Map<String, dynamic>> patchJson(
+    String path, {
+    Map<String, dynamic>? body,
+    String? token,
+  });
 }
 
 /// HTTP-клиент поверх пакета `http`.
@@ -75,6 +83,15 @@ class HttpApiClient implements ApiClient {
     return _send(path, method: 'PUT', body: body, token: token);
   }
 
+  @override
+  Future<Map<String, dynamic>> patchJson(
+    String path, {
+    Map<String, dynamic>? body,
+    String? token,
+  }) {
+    return _send(path, method: 'PATCH', body: body, token: token);
+  }
+
   Future<Map<String, dynamic>> _send(
     String path, {
     required String method,
@@ -92,6 +109,7 @@ class HttpApiClient implements ApiClient {
     try {
       final response = await switch (method) {
         'GET' => _client.get(uri, headers: headers),
+        'PATCH' => _client.patch(uri, headers: headers, body: encoded),
         'PUT' => _client.put(uri, headers: headers, body: jsonEncode(body ?? const {})),
         _ => _client.post(uri, headers: headers, body: jsonEncode(body ?? const {})),
       }

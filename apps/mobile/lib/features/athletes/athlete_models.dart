@@ -13,6 +13,8 @@ class LinkedAthlete {
     required this.isPrimary,
     required this.beltGrade,
     this.beltAwardedAt,
+    this.rank,
+    this.rankLabel,
   });
 
   final String id;
@@ -28,6 +30,12 @@ class LinkedAthlete {
 
   /// Дата присвоения пояса в формате `YYYY-MM-DD`.
   final String? beltAwardedAt;
+
+  /// Ступень из каталога (ADR-0012): «8 кю», «2 дан». Пояс выводится из неё.
+  final String? rank;
+
+  /// Подпись ступени; `null`, если ступень не определена.
+  final String? rankLabel;
 
   /// Связь с аккаунтом: `SELF`, `PARENT`, `GUARDIAN`.
   final String relation;
@@ -55,6 +63,8 @@ class LinkedAthlete {
       isPrimary: json['isPrimary'] == true,
       beltGrade: (json['beltGrade'] as String?) ?? 'WHITE',
       beltAwardedAt: json['beltAwardedAt'] as String?,
+      rank: json['rank'] as String?,
+      rankLabel: json['rankLabel'] as String?,
     );
   }
 }

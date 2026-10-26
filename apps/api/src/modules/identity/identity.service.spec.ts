@@ -89,6 +89,7 @@ describe('toLinkedAthlete', () => {
       status: 'ACTIVE',
       beltGrade: 'WHITE',
       beltAwardedAt: null,
+      rank: null,
       relation: 'PARENT',
       isPrimary: true,
     };
@@ -102,6 +103,7 @@ describe('toLinkedAthlete', () => {
       status: 'ACTIVE',
       beltGrade: 'WHITE',
       beltAwardedAt: null,
+      rank: null,
       relation: 'PARENT',
       isPrimary: true,
     });
@@ -117,6 +119,7 @@ describe('toLinkedAthlete', () => {
       status: 'ACTIVE',
       beltGrade: 'WHITE',
       beltAwardedAt: null,
+      rank: null,
       relation: 'SELF',
       isPrimary: false,
     };
@@ -177,6 +180,7 @@ describe('IdentityService', () => {
         status: 'ACTIVE',
         beltGrade: 'WHITE',
         beltAwardedAt: null,
+        rank: null,
         relation: 'PARENT',
         isPrimary: true,
       },
@@ -213,6 +217,7 @@ describe('IdentityService', () => {
         status: 'ACTIVE',
         beltGrade: 'WHITE',
         beltAwardedAt: null,
+        rank: null,
         relation: 'PARENT',
         isPrimary: true,
       },
