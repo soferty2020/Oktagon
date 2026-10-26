@@ -37,6 +37,18 @@ const NAVIGATION: readonly {
     label: 'Посещаемость',
     requiredPermissions: ['attendance.view'],
   },
+  // Аттестации и соревнования: экзамены и турниры. Отдельные разделы, потому что
+  // это события с участниками и результатами, а не свойство карточки спортсмена.
+  {
+    href: '/attestations',
+    label: 'Аттестации',
+    requiredPermissions: ['attestations.view'],
+  },
+  {
+    href: '/competitions',
+    label: 'Соревнования',
+    requiredPermissions: ['competitions.view'],
+  },
   {
     href: '/finance',
     label: 'Финансы',
