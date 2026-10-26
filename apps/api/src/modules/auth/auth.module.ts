@@ -40,6 +40,8 @@ import { UsersController } from './users.controller';
     // Явное undefined: по умолчанию лимитер берет клиент из RedisModule.
     { provide: RATE_LIMIT_REDIS, useValue: undefined },
   ],
-  exports: [AuthService, PasswordService, InviteService],
+  // RateLimiterService нужен публичной форме заявок: у неё нет guard'ов, и
+  // защита от спама живёт в сервисе, а не в auth.
+  exports: [AuthService, PasswordService, InviteService, RateLimiterService],
 })
 export class AuthModule {}

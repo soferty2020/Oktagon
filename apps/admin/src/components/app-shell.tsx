@@ -24,6 +24,12 @@ const NAVIGATION: readonly {
 }[] = [
   { href: '/', label: 'Обзор' },
   { href: '/athletes', label: 'Спортсмены' },
+  // Заявки — работа администратора: тренер их не видит (ADR-0013).
+  {
+    href: '/trial-requests',
+    label: 'Заявки',
+    requiredPermissions: ['trial-requests.view'],
+  },
   { href: '/groups', label: 'Группы' },
   // Тренеры: карточка правится `branches.manage`, привязка аккаунта — `users.manage`.
   // Ссылка показывается тем, кто видит группы: без этого список тренеров не нужен.

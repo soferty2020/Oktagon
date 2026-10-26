@@ -195,6 +195,7 @@ model User {
   competitionsCreated Competition[] @relation("CompetitionCreatedBy")
   competitionsPublished Competition[] @relation("CompetitionPublishedBy")
   competitionRevisions CompetitionEntryRevision[]
+  trialRequestsProcessed TrialRequest[] @relation("TrialRequestProcessedBy")
 
   @@index([role, status])
   @@index([archivedAt])
@@ -1269,4 +1270,44 @@ model CompetitionEntryRevision {
 
   @@unique([entryId, version])
   @@map("competition_entry_revisions")
+}
+// ---------------------------------------------------------------------------
+// Заявки на пробную тренировку (ADR-0013, #25)
+// ---------------------------------------------------------------------------
+
+enum TrialRequestStatus {
+  NEW
+  CONTACTED
+  TRIAL_SCHEDULED
+  CONVERTED
+  REJECTED
+}
+
+/// Заявка с сайта или из соцсети.
+///
+/// Не спортсмен: до знакомства известны только имя и телефон. Карточку заводят
+/// отдельно, когда человек пришёл.
+model TrialRequest {
+  id       String @id @default(uuid()) @db.Uuid
+  name     String @db.VarChar(200)
+  phone    String @db.VarChar(32)
+  email    String? @db.VarChar(200)
+  childName String? @map("child_name") @db.VarChar(200)
+  /// Возраст ребёнка: дата рождения на этом шаге обычно неизвестна.
+  childAge Int? @map("child_age")
+  comment  String? @db.VarChar(2000)
+  /// Откуда пришла: сайт, Instagram, звонок. Свободный текст — источников много.
+  source   String? @db.VarChar(100)
+
+  status TrialRequestStatus @default(NEW)
+
+  processedAt   DateTime? @map("processed_at")
+  processedById String?   @map("processed_by_id") @db.Uuid
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  processedBy User? @relation("TrialRequestProcessedBy", fields: [processedById], references: [id])
+
+  @@index([status, createdAt])
+  @@map("trial_requests")
 }

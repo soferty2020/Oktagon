@@ -37,6 +37,8 @@ export const PermissionCode = {
   CompetitionsManage: 'competitions.manage',
   CompetitionsResults: 'competitions.results',
   CompetitionsPublish: 'competitions.publish',
+  TrialRequestsView: 'trial-requests.view',
+  TrialRequestsManage: 'trial-requests.manage',
   ScheduleView: 'schedule.view',
   ScheduleEdit: 'schedule.edit',
   ScheduleCancel: 'schedule.cancel',
