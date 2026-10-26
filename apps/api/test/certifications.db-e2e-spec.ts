@@ -79,16 +79,16 @@ describe('Аттестации (db e2e)', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         certifiedOn: '2024-02-10',
-        beltGrade: 'YELLOW',
-        stageKind: 'KYU',
-        stageNumber: 8,
+        // 8 кю по каталогу — синий пояс (ADR-0012).
+        rank: 'kyu-8',
         note: 'Весенняя аттестация',
       })
       .expect(201);
 
     expect(created.body).toMatchObject({
       athleteId,
-      beltGrade: 'YELLOW',
+      rank: 'kyu-8',
+      beltGrade: 'BLUE',
       stageLabel: '8 кю',
       certifiedOn: '2024-02-10',
     });
@@ -98,7 +98,8 @@ describe('Аттестации (db e2e)', () => {
       .set('Authorization', `Bearer ${token}`)
       .expect(200);
 
-    expect(card.body.beltGrade).toBe('YELLOW');
+    expect(card.body.rank).toBe('kyu-8');
+    expect(card.body.beltGrade).toBe('BLUE');
     expect(card.body.beltAwardedAt).toBe('2024-02-10');
   });
 
@@ -106,7 +107,7 @@ describe('Аттестации (db e2e)', () => {
     await request(app.getHttpServer())
       .post(`/api/v1/athletes/${athleteId}/certifications`)
       .set('Authorization', `Bearer ${token}`)
-      .send({ certifiedOn: '2023-01-15', beltGrade: 'WHITE', stageKind: 'KYU', stageNumber: 10 })
+      .send({ certifiedOn: '2023-01-15', rank: 'kyu-0' })
       .expect(201);
 
     const history = await request(app.getHttpServer())
@@ -137,7 +138,7 @@ describe('Аттестации (db e2e)', () => {
       .set('Authorization', `Bearer ${token}`)
       .expect(200);
 
-    // Осталась аттестация на белый пояс — он и становится текущим.
+    // Осталась аттестация на 0 кю (белый пояс) — она и становится текущей.
     expect(card.body.beltGrade).toBe('WHITE');
     expect(card.body.beltAwardedAt).toBe('2023-01-15');
   });
@@ -148,19 +149,19 @@ describe('Аттестации (db e2e)', () => {
     await request(app.getHttpServer())
       .post(`/api/v1/athletes/${athleteId}/certifications`)
       .set('Authorization', `Bearer ${token}`)
-      .send({ certifiedOn: future, beltGrade: 'GREEN', stageKind: 'KYU', stageNumber: 6 })
+      .send({ certifiedOn: future, rank: 'kyu-6' })
       .expect(400);
 
     await request(app.getHttpServer())
       .post(`/api/v1/athletes/${athleteId}/certifications`)
       .set('Authorization', `Bearer ${token}`)
-      .send({ certifiedOn: '2023-01-15', beltGrade: 'GREY', stageKind: 'KYU', stageNumber: 6 })
+      .send({ certifiedOn: '2023-01-15', beltGrade: 'GREY' })
       .expect(400);
 
     await request(app.getHttpServer())
       .post(`/api/v1/athletes/${athleteId}/certifications`)
       .set('Authorization', `Bearer ${token}`)
-      .send({ certifiedOn: '2023-01-15', beltGrade: 'GREEN', stageKind: 'KYU', stageNumber: 11 })
+      .send({ certifiedOn: '2023-01-15', rank: 'kyu-11' })
       .expect(400);
   });
 
