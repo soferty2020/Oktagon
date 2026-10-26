@@ -10,6 +10,7 @@ export * from './belt-grades';
 export * from './ranks';
 export * from './certifications';
 export * from './attestations';
+export * from './competitions';
 export * from './athletes';
 export * from './groups';
 export * from './users';

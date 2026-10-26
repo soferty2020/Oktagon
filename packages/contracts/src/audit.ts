@@ -110,6 +110,18 @@ export const AuditAction = {
 
   // Настройки клуба (docs/26-admin-settings.md: изменения настроек аудируются)
   // Аттестации как мероприятия (#33–#35)
+  // Соревнования (#36–#38)
+  COMPETITION_CREATED: 'competition.created',
+  COMPETITION_UPDATED: 'competition.updated',
+  COMPETITION_CANCELLED: 'competition.cancelled',
+  COMPETITION_PUBLISHED: 'competition.published',
+  COMPETITION_PARTICIPANT_ADDED: 'competition.participant_added',
+  COMPETITION_PARTICIPANT_REMOVED: 'competition.participant_removed',
+  COMPETITION_ENTRY_ADDED: 'competition.entry_added',
+  COMPETITION_RESULT_RECORDED: 'competition.result_recorded',
+  COMPETITION_RESULT_CORRECTED: 'competition.result_corrected',
+  COMPETITION_MATCH_RECORDED: 'competition.match_recorded',
+
   ATTESTATION_EVENT_CREATED: 'attestation.event_created',
   ATTESTATION_EVENT_UPDATED: 'attestation.event_updated',
   ATTESTATION_EVENT_CANCELLED: 'attestation.event_cancelled',
@@ -140,6 +152,10 @@ export const AuditEntityType = {
   ATHLETE: 'Athlete',
   CERTIFICATION: 'Certification',
   CERTIFICATION_EVENT: 'CertificationEvent',
+  COMPETITION: 'Competition',
+  COMPETITION_CATEGORY: 'CompetitionCategory',
+  COMPETITION_PARTICIPANT: 'CompetitionParticipant',
+  COMPETITION_ENTRY: 'CompetitionEntry',
   CERTIFICATION_PARTICIPANT: 'CertificationParticipant',
   USER_ATHLETE: 'UserAthlete',
   GROUP: 'Group',

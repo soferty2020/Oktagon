@@ -192,6 +192,9 @@ model User {
   certificationEventsCreated CertificationEvent[] @relation("CertificationEventCreatedBy")
   certificationEventsPublished CertificationEvent[] @relation("CertificationEventPublishedBy")
   certificationRevisions CertificationResultRevision[]
+  competitionsCreated Competition[] @relation("CompetitionCreatedBy")
+  competitionsPublished Competition[] @relation("CompetitionPublishedBy")
+  competitionRevisions CompetitionEntryRevision[]
 
   @@index([role, status])
   @@index([archivedAt])
@@ -296,6 +299,7 @@ model Athlete {
   userLinks         UserAthlete[]
   certifications    Certification[]
   certificationParticipants CertificationParticipant[]
+  competitionParticipants CompetitionParticipant[]
   memberships       GroupMembership[]
   attendances       Attendance[]
   plannedAbsences   PlannedAbsence[]
@@ -387,6 +391,7 @@ model TrainerProfile {
   groupTrainers    GroupTrainer[]
   trainingSessions TrainingSession[]
   certificationParticipants CertificationParticipant[]
+  competitionParticipants CompetitionParticipant[]
 
   @@map("trainer_profiles")
 }
@@ -1077,4 +1082,191 @@ model CertificationResultRevision {
 
   @@unique([participantId, version])
   @@map("certification_result_revisions")
+}
+// ---------------------------------------------------------------------------
+// Competitions: турниры, категории, участия и встречи (#36–#38)
+// ---------------------------------------------------------------------------
+
+enum CompetitionStatus {
+  DRAFT
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  PUBLISHED
+  CANCELLED
+}
+
+enum CompetitionLevel {
+  CLUB
+  CITY
+  REGIONAL
+  NATIONAL
+  INTERNATIONAL
+}
+
+enum CompetitionDiscipline {
+  KUMITE
+  KATA
+}
+
+/// Итог участия. PLACED требует места, NO_SHOW не может иметь медаль.
+enum CompetitionEntryResult {
+  PENDING
+  PLACED
+  PARTICIPATED
+  ELIMINATED
+  DISQUALIFIED
+  NO_SHOW
+}
+
+enum CompetitionMedal {
+  NONE
+  GOLD
+  SILVER
+  BRONZE
+}
+
+/// Результат встречи в кумитэ.
+enum CompetitionMatchResult {
+  WIN
+  LOSS
+}
+
+/// Турнир.
+model Competition {
+  id          String  @id @default(uuid()) @db.Uuid
+  title       String  @db.VarChar(200)
+  startsAt    DateTime @map("starts_at")
+  endsAt      DateTime? @map("ends_at")
+  location    String? @db.VarChar(200)
+  organizer   String? @db.VarChar(200)
+  level       CompetitionLevel @default(CLUB)
+  description String? @db.VarChar(2000)
+  status      CompetitionStatus @default(DRAFT)
+
+  createdById String? @map("created_by_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  publishedAt DateTime? @map("published_at")
+  publishedById String? @map("published_by_id") @db.Uuid
+  cancelledAt DateTime? @map("cancelled_at")
+
+  createdBy   User? @relation("CompetitionCreatedBy", fields: [createdById], references: [id])
+  publishedBy User? @relation("CompetitionPublishedBy", fields: [publishedById], references: [id])
+
+  participants CompetitionParticipant[]
+  categories   CompetitionCategory[]
+
+  @@index([startsAt])
+  @@index([status])
+  @@map("competitions")
+}
+
+/// Справочник категорий: общий (competitionId = null) или турнирный.
+model CompetitionCategory {
+  id          String @id @default(uuid()) @db.Uuid
+  competitionId String? @map("competition_id") @db.Uuid
+
+  discipline CompetitionDiscipline
+  name       String @db.VarChar(200)
+  ageFrom    Int?   @map("age_from")
+  ageTo      Int?   @map("age_to")
+  weightFrom Decimal? @map("weight_from") @db.Decimal(5, 1)
+  weightTo   Decimal? @map("weight_to") @db.Decimal(5, 1)
+  beltFrom   String? @map("belt_from") @db.VarChar(16)
+  beltTo     String? @map("belt_to") @db.VarChar(16)
+  isActive   Boolean @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  competition Competition? @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  entries     CompetitionEntry[]
+
+  @@index([discipline, isActive])
+  @@map("competition_categories")
+}
+
+/// Спортсмен в турнире: одна оплата на весь турнир, не на дисциплину.
+model CompetitionParticipant {
+  id            String @id @default(uuid()) @db.Uuid
+  competitionId String @map("competition_id") @db.Uuid
+  athleteId     String @map("athlete_id") @db.Uuid
+  responsibleTrainerId String? @map("responsible_trainer_id") @db.Uuid
+  paymentStatus ParticipantPaymentStatus @default(UNPAID) @map("payment_status")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  athlete     Athlete     @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  responsibleTrainer TrainerProfile? @relation(fields: [responsibleTrainerId], references: [id])
+  entries     CompetitionEntry[]
+
+  @@unique([competitionId, athleteId])
+  @@index([athleteId])
+  @@map("competition_participants")
+}
+
+/// Участие в дисциплине и категории: свой результат, своя история правок.
+model CompetitionEntry {
+  id            String @id @default(uuid()) @db.Uuid
+  participantId String @map("participant_id") @db.Uuid
+  categoryId    String @map("category_id") @db.Uuid
+  discipline    CompetitionDiscipline
+
+  categorySnapshot String @map("category_snapshot") @db.VarChar(200)
+
+  result CompetitionEntryResult @default(PENDING)
+  place  Int?
+  medal  CompetitionMedal @default(NONE)
+  comment String? @db.VarChar(1000)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  participant CompetitionParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  category    CompetitionCategory    @relation(fields: [categoryId], references: [id])
+  matches     CompetitionMatch[]
+  revisions   CompetitionEntryRevision[]
+
+  @@unique([participantId, categoryId])
+  @@map("competition_entries")
+}
+
+/// Встреча в кумитэ: соперник, стадия и результат. Отдельной базы соперников нет.
+model CompetitionMatch {
+  id           String @id @default(uuid()) @db.Uuid
+  entryId      String @map("entry_id") @db.Uuid
+  round        Int
+  opponentName String @map("opponent_name") @db.VarChar(200)
+  opponentClub String? @map("opponent_club") @db.VarChar(200)
+  result       CompetitionMatchResult
+  note         String? @db.VarChar(500)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  entry CompetitionEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@index([entryId, round])
+  @@map("competition_matches")
+}
+/// Версия результата участия (#38): исправление не затирает прежнее значение.
+///
+/// Появляется только после публикации турнира — до неё правка результата обычная
+/// операция. Задача требует версионировать именно исправления опубликованного.
+model CompetitionEntryRevision {
+  id        String @id @default(uuid()) @db.Uuid
+  entryId   String @map("entry_id") @db.Uuid
+  version   Int
+  result    CompetitionEntryResult
+  place     Int?
+  medal     CompetitionMedal
+  comment   String? @db.VarChar(1000)
+  changedById String? @map("changed_by_id") @db.Uuid
+  changedAt DateTime @default(now()) @map("changed_at")
+  reason    String? @db.VarChar(500)
+
+  entry     CompetitionEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  changedBy User?            @relation(fields: [changedById], references: [id])
+
+  @@unique([entryId, version])
+  @@map("competition_entry_revisions")
 }
