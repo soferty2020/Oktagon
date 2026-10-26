@@ -24,8 +24,11 @@ import {
 @Module({
   imports: [PrismaModule, AuditModule, IdentityModule],
   controllers: [
-    CompetitionsController,
+    // Категории объявлены раньше турниров: `GET /competitions/categories` иначе
+    // перехватывается маршрутом `GET /competitions/:id` и падает на валидации
+    // UUID — то есть категории нельзя прочитать, хотя создать можно.
     CompetitionCategoriesController,
+    CompetitionsController,
     CompetitionParticipantsController,
     CompetitionResultsController,
   ],

@@ -408,6 +408,26 @@ describe('Спорт: аттестации и соревнования (db e2e)'
     await prisma.db.user.deleteMany({ where: { id: trainer.id } });
   });
 
+  it('список категорий читается, а не упирается в маршрут турнира', async () => {
+    const created = await request(app.getHttpServer())
+      .post('/api/v1/competitions/categories')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ discipline: 'KATA', name: `E2E список ${stamp}` })
+      .expect(201);
+
+    // Регрессия: `GET /competitions/categories` перехватывался маршрутом
+    // `GET /competitions/:id` и отвечал 400 «uuid is expected».
+    const list = await request(app.getHttpServer())
+      .get('/api/v1/competitions/categories')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    const names = (list.body as { name: string }[]).map((item) => item.name);
+    expect(names).toContain(`E2E список ${stamp}`);
+
+    expect(created.body.discipline).toBe('KATA');
+  });
+
   it('турнир: две дисциплины — разные участия, одна оплата', async () => {
     const competition = await request(app.getHttpServer())
       .post('/api/v1/competitions')
