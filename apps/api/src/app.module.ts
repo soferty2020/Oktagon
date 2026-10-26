@@ -9,6 +9,7 @@ import { RequestContextService, RequestIdInterceptor } from './shared';
 import { TokenModule } from './shared/token.module';
 import { AnalyticsModule } from './modules/analytics';
 import { AthletesModule } from './modules/athletes';
+import { AttestationsModule } from './modules/attestations/attestations.module';
 import { AttendanceModule } from './modules/attendance';
 import { AuditContextInterceptor } from './modules/audit/audit-context.interceptor';
 import { AuditModule } from './modules/audit';
@@ -51,6 +52,7 @@ import { SettingsModule } from './modules/settings';
     AuthModule,
     IdentityModule,
     AthletesModule,
+    AttestationsModule,
     ClubStructureModule,
     GroupsModule,
 

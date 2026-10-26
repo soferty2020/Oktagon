@@ -9,6 +9,7 @@ export * from './club-structure';
 export * from './belt-grades';
 export * from './ranks';
 export * from './certifications';
+export * from './attestations';
 export * from './athletes';
 export * from './groups';
 export * from './users';

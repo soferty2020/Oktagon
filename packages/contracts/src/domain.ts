@@ -29,6 +29,10 @@ export const PermissionCode = {
   GroupsEdit: 'groups.edit',
   AttendanceView: 'attendance.view',
   AttendanceEdit: 'attendance.edit',
+  AttestationsView: 'attestations.view',
+  AttestationsManage: 'attestations.manage',
+  AttestationsResults: 'attestations.results',
+  AttestationsPublish: 'attestations.publish',
   ScheduleView: 'schedule.view',
   ScheduleEdit: 'schedule.edit',
   ScheduleCancel: 'schedule.cancel',
@@ -87,6 +91,11 @@ export const ROLE_PERMISSIONS: Readonly<Record<UserRole, readonly PermissionCode
     PermissionCode.GroupsView,
     PermissionCode.AttendanceView,
     PermissionCode.AttendanceEdit,
+    // Тренер ведёт аттестации своих спортсменов: создаёт мероприятие, отмечает
+    // допуск и результат. Публикация — отдельное право у руководителя.
+    PermissionCode.AttestationsView,
+    PermissionCode.AttestationsManage,
+    PermissionCode.AttestationsResults,
     PermissionCode.ScheduleView,
     PermissionCode.ChatUse,
   ],

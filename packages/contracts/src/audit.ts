@@ -109,6 +109,17 @@ export const AuditAction = {
   MESSAGE_DELETED: 'chat.message_deleted',
 
   // Настройки клуба (docs/26-admin-settings.md: изменения настроек аудируются)
+  // Аттестации как мероприятия (#33–#35)
+  ATTESTATION_EVENT_CREATED: 'attestation.event_created',
+  ATTESTATION_EVENT_UPDATED: 'attestation.event_updated',
+  ATTESTATION_EVENT_CANCELLED: 'attestation.event_cancelled',
+  ATTESTATION_EVENT_PUBLISHED: 'attestation.event_published',
+  ATTESTATION_PARTICIPANT_ADDED: 'attestation.participant_added',
+  ATTESTATION_PARTICIPANT_REMOVED: 'attestation.participant_removed',
+  ATTESTATION_PARTICIPANT_UPDATED: 'attestation.participant_updated',
+  ATTESTATION_RESULT_RECORDED: 'attestation.result_recorded',
+  ATTESTATION_RESULT_CORRECTED: 'attestation.result_corrected',
+
   SETTINGS_CLUB_UPDATED: 'settings.club_updated',
   SETTINGS_DEBT_RULES_UPDATED: 'settings.debt_rules_updated',
   SETTINGS_CLUB_VIEWED: 'settings.club_viewed',
@@ -128,6 +139,8 @@ export const AuditEntityType = {
   TRAINER_PROFILE: 'TrainerProfile',
   ATHLETE: 'Athlete',
   CERTIFICATION: 'Certification',
+  CERTIFICATION_EVENT: 'CertificationEvent',
+  CERTIFICATION_PARTICIPANT: 'CertificationParticipant',
   USER_ATHLETE: 'UserAthlete',
   GROUP: 'Group',
   GROUP_BRANCH: 'GroupBranch',
