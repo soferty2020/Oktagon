@@ -109,7 +109,7 @@ class HttpApiClient implements ApiClient {
     try {
       final response = await switch (method) {
         'GET' => _client.get(uri, headers: headers),
-        'PATCH' => _client.patch(uri, headers: headers, body: encoded),
+        'PATCH' => _client.patch(uri, headers: headers, body: jsonEncode(body ?? const {})),
         'PUT' => _client.put(uri, headers: headers, body: jsonEncode(body ?? const {})),
         _ => _client.post(uri, headers: headers, body: jsonEncode(body ?? const {})),
       }

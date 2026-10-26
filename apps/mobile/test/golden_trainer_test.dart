@@ -13,6 +13,8 @@ import 'package:octagon_mobile/features/trainer/attendance_screen.dart';
 import 'package:octagon_mobile/features/trainer/trainer_calendar_controller.dart';
 import 'package:octagon_mobile/features/trainer/trainer_day_controller.dart';
 import 'package:octagon_mobile/features/trainer/trainer_repository.dart';
+import 'package:octagon_mobile/features/attestations/attestation_controller.dart';
+import 'package:octagon_mobile/features/attestations/attestation_repository.dart';
 import 'package:octagon_mobile/features/trainer/trainer_shell.dart';
 import 'package:octagon_mobile/features/trainer/trainer_students_controller.dart';
 import 'package:octagon_mobile/features/trainer/trainer_students_screen.dart';
@@ -161,6 +163,7 @@ void main() {
             day: day,
             calendar: TrainerCalendarController(repository: repository, clock: () => now),
             students: TrainerStudentsController(repository: repository),
+      attestations: AttestationController(repository: ApiAttestationRepository(client: client)),
             news: NewsController(repository: NewsRepository(client: client)),
             attendanceFactory: () => AttendanceController(repository: repository),
           ),

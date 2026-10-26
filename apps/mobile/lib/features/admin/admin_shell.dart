@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../app_theme.dart';
 import '../../core/api_client.dart';
 import '../../design/tokens.dart';
 import '../attestations/attestation_controller.dart';
@@ -101,7 +100,7 @@ class _AdminMoreScreen extends StatelessWidget {
         const SizedBox(height: 16),
         if (user != null) ...[
           Text(user.displayName, style: Theme.of(context).textTheme.titleMedium),
-          Text(user.email ?? '', style: const TextStyle(color: Colors.black54)),
+          Text(user.email, style: const TextStyle(color: Colors.black54)),
           const SizedBox(height: 24),
         ],
         const Text(

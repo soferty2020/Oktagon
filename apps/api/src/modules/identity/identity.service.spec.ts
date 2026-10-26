@@ -104,6 +104,7 @@ describe('toLinkedAthlete', () => {
       beltGrade: 'WHITE',
       beltAwardedAt: null,
       rank: null,
+      rankLabel: null,
       relation: 'PARENT',
       isPrimary: true,
     });
