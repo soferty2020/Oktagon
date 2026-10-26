@@ -46,32 +46,15 @@ export default async function AthletesPage({
   }
 
   const { accessToken } = await readTokens();
-  const result = await apiFetch<AthleteView[]>('/athletes', { accessToken });
+  // Поиск серверный (#28): API ищет `contains` по фамилии, имени и отчеству.
+  // Раньше фильтровался уже загруженный список — на 300+ спортсменах поиск
+  // молчал про тех, кто не попал в первую загрузку.
+  const path = query ? `/athletes?search=${encodeURIComponent(query)}` : '/athletes';
+  const result = await apiFetch<AthleteView[]>(path, { accessToken });
   const canViewContacts = user.permissions.includes('athletes.contacts.view');
   const canEdit = user.permissions.includes('athletes.edit');
 
-  // Поиск клиентский, по уже загруженному списку: серверного поиска в API нет.
-  // На большом клубе это ограничение, поэтому подпись честно говорит «в списке».
-  const rows = result.ok
-    ? result.data.filter((athlete) => {
-        if (!query) {
-          return true;
-        }
-
-        const haystack = [
-          athlete.lastName,
-          athlete.firstName,
-          athlete.middleName,
-          athlete.phone,
-          athlete.email,
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase();
-
-        return haystack.includes(query);
-      })
-    : [];
+  const rows = result.ok ? result.data : [];
 
   return (
     <AppShell user={user}>
@@ -90,7 +73,7 @@ export default async function AthletesPage({
         <input
           name="q"
           defaultValue={params.q ?? ''}
-          placeholder="Поиск по имени или телефону"
+          placeholder="Поиск по фамилии, имени или отчеству"
           className={`${fieldClass} max-w-sm bg-white`}
           aria-label="Поиск спортсмена"
         />
