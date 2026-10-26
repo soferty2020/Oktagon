@@ -220,7 +220,11 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
 
       {categories.length === 0 ? (
         <Notice tone="info">
-          Категорий нет. Соревнования без категорий не проводятся — их заводит руководитель клуба.
+          Категорий нет: заявку оформить не получится. Их заводит руководитель — в{' '}
+          <Link className="underline" href="/competitions/categories">
+            справочнике категорий
+          </Link>
+          .
         </Notice>
       ) : null}
 

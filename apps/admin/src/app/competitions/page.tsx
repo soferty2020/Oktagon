@@ -87,6 +87,12 @@ export default async function CompetitionsPage() {
     <AppShell user={user}>
       <PageHeader title="Соревнования" description="Турниры, заявки и результаты" />
 
+      <div className="mb-6">
+        <Link className={secondaryButtonClass} href="/competitions/categories">
+          Категории
+        </Link>
+      </div>
+
       {!competitions?.ok && competitions ? (
         <Notice tone="info">{describeError(competitions.error)}</Notice>
       ) : null}
