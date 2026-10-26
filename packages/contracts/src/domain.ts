@@ -88,7 +88,15 @@ export const FINANCIAL_PERMISSION_CODES: readonly PermissionCode[] = [
  * только через индивидуальную выдачу (BR-010).
  */
 export const ROLE_PERMISSIONS: Readonly<Record<UserRole, readonly PermissionCode[]>> = {
-  MEMBER: [PermissionCode.GroupsView, PermissionCode.ScheduleView, PermissionCode.AttendanceView],
+  // Родитель видит мероприятия своих детей и опубликованные результаты (#39).
+  // Самостоятельной записи у него нет — это правило проверяет API, а не права.
+  MEMBER: [
+    PermissionCode.GroupsView,
+    PermissionCode.ScheduleView,
+    PermissionCode.AttendanceView,
+    PermissionCode.AttestationsView,
+    PermissionCode.CompetitionsView,
+  ],
   STAFF: [
     PermissionCode.AthletesView,
     PermissionCode.AthletesContactsView,

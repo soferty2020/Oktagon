@@ -39,19 +39,23 @@ export class CertificationEventsController {
   @ApiOperation({ summary: 'Список мероприятий; фильтр по статусу' })
   @ApiOkResponse({ description: 'Мероприятия, новые сверху' })
   async list(
+    @CurrentUser() user: AuthenticatedUser,
     @Query('status') status?: string,
   ): Promise<CertificationEventView[]> {
     const known = Object.values(CertificationEventStatus) as string[];
     const filter = status && known.includes(status) ? (status as CertificationEventStatus) : undefined;
 
-    return this.events.list(filter);
+    return this.events.list({ userId: user.id, role: user.role ?? 'MEMBER' }, filter);
   }
 
   @Get(':id')
   @RequirePermissions(PermissionCode.AttestationsView)
   @ApiOperation({ summary: 'Карточка мероприятия' })
-  async get(@Param('id', ParseUUIDPipe) id: string): Promise<CertificationEventView> {
-    return this.events.get(id);
+  async get(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<CertificationEventView> {
+    return this.events.get({ userId: user.id, role: user.role ?? 'MEMBER' }, id);
   }
 
   @Post()

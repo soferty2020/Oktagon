@@ -39,9 +39,10 @@ export class ParticipantsController {
   @RequirePermissions(PermissionCode.AttestationsView)
   @ApiOperation({ summary: 'Участники мероприятия' })
   async list(
+    @CurrentUser() user: AuthenticatedUser,
     @Param('eventId', ParseUUIDPipe) eventId: string,
   ): Promise<CertificationParticipantView[]> {
-    return this.participants.list(eventId);
+    return this.participants.list(eventId, { userId: user.id, role: user.role ?? 'MEMBER' });
   }
 
   @Post()

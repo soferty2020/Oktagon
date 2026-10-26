@@ -12,6 +12,8 @@ import '../home/member_home_controller.dart';
 import '../home/member_home_screen.dart';
 import '../news/news_controller.dart';
 import '../news/news_screen.dart';
+import '../sports/sports_controller.dart';
+import '../sports/sports_screen.dart';
 import '../profile/profile_screen.dart';
 import '../schedule/schedule_controller.dart';
 import '../schedule/schedule_screen.dart';
@@ -29,6 +31,7 @@ class MemberShell extends StatefulWidget {
     required this.home,
     required this.schedule,
     required this.news,
+    required this.sports,
     required this.chats,
     required this.attendance,
     required this.chatFactory,
@@ -38,6 +41,9 @@ class MemberShell extends StatefulWidget {
   final MemberHomeController home;
   final ScheduleController schedule;
   final NewsController news;
+
+  /// Мероприятия ребёнка: аттестации и соревнования (#41).
+  final SportsController sports;
   final ChatsController chats;
 
   /// Нужен истории посещений и предупреждению об отсутствии (H5, H6).
@@ -104,6 +110,7 @@ class _MemberShellState extends State<MemberShell> {
                   refreshKey: '${selected?.id ?? ''}:${widget.home.group?.id ?? ''}',
                 ),
                 NewsScreen(auth: widget.auth, controller: widget.news),
+                SportsScreen(auth: widget.auth, controller: widget.sports),
                 ChatsScreen(
                   auth: widget.auth,
                   controller: widget.chats,
@@ -138,6 +145,13 @@ class _MemberShellState extends State<MemberShell> {
                 icon: Icon(Icons.campaign_outlined),
                 selectedIcon: Icon(Icons.campaign),
                 label: 'Новости',
+              ),
+              // Спорт: аттестации и соревнования ребёнка. Родитель только смотрит,
+              // записи здесь нет — её оформляет тренер.
+              const NavigationDestination(
+                icon: Icon(Icons.sports_martial_arts_outlined),
+                selectedIcon: Icon(Icons.sports_martial_arts),
+                label: 'Спорт',
               ),
               NavigationDestination(
                 // Значок с числом непрочитанных: иначе новое сообщение

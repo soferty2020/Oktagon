@@ -14,6 +14,7 @@ import {
 
 import { ApiException } from '../../shared/api-exception';
 import { AuditService } from '../audit/audit.service';
+import { IdentityService } from '../identity/identity.service';
 import { ResourceScopeService } from '../identity/resource-scope.service';
 import {
   ParticipantsRepository,
@@ -38,11 +39,33 @@ export class ParticipantsService {
     private readonly repository: ParticipantsRepository,
     private readonly scope: ResourceScopeService,
     private readonly audit: AuditService,
+    private readonly identity: IdentityService,
   ) {}
 
-  async list(eventId: string): Promise<CertificationParticipantView[]> {
+  /**
+   * Участники мероприятия.
+   *
+   * Родитель видит только своих детей, и до публикации результаты скрыты: дата,
+   * допуск и оплата видны, итог — нет (#39, #41).
+   */
+  async list(
+    eventId: string,
+    viewer: { userId: string; role: string },
+  ): Promise<CertificationParticipantView[]> {
     const records = await this.repository.list(eventId);
-    return records.map(toParticipantView);
+    const status = await this.repository.eventStatus(eventId);
+    const published = status === 'PUBLISHED';
+
+    if (viewer.role !== 'MEMBER') {
+      return records.map((record) => toParticipantView(record, published));
+    }
+
+    const linked = await this.identity.listLinkedAthletes(viewer.userId);
+    const allowed = new Set(linked.map((athlete) => athlete.id));
+
+    return records
+      .filter((record) => allowed.has(record.athleteId))
+      .map((record) => toParticipantView(record, published));
   }
 
   async add(
@@ -192,7 +215,10 @@ function requireRank(id: string) {
 }
 
 /** Запись → ответ API. */
-export function toParticipantView(record: ParticipantRecord): CertificationParticipantView {
+export function toParticipantView(
+  record: ParticipantRecord,
+  resultsPublished = true,
+): CertificationParticipantView {
   return {
     id: record.id,
     eventId: record.eventId,
@@ -204,11 +230,13 @@ export function toParticipantView(record: ParticipantRecord): CertificationParti
     snapshotRankLabel: rankLabel(record.snapshotRank),
     admission: record.admission,
     paymentStatus: record.paymentStatus,
-    result: record.result,
-    awardedRank: record.awardedRank,
-    awardedRankLabel: rankLabel(record.awardedRank),
-    resultComment: record.resultComment,
-    certificationId: record.certificationId,
+    // До публикации итог не отдаём: родитель узнаёт его одновременно со всеми.
+    result: resultsPublished ? record.result : 'PENDING',
+    awardedRank: resultsPublished ? record.awardedRank : null,
+    awardedRankLabel: resultsPublished ? rankLabel(record.awardedRank) : null,
+    resultComment: resultsPublished ? record.resultComment : null,
+    certificationId: resultsPublished ? record.certificationId : null,
+    resultsPublished,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
   };

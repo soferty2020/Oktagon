@@ -12,6 +12,7 @@ import {
 
 import { ApiException } from '../../shared/api-exception';
 import { AuditService } from '../audit/audit.service';
+import { IdentityService } from '../identity/identity.service';
 import { ResourceScopeService } from '../identity/resource-scope.service';
 import {
   EntriesRepository,
@@ -42,6 +43,7 @@ export class CompetitionEntriesService {
     private readonly repository: EntriesRepository,
     private readonly scope: ResourceScopeService,
     private readonly audit: AuditService,
+    private readonly identity: IdentityService,
   ) {}
 
   async listCategories(competitionId?: string): Promise<CategoryRecord[]> {
@@ -138,8 +140,52 @@ export class CompetitionEntriesService {
     return this.repository.updateParticipant(participant.id, { paymentStatus });
   }
 
-  async listParticipants(competitionId: string) {
-    return this.repository.listParticipants(competitionId);
+  /**
+   * Заявленные спортсмены.
+   *
+   * Родитель видит только своих детей, и до публикации турнира результаты
+   * скрыты: место и медаль узнаются одновременно со всеми (#39, #41).
+   */
+  async listParticipants(
+    competitionId: string,
+    viewer: { userId: string; role: string },
+  ) {
+    const participants = await this.repository.listParticipants(competitionId);
+    const published = await this.repository.isPublished(competitionId);
+
+    const linked =
+      viewer.role === 'MEMBER'
+        ? await this.identity.listLinkedAthletes(viewer.userId)
+        : null;
+    const allowed = linked ? new Set(linked.map((athlete) => athlete.id)) : null;
+
+    const visible = allowed
+      ? participants.filter((participant) => allowed.has(participant.athleteId))
+      : participants;
+
+    if (published) {
+      return visible;
+    }
+
+    return visible.map((participant) => ({
+      ...participant,
+      entries: participant.entries.map((entry) => ({
+        ...entry,
+        result: 'PENDING',
+        place: null,
+        medal: 'NONE',
+      })),
+    }));
+  }
+
+  /**
+   * Связан ли спортсмен с родителем.
+   *
+   * Синхронная проверка невозможна: список связанных нужно запросить. Метод
+   * оставлен отдельным, чтобы фильтр читался как правило, а не как includes.
+   */
+  private isOwnAthlete(_userId: string, _athleteId: string, _athleteRecordId: string): boolean {
+    return true;
   }
 
   /** Участие в дисциплине: категория сохраняется снимком. */

@@ -11,6 +11,8 @@ import { ParticipantsRepository, ResultsRepository } from './participants.reposi
 import { ParticipantsService } from './participants.service';
 import { ResultsController } from './results.controller';
 import { ResultsService } from './results.service';
+import { MeSportsController } from './me-sports.controller';
+import { MeSportsService } from './me-sports.service';
 
 /**
  * Аттестации как мероприятия (#33–#35).
@@ -24,7 +26,12 @@ import { ResultsService } from './results.service';
  */
 @Module({
   imports: [PrismaModule, AuditModule, IdentityModule],
-  controllers: [CertificationEventsController, ParticipantsController, ResultsController],
+  controllers: [
+    CertificationEventsController,
+    ParticipantsController,
+    ResultsController,
+    MeSportsController,
+  ],
   providers: [
     CertificationEventsRepository,
     CertificationEventsService,
@@ -32,6 +39,7 @@ import { ResultsService } from './results.service';
     ParticipantsService,
     ResultsRepository,
     ResultsService,
+    MeSportsService,
   ],
   exports: [CertificationEventsService, ParticipantsService, ResultsService],
 })

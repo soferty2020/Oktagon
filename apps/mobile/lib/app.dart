@@ -10,6 +10,7 @@ import 'features/home/member_home_controller.dart';
 import 'features/news/news_controller.dart';
 import 'features/schedule/schedule_controller.dart';
 import 'features/shell/member_shell.dart';
+import 'features/sports/sports_controller.dart';
 import 'features/trainer/attendance_controller.dart';
 import 'features/trainer/trainer_calendar_controller.dart';
 import 'features/trainer/trainer_day_controller.dart';
@@ -28,6 +29,7 @@ class OctagonApp extends StatelessWidget {
     required this.memberHomeController,
     required this.scheduleController,
     required this.newsController,
+    required this.sportsController,
     required this.chatsController,
     required this.attendanceRepository,
     required this.trainerDayController,
@@ -41,6 +43,9 @@ class OctagonApp extends StatelessWidget {
   final MemberHomeController memberHomeController;
   final ScheduleController scheduleController;
   final NewsController newsController;
+
+  /// Мероприятия ребёнка: аттестации и соревнования (#41).
+  final SportsController sportsController;
   final ChatsController chatsController;
 
   /// Нужен истории посещений и предупреждению об отсутствии (H5, H6).
@@ -88,6 +93,7 @@ class OctagonApp extends StatelessWidget {
         home: memberHomeController,
         schedule: scheduleController,
         news: newsController,
+        sports: sportsController,
         chats: chatsController,
         attendance: attendanceRepository,
         chatFactory: chatFactory,

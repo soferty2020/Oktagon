@@ -59,10 +59,12 @@ describe('CompetitionEntriesService', () => {
     scope = { assertAthleteAccess: jest.fn().mockResolvedValue(undefined) };
     audit = { recordSafely: jest.fn().mockResolvedValue(null) };
 
+    const identity = { listLinkedAthletes: jest.fn().mockResolvedValue([]) };
     service = new CompetitionEntriesService(
       repository,
       scope as unknown as ResourceScopeService,
       audit as unknown as AuditService,
+      identity as unknown as import('../identity/identity.service').IdentityService,
     );
   });
 

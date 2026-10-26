@@ -132,6 +132,13 @@ export interface CertificationParticipantView {
   awardedRankLabel: string | null;
   resultComment: string | null;
   certificationId: string | null;
+  /**
+   * Опубликованы ли результаты мероприятия.
+   *
+   * false — участник виден (дата, допуск, оплата), но итог скрыт: до публикации
+   * родитель не должен узнать результат раньше времени (#39).
+   */
+  resultsPublished: boolean;
   createdAt: string;
   updatedAt: string;
 }

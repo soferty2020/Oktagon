@@ -103,6 +103,16 @@ export class ParticipantsRepository {
     await this.prisma.db.certificationParticipant.delete({ where: { id } });
   }
 
+  /** Статус мероприятия: до публикации результаты скрываются от родителей. */
+  async eventStatus(eventId: string): Promise<string | null> {
+    const event = await this.prisma.db.certificationEvent.findUnique({
+      where: { id: eventId },
+      select: { status: true },
+    });
+
+    return event?.status ?? null;
+  }
+
   /** Версии результата участника: новые сверху. */
   async revisions(participantId: string) {
     return this.prisma.db.certificationResultRevision.findMany({

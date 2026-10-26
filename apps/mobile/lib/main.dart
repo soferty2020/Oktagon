@@ -18,6 +18,8 @@ import 'features/home/member_home_controller.dart';
 import 'features/news/news_controller.dart';
 import 'features/news/news_repository.dart';
 import 'features/payments/payment_status_repository.dart';
+import 'features/sports/sports_controller.dart';
+import 'features/sports/sports_repository.dart';
 import 'features/schedule/schedule_controller.dart';
 import 'features/schedule/schedule_repository.dart';
 import 'features/trainer/attendance_controller.dart';
@@ -63,6 +65,12 @@ void main() {
 
   final newsController = NewsController(repository: NewsRepository(client: client));
 
+  // Мероприятия ребёнка (#41): один запрос отдаёт аттестации и соревнования
+  // своих спортсменов, уже отфильтрованные по правам и публикации.
+  final sportsController = SportsController(
+    repository: ApiSportsRepository(client: client),
+  );
+
   // Тренерские контроллеры: репозиторий общий, состояние — раздельное.
   final trainerRepository = TrainerRepository(client: client);
   final trainerDayController = TrainerDayController(repository: trainerRepository);
@@ -83,6 +91,7 @@ void main() {
       memberHomeController: memberHomeController,
       scheduleController: scheduleController,
       newsController: newsController,
+      sportsController: sportsController,
       chatsController: chatsController,
       attendanceRepository: attendanceRepository,
       trainerDayController: trainerDayController,

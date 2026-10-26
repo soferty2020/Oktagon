@@ -117,6 +117,44 @@ export class CertificationEventsRepository {
     });
   }
 
+
+  /**
+   * Мероприятия, в которых участвует хотя бы один из спортсменов (#39).
+   *
+   * Нужно родителю: он видит только те экзамены, где есть его ребёнок, а не весь
+   * календарь клуба.
+   */
+  async listForAthletes(
+    athleteIds: string[],
+    status?: CertificationEventStatus,
+  ): Promise<CertificationEventRecord[]> {
+    if (athleteIds.length === 0) {
+      return [];
+    }
+
+    return this.prisma.db.certificationEvent.findMany({
+      where: {
+        ...(status ? { status } : {}),
+        participants: { some: { athleteId: { in: athleteIds } } },
+      },
+      orderBy: [{ scheduledAt: 'desc' }],
+      select: EVENT_SELECT,
+    });
+  }
+
+  /** Участвует ли спортсмен из списка в мероприятии. */
+  async hasParticipant(eventId: string, athleteIds: string[]): Promise<boolean> {
+    if (athleteIds.length === 0) {
+      return false;
+    }
+
+    const record = await this.prisma.db.certificationParticipant.findFirst({
+      where: { eventId, athleteId: { in: athleteIds } },
+      select: { id: true },
+    });
+
+    return record !== null;
+  }
   /** Сколько участников ещё без итога: завершить мероприятие нельзя, пока есть такие. */
   async countPendingResults(eventId: string): Promise<number> {
     return this.prisma.db.certificationParticipant.count({

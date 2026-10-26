@@ -108,6 +108,39 @@ export class CompetitionsRepository {
     return this.prisma.db.competition.update({ where: { id }, data, select: COMPETITION_SELECT });
   }
 
+
+  /** Турниры, где участвует хотя бы один из спортсменов (#39). */
+  async listForAthletes(
+    athleteIds: string[],
+    status?: CompetitionStatus,
+  ): Promise<CompetitionRecord[]> {
+    if (athleteIds.length === 0) {
+      return [];
+    }
+
+    return this.prisma.db.competition.findMany({
+      where: {
+        ...(status ? { status } : {}),
+        participants: { some: { athleteId: { in: athleteIds } } },
+      },
+      orderBy: [{ startsAt: 'desc' }],
+      select: COMPETITION_SELECT,
+    });
+  }
+
+  /** Участвует ли спортсмен из списка в турнире. */
+  async hasParticipant(competitionId: string, athleteIds: string[]): Promise<boolean> {
+    if (athleteIds.length === 0) {
+      return false;
+    }
+
+    const record = await this.prisma.db.competitionParticipant.findFirst({
+      where: { competitionId, athleteId: { in: athleteIds } },
+      select: { id: true },
+    });
+
+    return record !== null;
+  }
   /** Сколько участий без итога: завершать турнир нельзя, пока такие есть. */
   async countPendingEntries(competitionId: string): Promise<number> {
     return this.prisma.db.competitionEntry.count({

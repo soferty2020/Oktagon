@@ -50,7 +50,12 @@ describe('CertificationEventsService', () => {
     } as unknown as jest.Mocked<CertificationEventsRepository>;
 
     audit = { recordSafely: jest.fn().mockResolvedValue(null) };
-    service = new CertificationEventsService(repository, audit as unknown as AuditService);
+    const identity = { listLinkedAthletes: jest.fn().mockResolvedValue([]) };
+    service = new CertificationEventsService(
+      repository,
+      audit as unknown as AuditService,
+      identity as unknown as import('../identity/identity.service').IdentityService,
+    );
   });
 
   it('создаёт мероприятие черновиком и пишет аудит', async () => {

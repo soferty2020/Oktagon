@@ -98,8 +98,14 @@ export class CompetitionParticipantsController {
   @Get()
   @RequirePermissions(PermissionCode.CompetitionsView)
   @ApiOperation({ summary: 'Заявленные спортсмены с участиями' })
-  async list(@Param('competitionId', ParseUUIDPipe) competitionId: string) {
-    return this.entries.listParticipants(competitionId);
+  async list(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('competitionId', ParseUUIDPipe) competitionId: string,
+  ) {
+    return this.entries.listParticipants(competitionId, {
+      userId: user.id,
+      role: user.role ?? 'MEMBER',
+    });
   }
 
   @Post()

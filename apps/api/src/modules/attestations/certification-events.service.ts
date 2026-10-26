@@ -12,6 +12,7 @@ import {
 
 import { ApiException } from '../../shared/api-exception';
 import { AuditService } from '../audit/audit.service';
+import { IdentityService } from '../identity/identity.service';
 import {
   CertificationEventsRepository,
   toEventView,
@@ -35,15 +36,37 @@ export class CertificationEventsService {
   constructor(
     private readonly repository: CertificationEventsRepository,
     private readonly audit: AuditService,
+    private readonly identity: IdentityService,
   ) {}
 
-  async list(status?: CertificationEventStatus): Promise<CertificationEventView[]> {
-    const records = await this.repository.list(status);
+  /**
+   * Список мероприятий.
+   *
+   * Родитель видит только те экзамены, где участвует его ребёнок: полный
+   * календарь клуба ему не нужен и раскрывает чужие события (#39).
+   */
+  async list(
+    viewer: { userId: string; role: string },
+    status?: CertificationEventStatus,
+  ): Promise<CertificationEventView[]> {
+    const linked = await this.linkedAthleteIds(viewer);
+    const records =
+      linked === null
+        ? await this.repository.list(status)
+        : await this.repository.listForAthletes(linked, status);
+
     return records.map(toEventView);
   }
 
-  async get(id: string): Promise<CertificationEventView> {
-    return toEventView(await this.requireEvent(id));
+  async get(viewer: { userId: string; role: string }, id: string): Promise<CertificationEventView> {
+    const record = await this.requireEvent(id);
+    const linked = await this.linkedAthleteIds(viewer);
+
+    if (linked !== null && !(await this.repository.hasParticipant(id, linked))) {
+      throw ApiException.notFound('Мероприятие не найдено');
+    }
+
+    return toEventView(record);
   }
 
   async create(
@@ -178,6 +201,19 @@ export class CertificationEventsService {
     });
 
     return toEventView(record);
+  }
+
+  /**
+   * Связанные спортсмены родителя; 
+ull — ограничения нет (тренер, руководитель).
+   */
+  private async linkedAthleteIds(viewer: { userId: string; role: string }): Promise<string[] | null> {
+    if (viewer.role !== 'MEMBER') {
+      return null;
+    }
+
+    const athletes = await this.identity.listLinkedAthletes(viewer.userId);
+    return athletes.map((athlete) => athlete.id);
   }
 
   private async requireEvent(id: string): Promise<CertificationEventRecord> {

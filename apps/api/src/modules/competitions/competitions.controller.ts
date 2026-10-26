@@ -38,18 +38,24 @@ export class CompetitionsController {
   @RequirePermissions(PermissionCode.CompetitionsView)
   @ApiOperation({ summary: 'Список турниров; фильтр по статусу' })
   @ApiOkResponse({ description: 'Турниры, новые сверху' })
-  async list(@Query('status') status?: string): Promise<CompetitionView[]> {
+  async list(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('status') status?: string,
+  ): Promise<CompetitionView[]> {
     const known = Object.values(CompetitionStatus) as string[];
     const filter = status && known.includes(status) ? (status as CompetitionStatus) : undefined;
 
-    return this.competitions.list(filter);
+    return this.competitions.list({ userId: user.id, role: user.role ?? 'MEMBER' }, filter);
   }
 
   @Get(':id')
   @RequirePermissions(PermissionCode.CompetitionsView)
   @ApiOperation({ summary: 'Карточка турнира' })
-  async get(@Param('id', ParseUUIDPipe) id: string): Promise<CompetitionView> {
-    return this.competitions.get(id);
+  async get(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<CompetitionView> {
+    return this.competitions.get({ userId: user.id, role: user.role ?? 'MEMBER' }, id);
   }
 
   @Post()

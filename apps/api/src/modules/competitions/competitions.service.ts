@@ -12,6 +12,7 @@ import {
 
 import { ApiException } from '../../shared/api-exception';
 import { AuditService } from '../audit/audit.service';
+import { IdentityService } from '../identity/identity.service';
 import {
   CompetitionsRepository,
   toCompetitionView,
@@ -32,14 +33,34 @@ export class CompetitionsService {
   constructor(
     private readonly repository: CompetitionsRepository,
     private readonly audit: AuditService,
+    private readonly identity: IdentityService,
   ) {}
 
-  async list(status?: CompetitionStatus): Promise<CompetitionView[]> {
-    return (await this.repository.list(status)).map(toCompetitionView);
+  /**
+   * Список турниров. Родитель видит только турниры, где участвует его ребёнок.
+   */
+  async list(
+    viewer: { userId: string; role: string },
+    status?: CompetitionStatus,
+  ): Promise<CompetitionView[]> {
+    const linked = await this.linkedAthleteIds(viewer);
+    const records =
+      linked === null
+        ? await this.repository.list(status)
+        : await this.repository.listForAthletes(linked, status);
+
+    return records.map(toCompetitionView);
   }
 
-  async get(id: string): Promise<CompetitionView> {
-    return toCompetitionView(await this.requireCompetition(id));
+  async get(viewer: { userId: string; role: string }, id: string): Promise<CompetitionView> {
+    const record = await this.requireCompetition(id);
+    const linked = await this.linkedAthleteIds(viewer);
+
+    if (linked !== null && !(await this.repository.hasParticipant(id, linked))) {
+      throw ApiException.notFound('Турнир не найден');
+    }
+
+    return toCompetitionView(record);
   }
 
   async create(callerId: string, input: CreateCompetitionInput): Promise<CompetitionView> {
@@ -169,6 +190,17 @@ export class CompetitionsService {
     });
 
     return toCompetitionView(record);
+  }
+
+  /** Связанные спортсмены родителя; 
+ull — ограничения нет. */
+  private async linkedAthleteIds(viewer: { userId: string; role: string }): Promise<string[] | null> {
+    if (viewer.role !== 'MEMBER') {
+      return null;
+    }
+
+    const athletes = await this.identity.listLinkedAthletes(viewer.userId);
+    return athletes.map((athlete) => athlete.id);
   }
 
   private async requireCompetition(id: string): Promise<CompetitionRecord> {
