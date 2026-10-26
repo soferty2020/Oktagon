@@ -4,7 +4,7 @@ import { fieldClass } from '@/components/ui';
 
 import { useActionState } from 'react';
 
-import { BELT_GRADES, beltGradeLabel } from '@octagon/contracts';
+import { RANKS, beltGradeLabel } from '@octagon/contracts';
 
 import {
   cancelCertificationAction,
@@ -22,6 +22,8 @@ export interface CertificationValues {
   id: string;
   certifiedOn: string;
   beltGrade: string;
+  rank: string | null;
+  rankLabel: string | null;
   stageKind: string;
   stageNumber: number;
   stageLabel: string;
@@ -73,7 +75,7 @@ export function CertificationsBlock({
             {certifications.map((certification) => (
               <tr key={certification.id}>
                 <td className="whitespace-nowrap">{formatDate(certification.certifiedOn)}</td>
-                <td>{certification.stageLabel}</td>
+                <td>{certification.rankLabel ?? certification.stageLabel}</td>
                 <td>{beltGradeLabel(certification.beltGrade) ?? certification.beltGrade}</td>
                 <td className="text-muted">{certification.createdBy?.email ?? '—'}</td>
                 <td>
@@ -97,7 +99,7 @@ export function CertificationsBlock({
         <form action={formAction} className="mt-4 flex flex-col gap-3 border-t border-line pt-4">
           <input type="hidden" name="athleteId" value={athleteId} />
 
-          <div className="grid gap-3 sm:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-3">
             <label className={labelClass}>
               Дата аттестации
               <input
@@ -111,33 +113,17 @@ export function CertificationsBlock({
             </label>
 
             <label className={labelClass}>
-              Пояс
-              <select name="beltGrade" defaultValue="WHITE" className={inputClass}>
-                {BELT_GRADES.map((grade) => (
-                  <option key={grade.code} value={grade.code}>
-                    {grade.order}. {grade.label}
+              Ступень
+              <select name="rank" defaultValue="kyu-10" required className={inputClass}>
+                {RANKS.map((rank) => (
+                  <option key={rank.id} value={rank.id}>
+                    {rank.label} — {rank.beltLabel}
                   </option>
                 ))}
               </select>
-            </label>
-
-            <label className={labelClass}>
-              Ступень
-              <div className="flex gap-2">
-                <select name="stageKind" defaultValue="KYU" className={inputClass}>
-                  <option value="KYU">кю</option>
-                  <option value="DAN">дан</option>
-                </select>
-                <input
-                  type="number"
-                  name="stageNumber"
-                  min={1}
-                  max={10}
-                  required
-                  defaultValue={10}
-                  className={`${inputClass} w-20`}
-                />
-              </div>
+              <span className="text-[11px] text-muted">
+                Пояс определится из ступени: кю-10 — оранжевый, кю-8 — синий, даны — чёрный.
+              </span>
             </label>
 
             <label className={labelClass}>

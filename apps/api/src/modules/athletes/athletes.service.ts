@@ -10,7 +10,9 @@ import {
   type LinkAccountInput,
   type UpdateAthleteInput,
   applyContactsVisibility,
+  findRank,
   hasPermission,
+  rankLabel,
 } from '@octagon/contracts';
 
 import { AthleteStatus, type BeltGrade, type Gender } from '../../../generated/prisma';
@@ -265,6 +267,29 @@ function toUpdateRecord(input: UpdateAthleteInput): UpdateAthleteRecordInput {
     status: input.status,
   };
 
+  // Ступень (ADR-0012) — источник истины: пояс выводится из неё. Присланный
+  // отдельно пояс проверяется, а не переписывается молча: расхождение — ошибка
+  // ввода, и скрывать её нельзя.
+  if (input.rank) {
+    const rank = findRank(input.rank);
+    if (!rank) {
+      throw new ApiException(
+        'VALIDATION_FAILED' satisfies ApiErrorCode,
+        `Ступень «${input.rank}» отсутствует в справочнике`,
+      );
+    }
+
+    if (input.beltGrade && input.beltGrade !== rank.belt) {
+      throw new ApiException(
+        'VALIDATION_FAILED' satisfies ApiErrorCode,
+        `Ступень «${rank.label}» соответствует поясу «${rank.beltLabel}», а не «${input.beltGrade}»`,
+      );
+    }
+
+    record.rank = rank.id;
+    record.beltGrade = rank.belt;
+  }
+
   const birthDate = parseCalendarDate(input.birthDate);
   if (birthDate !== undefined) {
     record.birthDate = birthDate;
@@ -290,6 +315,11 @@ function toAthleteView(athlete: AthleteRecord, canViewContacts: boolean): Athlet
     birthDate: athlete.birthDate ? athlete.birthDate.toISOString().slice(0, 10) : null,
     gender: athlete.gender,
     status: athlete.status,
+    // Ступень — источник истины (ADR-0012); пояс выводится из неё, если известен.
+    // `null` означает, что миграция не смогла вывести ступень однозначно, и это
+    // честнее, чем подставить белый пояс.
+    rank: athlete.rank ?? null,
+    rankLabel: rankLabel(athlete.rank),
     // Пояс всегда заполнен: белый — значение по умолчанию, а не отсутствие данных.
     beltGrade: athlete.beltGrade,
     beltAwardedAt: athlete.beltAwardedAt

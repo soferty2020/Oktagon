@@ -3,10 +3,10 @@ import {
   ApiErrorCode,
   AuditAction,
   AuditEntityType,
-  MAX_STAGE,
-  MIN_STAGE,
   certificationStageLabel,
   findBeltGrade,
+  rankLabel,
+  resolveRank,
   type CertificationStageKind,
   type CertificationView,
   type CreateCertificationInput,
@@ -54,15 +54,36 @@ export class CertificationsService {
     await this.scope.assertAthleteAccess(callerUserId, athleteId);
 
     const certifiedOn = parseCertifiedOn(input.certifiedOn);
-    const stageNumber = validateStageNumber(input.stageNumber);
-    const beltGrade = validateBeltGrade(input.beltGrade);
+
+    // Ступень — источник истины (ADR-0012). Принимаем и новый `rank`, и старую
+    // пару «вид + номер»: клиенты обновляются не одновременно с API.
+    const rank = resolveRank(input);
+    if (!rank) {
+      throw new ApiException(
+        'VALIDATION_FAILED' satisfies ApiErrorCode,
+        'Укажите ступень из справочника',
+      );
+    }
+
+    // Если клиент прислал пояс, он должен совпадать с поясом ступени. Молча
+    // переписать пояс — значит скрыть ошибку ввода, а не исправить её.
+    if (input.beltGrade) {
+      const belt = validateBeltGrade(input.beltGrade);
+      if (belt !== rank.belt) {
+        throw new ApiException(
+          'VALIDATION_FAILED' satisfies ApiErrorCode,
+          `Ступень «${rank.label}» соответствует поясу «${rank.beltLabel}», а не «${input.beltGrade}»`,
+        );
+      }
+    }
 
     const record = await this.repository.create({
       athleteId,
       certifiedOn,
-      beltGrade,
-      stageKind: input.stageKind,
-      stageNumber,
+      beltGrade: rank.belt,
+      stageKind: rank.kind,
+      stageNumber: rank.number,
+      rank: rank.id,
       note: input.note?.trim() ? input.note.trim().slice(0, 500) : null,
       createdById: callerUserId,
     });
@@ -133,16 +154,6 @@ function parseCertifiedOn(value: string): Date {
   return date;
 }
 
-/** Ступень: 1..10 для кю и для дана. */
-function validateStageNumber(value: number): number {
-  if (!Number.isInteger(value) || value < MIN_STAGE || value > MAX_STAGE) {
-    throw new ApiException(
-      'VALIDATION_FAILED' satisfies ApiErrorCode,
-      `Ступень должна быть целым числом от ${MIN_STAGE} до ${MAX_STAGE}`,
-    );
-  }
-  return value;
-}
 
 /** Пояс должен быть из фиксированного справочника (BR-015). */
 function validateBeltGrade(value: string) {
@@ -162,10 +173,17 @@ function toView(record: CertificationRecord): CertificationView {
     id: record.id,
     athleteId: record.athleteId,
     certifiedOn: record.certifiedOn.toISOString().slice(0, 10),
+    // Ступень — из каталога; для старых записей её выводит миграция. Если её нет,
+    // клиент покажет «не определена», а не подставит пояс как ступень.
+    rank: record.rank ?? null,
+    rankLabel: rankLabel(record.rank),
     beltGrade: record.beltGrade,
     stageKind: record.stageKind as CertificationStageKind,
     stageNumber: record.stageNumber,
-    stageLabel: certificationStageLabel(record.stageKind as CertificationStageKind, record.stageNumber),
+    stageLabel: certificationStageLabel(
+      record.stageKind as CertificationStageKind,
+      record.stageNumber,
+    ),
     note: record.note,
     createdBy: record.createdBy,
     createdAt: record.createdAt.toISOString(),

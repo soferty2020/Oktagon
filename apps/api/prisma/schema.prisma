@@ -275,6 +275,12 @@ model Athlete {
   /// Текущий пояс (K3). Белый — значение по умолчанию: пояс есть у каждого
   /// спортсмена с момента заведения карточки.
   beltGrade   BeltGrade     @default(WHITE) @map("belt_grade")
+  /// Текущая ступень из RankCatalog (ADR-0012): `kyu-0`…`kyu-10`, `dan-1`…`dan-10`.
+  ///
+  /// Источник истины для пояса. Nullable намеренно: у записей, где пояс не
+  /// выводится из аттестаций (например, синий пояс без единой аттестации),
+  /// миграция не угадывает значение, а оставляет пусто до ручного разрешения.
+  rank        String?       @map("rank") @db.VarChar(16)
   /// Дата присвоения пояса; у старых записей может отсутствовать.
   beltAwardedAt DateTime?   @map("belt_awarded_at") @db.Date
   phone       String?
@@ -880,6 +886,9 @@ model Certification {
   stageKind CertificationStageKind @default(KYU) @map("stage_kind")
   /// Номер ступени: 1..10 для кю и для дана.
   stageNumber Int @map("stage_number")
+  /// Присвоенная ступень из RankCatalog (ADR-0012). Для новых записей пишется
+  /// вместе с поясом; у старых миграция заполняет по stageKind/stageNumber.
+  rank String? @map("rank") @db.VarChar(16)
 
   note String? @db.VarChar(500)
 

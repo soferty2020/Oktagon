@@ -5,9 +5,12 @@
  * Одно без другого отвечает на половину вопроса: «какой пояс» без «какая ступень
  * и когда получена».
  *
- * Ступень хранится числом и видом, а не строкой «8 кю»: по ней сравнивают
- * аттестации между собой, и разбор строки при каждом сравнении был бы лишним.
+ * С ADR-0012 ступень — единая запись каталога (`kyu-0`…`dan-10`), и пояс из неё
+ * выводится. `stageKind`/`stageNumber`/`beltGrade` остались полями контракта на
+ * переходный период: старые клиенты их присылают, API сводит всё к ступени.
  */
+
+import { findRank, type RankView } from './ranks';
 
 /** Вид ступени: кю до чёрного пояса, дан — после. */
 export const CertificationStageKind = {
@@ -27,22 +30,35 @@ export interface CertificationView {
   athleteId: string;
   /** Дата аттестации, YYYY-MM-DD. */
   certifiedOn: string;
+  /** Присвоенная ступень из каталога (ADR-0012). */
+  rank: string | null;
+  /** Подпись ступени: «8 кю» или «2 дан». */
+  rankLabel: string | null;
+  /** Пояс, выведенный из ступени. */
   beltGrade: string;
+  /** Устаревшие поля: остаются для клиентов, не перешедших на `rank`. */
   stageKind: CertificationStageKind;
   stageNumber: number;
-  /** Подпись ступени: «8 кю» или «2 дан». */
+  /** Подпись ступени: «8 кю» или «2 дан». Совпадает с `rankLabel`. */
   stageLabel: string;
   note: string | null;
   createdBy: { id: string; email: string } | null;
   createdAt: string;
 }
 
-/** Новая аттестация: создание меняет текущий пояс спортсмена. */
+/**
+ * Новая аттестация.
+ *
+ * `rank` — предпочтительный способ. Если его нет, ступень выводится из
+ * `stageKind`/`stageNumber`; `beltGrade` при этом не источни истины, а проверка:
+ * несовпадение пояса со ступенью — ошибка ввода, а не повод молча переписать.
+ */
 export interface CreateCertificationInput {
   certifiedOn: string;
-  beltGrade: string;
-  stageKind: CertificationStageKind;
-  stageNumber: number;
+  rank?: string;
+  beltGrade?: string;
+  stageKind?: CertificationStageKind;
+  stageNumber?: number;
   note?: string | null;
 }
 
@@ -52,4 +68,22 @@ export function certificationStageLabel(
   number: number,
 ): string {
   return `${number} ${kind === CertificationStageKind.KYU ? 'кю' : 'дан'}`;
+}
+
+/** Ступень аттестации: из `rank`, иначе из вида и номера. */
+export function certificationRank(certification: {
+  rank?: string | null;
+  stageKind?: CertificationStageKind | string | null;
+  stageNumber?: number | null;
+}): RankView | undefined {
+  if (certification.rank) {
+    return findRank(certification.rank);
+  }
+
+  if (certification.stageKind && typeof certification.stageNumber === 'number') {
+    const kind = String(certification.stageKind).toUpperCase();
+    return findRank(`${kind === 'DAN' ? 'dan' : 'kyu'}-${certification.stageNumber}`);
+  }
+
+  return undefined;
 }

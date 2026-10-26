@@ -12,6 +12,8 @@ export interface AthleteRecord {
   status: AthleteStatus;
   /** Текущий пояс (K3); белый — значение по умолчанию. */
   beltGrade: BeltGrade;
+  /** Ступень из каталога (ADR-0012); null — не выведена миграцией. */
+  rank: string | null;
   beltAwardedAt: Date | null;
   phone: string | null;
   email: string | null;
@@ -45,6 +47,8 @@ export interface UpdateAthleteInput {
   birthDate?: Date | null;
   gender?: Gender;
   beltGrade?: BeltGrade;
+  /** Ступень из каталога (ADR-0012); пишется вместе с поясом. */
+  rank?: string;
   beltAwardedAt?: Date | null;
   phone?: string | null;
   email?: string | null;
@@ -92,6 +96,7 @@ const ATHLETE_SELECT = {
   gender: true,
   status: true,
   beltGrade: true,
+  rank: true,
   beltAwardedAt: true,
   phone: true,
   email: true,

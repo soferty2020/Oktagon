@@ -13,20 +13,35 @@ export class CreateCertificationDto {
   @IsDateString()
   certifiedOn!: string;
 
-  @ApiProperty({ example: 'YELLOW', description: 'Присвоенный пояс из справочника' })
+  /**
+   * Ступень из каталога (ADR-0012): `kyu-0`…`kyu-10`, `dan-1`…`dan-10`.
+   *
+   * Предпочтительный способ. Если не задана, ступень выводится из
+   * `stageKind`/`stageNumber` — для клиентов, не обновившихся вместе с API.
+   */
+  @ApiPropertyOptional({ example: 'kyu-8', description: 'Ступень из RankCatalog' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(16)
+  rank?: string;
+
+  @ApiPropertyOptional({ example: 'YELLOW', description: 'Пояс; проверяется на совпадение со ступенью' })
+  @IsOptional()
   @IsString()
   @MaxLength(64)
-  beltGrade!: string;
+  beltGrade?: string;
 
-  @ApiProperty({ enum: Object.values(CertificationStageKind) })
+  @ApiPropertyOptional({ enum: Object.values(CertificationStageKind) })
+  @IsOptional()
   @IsEnum(CertificationStageKind)
-  stageKind!: CertificationStageKind;
+  stageKind?: CertificationStageKind;
 
-  @ApiProperty({ minimum: MIN_STAGE, maximum: MAX_STAGE, example: 8 })
+  @ApiPropertyOptional({ minimum: MIN_STAGE, maximum: MAX_STAGE, example: 8 })
+  @IsOptional()
   @IsInt()
   @Min(MIN_STAGE)
   @Max(MAX_STAGE)
-  stageNumber!: number;
+  stageNumber?: number;
 
   @ApiPropertyOptional({ maxLength: 500 })
   @IsOptional()

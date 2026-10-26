@@ -15,6 +15,7 @@ const athlete: AthleteRecord = {
   gender: 'MALE',
   status: 'ACTIVE',
   beltGrade: 'WHITE',
+  rank: 'kyu-0',
   beltAwardedAt: null,
   phone: '+7 700 111 22 33',
   email: 'ali@example.com',

@@ -25,6 +25,7 @@ describe('CertificationsService', () => {
     beltGrade: 'YELLOW',
     stageKind: CertificationStageKind.KYU,
     stageNumber: 8,
+    rank: 'kyu-8',
     note: null,
     createdAt: new Date('2024-02-10T10:00:00.000Z'),
     createdBy: { id: 'admin-1', email: 'admin@octagon.kz' },
@@ -33,7 +34,8 @@ describe('CertificationsService', () => {
 
   const input = {
     certifiedOn: '2024-02-10',
-    beltGrade: 'YELLOW',
+    // 8 кю по каталогу — синий пояс (ADR-0012); жёлтый был бы противоречием.
+    beltGrade: 'BLUE',
     stageKind: CertificationStageKind.KYU,
     stageNumber: 8,
   };
@@ -77,13 +79,15 @@ describe('CertificationsService', () => {
   it('создает аттестацию и пишет аудит', async () => {
     const created = await service.create('admin-1', 'athlete-1', input);
 
-    expect(created.beltGrade).toBe('YELLOW');
+    expect(created.rank).toBe('kyu-8');
     expect(repository.create).toHaveBeenCalledWith(
       expect.objectContaining({
         athleteId: 'athlete-1',
-        beltGrade: 'YELLOW',
+        // Пояс выводится из ступени, а не берётся из ввода.
+        beltGrade: 'BLUE',
         stageKind: 'KYU',
         stageNumber: 8,
+        rank: 'kyu-8',
         createdById: 'admin-1',
       }),
     );

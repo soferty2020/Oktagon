@@ -11,6 +11,8 @@ export interface CertificationRecord {
   beltGrade: BeltGrade;
   stageKind: CertificationStageKind;
   stageNumber: number;
+  /** Ступень из каталога (ADR-0012); null у старых записей до миграции. */
+  rank: string | null;
   note: string | null;
   createdAt: Date;
   createdBy: { id: string; email: string } | null;
@@ -22,6 +24,7 @@ export interface CreateCertificationRecordInput {
   beltGrade: BeltGrade;
   stageKind: CertificationStageKind;
   stageNumber: number;
+  rank: string;
   note: string | null;
   createdById: string;
 }
@@ -48,6 +51,7 @@ const CERTIFICATION_SELECT = {
   beltGrade: true,
   stageKind: true,
   stageNumber: true,
+  rank: true,
   note: true,
   createdAt: true,
   createdBy: { select: { id: true, email: true } },
@@ -89,7 +93,7 @@ export class PrismaCertificationsRepository extends CertificationsRepository {
       // не должны расходиться.
       await tx.athlete.update({
         where: { id: input.athleteId },
-        data: { beltGrade: input.beltGrade, beltAwardedAt: input.certifiedOn },
+        data: { beltGrade: input.beltGrade, beltAwardedAt: input.certifiedOn, rank: input.rank },
       });
 
       return created;
@@ -110,7 +114,7 @@ export class PrismaCertificationsRepository extends CertificationsRepository {
       const latest = await tx.certification.findFirst({
         where: { athleteId: existing.athleteId },
         orderBy: [{ certifiedOn: 'desc' }, { createdAt: 'desc' }],
-        select: { beltGrade: true, certifiedOn: true },
+        select: { beltGrade: true, certifiedOn: true, rank: true },
       });
 
       // Аттестаций не осталось — возвращаем белый пояс: он дефолт, а не
@@ -120,6 +124,9 @@ export class PrismaCertificationsRepository extends CertificationsRepository {
         data: {
           beltGrade: latest?.beltGrade ?? 'WHITE',
           beltAwardedAt: latest?.certifiedOn ?? null,
+          // Ступень пересчитывается вместе с поясом: они не должны расходиться.
+          // Если аттестаций не осталось — начальная 0 кю (белый пояс).
+          rank: latest?.rank ?? 'kyu-0',
         },
       });
     });
@@ -135,6 +142,8 @@ function toRecord(record: {
   beltGrade: BeltGrade;
   stageKind: CertificationStageKind;
   stageNumber: number;
+  /** Ступень из каталога (ADR-0012); null у старых записей до миграции. */
+  rank: string | null;
   note: string | null;
   createdAt: Date;
   createdBy: { id: string; email: string } | null;

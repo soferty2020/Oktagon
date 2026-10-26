@@ -32,6 +32,8 @@ interface AthleteDetails {
   birthDate: string | null;
   gender: string;
   status: string;
+  rank: string | null;
+  rankLabel: string | null;
   beltGrade: string;
   beltAwardedAt: string | null;
   phone: string | null;
@@ -108,6 +110,8 @@ export default async function AthletePage({ params }: { params: Promise<{ id: st
         }`}
         description={[
           `Статус: ${athlete.data.status}`,
+          // Ступень — источник истины (ADR-0012); пояс показан как следствие.
+          `Ступень: ${athlete.data.rankLabel ?? 'не определена'}`,
           `Пояс: ${beltGradeLabel(athlete.data.beltGrade) ?? athlete.data.beltGrade}`,
           athlete.data.beltAwardedAt ? `с ${formatDate(athlete.data.beltAwardedAt)}` : null,
           `создан ${athlete.data.createdAt.slice(0, 10)}`,

@@ -247,11 +247,12 @@ export async function createCertificationAction(
       apiFetch(`/athletes/${athleteId}/certifications`, {
         accessToken,
         method: 'POST',
+        // Ступень — единый источник истины (ADR-0012): пояс и номер кю/дан API
+        // выводит из неё. Старые поля не отправляются, чтобы не создать
+        // противоречие между ступенью и поясом.
         body: {
           certifiedOn: String(formData.get('certifiedOn') ?? '').trim(),
-          beltGrade: String(formData.get('beltGrade') ?? '').trim(),
-          stageKind: String(formData.get('stageKind') ?? 'KYU'),
-          stageNumber: Number(formData.get('stageNumber') ?? 0),
+          rank: String(formData.get('rank') ?? '').trim(),
           ...(String(formData.get('note') ?? '').trim()
             ? { note: String(formData.get('note')).trim() }
             : {}),

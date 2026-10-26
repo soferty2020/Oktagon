@@ -24,6 +24,7 @@
     "db:deploy:test": "prisma migrate deploy --schema prisma/schema.prisma",
     "db:status": "prisma migrate status",
     "db:seed": "ts-node -O '{\"module\":\"CommonJS\"}' prisma/seed.ts",
+    "ranks:report": "ts-node -O '{\"module\":\"CommonJS\"}' prisma/report-ranks.ts",
     "db:studio": "prisma studio"
   },
   "prisma": {

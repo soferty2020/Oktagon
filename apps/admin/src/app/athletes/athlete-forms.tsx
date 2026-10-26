@@ -4,7 +4,7 @@ import { fieldClass } from '@/components/ui';
 
 import { useActionState } from 'react';
 
-import { BELT_GRADES } from '@octagon/contracts';
+import { RANKS } from '@octagon/contracts';
 
 import { statusLabel } from '@/components/status-badge';
 
@@ -145,6 +145,7 @@ interface AthleteValues {
   birthDate: string | null;
   status: string;
   beltGrade: string;
+  rank: string | null;
   beltAwardedAt: string | null;
   phone: string | null;
   email: string | null;
@@ -232,15 +233,22 @@ export function EditAthleteForm({ athlete }: { athlete: AthleteValues }) {
           </select>
         </label>
         <label className={labelClass}>
-          Пояс
-          {/* Белый — значение по умолчанию; очистить пояс нельзя. */}
-          <select name="beltGrade" defaultValue={athlete.beltGrade} className={inputClass}>
-            {BELT_GRADES.map((grade) => (
-              <option key={grade.code} value={grade.code}>
-                {grade.order}. {grade.label}
+          Ступень
+          {/* Ступень определяет пояс (ADR-0012): отдельный выбор пояса убран,
+              иначе можно было сохранить «синий пояс, 10 кю». */}
+          <select
+            name="rank"
+            defaultValue={athlete.rank ?? 'kyu-0'}
+            required
+            className={inputClass}
+          >
+            {RANKS.map((rank) => (
+              <option key={rank.id} value={rank.id}>
+                {rank.label} — {rank.beltLabel}
               </option>
             ))}
           </select>
+          <span className="text-[11px] text-muted">Пояс определится из ступени.</span>
         </label>
         <label className={labelClass}>
           Дата присвоения пояса
