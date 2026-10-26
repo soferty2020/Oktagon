@@ -64,7 +64,15 @@ describe('toProfile', () => {
 
     // Матрица прав обещает родителю «own schedule» и «own attendance»: без этих
     // прав запрос отклонялся guard'ом до проверки scope (ADR-0013).
-    expect(profile.permissions.codes).toEqual(['attendance.view', 'groups.view', 'schedule.view']);
+    // С #39 сюда добавились мероприятия своих детей: они тоже отфильтрованы scope,
+    // а не правами, поэтому право одно на просмотр — без записи.
+    expect(profile.permissions.codes).toEqual([
+      'attendance.view',
+      'attestations.view',
+      'competitions.view',
+      'groups.view',
+      'schedule.view',
+    ]);
     // Индивидуальных выдач нет: все права пришли от роли.
     expect(profile.permissions.grants).toEqual([]);
   });
