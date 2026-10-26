@@ -104,6 +104,9 @@ export class AthletesController {
       middleName: dto.middleName ?? null,
       birthDate: dto.birthDate ?? null,
       gender: dto.gender,
+      // Ступень передаётся дальше: она источник истины для пояса (ADR-0012).
+      // Без неё PATCH со сменой ступени молча менял бы только пояс.
+      rank: dto.rank,
       // Пояс передается как есть: PATCH только со статусом не должен менять пояс,
       // а очистить его нельзя — белый остается значением по умолчанию.
       beltGrade: dto.beltGrade,

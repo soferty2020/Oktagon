@@ -113,6 +113,15 @@ export class UpdateAthleteDto {
   notes?: string;
 
   @ApiPropertyOptional({
+    example: 'kyu-8',
+    description: 'Ступень из RankCatalog (ADR-0012); пояс выводится из неё',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(16)
+  rank?: string;
+
+  @ApiPropertyOptional({
     enum: Object.values(BeltGrade),
     description: 'Текущий пояс (K3); по умолчанию белый, очистить нельзя',
   })

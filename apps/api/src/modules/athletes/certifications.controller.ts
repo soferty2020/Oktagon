@@ -43,6 +43,9 @@ export class CertificationsController {
   ): Promise<CertificationView> {
     return this.certifications.create(user.id, athleteId, {
       certifiedOn: dto.certifiedOn,
+      // Ступень передаётся дальше: без неё сервис получал только старые поля и
+      // отвергал запрос «Укажите ступень», хотя клиент её прислал.
+      rank: dto.rank,
       beltGrade: dto.beltGrade,
       stageKind: dto.stageKind,
       stageNumber: dto.stageNumber,
