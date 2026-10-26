@@ -25,6 +25,7 @@
     "db:status": "prisma migrate status",
     "db:seed": "ts-node -O '{\"module\":\"CommonJS\"}' prisma/seed.ts",
     "ranks:report": "ts-node -O '{\"module\":\"CommonJS\"}' prisma/report-ranks.ts",
+    "openapi:export": "ts-node -O '{\"module\":\"CommonJS\"}' src/openapi-export.ts",
     "db:studio": "prisma studio"
   },
   "prisma": {
