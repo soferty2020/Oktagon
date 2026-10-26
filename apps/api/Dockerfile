@@ -62,6 +62,9 @@ COPY apps/api/package.json ./apps/api/package.json
 # в стадии migrate нет `dist` пакетов (`.dockerignore` его исключает). Без сборки
 # отчёт падал на «Cannot find module '@octagon/contracts'».
 RUN pnpm build:packages
+# Prisma Client тоже нужен: отчёт читает БД через сгенерированный клиент, а в
+# стадии migrate его нет (генерируется в стадии build).
+RUN pnpm --filter @octagon/api exec prisma generate
 WORKDIR /repo/apps/api
 CMD ["pnpm", "db:deploy"]
 
