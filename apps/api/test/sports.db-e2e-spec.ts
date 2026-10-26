@@ -289,6 +289,125 @@ describe('Спорт: аттестации и соревнования (db e2e)'
     expect(cancelled.body.status).toBe('CANCELLED');
   });
 
+  it('родитель видит только мероприятия своих детей', async () => {
+    // Родитель и привязка создаются напрямую: отдельного API привязки нет, её
+    // делает админка при заведении аккаунта.
+    const parent = await prisma.db.user.create({
+      data: {
+        email: `sports-parent-${stamp}@example.com`,
+        firstName: 'Родитель',
+        lastName: 'E2E',
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        passwordHash: await new PasswordService().hash(password),
+      },
+      select: { id: true, email: true },
+    });
+
+    await prisma.db.userAthlete.create({
+      data: { userId: parent.id, athleteId, relation: 'PARENT', isPrimary: true },
+    });
+
+    const ownEvent = await createEvent();
+
+    const stranger = await prisma.db.athlete.create({
+      data: { firstName: 'Чужой', lastName: 'Спортсмен', status: 'ACTIVE' },
+      select: { id: true },
+    });
+
+    const foreignEvent = await request(app.getHttpServer())
+      .post('/api/v1/certification-events')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ title: `E2E чужое ${stamp}`, scheduledAt: '2026-11-20T10:00:00.000Z' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/api/v1/certification-events/${foreignEvent.body.id}/participants`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ athleteId: stranger.id, targetRank: 'kyu-9' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/api/v1/certification-events/${ownEvent}/participants`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ athleteId, targetRank: 'kyu-9' })
+      .expect(201);
+
+    const login = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ email: parent.email, password })
+      .expect(200);
+
+    const parentToken = login.body.accessToken as string;
+
+    const list = await request(app.getHttpServer())
+      .get('/api/v1/certification-events')
+      .set('Authorization', `Bearer ${parentToken}`)
+      .expect(200);
+
+    const titles = (list.body as { title: string }[]).map((item) => item.title);
+    expect(titles).toContain(`E2E аттестация ${stamp}`);
+    expect(titles).not.toContain(`E2E чужое ${stamp}`);
+
+    // Чужое мероприятие по прямому id — 404, а не 403: не подтверждаем даже
+    // существование чужого события.
+    await request(app.getHttpServer())
+      .get(`/api/v1/certification-events/${foreignEvent.body.id}`)
+      .set('Authorization', `Bearer ${parentToken}`)
+      .expect(404);
+
+    await prisma.db.athlete.deleteMany({ where: { id: stranger.id } });
+    await prisma.db.userAthlete.deleteMany({ where: { userId: parent.id } });
+    await prisma.db.user.deleteMany({ where: { id: parent.id } });
+  });
+
+  it('тренер не записывает результат чужому спортсмену', async () => {
+    const trainer = await prisma.db.user.create({
+      data: {
+        email: `sports-trainer-${stamp}@example.com`,
+        firstName: 'Тренер',
+        lastName: 'E2E',
+        role: 'STAFF',
+        status: 'ACTIVE',
+        scopeAllGroups: false,
+        passwordHash: await new PasswordService().hash(password),
+      },
+      select: { id: true, email: true },
+    });
+
+    const login = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ email: trainer.email, password })
+      .expect(200);
+
+    const trainerToken = login.body.accessToken as string;
+
+    const id = await createEvent();
+
+    await request(app.getHttpServer())
+      .post(`/api/v1/certification-events/${id}/plan`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/v1/certification-events/${id}/start`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/v1/certification-events/${id}/participants`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ athleteId, targetRank: 'kyu-9' })
+      .expect(201);
+
+    // Тренер без групп не видит спортсмена: результат недоступен.
+    await request(app.getHttpServer())
+      .post(`/api/v1/certification-events/${id}/participants/${athleteId}/result`)
+      .set('Authorization', `Bearer ${trainerToken}`)
+      .send({ result: 'PASSED' })
+      .expect(403);
+
+    await prisma.db.user.deleteMany({ where: { id: trainer.id } });
+  });
+
   it('турнир: две дисциплины — разные участия, одна оплата', async () => {
     const competition = await request(app.getHttpServer())
       .post('/api/v1/competitions')
