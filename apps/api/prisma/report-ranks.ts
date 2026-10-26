@@ -9,7 +9,10 @@
  * Запуск: pnpm --filter @octagon/api ranks:report
  */
 import { PrismaClient } from '../generated/prisma';
-import { BELT_GRADES, RANKS, beltForRank } from '@octagon/contracts';
+// Относительный путь, а не `@octagon/contracts`: в стадии `migrate` symlink
+// `apps/api/node_modules/@octagon/contracts` собран от корня и ведёт в никуда
+// (`apps/packages`), поэтому отчёт падал на «Cannot find module».
+import { BELT_GRADES, RANKS, beltForRank } from '../../../packages/contracts/dist';
 
 const prisma = new PrismaClient();
 
