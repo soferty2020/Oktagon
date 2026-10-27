@@ -247,6 +247,54 @@ jobs:
         working-directory: apps/mobile
         run: flutter build web --release
 
+  mobile-apk:
+    # APK отдельным job: Android SDK и Gradle тяжёлые, и падать должна именно
+    # сборка, а не анализ Dart. Артефакт даёт установку на телефон без локального
+    # Flutter — иначе экраны проверяются только анализатором.
+    name: mobile (apk)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        working-directory: apps/mobile
+        run: flutter pub get
+
+      - name: Accept Android licenses
+        # Лицензии SDK в образе уже приняты, но команда дешёвая и убирает
+        # единственную причину, по которой сборка могла бы упасть не по делу.
+        run: yes | flutter doctor --android-licenses || true
+
+      - name: Build APK
+        # Release без настроенной подписи подписывается debug-ключом: для
+        # проверки на телефоне этого достаточно, а signingConfig появится при
+        # публикации (задача #27).
+        working-directory: apps/mobile
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: octagon-apk
+          path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+
   docker:
     # Образы проверяются сборкой и запуском, а не только наличием Dockerfile:
     # ошибка в путях COPY или отсутствующий модуль в standalone-сборке
