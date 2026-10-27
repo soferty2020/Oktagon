@@ -5,7 +5,7 @@ import type { Request } from 'express';
 
 import { AuthService } from './auth.service';
 import { LoginDto, LogoutDto, RefreshDto } from './auth.dto';
-import { AcceptInviteDto } from './invite.dto';
+import { AcceptInviteCodeDto, AcceptInviteDto } from './invite.dto';
 import { InviteService } from './invite.service';
 
 /**
@@ -64,6 +64,33 @@ export class AuthController {
     return this.invites.accept({
       token: dto.token,
       inviteId: dto.inviteId,
+      email: dto.email,
+      password: dto.password,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      middleName: dto.middleName,
+      phone: dto.phone,
+    });
+  }
+
+  /**
+   * Принятие приглашения по короткому коду (ADR-0014).
+   *
+   * Нужен тренеру, который ставит приложение и не открывает ссылки из браузера.
+   * Код короткий, поэтому лимит по IP здесь особенно важен: 8 символов можно
+   * перебирать, если не ограничивать попытки.
+   */
+  @Post('accept-invite-code')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Принятие приглашения по коду: установка пароля и профиля' })
+  @ApiOkResponse({ description: 'Пользователь активирован; далее выполняется вход' })
+  async acceptInviteByCode(
+    @Body() dto: AcceptInviteCodeDto,
+    @Req() request: Request,
+  ): Promise<{ userId: string; email: string; role: string }> {
+    await this.auth.enforceInviteRateLimit(clientIp(request));
+    return this.invites.acceptByCode({
+      code: dto.code,
       email: dto.email,
       password: dto.password,
       firstName: dto.firstName,

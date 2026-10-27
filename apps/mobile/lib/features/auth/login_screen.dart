@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'auth_controller.dart';
+import 'invite_code_screen.dart';
 
 /// Экран входа (H1).
 ///
@@ -158,6 +159,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: const Color(0xFF888888),
                               ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Код — основной путь для тренера: ссылку из браузера в
+                        // зале открывать неудобно (ADR-0014).
+                        TextButton(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (context) => InviteCodeScreen(auth: widget.auth),
+                            ),
+                          ),
+                          child: const Text('У меня есть код'),
                         ),
                       ],
                     ),

@@ -7,6 +7,7 @@ export interface InviteRecord {
   email: string;
   role: UserRole;
   tokenHash: string;
+  codeHash: string | null;
   expiresAt: Date;
   usedAt: Date | null;
   usedBy: string | null;
@@ -25,10 +26,13 @@ export abstract class InviteRepository {
     email: string;
     role: UserRole;
     tokenHash: string;
+    codeHash?: string | null;
     expiresAt: Date;
     createdBy: string;
   }): Promise<InviteRecord>;
   abstract findByTokenHash(tokenHash: string): Promise<InviteRecord | null>;
+  /** Поиск по хешу короткого кода приглашения. */
+  abstract findByCodeHash(codeHash: string): Promise<InviteRecord | null>;
   abstract findById(id: string): Promise<InviteRecord | null>;
   /** Отзывает все неиспользованные приглашения на адрес (перевыпуск). */
   abstract revokePendingForEmail(email: string): Promise<number>;
@@ -48,6 +52,7 @@ const INVITE_SELECT = {
   email: true,
   role: true,
   tokenHash: true,
+  codeHash: true,
   expiresAt: true,
   usedAt: true,
   usedBy: true,
@@ -65,6 +70,7 @@ export class PrismaInviteRepository extends InviteRepository {
     email: string;
     role: UserRole;
     tokenHash: string;
+    codeHash?: string | null;
     expiresAt: Date;
     createdBy: string;
   }): Promise<InviteRecord> {
@@ -73,6 +79,7 @@ export class PrismaInviteRepository extends InviteRepository {
         email: input.email,
         role: input.role,
         tokenHash: input.tokenHash,
+        codeHash: input.codeHash ?? null,
         expiresAt: input.expiresAt,
         createdBy: input.createdBy,
       },
@@ -83,6 +90,14 @@ export class PrismaInviteRepository extends InviteRepository {
   async findByTokenHash(tokenHash: string): Promise<InviteRecord | null> {
     return this.prisma.db.userInvite.findFirst({
       where: { tokenHash },
+      select: INVITE_SELECT,
+    });
+  }
+
+  /** Поиск по хешу кода: тренер вводит код в приложении. */
+  async findByCodeHash(codeHash: string): Promise<InviteRecord | null> {
+    return this.prisma.db.userInvite.findFirst({
+      where: { codeHash },
       select: INVITE_SELECT,
     });
   }

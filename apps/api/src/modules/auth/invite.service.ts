@@ -22,6 +22,36 @@ import { PasswordService } from './password.service';
 /** Длина токена приглашения в байтах (hex-представление вдвое длиннее). */
 const TOKEN_BYTES = 32;
 
+/** Длина кода приглашения: тренер вводит его в приложении вручную. */
+const CODE_LENGTH = 8;
+
+/**
+ * Алфавит кода без похожих символов: `0/O`, `1/I/L` не отличить на телефоне, а
+ * код диктуют голосом или переписывают из мессенджера.
+ */
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+
+/** Генерирует код приглашения. */
+export function generateInviteCode(): string {
+  const bytes = randomBytes(CODE_LENGTH);
+  let code = '';
+
+  for (let index = 0; index < CODE_LENGTH; index += 1) {
+    code += CODE_ALPHABET[bytes[index] % CODE_ALPHABET.length];
+  }
+
+  return code;
+}
+
+/**
+ * Хеш кода. Ввод нормализуется: пробелы, дефисы и регистр не должны решать,
+ * сработает код или нет — человек вводит его с телефона.
+ */
+export function hashInviteCode(code: string): string {
+  const normalized = code.replace(/[\s-]/g, '').toUpperCase();
+  return createHash('sha256').update(normalized).digest('hex');
+}
+
 /** Считает хеш токена для хранения: сам токен в БД не попадает. */
 export function hashInviteToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
@@ -38,6 +68,17 @@ export interface AcceptInviteInput {
   token?: string;
   /** Идентификатор приглашения, если администратор передал его напрямую. */
   inviteId?: string;
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  phone?: string;
+}
+
+/** Принятие по короткому коду (ADR-0014). */
+export interface AcceptInviteCodeInput {
+  code: string;
   email: string;
   password: string;
   firstName: string;
@@ -85,12 +126,16 @@ export class InviteService {
     }
 
     const token = randomBytes(TOKEN_BYTES).toString('hex');
+    // Код нужен тренеру в зале: ссылку открывать в браузере неудобно, а код
+    // вводится прямо в приложении.
+    const code = generateInviteCode();
     const expiresAt = new Date(Date.now() + this.inviteTtlHours() * 3600 * 1000);
 
     const record = await this.invites.create({
       email,
       role: input.role,
       tokenHash: hashInviteToken(token),
+      codeHash: hashInviteCode(code),
       expiresAt,
       createdBy: input.createdBy,
     });
@@ -102,7 +147,7 @@ export class InviteService {
       after: { email, role: input.role, expiresAt: expiresAt.toISOString() },
     });
 
-    return { ...toView(record), token };
+    return { ...toView(record), token, code };
   }
 
   /** Список действующих приглашений для админки. */
@@ -195,8 +240,39 @@ export class InviteService {
     return { userId: user.id, email: user.email, role: invite.role };
   }
 
-  private async resolveInvite(input: AcceptInviteInput): Promise<InviteRecord> {
-    if (input.token) {
+  /**
+   * Принятие приглашения по коду (ADR-0014).
+   *
+   * Код — то же приглашение, только другой способ его предъявить: тот же срок,
+   * та же одноразовость, та же проверка email. Поэтому дальше вызывается общий
+   * `accept` — правила не должны разъезжаться между ссылкой и кодом.
+   */
+  async acceptByCode(
+    input: AcceptInviteCodeInput,
+  ): Promise<{ userId: string; email: string; role: UserRole }> {
+    const invite = await this.invites.findByCodeHash(hashInviteCode(input.code));
+
+    // Недействительный, истекший и использованный код неотличимы: иначе
+    // перебором можно выяснить, какие приглашения существуют.
+    if (!invite) {
+      throw new ApiException(
+        'INVITE_INVALID' satisfies ApiErrorCode,
+        'Код недействителен: проверьте символы или запросите новый у администратора',
+      );
+    }
+
+    return this.accept({
+      inviteId: invite.id,
+      email: input.email,
+      password: input.password,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      middleName: input.middleName,
+      phone: input.phone,
+    });
+  }
+
+  private async resolveInvite(input: AcceptInviteInput): Promise<InviteRecord> {    if (input.token) {
       const byToken = await this.invites.findByTokenHash(hashInviteToken(input.token));
       if (!byToken) {
         throw new ApiException('INVITE_INVALID' satisfies ApiErrorCode, 'Приглашение не найдено');

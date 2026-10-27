@@ -81,6 +81,20 @@ export function InviteForm() {
             приглашенному — он задаст пароль и войдет.
           </p>
 
+          {state.code ? (
+            <div className="mt-3 rounded-md bg-white p-3">
+              <p className="text-xs text-muted">
+                Код для приложения — его тренер вводит на экране «У меня есть код»:
+              </p>
+              <p className="mt-1 font-mono text-2xl font-bold tracking-[0.2em] text-ink">
+                {state.code}
+              </p>
+              <p className="mt-1 text-xs text-muted">
+                Тот же срок, что у ссылки, и одноразовый: после входа код перестаёт работать.
+              </p>
+            </div>
+          ) : null}
+
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <input
               readOnly

@@ -30,6 +30,7 @@ describe('Invites (e2e, без БД)', () => {
     email: 'trainer@example.com',
     role: 'STAFF',
     tokenHash: 'x'.repeat(64),
+    codeHash: null,
     expiresAt: new Date(Date.now() + 3600 * 1000),
     usedAt: null,
     usedBy: null,

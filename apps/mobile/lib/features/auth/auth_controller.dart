@@ -74,9 +74,43 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  /// Выход из аккаунта.
-  Future<void> logout() async {
+  /// Активация приглашения по коду (ADR-0014).
+  ///
+  /// Отдельный метод, а не «ввод кода как логин»: после активации сразу
+  /// выполняется вход, и человек оказывается в интерфейсе своей роли.
+  Future<bool> acceptInviteCode({
+    required String code,
+    required String email,
+    required String password,
+    required String firstName,
+    required String lastName,
+  }) async {
     _busy = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _session = await _repository.acceptInviteCode(
+        code: code,
+        email: email,
+        password: password,
+        firstName: firstName,
+        lastName: lastName,
+      );
+      _status = AuthStatus.authenticated;
+      return true;
+    } on ApiException catch (error) {
+      _error = describeAuthError(error);
+      _status = AuthStatus.unauthenticated;
+      return false;
+    } finally {
+      _busy = false;
+      notifyListeners();
+    }
+  }
+
+  /// Выход из аккаунта.
+  Future<void> logout() async {    _busy = true;
     notifyListeners();
 
     await _repository.logout();

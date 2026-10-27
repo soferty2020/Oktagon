@@ -103,6 +103,32 @@ class AuthRepository {
         accessExpiresAt: session.accessExpiresAt,
       );
 
+  /// Активация приглашения по коду (ADR-0014).
+  ///
+  /// Код вводит тренер на экране «У меня есть код»: ссылку из браузера в зале
+  /// открывать неудобно. После активации сразу выполняется вход — человек не
+  /// должен вводить те же данные дважды.
+  Future<AuthSession> acceptInviteCode({
+    required String code,
+    required String email,
+    required String password,
+    required String firstName,
+    required String lastName,
+  }) async {
+    await _client.postJson(
+      '/auth/accept-invite-code',
+      body: {
+        'code': code.trim().toUpperCase(),
+        'email': email.trim(),
+        'password': password,
+        'firstName': firstName.trim(),
+        'lastName': lastName.trim(),
+      },
+    );
+
+    return login(email: email, password: password);
+  }
+
   AuthSession _sessionFromStored(StoredTokens stored, UserProfile profile) => AuthSession(
         accessToken: stored.accessToken,
         refreshToken: stored.refreshToken,

@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { AuditService } from '../audit/audit.service';
 import { AuthRepository, type AuthUserRecord } from './auth.repository';
 import { InviteRepository, type InviteRecord } from './invite.repository';
-import { InviteService } from './invite.service';
+import { InviteService, generateInviteCode, hashInviteCode } from './invite.service';
 import { PasswordService } from './password.service';
 
 const inviteRecord: InviteRecord = {
@@ -11,6 +11,7 @@ const inviteRecord: InviteRecord = {
   email: 'trainer@example.com',
   role: 'STAFF',
   tokenHash: 'stored-hash',
+  codeHash: null,
   expiresAt: new Date(Date.now() + 72 * 3600 * 1000),
   usedAt: null,
   usedBy: null,
@@ -42,6 +43,7 @@ describe('InviteService', () => {
       create: jest.fn().mockResolvedValue(inviteRecord),
       findByTokenHash: jest.fn().mockResolvedValue(inviteRecord),
       findById: jest.fn().mockResolvedValue(inviteRecord),
+      findByCodeHash: jest.fn().mockResolvedValue(inviteRecord),
       revokePendingForEmail: jest.fn().mockResolvedValue(0),
       consume: jest.fn().mockResolvedValue(true),
       attachConsumer: jest.fn().mockResolvedValue(undefined),
@@ -255,6 +257,66 @@ describe('InviteService', () => {
 
       invites.findByTokenHash.mockResolvedValueOnce({ ...inviteRecord, usedAt: new Date() });
       await expect(service.preview('used')).rejects.toMatchObject({ code: 'INVITE_INVALID' });
+    });
+  });
+
+  describe('принятие по коду (ADR-0014)', () => {
+    it('код нормализуется: регистр, пробелы и дефисы не важны', () => {
+      const expected = hashInviteCode('K7M2P4QX');
+
+      expect(hashInviteCode('k7m2p4qx')).toBe(expected);
+      expect(hashInviteCode('K7M2 P4QX')).toBe(expected);
+      expect(hashInviteCode('k7m2-p4qx')).toBe(expected);
+    });
+
+    it('генерирует код из 8 символов без похожих букв', () => {
+      const code = generateInviteCode();
+
+      expect(code).toHaveLength(8);
+      // 0/O и 1/I/L исключены: код диктуют голосом.
+      expect(code).toMatch(/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/);
+    });
+
+    it('неизвестный код отвергается как недействительное приглашение', async () => {
+      invites.findByCodeHash.mockResolvedValueOnce(null);
+
+      await expect(
+        service.acceptByCode({
+          code: 'ABCDEFGH',
+          email: 'trainer@example.com',
+          password: 'password-123',
+          firstName: 'Тренер',
+          lastName: 'Клуба',
+        }),
+      ).rejects.toMatchObject({ code: 'INVITE_INVALID' });
+    });
+
+    it('подтверждённый код активирует пользователя с ролью из приглашения', async () => {
+      const result = await service.acceptByCode({
+        code: 'K7M2P4QX',
+        email: 'trainer@example.com',
+        password: 'password-123',
+        firstName: 'Тренер',
+        lastName: 'Клуба',
+      });
+
+      expect(result.role).toBe('STAFF');
+      expect(invites.consume).toHaveBeenCalledWith('invite-1');
+      expect(users.activateFromInvite).toHaveBeenCalledWith(
+        expect.objectContaining({ role: 'STAFF', email: 'trainer@example.com' }),
+      );
+    });
+
+    it('код ищется по хешу, а не по сырому значению', async () => {
+      await service.acceptByCode({
+        code: 'K7M2P4QX',
+        email: 'trainer@example.com',
+        password: 'password-123',
+        firstName: 'Тренер',
+        lastName: 'Клуба',
+      });
+
+      expect(invites.findByCodeHash).toHaveBeenCalledWith(expect.stringMatching(/^[0-9a-f]{64}$/));
     });
   });
 });

@@ -9,6 +9,8 @@ export interface InviteFormState {
   error?: string;
   /** Токен показывается один раз: в БД хранится только его хеш. */
   token?: string;
+  /** Короткий код для ввода в приложении (ADR-0014). */
+  code?: string;
   email?: string;
   role?: string;
   expiresAt?: string;
@@ -54,6 +56,7 @@ export async function createInviteAction(
 
   const result = await apiFetch<{
     token: string;
+    code: string;
     email: string;
     role: string;
     expiresAt: string;
@@ -74,6 +77,7 @@ export async function createInviteAction(
 
   return {
     token: result.data.token,
+    code: result.data.code,
     email: result.data.email,
     role: result.data.role,
     expiresAt: result.data.expiresAt,

@@ -238,6 +238,8 @@ model UserInvite {
   role      UserRole  @default(MEMBER)
   /// Хранится только хеш токена приглашения.
   tokenHash String    @map("token_hash")
+  /// Хеш короткого кода: тренер вводит его в приложении, ссылку открывать не нужно.
+  codeHash  String?   @map("code_hash")
   expiresAt DateTime  @map("expires_at")
   usedAt    DateTime? @map("used_at")
   createdBy String    @map("created_by") @db.Uuid
