@@ -12,6 +12,7 @@ import { archiveAthleteAction, unlinkAccountAction } from '../actions';
 import { LinkAccountForm } from '../athlete-forms';
 import { CertificationsBlock, type CertificationValues } from '../certifications';
 import { Icon, type IconName } from './icons';
+import { LinkCodeCard } from './link-code';
 
 export const metadata = {
   title: 'Спортсмен — OCTAGON',
@@ -262,8 +263,17 @@ export default async function AthletePage({
                 />
               ) : null}
               <ActionLink href="/competitions" icon="trophy" label="Назначить на соревнование" />
+              {canEdit ? (
+                <ActionLink
+                  href="/athletes/link-requests"
+                  icon="group"
+                  label="Заявки на привязку"
+                />
+              ) : null}
             </div>
           </section>
+
+          {canEdit ? <LinkCodeCard athleteId={person.id} /> : null}
 
           {canEdit && person.status !== 'ARCHIVED' ? (
             <section className="rounded-card border border-[#F6DADA] bg-[#FDF3F3] p-6">
