@@ -196,6 +196,58 @@ export class AuthService {
     });
   }
 
+  /**
+   * Самостоятельная регистрация родителя (ADR-0015).
+   *
+   * Аккаунт создаётся активным и без детей: доступ к данным ребёнка появляется
+   * только после привязки по коду или подтверждённой заявке. Регистрация не
+   * выдаёт прав — роль всегда MEMBER.
+   *
+   * Лимит по IP обязателен: без него регистрацию можно использовать для
+   * массового создания аккаунтов.
+   */
+  async register(input: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phone?: string | null;
+    ip?: string | null;
+  }): Promise<AuthSession> {
+    await this.enforceRateLimit(`auth:register:ip:${input.ip ?? 'unknown'}`, input.ip ?? null, {
+      log: `Превышен лимит регистраций по IP ${input.ip}`,
+      message: 'Слишком много попыток регистрации, попробуйте позже',
+    });
+
+    const email = input.email.trim().toLowerCase();
+    const existing = await this.repository.findUserForAuth(email);
+
+    if (existing) {
+      // Не раскрываем, что адрес занят: сообщение то же, что для любого отказа.
+      throw new ApiException(
+        'EMAIL_ALREADY_EXISTS' satisfies ApiErrorCode,
+        'Не удалось создать аккаунт с этим адресом',
+      );
+    }
+
+    const user = await this.repository.register({
+      email,
+      passwordHash: await this.passwords.hash(input.password),
+      firstName: input.firstName,
+      lastName: input.lastName,
+      phone: input.phone ?? null,
+    });
+
+    await this.audit.recordSafely({
+      action: AuditAction.AUTH_REGISTERED,
+      entityType: AuditEntityType.USER,
+      entityId: user.id,
+      after: { email, role: user.role },
+    });
+
+    return this.issueSession(user.id, user.email, user.role);
+  }
+
   /** Ограничивает перебор refresh-токенов по IP. */
   private async enforceRefreshRateLimit(ip: string | null): Promise<void> {
     await this.enforceRateLimit(`auth:refresh:ip:${ip ?? 'unknown'}`, ip, {

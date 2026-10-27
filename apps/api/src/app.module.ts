@@ -11,6 +11,7 @@ import { AnalyticsModule } from './modules/analytics';
 import { AthletesModule } from './modules/athletes';
 import { AttestationsModule } from './modules/attestations/attestations.module';
 import { CompetitionsModule } from './modules/competitions/competitions.module';
+import { OnboardingModule } from './modules/onboarding/onboarding.module';
 import { TrialRequestsModule } from './modules/trial-requests/trial-requests.module';
 import { AttendanceModule } from './modules/attendance';
 import { AuditContextInterceptor } from './modules/audit/audit-context.interceptor';
@@ -57,6 +58,7 @@ import { SettingsModule } from './modules/settings';
     AttestationsModule,
     CompetitionsModule,
     TrialRequestsModule,
+    OnboardingModule,
     ClubStructureModule,
     GroupsModule,
 

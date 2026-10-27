@@ -17,45 +17,20 @@ import { ApiException } from '../../shared/api-exception';
 import { AuditService } from '../audit/audit.service';
 import { AuthRepository } from './auth.repository';
 import { InviteRepository, type InviteRecord } from './invite.repository';
+import { generateLinkCode, hashLinkCode } from '../../shared/link-code';
 import { PasswordService } from './password.service';
 
 /** Длина токена приглашения в байтах (hex-представление вдвое длиннее). */
 const TOKEN_BYTES = 32;
 
-/** Длина кода приглашения: тренер вводит его в приложении вручную. */
-const CODE_LENGTH = 8;
-
-/**
- * Алфавит кода без похожих символов: `0/O`, `1/I/L` не отличить на телефоне, а
- * код диктуют голосом или переписывают из мессенджера.
- */
-const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-
-/** Генерирует код приглашения. */
-export function generateInviteCode(): string {
-  const bytes = randomBytes(CODE_LENGTH);
-  let code = '';
-
-  for (let index = 0; index < CODE_LENGTH; index += 1) {
-    code += CODE_ALPHABET[bytes[index] % CODE_ALPHABET.length];
-  }
-
-  return code;
-}
-
-/**
- * Хеш кода. Ввод нормализуется: пробелы, дефисы и регистр не должны решать,
- * сработает код или нет — человек вводит его с телефона.
- */
-export function hashInviteCode(code: string): string {
-  const normalized = code.replace(/[\s-]/g, '').toUpperCase();
-  return createHash('sha256').update(normalized).digest('hex');
-}
-
 /** Считает хеш токена для хранения: сам токен в БД не попадает. */
 export function hashInviteToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
 }
+
+// Код приглашения — тот же алгоритм, что у кода привязки родителя (ADR-0015).
+// Переэкспорт, чтобы не переписывать существующие импорты и тесты.
+export { generateLinkCode as generateInviteCode, hashLinkCode as hashInviteCode } from '../../shared/link-code';
 
 export interface CreateInviteInput {
   email: string;
@@ -128,14 +103,14 @@ export class InviteService {
     const token = randomBytes(TOKEN_BYTES).toString('hex');
     // Код нужен тренеру в зале: ссылку открывать в браузере неудобно, а код
     // вводится прямо в приложении.
-    const code = generateInviteCode();
+    const code = generateLinkCode();
     const expiresAt = new Date(Date.now() + this.inviteTtlHours() * 3600 * 1000);
 
     const record = await this.invites.create({
       email,
       role: input.role,
       tokenHash: hashInviteToken(token),
-      codeHash: hashInviteCode(code),
+      codeHash: hashLinkCode(code),
       expiresAt,
       createdBy: input.createdBy,
     });
@@ -250,7 +225,7 @@ export class InviteService {
   async acceptByCode(
     input: AcceptInviteCodeInput,
   ): Promise<{ userId: string; email: string; role: UserRole }> {
-    const invite = await this.invites.findByCodeHash(hashInviteCode(input.code));
+    const invite = await this.invites.findByCodeHash(hashLinkCode(input.code));
 
     // Недействительный, истекший и использованный код неотличимы: иначе
     // перебором можно выяснить, какие приглашения существуют.

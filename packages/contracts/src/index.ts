@@ -13,6 +13,7 @@ export * from './attestations';
 export * from './competitions';
 export * from './trial-requests';
 export * from './athletes';
+export * from './onboarding';
 export * from './groups';
 export * from './users';
 export * from './schedule';

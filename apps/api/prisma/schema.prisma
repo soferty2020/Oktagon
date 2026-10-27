@@ -177,6 +177,10 @@ model User {
   refreshTokens      RefreshToken[]
   createdInvites     UserInvite[]       @relation("InviteCreatedBy")
   usedInvite         UserInvite?        @relation("InviteUsedBy")
+  linkRequests       LinkRequest[]      @relation("LinkRequestUser")
+  reviewedRequests   LinkRequest[]      @relation("LinkRequestReviewer")
+  createdLinkCodes   AthleteLinkCode[]  @relation("LinkCodeCreatedBy")
+  usedLinkCodes      AthleteLinkCode[]  @relation("LinkCodeUsedBy")
   attendanceMarked   Attendance[]       @relation("AttendanceMarkedBy")
   sessionsCancelled  TrainingSession[]  @relation("SessionCancelledBy")
   freezesCreated     FreezePeriod[]     @relation("FreezeCreatedBy")
@@ -309,6 +313,8 @@ model Athlete {
   membershipPeriods MembershipPeriod[]
   payments          PaymentTransaction[]
   freezePeriods     FreezePeriod[]
+  linkCodes         AthleteLinkCode[]
+  linkRequests      LinkRequest[]
 
   @@index([status])
   @@index([lastName, firstName])
@@ -1312,4 +1318,65 @@ model TrialRequest {
 
   @@index([status, createdAt])
   @@map("trial_requests")
+}
+// ---------------------------------------------------------------------------
+// Онбординг родителей (#58, ADR-0015)
+// ---------------------------------------------------------------------------
+
+enum LinkRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// Заявка родителя на привязку к ребёнку.
+///
+/// Создаётся, когда кода привязки нет: родитель вводит ФИО и дату рождения
+/// ребёнка, администратор сопоставляет с карточкой и подтверждает. До
+/// подтверждения родитель не видит ни одного спортсмена.
+model LinkRequest {
+  id           String            @id @default(uuid()) @db.Uuid
+  userId       String            @map("user_id") @db.Uuid
+  firstName    String            @map("first_name")
+  lastName     String            @map("last_name")
+  birthDate    DateTime?         @map("birth_date") @db.Date
+  phone        String?
+  status       LinkRequestStatus @default(PENDING)
+  /// Заполняется при подтверждении: к какому спортсмену привязали.
+  athleteId    String?           @map("athlete_id") @db.Uuid
+  rejectReason String?           @map("reject_reason")
+  reviewedBy   String?           @map("reviewed_by") @db.Uuid
+  reviewedAt   DateTime?         @map("reviewed_at")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  user     User     @relation("LinkRequestUser", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer User?    @relation("LinkRequestReviewer", fields: [reviewedBy], references: [id])
+  athlete  Athlete? @relation(fields: [athleteId], references: [id])
+
+  @@index([status])
+  @@index([userId])
+  @@map("link_requests")
+}
+
+/// Одноразовый код привязки родителя к спортсмену.
+///
+/// Выдаёт тренер группы или администратор. В базе только хеш: по дампу
+/// действующий код не восстановить (тот же принцип, что у приглашений, ADR-0014).
+model AthleteLinkCode {
+  id        String    @id @default(uuid()) @db.Uuid
+  athleteId String    @map("athlete_id") @db.Uuid
+  codeHash  String    @unique @map("code_hash") @db.VarChar(64)
+  createdBy String    @map("created_by") @db.Uuid
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  usedBy    String?   @map("used_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  athlete Athlete @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  creator User    @relation("LinkCodeCreatedBy", fields: [createdBy], references: [id])
+  user    User?   @relation("LinkCodeUsedBy", fields: [usedBy], references: [id])
+
+  @@index([athleteId])
+  @@map("athlete_link_codes")
 }

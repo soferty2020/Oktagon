@@ -22,6 +22,15 @@ export interface ActivateFromInviteInput {
   phone?: string;
 }
 
+/** Данные самостоятельной регистрации (ADR-0015): роль всегда MEMBER. */
+export interface RegisterUserInput {
+  email: string;
+  passwordHash: string;
+  firstName: string;
+  lastName: string;
+  phone?: string | null;
+}
+
 /**
  * Доступ к данным аутентификации.
  *
@@ -42,6 +51,14 @@ export abstract class AuthRepository {
    * иначе создается новая.
    */
   abstract activateFromInvite(input: ActivateFromInviteInput): Promise<AuthUserRecord>;
+  /**
+   * Создаёт пользователя самостоятельной регистрацией (ADR-0015).
+   *
+   * Роль всегда MEMBER: регистрация не выдаёт прав. Существование адреса
+   * проверяется отдельно и внутри транзакции — иначе два одновременных запроса
+   * на один email дадут второй пользователь с тем же адресом.
+   */
+  abstract register(input: RegisterUserInput): Promise<AuthUserRecord>;
 }
 
 @Injectable()
@@ -113,5 +130,20 @@ export class PrismaAuthRepository extends AuthRepository {
     }
 
     return this.prisma.db.user.create({ data: { email, ...profile }, select });
+  }
+
+  async register(input: RegisterUserInput): Promise<AuthUserRecord> {
+    return this.prisma.db.user.create({
+      data: {
+        email: input.email.trim().toLowerCase(),
+        passwordHash: input.passwordHash,
+        role: UserRole.MEMBER,
+        status: UserStatus.ACTIVE,
+        firstName: input.firstName.trim(),
+        lastName: input.lastName.trim(),
+        phone: input.phone?.trim() || null,
+      },
+      select: { id: true, email: true, passwordHash: true, role: true, status: true },
+    });
   }
 }

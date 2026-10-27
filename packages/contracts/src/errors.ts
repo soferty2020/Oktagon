@@ -24,6 +24,19 @@ export const ApiErrorCode = {
   /** Приглашение выдано на другой адрес: принимающий вошел под своим аккаунтом. */
   INVITE_EMAIL_MISMATCH: 'INVITE_EMAIL_MISMATCH',
   USER_BLOCKED: 'USER_BLOCKED',
+  /**
+   * Код привязки не принят (ADR-0015).
+   *
+   * Неверный, истёкший и уже использованный код дают один код ошибки: иначе
+   * перебором можно выяснить, какие коды существуют.
+   */
+  LINK_CODE_INVALID: 'LINK_CODE_INVALID',
+  /** Родитель уже привязан к этому спортсмену. */
+  LINK_CODE_ALREADY_LINKED: 'LINK_CODE_ALREADY_LINKED',
+  /** По этому спортсмену уже есть заявка, ожидающая решения. */
+  LINK_REQUEST_ALREADY_PENDING: 'LINK_REQUEST_ALREADY_PENDING',
+  /** Заявка уже рассмотрена: подтвердить или отклонить её повторно нельзя. */
+  LINK_REQUEST_NOT_PENDING: 'LINK_REQUEST_NOT_PENDING',
   /** Неизвестный код права: каталог permissions не содержит такого значения. */
   PERMISSION_UNKNOWN: 'PERMISSION_UNKNOWN',
   /** Право уже гарантировано ролью пользователя. */
@@ -223,6 +236,10 @@ export const API_ERROR_HTTP_STATUS: Readonly<Record<ApiErrorCode, number>> = {
   INVITE_ALREADY_USED: 409,
   INVITE_EMAIL_MISMATCH: 403,
   USER_BLOCKED: 403,
+  LINK_CODE_INVALID: 400,
+  LINK_CODE_ALREADY_LINKED: 409,
+  LINK_REQUEST_ALREADY_PENDING: 409,
+  LINK_REQUEST_NOT_PENDING: 409,
   PERMISSION_UNKNOWN: 400,
   PERMISSION_GRANTED_BY_ROLE: 409,
   PERMISSION_IS_ROLE_BASED: 409,

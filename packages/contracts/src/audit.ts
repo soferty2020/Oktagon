@@ -17,6 +17,8 @@ export const AuditAction = {
   /** Повторное использование отозванного refresh-токена: все токены отозваны. */
   AUTH_TOKEN_REUSE_DETECTED: 'auth.token_reuse_detected',
   AUTH_INVITE_ACCEPTED: 'auth.invite_accepted',
+  /** Самостоятельная регистрация родителя (ADR-0015). */
+  AUTH_REGISTERED: 'auth.registered',
 
   // Пользователи, приглашения, права доступа (BR-007: права доступа аудируемы)
   USER_INVITED: 'user.invited',
@@ -26,6 +28,13 @@ export const AuditAction = {
   USER_ARCHIVED: 'user.archived',
   PERMISSION_GRANTED: 'permission.granted',
   PERMISSION_REVOKED: 'permission.revoked',
+
+  // Привязка родителя к ребёнку (ADR-0015)
+  ATHLETE_LINK_CODE_ISSUED: 'athlete.link_code_issued',
+  ATHLETE_LINKED_BY_CODE: 'athlete.linked_by_code',
+  LINK_REQUEST_CREATED: 'link_request.created',
+  LINK_REQUEST_APPROVED: 'link_request.approved',
+  LINK_REQUEST_REJECTED: 'link_request.rejected',
 
   // Структура клуба
   BRANCH_CREATED: 'branch.created',
@@ -145,6 +154,7 @@ export const AuditEntityType = {
   USER: 'User',
   USER_PERMISSION: 'UserPermission',
   USER_INVITE: 'UserInvite',
+  LINK_REQUEST: 'LinkRequest',
   REFRESH_TOKEN: 'RefreshToken',
   BRANCH: 'Branch',
   HALL: 'Hall',

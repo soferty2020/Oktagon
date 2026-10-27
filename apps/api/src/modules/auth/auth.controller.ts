@@ -1,10 +1,10 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Req } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { AuthSession, UserInvitePreview } from '@octagon/contracts';
 import type { Request } from 'express';
 
 import { AuthService } from './auth.service';
-import { LoginDto, LogoutDto, RefreshDto } from './auth.dto';
+import { LoginDto, LogoutDto, RefreshDto, RegisterDto } from './auth.dto';
 import { AcceptInviteCodeDto, AcceptInviteDto } from './invite.dto';
 import { InviteService } from './invite.service';
 
@@ -21,6 +21,21 @@ export class AuthController {
     private readonly auth: AuthService,
     private readonly invites: InviteService,
   ) {}
+
+  @Post('register')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Самостоятельная регистрация родителя (ADR-0015)' })
+  @ApiCreatedResponse({ description: 'Аккаунт создан, выданы токены; детей пока нет' })
+  register(@Body() dto: RegisterDto, @Req() request: Request): Promise<AuthSession> {
+    return this.auth.register({
+      email: dto.email,
+      password: dto.password,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      phone: dto.phone,
+      ip: clientIp(request),
+    });
+  }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
