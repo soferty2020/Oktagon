@@ -1,0 +1,7819 @@
+[
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 940,
+      "name": "Desktop 1440 — карточка спортсмена",
+      "props": {
+        "fill": "#F7F7F9"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 0
+      },
+      "x": 0,
+      "y": 0,
+      "width": 248,
+      "height": 940,
+      "name": "Сайдбар",
+      "props": {
+        "fill": "#0E0E10"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 1
+      },
+      "x": 24,
+      "y": 26,
+      "text": "OCTAGON",
+      "name": "Логотип",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FFFFFF",
+        "fontSize": 18,
+        "fontStyle": "Bold",
+        "letterSpacing": 3
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 1
+      },
+      "x": 24,
+      "y": 50,
+      "text": "KARATE CLUB",
+      "name": "Подпись логотипа",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#5A5A64",
+        "fontSize": 8,
+        "letterSpacing": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 1
+      },
+      "x": 24,
+      "y": 101,
+      "text": "Обзор",
+      "name": "Пункт: Обзор",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 1
+      },
+      "x": 8,
+      "y": 132,
+      "width": 232,
+      "height": 36,
+      "name": "Активный пункт",
+      "props": {
+        "fill": "#22222A",
+        "cornerRadius": 8
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 1
+      },
+      "x": 0,
+      "y": 132,
+      "width": 3,
+      "height": 36,
+      "name": "Полоса",
+      "props": {
+        "fill": "#FF6B00"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 1
+      },
+      "x": 24,
+      "y": 141,
+      "text": "Спортсмены",
+      "name": "Пункт: Спортсмены",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FFFFFF",
+        "fontSize": 13,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 1
+      },
+      "x": 24,
+      "y": 181,
+      "text": "Заявки",
+      "name": "Пункт: Заявки",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 1
+      },
+      "x": 24,
+      "y": 221,
+      "text": "Группы",
+      "name": "Пункт: Группы",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 1
+      },
+      "x": 24,
+      "y": 261,
+      "text": "Тренеры",
+      "name": "Пункт: Тренеры",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 1
+      },
+      "x": 24,
+      "y": 301,
+      "text": "Расписание",
+      "name": "Пункт: Расписание",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 1
+      },
+      "x": 24,
+      "y": 341,
+      "text": "Посещаемость",
+      "name": "Пункт: Посещаемость",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 1
+      },
+      "x": 24,
+      "y": 381,
+      "text": "Аттестации",
+      "name": "Пункт: Аттестации",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 1
+      },
+      "x": 24,
+      "y": 421,
+      "text": "Соревнования",
+      "name": "Пункт: Соревнования",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 1
+      },
+      "x": 24,
+      "y": 461,
+      "text": "Финансы",
+      "name": "Пункт: Финансы",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 1
+      },
+      "x": 24,
+      "y": 501,
+      "text": "Отчёты",
+      "name": "Пункт: Отчёты",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 1
+      },
+      "x": 24,
+      "y": 541,
+      "text": "Настройки",
+      "name": "Пункт: Настройки",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 0
+      },
+      "x": 248,
+      "y": 0,
+      "width": 1192,
+      "height": 64,
+      "name": "Шапка",
+      "props": {
+        "fill": "#FFFFFF"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 18
+      },
+      "x": 0,
+      "y": 63,
+      "width": 1192,
+      "height": 1,
+      "name": "Разделитель шапки",
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 18
+      },
+      "x": 24,
+      "y": 24,
+      "text": "Спортсмены",
+      "name": "Крошка: раздел",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 18
+      },
+      "x": 116,
+      "y": 24,
+      "text": "/",
+      "name": "Крошка: слэш",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#C8C8CE",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 18
+      },
+      "x": 132,
+      "y": 24,
+      "text": "Карточка спортсмена",
+      "name": "Крошка: карточка",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 13,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 18
+      },
+      "x": 1004,
+      "y": 16,
+      "width": 164,
+      "height": 32,
+      "name": "Профиль пользователя",
+      "props": {
+        "fill": "#F7F7F9",
+        "cornerRadius": 16
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 18
+      },
+      "x": 1020,
+      "y": 24,
+      "text": "Владелец Клуба",
+      "name": "Имя пользователя",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 12,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 96,
+      "width": 1128,
+      "height": 188,
+      "name": "Профиль: шапка",
+      "props": {
+        "fill": "#0E0E10",
+        "cornerRadius": 16
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 25
+      },
+      "x": 28,
+      "y": 28,
+      "width": 72,
+      "height": 72,
+      "name": "Аватар",
+      "props": {
+        "fill": "#22222A",
+        "cornerRadius": 36
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 25
+      },
+      "x": 28,
+      "y": 48,
+      "width": 72,
+      "text": "ДС",
+      "name": "Инициалы",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FF6B00",
+        "fontSize": 24,
+        "fontStyle": "Bold",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 25
+      },
+      "x": 120,
+      "y": 28,
+      "text": "Сагабиев Дмитрий Олегович",
+      "name": "ФИО",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FFFFFF",
+        "fontSize": 26,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 25
+      },
+      "x": 120,
+      "y": 66,
+      "width": 92,
+      "height": 24,
+      "name": "Статус",
+      "props": {
+        "fill": "#1F3A2B",
+        "cornerRadius": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 25
+      },
+      "x": 130,
+      "y": 75,
+      "width": 6,
+      "height": 6,
+      "name": "Точка статуса",
+      "props": {
+        "fill": "#4ADE80",
+        "cornerRadius": 3
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 25
+      },
+      "x": 142,
+      "y": 70,
+      "text": "Активен",
+      "name": "Текст статуса",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#7DE2A6",
+        "fontSize": 12,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 25
+      },
+      "x": 120,
+      "y": 100,
+      "text": "Группа «Дети 10–12 лет» · Центральный зал",
+      "name": "Контекст",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 25
+      },
+      "x": 708,
+      "y": 24,
+      "text": "СТУПЕНЬ",
+      "name": "Подпись ступени",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#7A7A84",
+        "fontSize": 10,
+        "fontStyle": "Medium",
+        "letterSpacing": 1.4
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 25
+      },
+      "x": 708,
+      "y": 42,
+      "text": "10",
+      "name": "Номер ступени",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FF6B00",
+        "fontSize": 52,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 25
+      },
+      "x": 766,
+      "y": 66,
+      "text": "кю",
+      "name": "Кю",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 18,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 25
+      },
+      "x": 812,
+      "y": 24,
+      "text": "ПОЯС",
+      "name": "Подпись пояса",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#7A7A84",
+        "fontSize": 10,
+        "fontStyle": "Medium",
+        "letterSpacing": 1.4
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 25
+      },
+      "x": 812,
+      "y": 48,
+      "width": 128,
+      "height": 28,
+      "name": "Плашка пояса",
+      "props": {
+        "fill": "#FFF0E5",
+        "cornerRadius": 14
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 25
+      },
+      "x": 812,
+      "y": 48,
+      "width": 4,
+      "height": 28,
+      "name": "Полоска пояса",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 25
+      },
+      "x": 826,
+      "y": 53,
+      "text": "Оранжевый",
+      "name": "Пояс",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#B24A00",
+        "fontSize": 13,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 25
+      },
+      "x": 708,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 1",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 25
+      },
+      "x": 728,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 2",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 25
+      },
+      "x": 748,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 3",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 25
+      },
+      "x": 768,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 4",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 25
+      },
+      "x": 788,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 5",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 25
+      },
+      "x": 808,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 6",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 25
+      },
+      "x": 828,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 7",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 25
+      },
+      "x": 848,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 8",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 25
+      },
+      "x": 868,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 9",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 25
+      },
+      "x": 888,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 10",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 25
+      },
+      "x": 908,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 11",
+      "props": {
+        "fill": "#3A3A44",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 25
+      },
+      "x": 708,
+      "y": 108,
+      "text": "10 из 11 ступеней",
+      "name": "Прогресс",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#7A7A84",
+        "fontSize": 11
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 25
+      },
+      "x": 932,
+      "y": 140,
+      "width": 168,
+      "height": 36,
+      "name": "Изменить",
+      "props": {
+        "fill": "transparent",
+        "cornerRadius": 10,
+        "stroke": "#4A4A54",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 25
+      },
+      "x": 932,
+      "y": 150,
+      "width": 168,
+      "text": "Изменить",
+      "name": "Изменить: текст",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FFFFFF",
+        "fontSize": 13,
+        "fontStyle": "Medium",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 25
+      },
+      "x": 748,
+      "y": 140,
+      "width": 172,
+      "height": 36,
+      "name": "+ Аттестация",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 10
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 25
+      },
+      "x": 748,
+      "y": 150,
+      "width": 172,
+      "text": "+ Аттестация",
+      "name": "Аттестация: текст",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FFFFFF",
+        "fontSize": 13,
+        "fontStyle": "Medium",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 308,
+      "width": 620,
+      "height": 44,
+      "name": "Вкладки",
+      "props": {
+        "fill": "#EFEFF3",
+        "cornerRadius": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 56
+      },
+      "x": 4,
+      "y": 4,
+      "width": 118,
+      "height": 36,
+      "name": "Активная вкладка",
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 9
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 56
+      },
+      "x": 4,
+      "y": 15,
+      "width": 118,
+      "text": "Профиль",
+      "name": "Вкладка: Профиль",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 13,
+        "fontStyle": "Medium",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 56
+      },
+      "x": 126,
+      "y": 15,
+      "width": 118,
+      "text": "Аттестации",
+      "name": "Вкладка: Аттестации",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#6E6E78",
+        "fontSize": 13,
+        "fontStyle": "Regular",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 56
+      },
+      "x": 248,
+      "y": 15,
+      "width": 118,
+      "text": "Оплаты",
+      "name": "Вкладка: Оплаты",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#6E6E78",
+        "fontSize": 13,
+        "fontStyle": "Regular",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 56
+      },
+      "x": 370,
+      "y": 15,
+      "width": 118,
+      "text": "Посещаемость",
+      "name": "Вкладка: Посещаемость",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#6E6E78",
+        "fontSize": 13,
+        "fontStyle": "Regular",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 56
+      },
+      "x": 492,
+      "y": 15,
+      "width": 118,
+      "text": "История",
+      "name": "Вкладка: История",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#6E6E78",
+        "fontSize": 13,
+        "fontStyle": "Regular",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 376,
+      "width": 788,
+      "height": 312,
+      "name": "Блок: Основные данные",
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 14,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 63
+      },
+      "x": 24,
+      "y": 20,
+      "text": "Основные данные",
+      "name": "Заголовок блока",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 15,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 63
+      },
+      "x": 24,
+      "y": 42,
+      "text": "Что известно о спортсмене",
+      "name": "Подпись блока",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 63
+      },
+      "x": 24,
+      "y": 76,
+      "text": "ДАТА РОЖДЕНИЯ",
+      "name": "Подпись: ДАТА РОЖДЕНИЯ",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 63
+      },
+      "x": 24,
+      "y": 94,
+      "width": 358,
+      "text": "24.08.2020",
+      "name": "Значение: ДАТА РОЖДЕНИЯ",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 63
+      },
+      "x": 406,
+      "y": 76,
+      "text": "ТЕЛЕФОН",
+      "name": "Подпись: ТЕЛЕФОН",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 63
+      },
+      "x": 406,
+      "y": 94,
+      "width": 358,
+      "text": "+7 967 213-16-16",
+      "name": "Значение: ТЕЛЕФОН",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 63
+      },
+      "x": 24,
+      "y": 132,
+      "text": "ПОЧТА",
+      "name": "Подпись: ПОЧТА",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 63
+      },
+      "x": 24,
+      "y": 150,
+      "width": 358,
+      "text": "parent@example.com",
+      "name": "Значение: ПОЧТА",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 63
+      },
+      "x": 406,
+      "y": 132,
+      "text": "ТРЕНЕР",
+      "name": "Подпись: ТРЕНЕР",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 63
+      },
+      "x": 406,
+      "y": 150,
+      "width": 358,
+      "text": "Иванов А. С.",
+      "name": "Значение: ТРЕНЕР",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 63
+      },
+      "x": 24,
+      "y": 188,
+      "text": "ФИЛИАЛ",
+      "name": "Подпись: ФИЛИАЛ",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 63
+      },
+      "x": 24,
+      "y": 206,
+      "width": 358,
+      "text": "Центральный зал",
+      "name": "Значение: ФИЛИАЛ",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 63
+      },
+      "x": 406,
+      "y": 188,
+      "text": "ДАТА В КЛУБЕ",
+      "name": "Подпись: ДАТА В КЛУБЕ",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 63
+      },
+      "x": 406,
+      "y": 206,
+      "width": 358,
+      "text": "с 25 мая 2025",
+      "name": "Значение: ДАТА В КЛУБЕ",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 63
+      },
+      "x": 24,
+      "y": 236,
+      "width": 740,
+      "height": 1,
+      "name": "Разделитель",
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 63
+      },
+      "x": 24,
+      "y": 252,
+      "text": "Заметки клуба",
+      "name": "Подпись заметок",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 63
+      },
+      "x": 24,
+      "y": 270,
+      "width": 740,
+      "text": "Переведён из младшей группы, готовится к аттестации на 8 кю.",
+      "name": "Заметки",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 712,
+      "width": 788,
+      "height": 196,
+      "name": "Блок: История спортивного роста",
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 14,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 81
+      },
+      "x": 24,
+      "y": 20,
+      "text": "История спортивного роста",
+      "name": "Заголовок блока",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 15,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 81
+      },
+      "x": 24,
+      "y": 42,
+      "text": "Ступени и даты присвоения",
+      "name": "Подпись блока",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 81
+      },
+      "x": 33,
+      "y": 98,
+      "width": 1,
+      "height": 38,
+      "name": "Линия таймлайна",
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 81
+      },
+      "x": 28,
+      "y": 84,
+      "width": 11,
+      "height": 11,
+      "name": "Точка таймлайна",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 81
+      },
+      "x": 52,
+      "y": 81,
+      "text": "10 кю",
+      "name": "Ступень таймлайна",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 81
+      },
+      "x": 52,
+      "y": 99,
+      "text": "16.12.2025 · оранжевый пояс",
+      "name": "Дата и пояс таймлайна",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 81
+      },
+      "x": 132,
+      "y": 83,
+      "width": 46,
+      "height": 18,
+      "name": "Текущая",
+      "props": {
+        "fill": "#FFF0E5",
+        "cornerRadius": 9
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 81
+      },
+      "x": 132,
+      "y": 86,
+      "text": "сейчас",
+      "name": "Текст текущей",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#B24A00",
+        "fontSize": 10,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 81
+      },
+      "x": 28,
+      "y": 136,
+      "width": 11,
+      "height": 11,
+      "name": "Точка таймлайна",
+      "props": {
+        "fill": "#EDEDF0",
+        "cornerRadius": 6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 81
+      },
+      "x": 52,
+      "y": 133,
+      "text": "0 кю",
+      "name": "Ступень таймлайна",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 81
+      },
+      "x": 52,
+      "y": 151,
+      "text": "25.05.2025 · белый пояс",
+      "name": "Дата и пояс таймлайна",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 0
+      },
+      "x": 1092,
+      "y": 376,
+      "width": 316,
+      "height": 150,
+      "name": "Блок: Связанные аккаунты",
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 14,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 93
+      },
+      "x": 24,
+      "y": 20,
+      "text": "Связанные аккаунты",
+      "name": "Заголовок блока",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 15,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 93
+      },
+      "x": 24,
+      "y": 42,
+      "text": "Кто видит спортсмена в приложении",
+      "name": "Подпись блока",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 93
+      },
+      "x": 20,
+      "y": 76,
+      "width": 276,
+      "height": 56,
+      "name": "Аккаунт",
+      "props": {
+        "fill": "#FAFAFB",
+        "cornerRadius": 10
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 93
+      },
+      "x": 20,
+      "y": 76,
+      "width": 3,
+      "height": 56,
+      "name": "Полоска аккаунта",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 93
+      },
+      "x": 36,
+      "y": 86,
+      "text": "o.sagabiev@gmail.com",
+      "name": "Почта аккаунта",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 13,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 93
+      },
+      "x": 36,
+      "y": 106,
+      "text": "родитель · основной",
+      "name": "Роль аккаунта",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 0
+      },
+      "x": 1092,
+      "y": 550,
+      "width": 316,
+      "height": 150,
+      "name": "Блок: Быстрые действия",
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 14,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 100
+      },
+      "x": 24,
+      "y": 20,
+      "text": "Быстрые действия",
+      "name": "Заголовок блока",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 15,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 100
+      },
+      "x": 24,
+      "y": 42,
+      "text": "Без перехода в другие разделы",
+      "name": "Подпись блока",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 100
+      },
+      "x": 20,
+      "y": 79,
+      "width": 6,
+      "height": 6,
+      "name": "Маркер действия",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 3
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 100
+      },
+      "x": 34,
+      "y": 74,
+      "text": "Изменить профиль",
+      "name": "Действие: Изменить профиль",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#2A2A32",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 100
+      },
+      "x": 20,
+      "y": 105,
+      "width": 6,
+      "height": 6,
+      "name": "Маркер действия",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 3
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 100
+      },
+      "x": 34,
+      "y": 100,
+      "text": "Добавить аттестацию",
+      "name": "Действие: Добавить аттестацию",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#2A2A32",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 100
+      },
+      "x": 20,
+      "y": 131,
+      "width": 6,
+      "height": 6,
+      "name": "Маркер действия",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 3
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 100
+      },
+      "x": 34,
+      "y": 126,
+      "text": "Назначить на соревнование",
+      "name": "Действие: Назначить на соревнование",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#2A2A32",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 0
+      },
+      "x": 1092,
+      "y": 724,
+      "width": 316,
+      "height": 122,
+      "name": "Опасное действие",
+      "props": {
+        "fill": "#FDF3F3",
+        "cornerRadius": 14,
+        "stroke": "#F6DADA",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 109
+      },
+      "x": 20,
+      "y": 18,
+      "text": "Архивирование",
+      "name": "Заголовок опасного",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A2B2B",
+        "fontSize": 13,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 109
+      },
+      "x": 20,
+      "y": 40,
+      "width": 276,
+      "text": "Карточка уйдёт из справочников.",
+      "name": "Текст опасного",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#A05A5A",
+        "fontSize": 11
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 109
+      },
+      "x": 20,
+      "y": 56,
+      "width": 276,
+      "text": "История сохранится.",
+      "name": "Текст опасного 2",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#A05A5A",
+        "fontSize": 11
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 109
+      },
+      "x": 20,
+      "y": 84,
+      "width": 132,
+      "height": 26,
+      "name": "Кнопка архива",
+      "props": {
+        "fill": "transparent",
+        "cornerRadius": 8,
+        "stroke": "#E3B4B4",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 109
+      },
+      "x": 20,
+      "y": 90,
+      "width": 132,
+      "text": "В архив",
+      "name": "Текст архива",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A2B2B",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "x": 1440,
+      "y": 0,
+      "width": 1440,
+      "height": 940,
+      "name": "Desktop 1440 — пустая карточка",
+      "props": {
+        "fill": "#F7F7F9"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 115
+      },
+      "x": 0,
+      "y": 0,
+      "width": 248,
+      "height": 940,
+      "name": "Сайдбар",
+      "props": {
+        "fill": "#0E0E10"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 116
+      },
+      "x": 24,
+      "y": 26,
+      "text": "OCTAGON",
+      "name": "Логотип",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FFFFFF",
+        "fontSize": 18,
+        "fontStyle": "Bold",
+        "letterSpacing": 3
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 116
+      },
+      "x": 24,
+      "y": 50,
+      "text": "KARATE CLUB",
+      "name": "Подпись логотипа",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#5A5A64",
+        "fontSize": 8,
+        "letterSpacing": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 116
+      },
+      "x": 24,
+      "y": 101,
+      "text": "Обзор",
+      "name": "Пункт: Обзор",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 116
+      },
+      "x": 8,
+      "y": 132,
+      "width": 232,
+      "height": 36,
+      "name": "Активный пункт",
+      "props": {
+        "fill": "#22222A",
+        "cornerRadius": 8
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 116
+      },
+      "x": 0,
+      "y": 132,
+      "width": 3,
+      "height": 36,
+      "name": "Полоса",
+      "props": {
+        "fill": "#FF6B00"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 116
+      },
+      "x": 24,
+      "y": 141,
+      "text": "Спортсмены",
+      "name": "Пункт: Спортсмены",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FFFFFF",
+        "fontSize": 13,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 116
+      },
+      "x": 24,
+      "y": 181,
+      "text": "Заявки",
+      "name": "Пункт: Заявки",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 116
+      },
+      "x": 24,
+      "y": 221,
+      "text": "Группы",
+      "name": "Пункт: Группы",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 116
+      },
+      "x": 24,
+      "y": 261,
+      "text": "Тренеры",
+      "name": "Пункт: Тренеры",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 116
+      },
+      "x": 24,
+      "y": 301,
+      "text": "Расписание",
+      "name": "Пункт: Расписание",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 116
+      },
+      "x": 24,
+      "y": 341,
+      "text": "Посещаемость",
+      "name": "Пункт: Посещаемость",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 116
+      },
+      "x": 24,
+      "y": 381,
+      "text": "Аттестации",
+      "name": "Пункт: Аттестации",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 116
+      },
+      "x": 24,
+      "y": 421,
+      "text": "Соревнования",
+      "name": "Пункт: Соревнования",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 116
+      },
+      "x": 24,
+      "y": 461,
+      "text": "Финансы",
+      "name": "Пункт: Финансы",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 116
+      },
+      "x": 24,
+      "y": 501,
+      "text": "Отчёты",
+      "name": "Пункт: Отчёты",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 116
+      },
+      "x": 24,
+      "y": 541,
+      "text": "Настройки",
+      "name": "Пункт: Настройки",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 115
+      },
+      "x": 248,
+      "y": 0,
+      "width": 1192,
+      "height": 64,
+      "name": "Шапка",
+      "props": {
+        "fill": "#FFFFFF"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 133
+      },
+      "x": 0,
+      "y": 63,
+      "width": 1192,
+      "height": 1,
+      "name": "Разделитель шапки",
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 133
+      },
+      "x": 24,
+      "y": 24,
+      "text": "Спортсмены",
+      "name": "Крошка: раздел",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 133
+      },
+      "x": 116,
+      "y": 24,
+      "text": "/",
+      "name": "Крошка: слэш",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#C8C8CE",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 133
+      },
+      "x": 132,
+      "y": 24,
+      "text": "Карточка спортсмена",
+      "name": "Крошка: карточка",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 13,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 133
+      },
+      "x": 1004,
+      "y": 16,
+      "width": 164,
+      "height": 32,
+      "name": "Профиль пользователя",
+      "props": {
+        "fill": "#F7F7F9",
+        "cornerRadius": 16
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 133
+      },
+      "x": 1020,
+      "y": 24,
+      "text": "Владелец Клуба",
+      "name": "Имя пользователя",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 12,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 115
+      },
+      "x": 280,
+      "y": 96,
+      "width": 1128,
+      "height": 188,
+      "name": "Профиль: шапка",
+      "props": {
+        "fill": "#0E0E10",
+        "cornerRadius": 16
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 140
+      },
+      "x": 28,
+      "y": 28,
+      "width": 72,
+      "height": 72,
+      "name": "Аватар",
+      "props": {
+        "fill": "#22222A",
+        "cornerRadius": 36
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 140
+      },
+      "x": 28,
+      "y": 48,
+      "width": 72,
+      "text": "—",
+      "name": "Инициалы",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FF6B00",
+        "fontSize": 24,
+        "fontStyle": "Bold",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 140
+      },
+      "x": 120,
+      "y": 28,
+      "text": "Новый спортсмен",
+      "name": "ФИО",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FFFFFF",
+        "fontSize": 26,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 140
+      },
+      "x": 120,
+      "y": 66,
+      "width": 92,
+      "height": 24,
+      "name": "Статус",
+      "props": {
+        "fill": "#2A2A32",
+        "cornerRadius": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 140
+      },
+      "x": 130,
+      "y": 75,
+      "width": 6,
+      "height": 6,
+      "name": "Точка статуса",
+      "props": {
+        "fill": "#8A8A8F",
+        "cornerRadius": 3
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 140
+      },
+      "x": 142,
+      "y": 70,
+      "text": "Не активен",
+      "name": "Текст статуса",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 12,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 140
+      },
+      "x": 120,
+      "y": 100,
+      "text": "Карточка создана, данные не заполнены",
+      "name": "Контекст",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 140
+      },
+      "x": 708,
+      "y": 24,
+      "text": "СТУПЕНЬ",
+      "name": "Подпись ступени",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#7A7A84",
+        "fontSize": 10,
+        "fontStyle": "Medium",
+        "letterSpacing": 1.4
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 140
+      },
+      "x": 708,
+      "y": 56,
+      "text": "не присвоена",
+      "name": "Ступень не присвоена",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#6A6A74",
+        "fontSize": 15,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 140
+      },
+      "x": 904,
+      "y": 24,
+      "text": "ПОЯС",
+      "name": "Подпись пояса",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#7A7A84",
+        "fontSize": 10,
+        "fontStyle": "Medium",
+        "letterSpacing": 1.4
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 140
+      },
+      "x": 904,
+      "y": 52,
+      "text": "Не присвоен",
+      "name": "Пояс пустой",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#6A6A74",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 140
+      },
+      "x": 892,
+      "y": 140,
+      "width": 208,
+      "height": 36,
+      "name": "Заполнить профиль",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 10
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 140
+      },
+      "x": 892,
+      "y": 150,
+      "width": 208,
+      "text": "Заполнить профиль",
+      "name": "Заполнить: текст",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FFFFFF",
+        "fontSize": 13,
+        "fontStyle": "Medium",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 115
+      },
+      "x": 280,
+      "y": 308,
+      "width": 620,
+      "height": 44,
+      "name": "Вкладки",
+      "props": {
+        "fill": "#EFEFF3",
+        "cornerRadius": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 154
+      },
+      "x": 4,
+      "y": 4,
+      "width": 118,
+      "height": 36,
+      "name": "Активная вкладка",
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 9
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 154
+      },
+      "x": 4,
+      "y": 15,
+      "width": 118,
+      "text": "Профиль",
+      "name": "Вкладка: Профиль",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 13,
+        "fontStyle": "Medium",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 154
+      },
+      "x": 126,
+      "y": 15,
+      "width": 118,
+      "text": "Аттестации",
+      "name": "Вкладка: Аттестации",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#6E6E78",
+        "fontSize": 13,
+        "fontStyle": "Regular",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 154
+      },
+      "x": 248,
+      "y": 15,
+      "width": 118,
+      "text": "Оплаты",
+      "name": "Вкладка: Оплаты",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#6E6E78",
+        "fontSize": 13,
+        "fontStyle": "Regular",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 154
+      },
+      "x": 370,
+      "y": 15,
+      "width": 118,
+      "text": "Посещаемость",
+      "name": "Вкладка: Посещаемость",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#6E6E78",
+        "fontSize": 13,
+        "fontStyle": "Regular",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 154
+      },
+      "x": 492,
+      "y": 15,
+      "width": 118,
+      "text": "История",
+      "name": "Вкладка: История",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#6E6E78",
+        "fontSize": 13,
+        "fontStyle": "Regular",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 115
+      },
+      "x": 280,
+      "y": 376,
+      "width": 1128,
+      "height": 216,
+      "name": "Пустое состояние",
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 14,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 161
+      },
+      "x": 540,
+      "y": 40,
+      "width": 48,
+      "height": 48,
+      "name": "Иконка пустого",
+      "props": {
+        "fill": "#FFF0E5",
+        "cornerRadius": 24
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 161
+      },
+      "x": 552,
+      "y": 54,
+      "width": 24,
+      "text": "+",
+      "name": "Плюс",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FF6B00",
+        "fontSize": 24,
+        "fontStyle": "Bold",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 161
+      },
+      "x": 24,
+      "y": 104,
+      "width": 1080,
+      "text": "Профиль ещё не заполнен",
+      "name": "Заголовок пустого",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 17,
+        "fontStyle": "Bold",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 161
+      },
+      "x": 24,
+      "y": 132,
+      "width": 1080,
+      "text": "Добавьте дату рождения и телефон — и запишите в группу. Ступень появится после первой аттестации.",
+      "name": "Описание пустого",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 13,
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 161
+      },
+      "x": 478,
+      "y": 168,
+      "width": 172,
+      "height": 36,
+      "name": "Кнопка пустого",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 10
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 161
+      },
+      "x": 478,
+      "y": 178,
+      "width": 172,
+      "text": "Заполнить профиль",
+      "name": "Текст кнопки пустого",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FFFFFF",
+        "fontSize": 13,
+        "fontStyle": "Medium",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "x": 4320,
+      "y": 0,
+      "width": 1440,
+      "height": 940,
+      "name": "Desktop 1440 — частично заполненная карточка",
+      "props": {
+        "fill": "#F7F7F9"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 168
+      },
+      "x": 0,
+      "y": 0,
+      "width": 248,
+      "height": 940,
+      "name": "Сайдбар",
+      "props": {
+        "fill": "#0E0E10"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 169
+      },
+      "x": 24,
+      "y": 26,
+      "text": "OCTAGON",
+      "name": "Логотип",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FFFFFF",
+        "fontSize": 18,
+        "fontStyle": "Bold",
+        "letterSpacing": 3
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 169
+      },
+      "x": 24,
+      "y": 50,
+      "text": "KARATE CLUB",
+      "name": "Подпись логотипа",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#5A5A64",
+        "fontSize": 8,
+        "letterSpacing": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 169
+      },
+      "x": 24,
+      "y": 101,
+      "text": "Обзор",
+      "name": "Пункт: Обзор",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 169
+      },
+      "x": 8,
+      "y": 132,
+      "width": 232,
+      "height": 36,
+      "name": "Активный пункт",
+      "props": {
+        "fill": "#22222A",
+        "cornerRadius": 8
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 169
+      },
+      "x": 0,
+      "y": 132,
+      "width": 3,
+      "height": 36,
+      "name": "Полоса",
+      "props": {
+        "fill": "#FF6B00"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 169
+      },
+      "x": 24,
+      "y": 141,
+      "text": "Спортсмены",
+      "name": "Пункт: Спортсмены",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FFFFFF",
+        "fontSize": 13,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 169
+      },
+      "x": 24,
+      "y": 181,
+      "text": "Заявки",
+      "name": "Пункт: Заявки",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 169
+      },
+      "x": 24,
+      "y": 221,
+      "text": "Группы",
+      "name": "Пункт: Группы",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 169
+      },
+      "x": 24,
+      "y": 261,
+      "text": "Тренеры",
+      "name": "Пункт: Тренеры",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 169
+      },
+      "x": 24,
+      "y": 301,
+      "text": "Расписание",
+      "name": "Пункт: Расписание",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 169
+      },
+      "x": 24,
+      "y": 341,
+      "text": "Посещаемость",
+      "name": "Пункт: Посещаемость",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 169
+      },
+      "x": 24,
+      "y": 381,
+      "text": "Аттестации",
+      "name": "Пункт: Аттестации",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 169
+      },
+      "x": 24,
+      "y": 421,
+      "text": "Соревнования",
+      "name": "Пункт: Соревнования",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 169
+      },
+      "x": 24,
+      "y": 461,
+      "text": "Финансы",
+      "name": "Пункт: Финансы",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 169
+      },
+      "x": 24,
+      "y": 501,
+      "text": "Отчёты",
+      "name": "Пункт: Отчёты",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 169
+      },
+      "x": 24,
+      "y": 541,
+      "text": "Настройки",
+      "name": "Пункт: Настройки",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13,
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 168
+      },
+      "x": 248,
+      "y": 0,
+      "width": 1192,
+      "height": 64,
+      "name": "Шапка",
+      "props": {
+        "fill": "#FFFFFF"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 186
+      },
+      "x": 0,
+      "y": 63,
+      "width": 1192,
+      "height": 1,
+      "name": "Разделитель шапки",
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 186
+      },
+      "x": 24,
+      "y": 24,
+      "text": "Спортсмены",
+      "name": "Крошка: раздел",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 186
+      },
+      "x": 116,
+      "y": 24,
+      "text": "/",
+      "name": "Крошка: слэш",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#C8C8CE",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 186
+      },
+      "x": 132,
+      "y": 24,
+      "text": "Карточка спортсмена",
+      "name": "Крошка: карточка",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 13,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 186
+      },
+      "x": 1004,
+      "y": 16,
+      "width": 164,
+      "height": 32,
+      "name": "Профиль пользователя",
+      "props": {
+        "fill": "#F7F7F9",
+        "cornerRadius": 16
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 186
+      },
+      "x": 1020,
+      "y": 24,
+      "text": "Владелец Клуба",
+      "name": "Имя пользователя",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 12,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 168
+      },
+      "x": 280,
+      "y": 96,
+      "width": 1128,
+      "height": 188,
+      "name": "Профиль: шапка",
+      "props": {
+        "fill": "#0E0E10",
+        "cornerRadius": 16
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 193
+      },
+      "x": 28,
+      "y": 28,
+      "width": 72,
+      "height": 72,
+      "name": "Аватар",
+      "props": {
+        "fill": "#22222A",
+        "cornerRadius": 36
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 193
+      },
+      "x": 28,
+      "y": 48,
+      "width": 72,
+      "text": "ДС",
+      "name": "Инициалы",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FF6B00",
+        "fontSize": 24,
+        "fontStyle": "Bold",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 193
+      },
+      "x": 120,
+      "y": 28,
+      "text": "Сагабиев Дмитрий Олегович",
+      "name": "ФИО",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FFFFFF",
+        "fontSize": 26,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 193
+      },
+      "x": 120,
+      "y": 66,
+      "width": 92,
+      "height": 24,
+      "name": "Статус",
+      "props": {
+        "fill": "#1F3A2B",
+        "cornerRadius": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 193
+      },
+      "x": 130,
+      "y": 75,
+      "width": 6,
+      "height": 6,
+      "name": "Точка статуса",
+      "props": {
+        "fill": "#4ADE80",
+        "cornerRadius": 3
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 193
+      },
+      "x": 142,
+      "y": 70,
+      "text": "Активен",
+      "name": "Текст статуса",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#7DE2A6",
+        "fontSize": 12,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 193
+      },
+      "x": 120,
+      "y": 100,
+      "text": "Группа «Дети 10–12 лет» · Центральный зал",
+      "name": "Контекст",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 193
+      },
+      "x": 708,
+      "y": 24,
+      "text": "СТУПЕНЬ",
+      "name": "Подпись ступени",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#7A7A84",
+        "fontSize": 10,
+        "fontStyle": "Medium",
+        "letterSpacing": 1.4
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 193
+      },
+      "x": 708,
+      "y": 42,
+      "text": "10",
+      "name": "Номер ступени",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FF6B00",
+        "fontSize": 52,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 193
+      },
+      "x": 766,
+      "y": 66,
+      "text": "кю",
+      "name": "Кю",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 18,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 193
+      },
+      "x": 812,
+      "y": 24,
+      "text": "ПОЯС",
+      "name": "Подпись пояса",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#7A7A84",
+        "fontSize": 10,
+        "fontStyle": "Medium",
+        "letterSpacing": 1.4
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 193
+      },
+      "x": 812,
+      "y": 48,
+      "width": 128,
+      "height": 28,
+      "name": "Плашка пояса",
+      "props": {
+        "fill": "#FFF0E5",
+        "cornerRadius": 14
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 193
+      },
+      "x": 812,
+      "y": 48,
+      "width": 4,
+      "height": 28,
+      "name": "Полоска пояса",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 193
+      },
+      "x": 826,
+      "y": 53,
+      "text": "Оранжевый",
+      "name": "Пояс",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#B24A00",
+        "fontSize": 13,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 193
+      },
+      "x": 708,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 1",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 193
+      },
+      "x": 728,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 2",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 193
+      },
+      "x": 748,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 3",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 193
+      },
+      "x": 768,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 4",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 193
+      },
+      "x": 788,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 5",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 193
+      },
+      "x": 808,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 6",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 193
+      },
+      "x": 828,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 7",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 193
+      },
+      "x": 848,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 8",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 193
+      },
+      "x": 868,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 9",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 193
+      },
+      "x": 888,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 10",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 193
+      },
+      "x": 908,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 11",
+      "props": {
+        "fill": "#3A3A44",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 193
+      },
+      "x": 708,
+      "y": 108,
+      "text": "10 из 11 ступеней",
+      "name": "Прогресс",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#7A7A84",
+        "fontSize": 11
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 193
+      },
+      "x": 932,
+      "y": 140,
+      "width": 168,
+      "height": 36,
+      "name": "Изменить",
+      "props": {
+        "fill": "transparent",
+        "cornerRadius": 10,
+        "stroke": "#4A4A54",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 193
+      },
+      "x": 932,
+      "y": 150,
+      "width": 168,
+      "text": "Изменить",
+      "name": "Изменить: текст",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FFFFFF",
+        "fontSize": 13,
+        "fontStyle": "Medium",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 193
+      },
+      "x": 748,
+      "y": 140,
+      "width": 172,
+      "height": 36,
+      "name": "+ Аттестация",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 10
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 193
+      },
+      "x": 748,
+      "y": 150,
+      "width": 172,
+      "text": "+ Аттестация",
+      "name": "Аттестация: текст",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FFFFFF",
+        "fontSize": 13,
+        "fontStyle": "Medium",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 168
+      },
+      "x": 280,
+      "y": 308,
+      "width": 620,
+      "height": 44,
+      "name": "Вкладки",
+      "props": {
+        "fill": "#EFEFF3",
+        "cornerRadius": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 224
+      },
+      "x": 4,
+      "y": 4,
+      "width": 118,
+      "height": 36,
+      "name": "Активная вкладка",
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 9
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 224
+      },
+      "x": 4,
+      "y": 15,
+      "width": 118,
+      "text": "Профиль",
+      "name": "Вкладка: Профиль",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 13,
+        "fontStyle": "Medium",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 224
+      },
+      "x": 126,
+      "y": 15,
+      "width": 118,
+      "text": "Аттестации",
+      "name": "Вкладка: Аттестации",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#6E6E78",
+        "fontSize": 13,
+        "fontStyle": "Regular",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 224
+      },
+      "x": 248,
+      "y": 15,
+      "width": 118,
+      "text": "Оплаты",
+      "name": "Вкладка: Оплаты",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#6E6E78",
+        "fontSize": 13,
+        "fontStyle": "Regular",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 224
+      },
+      "x": 370,
+      "y": 15,
+      "width": 118,
+      "text": "Посещаемость",
+      "name": "Вкладка: Посещаемость",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#6E6E78",
+        "fontSize": 13,
+        "fontStyle": "Regular",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 224
+      },
+      "x": 492,
+      "y": 15,
+      "width": 118,
+      "text": "История",
+      "name": "Вкладка: История",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#6E6E78",
+        "fontSize": 13,
+        "fontStyle": "Regular",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 168
+      },
+      "x": 280,
+      "y": 376,
+      "width": 788,
+      "height": 312,
+      "name": "Блок: Основные данные",
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 14,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 231
+      },
+      "x": 24,
+      "y": 20,
+      "text": "Основные данные",
+      "name": "Заголовок блока",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 15,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 231
+      },
+      "x": 24,
+      "y": 42,
+      "text": "Что известно о спортсмене",
+      "name": "Подпись блока",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 231
+      },
+      "x": 24,
+      "y": 76,
+      "text": "ДАТА РОЖДЕНИЯ",
+      "name": "Подпись: ДАТА РОЖДЕНИЯ",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 231
+      },
+      "x": 24,
+      "y": 94,
+      "width": 358,
+      "text": "24.08.2020",
+      "name": "Значение: ДАТА РОЖДЕНИЯ",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 231
+      },
+      "x": 406,
+      "y": 76,
+      "text": "ТЕЛЕФОН",
+      "name": "Подпись: ТЕЛЕФОН",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 231
+      },
+      "x": 406,
+      "y": 94,
+      "width": 358,
+      "text": "Не указан",
+      "name": "Значение: ТЕЛЕФОН",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 231
+      },
+      "x": 24,
+      "y": 132,
+      "text": "ПОЧТА",
+      "name": "Подпись: ПОЧТА",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 231
+      },
+      "x": 24,
+      "y": 150,
+      "width": 358,
+      "text": "Не указана",
+      "name": "Значение: ПОЧТА",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 231
+      },
+      "x": 406,
+      "y": 132,
+      "text": "ТРЕНЕР",
+      "name": "Подпись: ТРЕНЕР",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 231
+      },
+      "x": 406,
+      "y": 150,
+      "width": 358,
+      "text": "Иванов А. С.",
+      "name": "Значение: ТРЕНЕР",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 231
+      },
+      "x": 24,
+      "y": 188,
+      "text": "ФИЛИАЛ",
+      "name": "Подпись: ФИЛИАЛ",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 231
+      },
+      "x": 24,
+      "y": 206,
+      "width": 358,
+      "text": "Центральный зал",
+      "name": "Значение: ФИЛИАЛ",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 231
+      },
+      "x": 406,
+      "y": 188,
+      "text": "ДАТА В КЛУБЕ",
+      "name": "Подпись: ДАТА В КЛУБЕ",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 231
+      },
+      "x": 406,
+      "y": 206,
+      "width": 358,
+      "text": "с 25 мая 2025",
+      "name": "Значение: ДАТА В КЛУБЕ",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 231
+      },
+      "x": 24,
+      "y": 236,
+      "width": 740,
+      "height": 1,
+      "name": "Разделитель",
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 231
+      },
+      "x": 24,
+      "y": 252,
+      "text": "Заметки клуба",
+      "name": "Подпись заметок",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 231
+      },
+      "x": 24,
+      "y": 270,
+      "width": 740,
+      "text": "Переведён из младшей группы, готовится к аттестации на 8 кю.",
+      "name": "Заметки",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 168
+      },
+      "x": 280,
+      "y": 712,
+      "width": 788,
+      "height": 196,
+      "name": "Блок: История спортивного роста",
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 14,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 249
+      },
+      "x": 24,
+      "y": 20,
+      "text": "История спортивного роста",
+      "name": "Заголовок блока",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 15,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 249
+      },
+      "x": 24,
+      "y": 42,
+      "text": "Ступени и даты присвоения",
+      "name": "Подпись блока",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 249
+      },
+      "x": 33,
+      "y": 98,
+      "width": 1,
+      "height": 38,
+      "name": "Линия таймлайна",
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 249
+      },
+      "x": 28,
+      "y": 84,
+      "width": 11,
+      "height": 11,
+      "name": "Точка таймлайна",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 249
+      },
+      "x": 52,
+      "y": 81,
+      "text": "10 кю",
+      "name": "Ступень таймлайна",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 249
+      },
+      "x": 52,
+      "y": 99,
+      "text": "16.12.2025 · оранжевый пояс",
+      "name": "Дата и пояс таймлайна",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 249
+      },
+      "x": 132,
+      "y": 83,
+      "width": 46,
+      "height": 18,
+      "name": "Текущая",
+      "props": {
+        "fill": "#FFF0E5",
+        "cornerRadius": 9
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 249
+      },
+      "x": 132,
+      "y": 86,
+      "text": "сейчас",
+      "name": "Текст текущей",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#B24A00",
+        "fontSize": 10,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 249
+      },
+      "x": 28,
+      "y": 136,
+      "width": 11,
+      "height": 11,
+      "name": "Точка таймлайна",
+      "props": {
+        "fill": "#EDEDF0",
+        "cornerRadius": 6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 249
+      },
+      "x": 52,
+      "y": 133,
+      "text": "0 кю",
+      "name": "Ступень таймлайна",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 249
+      },
+      "x": 52,
+      "y": 151,
+      "text": "25.05.2025 · белый пояс",
+      "name": "Дата и пояс таймлайна",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 168
+      },
+      "x": 1092,
+      "y": 376,
+      "width": 316,
+      "height": 150,
+      "name": "Блок: Связанные аккаунты",
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 14,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 261
+      },
+      "x": 24,
+      "y": 20,
+      "text": "Связанные аккаунты",
+      "name": "Заголовок блока",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 15,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 261
+      },
+      "x": 24,
+      "y": 42,
+      "text": "Кто видит спортсмена в приложении",
+      "name": "Подпись блока",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 261
+      },
+      "x": 24,
+      "y": 84,
+      "text": "Аккаунтов нет",
+      "name": "Пустые аккаунты",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 261
+      },
+      "x": 24,
+      "y": 104,
+      "width": 268,
+      "text": "Родитель получит доступ по коду приглашения.",
+      "name": "Подсказка аккаунтов",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#A8A8B0",
+        "fontSize": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 168
+      },
+      "x": 1092,
+      "y": 550,
+      "width": 316,
+      "height": 150,
+      "name": "Блок: Быстрые действия",
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 14,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 266
+      },
+      "x": 24,
+      "y": 20,
+      "text": "Быстрые действия",
+      "name": "Заголовок блока",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 15,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 266
+      },
+      "x": 24,
+      "y": 42,
+      "text": "Без перехода в другие разделы",
+      "name": "Подпись блока",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 266
+      },
+      "x": 20,
+      "y": 79,
+      "width": 6,
+      "height": 6,
+      "name": "Маркер действия",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 3
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 266
+      },
+      "x": 34,
+      "y": 74,
+      "text": "Изменить профиль",
+      "name": "Действие: Изменить профиль",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#2A2A32",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 266
+      },
+      "x": 20,
+      "y": 105,
+      "width": 6,
+      "height": 6,
+      "name": "Маркер действия",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 3
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 266
+      },
+      "x": 34,
+      "y": 100,
+      "text": "Добавить аттестацию",
+      "name": "Действие: Добавить аттестацию",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#2A2A32",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 266
+      },
+      "x": 20,
+      "y": 131,
+      "width": 6,
+      "height": 6,
+      "name": "Маркер действия",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 3
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 266
+      },
+      "x": 34,
+      "y": 126,
+      "text": "Назначить на соревнование",
+      "name": "Действие: Назначить на соревнование",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#2A2A32",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 168
+      },
+      "x": 1092,
+      "y": 724,
+      "width": 316,
+      "height": 122,
+      "name": "Опасное действие",
+      "props": {
+        "fill": "#FDF3F3",
+        "cornerRadius": 14,
+        "stroke": "#F6DADA",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 275
+      },
+      "x": 20,
+      "y": 18,
+      "text": "Архивирование",
+      "name": "Заголовок опасного",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A2B2B",
+        "fontSize": 13,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 275
+      },
+      "x": 20,
+      "y": 40,
+      "width": 276,
+      "text": "Карточка уйдёт из справочников.",
+      "name": "Текст опасного",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#A05A5A",
+        "fontSize": 11
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 275
+      },
+      "x": 20,
+      "y": 56,
+      "width": 276,
+      "text": "История сохранится.",
+      "name": "Текст опасного 2",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#A05A5A",
+        "fontSize": 11
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 275
+      },
+      "x": 20,
+      "y": 84,
+      "width": 132,
+      "height": 26,
+      "name": "Кнопка архива",
+      "props": {
+        "fill": "transparent",
+        "cornerRadius": 8,
+        "stroke": "#E3B4B4",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 275
+      },
+      "x": 20,
+      "y": 90,
+      "width": 132,
+      "text": "В архив",
+      "name": "Текст архива",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A2B2B",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "x": 2880,
+      "y": 0,
+      "width": 1024,
+      "height": 880,
+      "name": "Tablet 1024 — карточка спортсмена",
+      "props": {
+        "fill": "#F7F7F9"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 281
+      },
+      "x": 0,
+      "y": 0,
+      "width": 1024,
+      "height": 64,
+      "name": "Шапка",
+      "props": {
+        "fill": "#FFFFFF"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 282
+      },
+      "x": 0,
+      "y": 63,
+      "width": 1024,
+      "height": 1,
+      "name": "Разделитель шапки",
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 282
+      },
+      "x": 64,
+      "y": 24,
+      "text": "Спортсмены",
+      "name": "Крошка: раздел",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 282
+      },
+      "x": 156,
+      "y": 24,
+      "text": "/",
+      "name": "Крошка: слэш",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#C8C8CE",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 282
+      },
+      "x": 172,
+      "y": 24,
+      "text": "Карточка спортсмена",
+      "name": "Крошка: карточка",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 13,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 282
+      },
+      "x": 836,
+      "y": 16,
+      "width": 164,
+      "height": 32,
+      "name": "Профиль пользователя",
+      "props": {
+        "fill": "#F7F7F9",
+        "cornerRadius": 16
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 282
+      },
+      "x": 852,
+      "y": 24,
+      "text": "Владелец Клуба",
+      "name": "Имя пользователя",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 12,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 281
+      },
+      "x": 16,
+      "y": 16,
+      "width": 32,
+      "height": 32,
+      "name": "Меню",
+      "props": {
+        "fill": "#0E0E10",
+        "cornerRadius": 8
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 281
+      },
+      "x": 16,
+      "y": 24,
+      "width": 32,
+      "text": "≡",
+      "name": "Иконка меню",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FFFFFF",
+        "fontSize": 16,
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 281
+      },
+      "x": 32,
+      "y": 88,
+      "width": 960,
+      "height": 188,
+      "name": "Профиль: шапка",
+      "props": {
+        "fill": "#0E0E10",
+        "cornerRadius": 16
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 291
+      },
+      "x": 28,
+      "y": 28,
+      "width": 72,
+      "height": 72,
+      "name": "Аватар",
+      "props": {
+        "fill": "#22222A",
+        "cornerRadius": 36
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 291
+      },
+      "x": 28,
+      "y": 48,
+      "width": 72,
+      "text": "ДС",
+      "name": "Инициалы",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FF6B00",
+        "fontSize": 24,
+        "fontStyle": "Bold",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 291
+      },
+      "x": 120,
+      "y": 28,
+      "text": "Сагабиев Дмитрий Олегович",
+      "name": "ФИО",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FFFFFF",
+        "fontSize": 26,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 291
+      },
+      "x": 120,
+      "y": 66,
+      "width": 92,
+      "height": 24,
+      "name": "Статус",
+      "props": {
+        "fill": "#1F3A2B",
+        "cornerRadius": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 291
+      },
+      "x": 130,
+      "y": 75,
+      "width": 6,
+      "height": 6,
+      "name": "Точка статуса",
+      "props": {
+        "fill": "#4ADE80",
+        "cornerRadius": 3
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 291
+      },
+      "x": 142,
+      "y": 70,
+      "text": "Активен",
+      "name": "Текст статуса",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#7DE2A6",
+        "fontSize": 12,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 291
+      },
+      "x": 120,
+      "y": 100,
+      "text": "Группа «Дети 10–12 лет» · Центральный зал",
+      "name": "Контекст",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 291
+      },
+      "x": 540,
+      "y": 24,
+      "text": "СТУПЕНЬ",
+      "name": "Подпись ступени",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#7A7A84",
+        "fontSize": 10,
+        "fontStyle": "Medium",
+        "letterSpacing": 1.4
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 291
+      },
+      "x": 540,
+      "y": 42,
+      "text": "10",
+      "name": "Номер ступени",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FF6B00",
+        "fontSize": 52,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 291
+      },
+      "x": 598,
+      "y": 66,
+      "text": "кю",
+      "name": "Кю",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 18,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 291
+      },
+      "x": 644,
+      "y": 24,
+      "text": "ПОЯС",
+      "name": "Подпись пояса",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#7A7A84",
+        "fontSize": 10,
+        "fontStyle": "Medium",
+        "letterSpacing": 1.4
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 291
+      },
+      "x": 644,
+      "y": 48,
+      "width": 128,
+      "height": 28,
+      "name": "Плашка пояса",
+      "props": {
+        "fill": "#FFF0E5",
+        "cornerRadius": 14
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 291
+      },
+      "x": 644,
+      "y": 48,
+      "width": 4,
+      "height": 28,
+      "name": "Полоска пояса",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 291
+      },
+      "x": 658,
+      "y": 53,
+      "text": "Оранжевый",
+      "name": "Пояс",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#B24A00",
+        "fontSize": 13,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 291
+      },
+      "x": 540,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 1",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 291
+      },
+      "x": 560,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 2",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 291
+      },
+      "x": 580,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 3",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 291
+      },
+      "x": 600,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 4",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 291
+      },
+      "x": 620,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 5",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 291
+      },
+      "x": 640,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 6",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 291
+      },
+      "x": 660,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 7",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 291
+      },
+      "x": 680,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 8",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 291
+      },
+      "x": 700,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 9",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 291
+      },
+      "x": 720,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 10",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 291
+      },
+      "x": 740,
+      "y": 96,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 11",
+      "props": {
+        "fill": "#3A3A44",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 291
+      },
+      "x": 540,
+      "y": 108,
+      "text": "10 из 11 ступеней",
+      "name": "Прогресс",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#7A7A84",
+        "fontSize": 11
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 291
+      },
+      "x": 764,
+      "y": 140,
+      "width": 168,
+      "height": 36,
+      "name": "Изменить",
+      "props": {
+        "fill": "transparent",
+        "cornerRadius": 10,
+        "stroke": "#4A4A54",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 291
+      },
+      "x": 764,
+      "y": 150,
+      "width": 168,
+      "text": "Изменить",
+      "name": "Изменить: текст",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FFFFFF",
+        "fontSize": 13,
+        "fontStyle": "Medium",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 291
+      },
+      "x": 580,
+      "y": 140,
+      "width": 172,
+      "height": 36,
+      "name": "+ Аттестация",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 10
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 291
+      },
+      "x": 580,
+      "y": 150,
+      "width": 172,
+      "text": "+ Аттестация",
+      "name": "Аттестация: текст",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FFFFFF",
+        "fontSize": 13,
+        "fontStyle": "Medium",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 281
+      },
+      "x": 32,
+      "y": 300,
+      "width": 960,
+      "height": 44,
+      "name": "Вкладки",
+      "props": {
+        "fill": "#EFEFF3",
+        "cornerRadius": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 322
+      },
+      "x": 4,
+      "y": 4,
+      "width": 234,
+      "height": 36,
+      "name": "Активная вкладка",
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 9
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 322
+      },
+      "x": 4,
+      "y": 15,
+      "width": 234,
+      "text": "Профиль",
+      "name": "Вкладка: Профиль",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 13,
+        "fontStyle": "Medium",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 322
+      },
+      "x": 242,
+      "y": 15,
+      "width": 234,
+      "text": "Аттестации",
+      "name": "Вкладка: Аттестации",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#6E6E78",
+        "fontSize": 13,
+        "fontStyle": "Regular",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 322
+      },
+      "x": 480,
+      "y": 15,
+      "width": 234,
+      "text": "Оплаты",
+      "name": "Вкладка: Оплаты",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#6E6E78",
+        "fontSize": 13,
+        "fontStyle": "Regular",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 322
+      },
+      "x": 718,
+      "y": 15,
+      "width": 234,
+      "text": "История",
+      "name": "Вкладка: История",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#6E6E78",
+        "fontSize": 13,
+        "fontStyle": "Regular",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 281
+      },
+      "x": 32,
+      "y": 368,
+      "width": 960,
+      "height": 252,
+      "name": "Блок: Основные данные",
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 14,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 328
+      },
+      "x": 24,
+      "y": 20,
+      "text": "Основные данные",
+      "name": "Заголовок блока",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 15,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 328
+      },
+      "x": 24,
+      "y": 42,
+      "text": "Что известно о спортсмене",
+      "name": "Подпись блока",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 328
+      },
+      "x": 24,
+      "y": 76,
+      "text": "ДАТА РОЖДЕНИЯ",
+      "name": "Подпись: ДАТА РОЖДЕНИЯ",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 328
+      },
+      "x": 24,
+      "y": 94,
+      "width": 444,
+      "text": "24.08.2020",
+      "name": "Значение: ДАТА РОЖДЕНИЯ",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 328
+      },
+      "x": 492,
+      "y": 76,
+      "text": "ТЕЛЕФОН",
+      "name": "Подпись: ТЕЛЕФОН",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 328
+      },
+      "x": 492,
+      "y": 94,
+      "width": 444,
+      "text": "+7 967 213-16-16",
+      "name": "Значение: ТЕЛЕФОН",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 328
+      },
+      "x": 24,
+      "y": 132,
+      "text": "ПОЧТА",
+      "name": "Подпись: ПОЧТА",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 328
+      },
+      "x": 24,
+      "y": 150,
+      "width": 444,
+      "text": "parent@example.com",
+      "name": "Значение: ПОЧТА",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 328
+      },
+      "x": 492,
+      "y": 132,
+      "text": "ТРЕНЕР",
+      "name": "Подпись: ТРЕНЕР",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 328
+      },
+      "x": 492,
+      "y": 150,
+      "width": 444,
+      "text": "Иванов А. С.",
+      "name": "Значение: ТРЕНЕР",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 328
+      },
+      "x": 24,
+      "y": 188,
+      "text": "ФИЛИАЛ",
+      "name": "Подпись: ФИЛИАЛ",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 328
+      },
+      "x": 24,
+      "y": 206,
+      "width": 444,
+      "text": "Центральный зал",
+      "name": "Значение: ФИЛИАЛ",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 328
+      },
+      "x": 492,
+      "y": 188,
+      "text": "ДАТА В КЛУБЕ",
+      "name": "Подпись: ДАТА В КЛУБЕ",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 328
+      },
+      "x": 492,
+      "y": 206,
+      "width": 444,
+      "text": "с 25 мая 2025",
+      "name": "Значение: ДАТА В КЛУБЕ",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 281
+      },
+      "x": 32,
+      "y": 644,
+      "width": 960,
+      "height": 178,
+      "name": "Блок: История спортивного роста",
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 14,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 343
+      },
+      "x": 24,
+      "y": 20,
+      "text": "История спортивного роста",
+      "name": "Заголовок блока",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 15,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 343
+      },
+      "x": 24,
+      "y": 42,
+      "text": "Ступени и даты присвоения",
+      "name": "Подпись блока",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 343
+      },
+      "x": 33,
+      "y": 98,
+      "width": 1,
+      "height": 38,
+      "name": "Линия таймлайна",
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 343
+      },
+      "x": 28,
+      "y": 84,
+      "width": 11,
+      "height": 11,
+      "name": "Точка таймлайна",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 343
+      },
+      "x": 52,
+      "y": 81,
+      "text": "10 кю",
+      "name": "Ступень таймлайна",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 343
+      },
+      "x": 52,
+      "y": 99,
+      "text": "16.12.2025 · оранжевый пояс",
+      "name": "Дата и пояс таймлайна",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 343
+      },
+      "x": 132,
+      "y": 83,
+      "width": 46,
+      "height": 18,
+      "name": "Текущая",
+      "props": {
+        "fill": "#FFF0E5",
+        "cornerRadius": 9
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 343
+      },
+      "x": 132,
+      "y": 86,
+      "text": "сейчас",
+      "name": "Текст текущей",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#B24A00",
+        "fontSize": 10,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 343
+      },
+      "x": 28,
+      "y": 136,
+      "width": 11,
+      "height": 11,
+      "name": "Точка таймлайна",
+      "props": {
+        "fill": "#EDEDF0",
+        "cornerRadius": 6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 343
+      },
+      "x": 52,
+      "y": 133,
+      "text": "0 кю",
+      "name": "Ступень таймлайна",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 343
+      },
+      "x": 52,
+      "y": 151,
+      "text": "25.05.2025 · белый пояс",
+      "name": "Дата и пояс таймлайна",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "x": 3904,
+      "y": 0,
+      "width": 390,
+      "height": 900,
+      "name": "Mobile 390 — карточка спортсмена",
+      "props": {
+        "fill": "#F7F7F9"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 355
+      },
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 232,
+      "name": "Профиль: шапка",
+      "props": {
+        "fill": "#0E0E10"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 356
+      },
+      "x": 20,
+      "y": 20,
+      "text": "← Спортсмены",
+      "name": "Назад",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 356
+      },
+      "x": 338,
+      "y": 20,
+      "text": "⋯",
+      "name": "Меню",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 16
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 356
+      },
+      "x": 20,
+      "y": 52,
+      "width": 56,
+      "height": 56,
+      "name": "Аватар",
+      "props": {
+        "fill": "#22222A",
+        "cornerRadius": 28
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 356
+      },
+      "x": 20,
+      "y": 67,
+      "width": 56,
+      "text": "ДС",
+      "name": "Инициалы",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FF6B00",
+        "fontSize": 18,
+        "fontStyle": "Bold",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 356
+      },
+      "x": 88,
+      "y": 54,
+      "text": "Сагабиев",
+      "name": "Фамилия",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FFFFFF",
+        "fontSize": 19,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 356
+      },
+      "x": 88,
+      "y": 76,
+      "text": "Дмитрий Олегович",
+      "name": "Имя",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#C8C8D0",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 356
+      },
+      "x": 88,
+      "y": 96,
+      "width": 84,
+      "height": 20,
+      "name": "Статус",
+      "props": {
+        "fill": "#1F3A2B",
+        "cornerRadius": 10
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 356
+      },
+      "x": 96,
+      "y": 103,
+      "width": 5,
+      "height": 5,
+      "name": "Точка",
+      "props": {
+        "fill": "#4ADE80",
+        "cornerRadius": 3
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 356
+      },
+      "x": 106,
+      "y": 99,
+      "text": "Активен",
+      "name": "Текст статуса",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#7DE2A6",
+        "fontSize": 11,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 356
+      },
+      "x": 20,
+      "y": 128,
+      "text": "10",
+      "name": "Ступень",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FF6B00",
+        "fontSize": 34,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 356
+      },
+      "x": 58,
+      "y": 140,
+      "text": "кю",
+      "name": "Кю",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 13
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 356
+      },
+      "x": 20,
+      "y": 170,
+      "width": 92,
+      "height": 22,
+      "name": "Пояс",
+      "props": {
+        "fill": "#FFF0E5",
+        "cornerRadius": 11
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 356
+      },
+      "x": 32,
+      "y": 174,
+      "text": "Оранжевый",
+      "name": "Текст пояса",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#B24A00",
+        "fontSize": 11,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 356
+      },
+      "x": 132,
+      "y": 178,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 1",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 356
+      },
+      "x": 152,
+      "y": 178,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 2",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 356
+      },
+      "x": 172,
+      "y": 178,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 3",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 356
+      },
+      "x": 192,
+      "y": 178,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 4",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 356
+      },
+      "x": 212,
+      "y": 178,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 5",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 356
+      },
+      "x": 232,
+      "y": 178,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 6",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 356
+      },
+      "x": 252,
+      "y": 178,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 7",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 356
+      },
+      "x": 272,
+      "y": 178,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 8",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 356
+      },
+      "x": 292,
+      "y": 178,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 9",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 356
+      },
+      "x": 312,
+      "y": 178,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 10",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 356
+      },
+      "x": 332,
+      "y": 178,
+      "width": 16,
+      "height": 4,
+      "name": "Ступень 11",
+      "props": {
+        "fill": "#3A3A44",
+        "cornerRadius": 2
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 356
+      },
+      "x": 132,
+      "y": 192,
+      "text": "10 из 11",
+      "name": "Прогресс",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#7A7A84",
+        "fontSize": 10
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 356
+      },
+      "x": 20,
+      "y": 206,
+      "text": "Группа «Дети 10–12» · Центральный зал",
+      "name": "Группа и зал",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#9A9AA2",
+        "fontSize": 11
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 355
+      },
+      "x": 16,
+      "y": 248,
+      "width": 358,
+      "height": 44,
+      "name": "Вкладки",
+      "props": {
+        "fill": "#EFEFF3",
+        "cornerRadius": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 383
+      },
+      "x": 4,
+      "y": 4,
+      "width": 112,
+      "height": 36,
+      "name": "Активная вкладка",
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 9
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 383
+      },
+      "x": 4,
+      "y": 15,
+      "width": 112,
+      "text": "Профиль",
+      "name": "Вкладка: Профиль",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 13,
+        "fontStyle": "Medium",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 383
+      },
+      "x": 120,
+      "y": 15,
+      "width": 112,
+      "text": "Аттестации",
+      "name": "Вкладка: Аттестации",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#6E6E78",
+        "fontSize": 13,
+        "fontStyle": "Regular",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 383
+      },
+      "x": 236,
+      "y": 15,
+      "width": 112,
+      "text": "Оплаты",
+      "name": "Вкладка: Оплаты",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#6E6E78",
+        "fontSize": 13,
+        "fontStyle": "Regular",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 355
+      },
+      "x": 16,
+      "y": 304,
+      "width": 358,
+      "height": 268,
+      "name": "Блок: Основные данные",
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 14,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 388
+      },
+      "x": 24,
+      "y": 20,
+      "text": "Основные данные",
+      "name": "Заголовок блока",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 15,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 388
+      },
+      "x": 20,
+      "y": 64,
+      "text": "ДАТА РОЖДЕНИЯ",
+      "name": "Подпись: ДАТА РОЖДЕНИЯ",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 388
+      },
+      "x": 20,
+      "y": 82,
+      "width": 147,
+      "text": "24.08.2020",
+      "name": "Значение: ДАТА РОЖДЕНИЯ",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 388
+      },
+      "x": 187,
+      "y": 64,
+      "text": "ТЕЛЕФОН",
+      "name": "Подпись: ТЕЛЕФОН",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 388
+      },
+      "x": 187,
+      "y": 82,
+      "width": 147,
+      "text": "+7 967 213-16-16",
+      "name": "Значение: ТЕЛЕФОН",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 388
+      },
+      "x": 20,
+      "y": 120,
+      "text": "ПОЧТА",
+      "name": "Подпись: ПОЧТА",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 388
+      },
+      "x": 20,
+      "y": 138,
+      "width": 167,
+      "text": "parent@example.com",
+      "name": "Значение: ПОЧТА",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 388
+      },
+      "x": 20,
+      "y": 176,
+      "text": "ТРЕНЕР",
+      "name": "Подпись: ТРЕНЕР",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 388
+      },
+      "x": 20,
+      "y": 194,
+      "width": 147,
+      "text": "Иванов А. С.",
+      "name": "Значение: ТРЕНЕР",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 388
+      },
+      "x": 187,
+      "y": 176,
+      "text": "ФИЛИАЛ",
+      "name": "Подпись: ФИЛИАЛ",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 11,
+        "fontStyle": "Medium",
+        "letterSpacing": 0.6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 388
+      },
+      "x": 187,
+      "y": 194,
+      "width": 147,
+      "text": "Центральный зал",
+      "name": "Значение: ФИЛИАЛ",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 355
+      },
+      "x": 16,
+      "y": 588,
+      "width": 358,
+      "height": 208,
+      "name": "Блок: История роста",
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 14,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 400
+      },
+      "x": 24,
+      "y": 20,
+      "text": "История роста",
+      "name": "Заголовок блока",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 15,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 400
+      },
+      "x": 29,
+      "y": 78,
+      "width": 1,
+      "height": 38,
+      "name": "Линия таймлайна",
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 400
+      },
+      "x": 24,
+      "y": 64,
+      "width": 11,
+      "height": 11,
+      "name": "Точка таймлайна",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 400
+      },
+      "x": 48,
+      "y": 61,
+      "text": "10 кю",
+      "name": "Ступень таймлайна",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 400
+      },
+      "x": 48,
+      "y": 79,
+      "text": "16.12.2025 · оранжевый пояс",
+      "name": "Дата и пояс таймлайна",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 400
+      },
+      "x": 128,
+      "y": 63,
+      "width": 46,
+      "height": 18,
+      "name": "Текущая",
+      "props": {
+        "fill": "#FFF0E5",
+        "cornerRadius": 9
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 400
+      },
+      "x": 128,
+      "y": 66,
+      "text": "сейчас",
+      "name": "Текст текущей",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#B24A00",
+        "fontSize": 10,
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 400
+      },
+      "x": 24,
+      "y": 116,
+      "width": 11,
+      "height": 11,
+      "name": "Точка таймлайна",
+      "props": {
+        "fill": "#EDEDF0",
+        "cornerRadius": 6
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 400
+      },
+      "x": 48,
+      "y": 113,
+      "text": "0 кю",
+      "name": "Ступень таймлайна",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 14,
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 400
+      },
+      "x": 48,
+      "y": 131,
+      "text": "25.05.2025 · белый пояс",
+      "name": "Дата и пояс таймлайна",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#8A8A8F",
+        "fontSize": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 355
+      },
+      "x": 16,
+      "y": 812,
+      "width": 173,
+      "height": 44,
+      "name": "Изменить",
+      "props": {
+        "fill": "transparent",
+        "cornerRadius": 12,
+        "stroke": "#D8D8DE",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 355
+      },
+      "x": 16,
+      "y": 826,
+      "width": 173,
+      "text": "Изменить",
+      "name": "Текст изменить",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#0E0E10",
+        "fontSize": 13,
+        "fontStyle": "Medium",
+        "textAlign": "center"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "rectangle",
+      "parent": {
+        "$step": 355
+      },
+      "x": 201,
+      "y": 812,
+      "width": 173,
+      "height": 44,
+      "name": "Аттестация",
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 12
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "text",
+      "parent": {
+        "$step": 355
+      },
+      "x": 201,
+      "y": 826,
+      "width": 173,
+      "text": "+ Аттестация",
+      "name": "Текст аттестации",
+      "props": {
+        "fontFamily": "Inter",
+        "fill": "#FFFFFF",
+        "fontSize": 13,
+        "fontStyle": "Medium",
+        "textAlign": "center"
+      }
+    }
+  }
+]

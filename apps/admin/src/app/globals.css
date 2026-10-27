@@ -15,10 +15,18 @@
   --color-accent-soft: #fff0e5;
   --color-canvas: #f7f7f9;
   --color-line: #ededf0;
-  --color-muted: #8a8a8f;
+  /* 8A8A8F давал контраст 3.44:1 на белом — ниже AA для текста 11-14px.
+     Подписи в карточке спортсмена читаются, а не угадываются. */
+  --color-muted: #6b6b72;
   --color-success: #2e9e5b;
   --color-danger: #e23b3b;
   --color-warning: #ffa726;
+
+  --color-warm: #fff8f2;
+  --color-warm-edge: #f5e6d8;
+  --color-accent-warm: #ffe3cc;
+  /* Оранжевый как текст: #ff6b00 на белом даёт 2.86:1, это только заливка. */
+  --color-accent-text: #b24a00;
 
   --radius-card: 12px;
 
@@ -27,6 +35,12 @@
   --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
   /* Controls по макету UI Kit: кнопки и поля скруглены меньше карточек. */
   --radius-control: 10px;
+}
+
+html,
+body {
+  /* Hallmark 34: горизонтальная прокрутка не появляется ни на одной ширине. */
+  overflow-x: clip;
 }
 
 body {

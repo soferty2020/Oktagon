@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 
 import { beltGradeLabel } from '@octagon/contracts';
 
-import { AppShell, Notice, PageHeader } from '@/components/app-shell';
+import { AppShell, Notice } from '@/components/app-shell';
 import { secondaryButtonClass } from '@/components/ui';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { describePermission } from '@/lib/permissions';
@@ -68,19 +68,37 @@ function formatDate(value: string | null): string {
   });
 }
 
+/** «с мая 2025» — в строке статуса месяц и год читаются легче полной даты. */
+function monthYear(value: string): string {
+  const date = new Date(value);
+  return `${date.toLocaleDateString('ru-RU', { month: 'long' })} ${date.getFullYear()}`;
+}
+
 function statusLabel(status: string): string {
-  return (
-    { ACTIVE: 'Активен', FROZEN: 'Заморожен', ARCHIVED: 'В архиве' }[status] ?? status
-  );
+  return { ACTIVE: 'Активен', FROZEN: 'Заморожен', ARCHIVED: 'В архиве' }[status] ?? status;
+}
+
+function initials(firstName: string, lastName: string): string {
+  return `${lastName.slice(0, 1)}${firstName.slice(0, 1)}`.toUpperCase();
+}
+
+/** Ступень числом: «10 кю» — число крупно, «кю» тихо. */
+function splitRank(rankLabel: string | null): { number: string; suffix: string } {
+  if (!rankLabel) {
+    return { number: '—', suffix: '' };
+  }
+
+  const match = rankLabel.match(/^(\d+)\s*(.*)$/);
+
+  return match ? { number: match[1], suffix: match[2] } : { number: rankLabel, suffix: '' };
 }
 
 /**
- * Карточка спортсмена (#60).
+ * Карточка спортсмена (#60, утверждённый макет).
  *
- * Просмотр и правка разделены: карточка показывает данные, редактирование — на
- * отдельном экране. Раньше форма была открыта всегда, блок аттестаций стоял выше
- * профиля, а «Сохранить» висело под длинным списком — понять, что это за человек
- * и что с ним происходит, было трудно.
+ * Профиль — витрина: имя, статус, ступень и пояс видны сразу, без формы.
+ * Группа, тренер и филиал живут только в шапке: в теле они не повторяются,
+ * иначе одни и те же данные читаются дважды на одном экране.
  */
 export default async function AthletePage({
   params,
@@ -118,7 +136,6 @@ export default async function AthletePage({
 
     return (
       <AppShell user={user}>
-        <PageHeader title="Спортсмен" />
         <Notice tone="error">{describeError(athlete.error)}</Notice>
       </AppShell>
     );
@@ -139,6 +156,7 @@ export default async function AthletePage({
   const fullName = `${person.lastName} ${person.firstName}${
     person.middleName ? ` ${person.middleName}` : ''
   }`;
+  const rank = splitRank(person.rankLabel);
 
   return (
     <AppShell user={user}>
@@ -146,65 +164,18 @@ export default async function AthletePage({
         <Link className="text-sm text-muted hover:text-ink" href="/athletes">
           ← Все спортсмены
         </Link>
-        <span className="text-xs text-muted">Карточка · ID {person.id.slice(0, 8)}</span>
+        <span className="text-sm text-muted">{fullName}</span>
       </div>
 
-      {/* Шапка: кто это и где занимается — до всяких форм. */}
-      <section className="rounded-card border border-line bg-white p-5 shadow-card">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold text-ink">{fullName}</h1>
-            <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
-              <StatusBadge status={person.status} />
-              <span>·</span>
-              <span>{person.rankLabel ?? 'ступень не определена'}</span>
-            </p>
-          </div>
+      <ProfileHero athlete={person} canEdit={canEdit} fullName={fullName} rank={rank} />
 
-          <div className="flex flex-wrap gap-2">
-            {canEdit ? (
-              <Link className={secondaryButtonClass} href={`/athletes/${person.id}/edit`}>
-                Изменить
-              </Link>
-            ) : null}
-            {canEdit ? (
-              <Link
-                className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90"
-                href={`/athletes/${person.id}?tab=attestations#add-certification`}
-              >
-                + Аттестация
-              </Link>
-            ) : null}
-          </div>
-        </div>
-
-        <dl className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <Fact
-            accent
-            icon="rank"
-            label="Спортивная ступень"
-            value={person.rankLabel ?? 'Не определена'}
-          />
-          <Fact
-            accent
-            icon="belt"
-            label="Текущий пояс"
-            value={beltGradeLabel(person.beltGrade) ?? person.beltGrade}
-          />
-          <Fact icon="group" label="Группа" value={person.group?.name ?? 'Не назначена'} />
-          <Fact icon="trainer" label="Тренер" value={person.trainer?.displayName ?? 'Не назначен'} />
-          <Fact icon="branch" label="Филиал" value={person.branch?.name ?? 'Не назначен'} />
-        </dl>
-      </section>
-
-      {/* Вкладки: ссылки, а не состояние клиента — работают без JS и открываются по ссылке. */}
-      <nav className="mt-6 flex flex-wrap gap-1 border-b border-line">
+      <nav className="mt-6 flex flex-wrap gap-1 rounded-xl bg-[#F1EFEC] p-1">
         {TABS.map((item) => (
           <Link
             className={
               item.key === activeTab
-                ? 'border-b-2 border-accent px-3 py-2 text-sm font-medium text-ink'
-                : 'border-b-2 border-transparent px-3 py-2 text-sm text-muted hover:text-ink'
+                ? 'rounded-lg bg-white px-4 py-2 text-sm font-medium text-ink shadow-sm'
+                : 'rounded-lg px-4 py-2 text-sm text-muted hover:text-ink'
             }
             href={`/athletes/${person.id}?tab=${item.key}`}
             key={item.key}
@@ -214,10 +185,13 @@ export default async function AthletePage({
         ))}
       </nav>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="min-w-0">
+      <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 space-y-6">
           {activeTab === 'profile' ? (
-            <ProfileTab athlete={person} canEdit={canEdit} history={history} />
+            <>
+              <ContactsCard athlete={person} />
+              <HistoryCard history={history} />
+            </>
           ) : null}
 
           {activeTab === 'attestations' ? (
@@ -229,16 +203,15 @@ export default async function AthletePage({
           ) : null}
 
           {activeTab === 'payments' ? (
-            <section className="rounded-card border border-line bg-white p-5 shadow-card">
-              <h2 className="text-sm font-semibold text-ink">Оплаты и задолженность</h2>
+            <section className="rounded-card border border-line bg-white p-6">
+              <h2 className="text-base font-semibold text-ink">Оплаты и задолженность</h2>
               {canViewFinance ? (
                 <>
-                  <p className="mt-1 text-sm text-muted">
-                    Периоды, поступления и долг по этому спортсмену — в финансовом разделе.
-                    Там же отметка оплаты и заморозки.
+                  <p className="mt-2 text-sm text-muted">
+                    Периоды, поступления и долг по спортсмену — в финансовом разделе.
                   </p>
                   <Link
-                    className={`${secondaryButtonClass} mt-3 inline-flex`}
+                    className={`${secondaryButtonClass} mt-4 inline-flex`}
                     href={`/finance/athletes/${person.id}`}
                   >
                     Открыть оплаты
@@ -250,58 +223,64 @@ export default async function AthletePage({
             </section>
           ) : null}
 
-          {activeTab === 'attendance' ? <AttendanceTab athleteId={person.id} /> : null}
-
-          {activeTab === 'history' ? (
-            <HistoryTab history={history} />
+          {activeTab === 'attendance' ? (
+            <section className="rounded-card border border-line bg-white p-6">
+              <h2 className="text-base font-semibold text-ink">Посещаемость</h2>
+              <p className="mt-4 rounded-lg border border-dashed border-line px-4 py-8 text-center text-sm text-muted">
+                История занятий появится, когда API начнёт отдавать её по спортсмену.
+                Сейчас посещаемость ведётся по занятиям и группам.
+              </p>
+              <Link className={`${secondaryButtonClass} mt-4 inline-flex`} href="/attendance">
+                Открыть посещаемость
+              </Link>
+            </section>
           ) : null}
+
+          {activeTab === 'history' ? <HistoryCard history={history} /> : null}
         </div>
 
-        {/* Правая колонка: на узком экране уходит под основное содержание. */}
         <aside className="space-y-6">
-          <LinkedAccountsCard
-            athleteId={person.id}
+          <AccountsCard
             accounts={person.linkedAccounts}
+            athleteId={person.id}
             availableUsers={availableUsers}
             canEdit={canEdit}
             canViewUsers={canViewUsers}
           />
 
-          <section className="rounded-card border border-line bg-white p-5 shadow-card">
-            <h2 className="text-sm font-semibold text-ink">Быстрые действия</h2>
-            <div className="mt-3 flex flex-col gap-2">
+          <section className="rounded-card border border-line bg-white p-6">
+            <h2 className="text-base font-semibold text-ink">Действия</h2>
+            <div className="mt-4 flex flex-col gap-3">
               {canEdit ? (
-                <Link className="text-sm text-accent hover:underline" href={`/athletes/${person.id}/edit`}>
-                  Изменить профиль
-                </Link>
+                <ActionLink href={`/athletes/${person.id}/edit`} icon="pencil" label="Изменить профиль" />
               ) : null}
               {canEdit ? (
-                <Link
-                  className="text-sm text-accent hover:underline"
+                <ActionLink
                   href={`/athletes/${person.id}?tab=attestations#add-certification`}
-                >
-                  Добавить аттестацию
-                </Link>
+                  icon="plus"
+                  label="Добавить аттестацию"
+                />
               ) : null}
-              <Link className="text-sm text-accent hover:underline" href="/competitions">
-                Назначить на соревнование
-              </Link>
+              <ActionLink href="/competitions" icon="trophy" label="Назначить на соревнование" />
             </div>
           </section>
 
           {canEdit && person.status !== 'ARCHIVED' ? (
-            <section className="rounded-card border border-red-100 bg-red-50/40 p-5">
-              <h2 className="text-sm font-semibold text-ink">Опасное действие</h2>
-              <p className="mt-1 text-xs text-muted">
-                Карточка исчезнет из справочников, статус станет «В архиве», история сохранится.
+            <section className="rounded-card border border-[#F6DADA] bg-[#FDF3F3] p-6">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-[#8A2B2B]">
+                <Icon className="h-4 w-4" name="archive" />
+                Архивирование
+              </h2>
+              <p className="mt-2 text-xs text-[#A05A5A]">
+                Карточка уйдёт из справочников, история сохранится.
               </p>
-              <form action={archiveAthleteAction} className="mt-3">
-                <input type="hidden" name="athleteId" value={person.id} />
+              <form action={archiveAthleteAction} className="mt-4">
+                <input name="athleteId" type="hidden" value={person.id} />
                 <button
-                  className="rounded-md border border-red-300 bg-white px-3 py-2 text-sm text-red-700 hover:bg-red-50"
+                  className="rounded-lg border border-[#E3B4B4] bg-white px-4 py-2 text-xs text-[#8A2B2B] hover:bg-[#FDF3F3]"
                   type="submit"
                 >
-                  Архивировать
+                  В архив
                 </button>
               </form>
             </section>
@@ -312,205 +291,191 @@ export default async function AthletePage({
   );
 }
 
-function ProfileTab({
+/** Шапка профиля: имя, статус, группа, ступень и пояс. */
+function ProfileHero({
   athlete,
   canEdit,
-  history,
+  fullName,
+  rank,
 }: {
   athlete: AthleteDetails;
   canEdit: boolean;
-  history: CertificationValues[];
+  fullName: string;
+  rank: { number: string; suffix: string };
 }) {
   return (
-    <div className="space-y-6">
-      <section className="rounded-card border border-line bg-white p-5 shadow-card">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold text-ink">Основные данные</h2>
+    <section className="relative overflow-hidden rounded-[18px] border border-warm-edge bg-warm p-7">
+      {/* Мягкие круги: тёплый фон не должен быть плоской заливкой. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-16 right-72 h-64 w-64 rounded-full bg-[#FFF1E4]"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-10 top-24 h-52 w-52 rounded-full bg-[#FFEBD9]"
+      />
+
+      <div className="relative flex flex-wrap items-start justify-between gap-6">
+        <div className="flex min-w-0 items-start gap-5">
+          <span className="flex h-[76px] w-[76px] shrink-0 items-center justify-center rounded-full bg-accent-warm text-2xl font-bold text-accent-text">
+            {initials(athlete.firstName, athlete.lastName)}
+          </span>
+
+          <div className="min-w-0">
+            <h1 className="text-[28px] font-bold leading-tight text-ink">{fullName}</h1>
+
+            <p className="mt-2 flex items-center gap-2 text-sm text-[#5A5A62]">
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  athlete.status === 'ACTIVE' ? 'bg-success' : 'bg-warning'
+                }`}
+              />
+              {statusLabel(athlete.status)}, с {monthYear(athlete.createdAt)}
+            </p>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Chip icon="group" label={athlete.group?.name ?? 'Не в группе'} />
+              <Chip icon="pin" label={athlete.branch?.name ?? 'Филиал не назначен'} />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-end gap-5">
+          <div className="flex items-start gap-8">
+            <div>
+              <p className="text-xs text-[#8A7A6A]">Ступень</p>
+              <p className="mt-1 flex items-baseline gap-1">
+                <span className="text-[56px] font-bold leading-none text-accent">
+                  {rank.number}
+                </span>
+                {rank.suffix ? (
+                  <span className="text-lg font-medium text-[#A08A78]">{rank.suffix}</span>
+                ) : null}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs text-[#8A7A6A]">Пояс</p>
+              <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-accent-soft py-1.5 pl-2 pr-4 text-[13px] font-medium text-accent-text">
+                <span className="h-5 w-1 rounded-full bg-accent" />
+                {beltGradeLabel(athlete.beltGrade) ?? athlete.beltGrade}
+              </p>
+            </div>
+          </div>
+
           {canEdit ? (
-            <Link className="text-sm text-accent hover:underline" href={`/athletes/${athlete.id}/edit`}>
-              Изменить
-            </Link>
+            <div className="flex gap-3">
+              <Link
+                className="rounded-[10px] border border-[#E2D5C8] bg-white px-6 py-2.5 text-[13px] font-medium text-ink hover:bg-white/70"
+                href={`/athletes/${athlete.id}/edit`}
+              >
+                Изменить
+              </Link>
+              <Link
+                className="rounded-[10px] bg-accent px-6 py-2.5 text-[13px] font-medium text-white hover:bg-accent/90"
+                href={`/athletes/${athlete.id}?tab=attestations#add-certification`}
+              >
+                + Аттестация
+              </Link>
+            </div>
           ) : null}
         </div>
-
-        <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-          <Fact label="ФИО" value={`${athlete.lastName} ${athlete.firstName} ${athlete.middleName ?? ''}`.trim()} />
-          <Fact icon="calendar" label="Дата рождения" value={formatDate(athlete.birthDate)} />
-          <Fact icon="phone" label="Телефон" value={athlete.phone ?? 'Не указан'} />
-          <Fact icon="mail" label="Электронная почта" value={athlete.email ?? 'Не указана'} />
-          <Fact label="Статус" value={statusLabel(athlete.status)} />
-          <Fact icon="branch" label="Филиал" value={athlete.branch?.name ?? 'Не назначен'} />
-          <Fact icon="group" label="Группа" value={athlete.group?.name ?? 'Не назначена'} />
-          <Fact icon="trainer" label="Тренер" value={athlete.trainer?.displayName ?? 'Не назначен'} />
-        </dl>
-
-        {athlete.notes ? (
-          <div className="mt-4 border-t border-line pt-4">
-            <p className="text-xs uppercase tracking-wide text-muted">Заметки клуба</p>
-            <p className="mt-1 whitespace-pre-line text-sm text-ink">{athlete.notes}</p>
-          </div>
-        ) : null}
-      </section>
-
-      <section className="rounded-card border border-line bg-white p-5 shadow-card">
-        <h2 className="text-sm font-semibold text-ink">Спортивный статус</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <Fact accent icon="rank" label="Текущая ступень" value={athlete.rankLabel ?? 'Не определена'} />
-          <Fact
-            label="Текущий пояс"
-            value={beltGradeLabel(athlete.beltGrade) ?? athlete.beltGrade}
-          />
-        </div>
-
-        <div className="mt-5">
-          <p className="text-xs uppercase tracking-wide text-muted">История спортивного роста</p>
-          {history.length === 0 ? (
-            <p className="mt-2 text-sm text-muted">Аттестаций пока нет.</p>
-          ) : (
-            /* Таймлайн: ступень — это путь, а не список строк. Точка и линия
-               показывают, что было раньше, без чтения дат. */
-            <ol className="mt-3 space-y-0">
-              {history.slice(0, 5).map((item, index) => (
-                <li className="relative flex gap-3 pb-3 last:pb-0" key={item.id}>
-                  <span className="relative flex w-4 flex-col items-center">
-                    <span
-                      className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${
-                        index === 0 ? 'bg-accent' : 'bg-line'
-                      }`}
-                    />
-                    {index < Math.min(history.length, 5) - 1 ? (
-                      <span className="mt-1 w-px flex-1 bg-line" />
-                    ) : null}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-baseline gap-2">
-                      <span className="text-sm font-semibold text-ink">
-                        {item.rankLabel ?? item.stageLabel}
-                      </span>
-                      <span className="text-xs text-muted">
-                        {beltGradeLabel(item.beltGrade) ?? item.beltGrade}
-                      </span>
-                    </div>
-                    <span className="text-xs text-muted">{formatDate(item.certifiedOn)}</span>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          )}
-        </div>
-      </section>
-    </div>
-  );
-}
-
-/**
- * Посещаемость (заглушка, #60).
- *
- * В макете вкладка есть, API истории по спортсмену — нет. Показываем структуру
- * таблицы как в макете и честную пометку, что данные появятся после доработки;
- * ссылка ведёт туда, где посещаемость уже есть — по занятиям и группам.
- * Доработка API — задача #62.
- */
-function AttendanceTab({ athleteId }: { athleteId: string }) {
-  return (
-    <section className="rounded-card border border-line bg-white p-5 shadow-card">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-ink">Посещаемость</h2>
-        <Link className="text-sm text-accent hover:underline" href={`/attendance`}>
-          Открыть посещаемость
-        </Link>
       </div>
-
-      <div className="mt-3 overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
-            <tr>
-              <th className="py-2">Дата</th>
-              <th className="py-2">Занятие</th>
-              <th className="py-2">Отметка</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className="py-6 text-center text-muted" colSpan={3}>
-                История занятий спортсмена появится здесь, когда API начнёт её отдавать.
-                <br />
-                <span className="text-xs">
-                  Сейчас посещаемость ведётся по занятиям и группам — см. раздел «Посещаемость».
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <p className="mt-3 text-xs text-muted">
-        Доработка API отмечена в бэклоге. Идентификатор спортсмена:{' '}
-        <span className="font-mono">{athleteId.slice(0, 8)}</span>
-      </p>
     </section>
   );
 }
 
-/**
- * История (заглушка + реальные аттестации).
- *
- * Спортивный рост — настоящие данные из аттестаций. Изменения карточки (кто и
- * когда правил поля) требуют аудита по сущности, которого пока нет; показываем
- * блок-заглушку, чтобы вкладка не выглядела пустой и было видно, чего ждать.
- */
-function HistoryTab({ history }: { history: CertificationValues[] }) {
+function Chip({ icon, label }: { icon: IconName; label: string }) {
   return (
-    <div className="space-y-6">
-      <section className="rounded-card border border-line bg-white p-5 shadow-card">
-        <h2 className="text-sm font-semibold text-ink">История спортивного роста</h2>
-
-        {history.length === 0 ? (
-          <p className="mt-3 rounded-md border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
-            Аттестаций пока нет. Здесь появятся ступени и даты их присвоения.
-          </p>
-        ) : (
-          <table className="mt-3 w-full text-left text-sm">
-            <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
-              <tr>
-                <th className="py-2">Дата</th>
-                <th className="py-2">Ступень</th>
-                <th className="py-2">Пояс</th>
-                <th className="py-2">Примечание</th>
-              </tr>
-            </thead>
-            <tbody>
-              {history.map((item) => (
-                <tr className="border-b border-line last:border-0" key={item.id}>
-                  <td className="py-2">{formatDate(item.certifiedOn)}</td>
-                  <td className="py-2 font-medium">{item.rankLabel ?? item.stageLabel}</td>
-                  <td className="py-2 text-muted">
-                    {beltGradeLabel(item.beltGrade) ?? item.beltGrade}
-                  </td>
-                  <td className="py-2 text-muted">{item.note ?? '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
-
-      <section className="rounded-card border border-line bg-white p-5 shadow-card">
-        <h2 className="text-sm font-semibold text-ink">Изменения карточки</h2>
-        <p className="mt-3 rounded-md border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
-          Кто и когда менял поля карточки — появится здесь, когда API начнёт отдавать
-          аудит по спортсмену.
-        </p>
-        <p className="mt-2 text-xs text-muted">
-          Доработка API отмечена в бэклоге. Сейчас критические изменения видны в общем
-          журнале аудита.
-        </p>
-      </section>
-    </div>
+    <span className="inline-flex items-center gap-3 rounded-full border border-line bg-white py-2 pl-3.5 pr-4 text-xs text-[#3A3A42]">
+      <Icon className="h-4 w-4 text-[#8A8A92]" name={icon} />
+      {label}
+    </span>
   );
 }
 
-function LinkedAccountsCard({
+/** Контакты: строки с иконками. Группа, тренер и филиал здесь не повторяются. */
+function ContactsCard({ athlete }: { athlete: AthleteDetails }) {
+  const rows: { icon: IconName; label: string; value: string }[] = [
+    { icon: 'calendar', label: 'Дата рождения', value: formatDate(athlete.birthDate) },
+    { icon: 'phone', label: 'Телефон', value: athlete.phone ?? 'Не указан' },
+    { icon: 'mail', label: 'Почта', value: athlete.email ?? 'Не указана' },
+  ];
+
+  return (
+    <section className="rounded-card border border-line bg-white p-6">
+      <h2 className="text-base font-semibold text-ink">Контакты</h2>
+      <p className="mt-1 text-xs text-muted">Как связаться с родителем</p>
+
+      <dl className="mt-4">
+        {rows.map((row, index) => (
+          <div
+            className={`flex items-center gap-4 py-4 ${
+              index < rows.length - 1 ? 'border-b border-line' : ''
+            }`}
+            key={row.label}
+          >
+            <Icon className="h-[18px] w-[18px] shrink-0 text-[#8A8A92]" name={row.icon} />
+            <div className="min-w-0 flex-1">
+              <dt className="text-xs text-muted">{row.label}</dt>
+              <dd className="mt-1 text-[15px] font-medium text-ink">{row.value}</dd>
+            </div>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+/** История ступеней: таймлайн, текущая ступень отмечена. */
+function HistoryCard({ history }: { history: CertificationValues[] }) {
+  return (
+    <section className="rounded-card border border-line bg-white p-6">
+      <h2 className="text-base font-semibold text-ink">История ступеней</h2>
+      <p className="mt-1 text-xs text-muted">От белого пояса до текущей ступени</p>
+
+      {history.length === 0 ? (
+        <p className="mt-4 rounded-lg border border-dashed border-line px-4 py-8 text-center text-sm text-muted">
+          Аттестаций пока нет — после первой здесь появится путь.
+        </p>
+      ) : (
+        <ol className="mt-5">
+          {history.map((item, index) => (
+            <li className="relative flex gap-4 pb-6 last:pb-0" key={item.id}>
+              <span className="relative flex w-3 flex-col items-center">
+                <span
+                  className={`mt-1.5 h-3 w-3 shrink-0 rounded-full ${
+                    index === 0 ? 'bg-accent' : 'bg-line'
+                  }`}
+                />
+                {index < history.length - 1 ? (
+                  <span className="mt-1 w-px flex-1 bg-line" />
+                ) : null}
+              </span>
+
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-6 gap-y-1 pb-1">
+                <span className="text-[15px] font-semibold text-ink">
+                  {item.rankLabel ?? item.stageLabel}
+                </span>
+                <span className="text-[13px] text-muted">
+                  {beltGradeLabel(item.beltGrade) ?? item.beltGrade}
+                </span>
+                <span className="text-[13px] text-muted">{formatDate(item.certifiedOn)}</span>
+                {index === 0 ? (
+                  <span className="rounded-full bg-accent-soft px-2.5 py-1 text-[11px] font-medium text-accent-text">
+                    сейчас
+                  </span>
+                ) : null}
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
+  );
+}
+
+function AccountsCard({
   athleteId,
   accounts,
   availableUsers,
@@ -524,36 +489,34 @@ function LinkedAccountsCard({
   canViewUsers: boolean;
 }) {
   return (
-    <section className="rounded-card border border-line bg-white p-5 shadow-card">
-      <h2 className="text-sm font-semibold text-ink">Связанные аккаунты</h2>
-      <p className="mt-1 text-xs text-muted">
-        Через аккаунт родитель видит спортсмена в приложении.
-      </p>
+    <section className="rounded-card border border-line bg-white p-6">
+      <h2 className="text-base font-semibold text-ink">Связанные аккаунты</h2>
 
       {accounts.length === 0 ? (
-        <p className="mt-3 text-sm text-muted">Связанных аккаунтов нет.</p>
+        <p className="mt-3 text-sm text-muted">Аккаунтов нет.</p>
       ) : (
-        <ul className="mt-3 space-y-2">
+        <ul className="mt-4 space-y-2">
           {accounts.map((account) => (
-            <li className="text-sm" key={account.userId}>
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="truncate text-ink">{account.email}</p>
-                  <p className="text-xs text-muted">
-                    {account.relation}
-                    {account.isPrimary ? ' · основной' : ''}
-                  </p>
-                </div>
-                {canEdit ? (
-                  <form action={unlinkAccountAction}>
-                    <input type="hidden" name="athleteId" value={athleteId} />
-                    <input type="hidden" name="userId" value={account.userId} />
-                    <button className="text-xs text-muted underline hover:text-red-700" type="submit">
-                      Снять
-                    </button>
-                  </form>
-                ) : null}
+            <li
+              className="flex items-start justify-between gap-3 rounded-lg border-l-[3px] border-accent bg-[#FAFAFB] px-3 py-3"
+              key={account.userId}
+            >
+              <div className="min-w-0">
+                <p className="truncate text-[13px] font-medium text-ink">{account.email}</p>
+                <p className="mt-1 text-xs text-muted">
+                  {account.relation}
+                  {account.isPrimary ? ', основной' : ''}
+                </p>
               </div>
+              {canEdit ? (
+                <form action={unlinkAccountAction}>
+                  <input name="athleteId" type="hidden" value={athleteId} />
+                  <input name="userId" type="hidden" value={account.userId} />
+                  <button className="text-xs text-muted underline hover:text-red-700" type="submit">
+                    Снять
+                  </button>
+                </form>
+              ) : null}
             </li>
           ))}
         </ul>
@@ -569,9 +532,7 @@ function LinkedAccountsCard({
           ) : availableUsers.length > 0 ? (
             <LinkAccountForm athleteId={athleteId} users={availableUsers} />
           ) : (
-            <p className="text-xs text-muted">
-              Свободных аккаунтов нет: все активные пользователи уже связаны.
-            </p>
+            <p className="text-xs text-muted">Свободных аккаунтов нет.</p>
           )}
         </div>
       ) : null}
@@ -579,53 +540,14 @@ function LinkedAccountsCard({
   );
 }
 
-function Fact({
-  label,
-  value,
-  icon,
-  accent = false,
-}: {
-  label: string;
-  value: string;
-  icon?: IconName;
-  /** Ключевой показатель (ступень, пояс) — с оранжевой плашкой вместо серой. */
-  accent?: boolean;
-}) {
+function ActionLink({ href, icon, label }: { href: string; icon: IconName; label: string }) {
   return (
-    <div className="flex items-start gap-3">
-      {icon ? (
-        <span
-          className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-            accent ? 'bg-accent-soft text-accent' : 'bg-canvas text-muted'
-          }`}
-        >
-          <Icon name={icon} />
-        </span>
-      ) : null}
-      <div className="min-w-0">
-        <dt className="text-[11px] uppercase tracking-wide text-muted">{label}</dt>
-        <dd className={`mt-0.5 truncate text-sm ${accent ? 'font-semibold text-ink' : 'text-ink'}`}>
-          {value}
-        </dd>
-      </div>
-    </div>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const tone =
-    status === 'ACTIVE'
-      ? 'bg-emerald-50 text-emerald-700'
-      : status === 'FROZEN'
-        ? 'bg-amber-50 text-amber-800'
-        : 'bg-neutral-100 text-neutral-600';
-  const dot =
-    status === 'ACTIVE' ? 'bg-emerald-500' : status === 'FROZEN' ? 'bg-amber-500' : 'bg-neutral-400';
-
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${tone}`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
-      {statusLabel(status)}
-    </span>
+    <Link
+      className="flex items-center gap-3 text-[13px] text-[#2A2A32] hover:text-accent-text"
+      href={href}
+    >
+      <Icon className="h-[17px] w-[17px] text-muted" name={icon} />
+      {label}
+    </Link>
   );
 }

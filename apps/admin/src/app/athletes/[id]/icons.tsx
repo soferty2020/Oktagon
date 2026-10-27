@@ -16,7 +16,14 @@ export type IconName =
   | 'branch'
   | 'phone'
   | 'mail'
-  | 'calendar';
+  | 'calendar'
+  | 'pin'
+  | 'pencil'
+  | 'plus'
+  | 'trophy'
+  | 'archive'
+  | 'dots'
+  | 'chevron';
 
 const PATHS: Record<IconName, string> = {
   rank: 'M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.2l5.9-.9L12 3z',
@@ -27,6 +34,13 @@ const PATHS: Record<IconName, string> = {
   phone: 'M5 4h3l2 5-2.5 1.5a11 11 0 005 5L14 13l5 2v3a2 2 0 01-2 2A15 15 0 013 6a2 2 0 012-2z',
   mail: 'M3 6h18v12H3zM3 7l9 6 9-6',
   calendar: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',
+  pin: 'M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11zM12 8.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5',
+  pencil: 'M4 20h4L20 8l-4-4L4 16zM14 6l4 4',
+  plus: 'M12 5v14M5 12h14',
+  trophy: 'M8 4h8v5a4 4 0 01-8 0zM8 6H5v2a3 3 0 003 3M16 6h3v2a3 3 0 01-3 3M10 17h4v3h-4z',
+  archive: 'M3 5h18v4H3zM5 9v10h14V9M9 13h6',
+  dots: 'M12 6h.01M12 12h.01M12 18h.01',
+  chevron: 'M6 9l6 6 6-6',
 };
 
 export function Icon({
