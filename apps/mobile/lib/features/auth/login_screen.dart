@@ -166,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextButton(
                           onPressed: () => Navigator.of(context).push(
                             MaterialPageRoute<void>(
-                              builder: (context) => InviteCodeScreen(auth: widget.auth),
+                              builder: (context) => InviteCodeScreen(auth: widget.controller),
                             ),
                           ),
                           child: const Text('У меня есть код'),
