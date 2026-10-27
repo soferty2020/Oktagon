@@ -285,8 +285,13 @@ jobs:
         # Release без настроенной подписи подписывается debug-ключом: для
         # проверки на телефоне этого достаточно, а signingConfig появится при
         # публикации (задача #27).
+        #
+        # Адрес API задаётся здесь: по умолчанию в коде `10.0.2.2` — это хост
+        # эмулятора, и на реальном телефоне запрос ушёл бы в никуда.
         working-directory: apps/mobile
-        run: flutter build apk --release
+        run: >-
+          flutter build apk --release
+          --dart-define=API_BASE_URL=https://api.octagon-karate.online/api/v1
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
