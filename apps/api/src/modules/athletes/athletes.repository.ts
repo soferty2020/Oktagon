@@ -22,6 +22,18 @@ export interface AthleteRecord {
   updatedAt: Date;
 }
 
+/**
+ * Принадлежность спортсмена: группа, её тренер и филиал (#60).
+ *
+ * Отдельный тип, а не поля `AthleteRecord`: список спортсменов membership не
+ * читает — там это лишний join на каждую строку, а карточка одна.
+ */
+export interface AthleteAffiliation {
+  group: { id: string; name: string } | null;
+  trainer: { id: string; displayName: string } | null;
+  branch: { id: string; name: string } | null;
+}
+
 export interface AthleteAccountRecord {
   userId: string;
   email: string;
@@ -85,6 +97,13 @@ export abstract class AthletesRepository {
   abstract unlinkAccount(athleteId: string, userId: string): Promise<boolean>;
   /** Существует ли активный пользователь с таким идентификатором. */
   abstract userExists(userId: string): Promise<boolean>;
+  /**
+   * Текущая группа, тренер и филиал (#60).
+   *
+   * `null` в каждом поле — не назначено. Карточка показывает empty state, а не
+   * подставляет первое попавшееся: «не в группе» — нормальное состояние.
+   */
+  abstract findAffiliation(athleteId: string): Promise<AthleteAffiliation>;
 }
 
 const ATHLETE_SELECT = {
@@ -103,6 +122,23 @@ const ATHLETE_SELECT = {
   notes: true,
   createdAt: true,
   updatedAt: true,
+} as const;
+
+/** Текущая группа, тренер и филиал: только для карточки, не для списка. */
+const AFFILIATION_SELECT = {
+  group: {
+    select: {
+      id: true,
+      name: true,
+      branch: { select: { id: true, name: true } },
+      trainers: {
+        where: { unassignedAt: null },
+        orderBy: { isPrimary: 'desc' },
+        take: 1,
+        select: { trainerProfile: { select: { id: true, displayName: true } } },
+      },
+    },
+  },
 } as const;
 
 @Injectable()
@@ -260,5 +296,25 @@ export class PrismaAthletesRepository extends AthletesRepository {
       select: { id: true },
     });
     return user !== null;
+  }
+
+  async findAffiliation(athleteId: string): Promise<AthleteAffiliation> {
+    const membership = await this.prisma.db.groupMembership.findFirst({
+      where: { athleteId, state: 'ACTIVE' },
+      orderBy: { joinedAt: 'desc' },
+      select: AFFILIATION_SELECT,
+    });
+
+    if (!membership) {
+      return { group: null, trainer: null, branch: null };
+    }
+
+    const trainer = membership.group.trainers[0]?.trainerProfile ?? null;
+
+    return {
+      group: { id: membership.group.id, name: membership.group.name },
+      trainer: trainer ? { id: trainer.id, displayName: trainer.displayName } : null,
+      branch: membership.group.branch,
+    };
   }
 }

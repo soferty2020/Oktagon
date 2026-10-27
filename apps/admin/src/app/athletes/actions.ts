@@ -144,8 +144,10 @@ export async function updateAthleteAction(
   const phone = optionalText(formData, 'phone');
   const email = optionalText(formData, 'email');
   const notes = optionalText(formData, 'notes');
-  // Пояс (K3): пустое значение очищает его, поэтому null, а не пропуск поля.
-  const beltGrade = optionalText(formData, 'beltGrade');
+  // Ступень — источник истины (ADR-0012), пояс выводится из неё. Пустое значение
+  // означает «не определена» и просто не отправляется: иначе PATCH с пустой
+  // строкой перезаписал бы реальную ступень через 400 или сброс.
+  const rank = optionalText(formData, 'rank');
   const beltAwardedAt = optionalText(formData, 'beltAwardedAt');
 
   const state = await withSession(
@@ -161,7 +163,9 @@ export async function updateAthleteAction(
           ...(phone ? { phone } : {}),
           ...(email ? { email } : {}),
           notes: notes ?? null,
-          beltGrade: beltGrade,
+          // Раньше здесь был только beltGrade, и выбор ступени не сохранялся
+          // вообще: пояс оставался прежним, ступень — тоже.
+          ...(rank ? { rank } : {}),
           beltAwardedAt: beltAwardedAt ?? null,
           ...(status ? { status } : {}),
         },

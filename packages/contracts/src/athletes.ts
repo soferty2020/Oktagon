@@ -51,6 +51,15 @@ export interface AthleteDetails extends AthleteView {
     relation: string;
     isPrimary: boolean;
   }>;
+  /**
+   * Текущая группа, тренер и филиал (#60).
+   *
+   * `null` — не назначен. Карточка показывает это как empty state, а не
+   * придумывает значение: «не в группе» — нормальное состояние новичка.
+   */
+  group: { id: string; name: string } | null;
+  trainer: { id: string; displayName: string } | null;
+  branch: { id: string; name: string } | null;
 }
 
 export interface CreateAthleteInput {

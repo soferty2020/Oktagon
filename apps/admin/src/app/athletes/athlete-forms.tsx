@@ -235,20 +235,23 @@ export function EditAthleteForm({ athlete }: { athlete: AthleteValues }) {
         <label className={labelClass}>
           Ступень
           {/* Ступень определяет пояс (ADR-0012): отдельный выбор пояса убран,
-              иначе можно было сохранить «синий пояс, 10 кю». */}
-          <select
-            name="rank"
-            defaultValue={athlete.rank ?? 'kyu-0'}
-            required
-            className={inputClass}
-          >
+              иначе можно было сохранить «синий пояс, 10 кю».
+
+              Пустое значение — «не определена», а не 0 кю. Раньше форма
+              подставляла 0 кю, и сохранение любого другого поля затирало
+              реальную ступень: пояс оставался оранжевым, а ступень становилась
+              белой (#60). */}
+          <select name="rank" defaultValue={athlete.rank ?? ''} className={inputClass}>
+            <option value="">Не определена</option>
             {RANKS.map((rank) => (
               <option key={rank.id} value={rank.id}>
                 {rank.label} — {rank.beltLabel}
               </option>
             ))}
           </select>
-          <span className="text-[11px] text-muted">Пояс определится из ступени.</span>
+          <span className="text-[11px] text-muted">
+            Пояс определится из ступени. «Не определена» оставляет текущий пояс без изменений.
+          </span>
         </label>
         <label className={labelClass}>
           Дата присвоения пояса

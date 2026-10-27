@@ -75,11 +75,16 @@ export class AthletesService {
 
     const athlete = await this.requireAthlete(athleteId);
     const accounts = await this.repository.listAccounts(athleteId);
+    const affiliation = await this.repository.findAffiliation(athleteId);
     const canViewContacts = await this.canViewContacts(callerUserId);
 
     return {
       ...toAthleteView(athlete, canViewContacts),
       notes: athlete.notes,
+      // Группа, тренер и филиал: null — не назначено, интерфейс покажет empty state.
+      group: affiliation.group,
+      trainer: affiliation.trainer,
+      branch: affiliation.branch,
       linkedAccounts: accounts.map((account) => ({
         userId: account.userId,
         email: account.email,
