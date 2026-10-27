@@ -68,7 +68,7 @@ export async function createEventAction(
 
   const result = await withSession(
     (accessToken) =>
-      apiFetch('/api/v1/certification-events', {
+      apiFetch('/certification-events', {
         accessToken,
         method: 'POST',
         body: {
@@ -94,7 +94,7 @@ export async function createEventAction(
 async function transition(id: string, action: string, success: string) {
   const result = await withSession(
     (accessToken) =>
-      apiFetch(`/api/v1/certification-events/${id}/${action}`, {
+      apiFetch(`/certification-events/${id}/${action}`, {
         accessToken,
         method: 'POST',
       }),
@@ -129,7 +129,7 @@ export async function cancelEventAction(id: string): Promise<AttestationFormStat
 export async function publishEventAction(id: string): Promise<AttestationFormState> {
   const result = await withSession(
     (accessToken) =>
-      apiFetch(`/api/v1/certification-events/${id}/publish`, {
+      apiFetch(`/certification-events/${id}/publish`, {
         accessToken,
         method: 'POST',
       }),
@@ -168,7 +168,7 @@ export async function addParticipantAction(
 
   const result = await withSession(
     (accessToken) =>
-      apiFetch(`/api/v1/certification-events/${eventId}/participants`, {
+      apiFetch(`/certification-events/${eventId}/participants`, {
         accessToken,
         method: 'POST',
         body: { athleteId, targetRank },
@@ -192,7 +192,7 @@ export async function setAdmissionAction(
 ): Promise<AttestationFormState> {
   const result = await withSession(
     (accessToken) =>
-      apiFetch(`/api/v1/certification-events/${eventId}/participants/${athleteId}`, {
+      apiFetch(`/certification-events/${eventId}/participants/${athleteId}`, {
         accessToken,
         method: 'PATCH',
         body: { admission },
@@ -216,7 +216,7 @@ export async function setPaymentAction(
 ): Promise<AttestationFormState> {
   const result = await withSession(
     (accessToken) =>
-      apiFetch(`/api/v1/certification-events/${eventId}/participants/${athleteId}/payment`, {
+      apiFetch(`/certification-events/${eventId}/participants/${athleteId}/payment`, {
         accessToken,
         method: 'PATCH',
         body: { paymentStatus },
@@ -250,7 +250,7 @@ export async function recordResultAction(
 
   const outcome = await withSession(
     (accessToken) =>
-      apiFetch(`/api/v1/certification-events/${eventId}/participants/${athleteId}/result`, {
+      apiFetch(`/certification-events/${eventId}/participants/${athleteId}/result`, {
         accessToken,
         method: 'POST',
         body: {
@@ -278,7 +278,7 @@ export async function removeParticipantAction(
 ): Promise<AttestationFormState> {
   const result = await withSession(
     (accessToken) =>
-      apiFetch(`/api/v1/certification-events/${eventId}/participants/${athleteId}`, {
+      apiFetch(`/certification-events/${eventId}/participants/${athleteId}`, {
         accessToken,
         method: 'DELETE',
       }),
