@@ -48,7 +48,9 @@ void main() {
     }
 
     // Кнопка должна быть в тех же границах, что и поля.
-    final button = tester.getRect(find.byType(FilledButton));
+    // На экране теперь две FilledButton: «Войти» и «Зарегистрироваться»
+    // (ADR-0015), поэтому ищем именно кнопку входа.
+    final button = tester.getRect(find.widgetWithText(FilledButton, 'Войти'));
     expect(button.left, greaterThanOrEqualTo(0));
     expect(button.right, lessThanOrEqualTo(390));
   });
