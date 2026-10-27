@@ -130,7 +130,12 @@ const AFFILIATION_SELECT = {
     select: {
       id: true,
       name: true,
-      branch: { select: { id: true, name: true } },
+      // Филиал у группы не один: связь через GroupBranch, основной — isPrimary.
+      branches: {
+        orderBy: { isPrimary: 'desc' },
+        take: 1,
+        select: { branch: { select: { id: true, name: true } } },
+      },
       trainers: {
         where: { unassignedAt: null },
         orderBy: { isPrimary: 'desc' },
@@ -310,11 +315,12 @@ export class PrismaAthletesRepository extends AthletesRepository {
     }
 
     const trainer = membership.group.trainers[0]?.trainerProfile ?? null;
+    const branch = membership.group.branches[0]?.branch ?? null;
 
     return {
       group: { id: membership.group.id, name: membership.group.name },
       trainer: trainer ? { id: trainer.id, displayName: trainer.displayName } : null,
-      branch: membership.group.branch,
+      branch,
     };
   }
 }
