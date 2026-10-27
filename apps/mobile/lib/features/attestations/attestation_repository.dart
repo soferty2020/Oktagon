@@ -87,7 +87,8 @@ class ApiAttestationRepository implements AttestationRepository {
       token: token,
       body: {
         'result': result,
-        if (awardedRank != null) 'awardedRank': awardedRank,
+        // Null-aware элемент: поле не отправляется, если ступень не выбрана.
+        'awardedRank': ?awardedRank,
         if (comment != null && comment.isNotEmpty) 'comment': comment,
         if (reason != null && reason.isNotEmpty) 'reason': reason,
       },
