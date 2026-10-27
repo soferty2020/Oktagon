@@ -4,7 +4,6 @@ import { notFound, redirect } from 'next/navigation';
 import { beltGradeLabel } from '@octagon/contracts';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
-import { EmptyState } from '@/components/empty-state';
 import { secondaryButtonClass } from '@/components/ui';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { describePermission } from '@/lib/permissions';
@@ -243,16 +242,7 @@ export default async function AthletePage({
             </section>
           ) : null}
 
-          {activeTab === 'attendance' ? (
-            <section className="rounded-card border border-line bg-white p-5">
-              <h2 className="text-sm font-semibold text-ink">Посещаемость</h2>
-              <EmptyState
-                title="Отдельной истории по спортсмену пока нет"
-                description="Посещаемость ведётся по занятиям и группам. Сводка доступна в разделе «Посещаемость»."
-                action={{ href: '/attendance', label: 'Перейти к посещаемости' }}
-              />
-            </section>
-          ) : null}
+          {activeTab === 'attendance' ? <AttendanceTab athleteId={person.id} /> : null}
 
           {activeTab === 'history' ? (
             <HistoryTab history={history} />
@@ -286,7 +276,7 @@ export default async function AthletePage({
                 </Link>
               ) : null}
               <Link className="text-sm text-accent hover:underline" href="/competitions">
-                Соревнования
+                Назначить на соревнование
               </Link>
             </div>
           </section>
@@ -389,43 +379,110 @@ function ProfileTab({
   );
 }
 
-function HistoryTab({ history }: { history: CertificationValues[] }) {
-  if (history.length === 0) {
-    return (
-      <section className="rounded-card border border-line bg-white p-5">
-        <h2 className="text-sm font-semibold text-ink">История</h2>
-        <EmptyState
-          title="Событий пока нет"
-          description="Здесь появятся аттестации и изменения ступени. Сейчас их нет."
-        />
-      </section>
-    );
-  }
-
+/**
+ * Посещаемость (заглушка, #60).
+ *
+ * В макете вкладка есть, API истории по спортсмену — нет. Показываем структуру
+ * таблицы как в макете и честную пометку, что данные появятся после доработки;
+ * ссылка ведёт туда, где посещаемость уже есть — по занятиям и группам.
+ * Доработка API — задача #62.
+ */
+function AttendanceTab({ athleteId }: { athleteId: string }) {
   return (
     <section className="rounded-card border border-line bg-white p-5">
-      <h2 className="text-sm font-semibold text-ink">История спортивного роста</h2>
-      <table className="mt-3 w-full text-left text-sm">
-        <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
-          <tr>
-            <th className="py-2">Дата</th>
-            <th className="py-2">Ступень</th>
-            <th className="py-2">Пояс</th>
-            <th className="py-2">Примечание</th>
-          </tr>
-        </thead>
-        <tbody>
-          {history.map((item) => (
-            <tr className="border-b border-line last:border-0" key={item.id}>
-              <td className="py-2">{formatDate(item.certifiedOn)}</td>
-              <td className="py-2 font-medium">{item.rankLabel ?? item.stageLabel}</td>
-              <td className="py-2 text-muted">{beltGradeLabel(item.beltGrade) ?? item.beltGrade}</td>
-              <td className="py-2 text-muted">{item.note ?? '—'}</td>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold text-ink">Посещаемость</h2>
+        <Link className="text-sm text-accent hover:underline" href={`/attendance`}>
+          Открыть посещаемость
+        </Link>
+      </div>
+
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
+            <tr>
+              <th className="py-2">Дата</th>
+              <th className="py-2">Занятие</th>
+              <th className="py-2">Отметка</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="py-6 text-center text-muted" colSpan={3}>
+                История занятий спортсмена появится здесь, когда API начнёт её отдавать.
+                <br />
+                <span className="text-xs">
+                  Сейчас посещаемость ведётся по занятиям и группам — см. раздел «Посещаемость».
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p className="mt-3 text-xs text-muted">
+        Доработка API отмечена в бэклоге. Идентификатор спортсмена:{' '}
+        <span className="font-mono">{athleteId.slice(0, 8)}</span>
+      </p>
     </section>
+  );
+}
+
+/**
+ * История (заглушка + реальные аттестации).
+ *
+ * Спортивный рост — настоящие данные из аттестаций. Изменения карточки (кто и
+ * когда правил поля) требуют аудита по сущности, которого пока нет; показываем
+ * блок-заглушку, чтобы вкладка не выглядела пустой и было видно, чего ждать.
+ */
+function HistoryTab({ history }: { history: CertificationValues[] }) {
+  return (
+    <div className="space-y-6">
+      <section className="rounded-card border border-line bg-white p-5">
+        <h2 className="text-sm font-semibold text-ink">История спортивного роста</h2>
+
+        {history.length === 0 ? (
+          <p className="mt-3 rounded-md border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
+            Аттестаций пока нет. Здесь появятся ступени и даты их присвоения.
+          </p>
+        ) : (
+          <table className="mt-3 w-full text-left text-sm">
+            <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
+              <tr>
+                <th className="py-2">Дата</th>
+                <th className="py-2">Ступень</th>
+                <th className="py-2">Пояс</th>
+                <th className="py-2">Примечание</th>
+              </tr>
+            </thead>
+            <tbody>
+              {history.map((item) => (
+                <tr className="border-b border-line last:border-0" key={item.id}>
+                  <td className="py-2">{formatDate(item.certifiedOn)}</td>
+                  <td className="py-2 font-medium">{item.rankLabel ?? item.stageLabel}</td>
+                  <td className="py-2 text-muted">
+                    {beltGradeLabel(item.beltGrade) ?? item.beltGrade}
+                  </td>
+                  <td className="py-2 text-muted">{item.note ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+
+      <section className="rounded-card border border-line bg-white p-5">
+        <h2 className="text-sm font-semibold text-ink">Изменения карточки</h2>
+        <p className="mt-3 rounded-md border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
+          Кто и когда менял поля карточки — появится здесь, когда API начнёт отдавать
+          аудит по спортсмену.
+        </p>
+        <p className="mt-2 text-xs text-muted">
+          Доработка API отмечена в бэклоге. Сейчас критические изменения видны в общем
+          журнале аудита.
+        </p>
+      </section>
+    </div>
   );
 }
 
