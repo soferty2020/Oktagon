@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { LinkRequestStatus, UserStatus } from '../../../generated/prisma';
+import { LinkRequestStatus } from '../../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import type {
   AthleteLinkCodeIssued,
