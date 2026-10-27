@@ -28,6 +28,34 @@ class AuthRepository {
     return session;
   }
 
+  /// Самостоятельная регистрация родителя (ADR-0015).
+  ///
+  /// Аккаунт создаётся без детей: доступ к ребёнку появляется после привязки
+  /// кодом или подтверждённой заявкой. API возвращает готовую сессию — второй
+  /// вход не нужен.
+  Future<AuthSession> register({
+    required String email,
+    required String password,
+    required String firstName,
+    required String lastName,
+    String? phone,
+  }) async {
+    final response = await _client.postJson(
+      '/auth/register',
+      body: {
+        'email': email.trim(),
+        'password': password,
+        'firstName': firstName.trim(),
+        'lastName': lastName.trim(),
+        if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
+      },
+    );
+
+    final session = AuthSession.fromJson(response);
+    await _storage.write(_toStored(session));
+    return session;
+  }
+
   /// Пробует восстановить сессию при запуске.
   ///
   /// Возвращает `null`, если сохраненных токенов нет или обновить их не удалось.

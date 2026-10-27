@@ -4,6 +4,7 @@ import '../../design/tokens.dart';
 import '../attendance/attendance_history_controller.dart';
 import '../attendance/attendance_history_screen.dart';
 import '../attendance/attendance_repository.dart';
+import '../home/onboarding_repository.dart';
 import '../auth/auth_controller.dart';
 import '../chat/chat_controller.dart';
 import '../chat/chats_controller.dart';
@@ -34,6 +35,7 @@ class MemberShell extends StatefulWidget {
     required this.sports,
     required this.chats,
     required this.attendance,
+    this.onboarding,
     required this.chatFactory,
   });
 
@@ -48,6 +50,9 @@ class MemberShell extends StatefulWidget {
 
   /// Нужен истории посещений и предупреждению об отсутствии (H5, H6).
   final AttendanceRepository attendance;
+
+  /// Привязка ребёнка (ADR-0015): нужна, когда детей ещё нет.
+  final OnboardingRepository? onboarding;
 
   /// Переписка создается на каждый диалог: состояние одной не должно переходить
   /// в другую.
@@ -96,6 +101,7 @@ class _MemberShellState extends State<MemberShell> {
                 MemberHomeContent(
                   auth: widget.auth,
                   controller: widget.home,
+                  onboarding: widget.onboarding,
                   onOpenSchedule: () => setState(() => _index = 1),
                   onOpenNews: () => setState(() => _index = 2),
                   onOpenAttendance: () => _openHistory(selected?.id, selected?.firstName ?? ''),

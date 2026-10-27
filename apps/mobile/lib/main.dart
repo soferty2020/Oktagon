@@ -9,6 +9,7 @@ import 'core/token_storage.dart';
 import 'features/athletes/athlete_repository.dart';
 import 'features/admin/trial_requests_screen.dart';
 import 'features/attendance/attendance_repository.dart';
+import 'features/home/onboarding_repository.dart';
 import 'features/attestations/attestation_controller.dart';
 import 'features/attestations/attestation_repository.dart';
 import 'features/auth/auth_controller.dart';
@@ -52,6 +53,9 @@ void main() {
   // Посещаемость нужна и главной (сводка), и истории с предупреждением об
   // отсутствии: репозиторий один, запросы разные.
   final attendanceRepository = AttendanceRepository(client: client);
+
+  // Привязка ребёнка (ADR-0015): родитель вводит код или оставляет заявку.
+  final onboardingRepository = OnboardingRepository(client: client);
 
   final memberHomeController = MemberHomeController(
     athletes: AthleteRepository(client: client),
@@ -105,6 +109,7 @@ void main() {
       sportsController: sportsController,
       chatsController: chatsController,
       attendanceRepository: attendanceRepository,
+    onboardingRepository: onboardingRepository,
       trainerDayController: trainerDayController,
       trainerCalendarController: trainerCalendarController,
       trainerStudentsController: trainerStudentsController,

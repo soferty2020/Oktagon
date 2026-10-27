@@ -7,6 +7,8 @@ import '../payments/payment_status_models.dart';
 import '../attendance/attendance_repository.dart';
 import '../auth/auth_controller.dart';
 import '../news/news_repository.dart';
+import 'link_child_screen.dart';
+import 'onboarding_repository.dart';
 import '../schedule/schedule_models.dart';
 import 'member_home_controller.dart';
 
@@ -23,11 +25,15 @@ class MemberHomeContent extends StatefulWidget {
     this.onOpenSchedule,
     this.onOpenNews,
     this.onOpenAttendance,
+    this.onboarding,
     this.now = DateTime.now,
   });
 
   final AuthController auth;
   final MemberHomeController controller;
+
+  /// Привязка ребёнка (ADR-0015): нужна, когда детей ещё нет.
+  final OnboardingRepository? onboarding;
 
   /// Источник текущего времени: в golden-тестах подменяется, иначе скриншот
   /// зависит от дня запуска.
@@ -46,6 +52,26 @@ class MemberHomeContent extends StatefulWidget {
 }
 
 class _MemberHomeContentState extends State<MemberHomeContent> {
+  /// Открывает привязку ребёнка и перезагружает список после успеха.
+  Future<void> _openLinkChild() async {
+    final onboarding = widget.onboarding;
+    if (onboarding == null) {
+      return;
+    }
+
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => LinkChildScreen(
+          onboarding: onboarding,
+          auth: widget.auth,
+          onLinked: widget.controller.retry,
+        ),
+      ),
+    );
+
+    await widget.controller.retry();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -84,10 +110,8 @@ class _MemberHomeContentState extends State<MemberHomeContent> {
         }
 
         if (controller.athletes.isEmpty) {
-          return const _EmptyState(
-            title: 'Нет связанных спортсменов',
-            message: 'Попросите администратора клуба связать вашу учетную запись '
-                'со спортсменом. После этого здесь появится расписание ребенка.',
+          return _NoChildrenState(
+            onAddChild: widget.onboarding == null ? null : _openLinkChild,
           );
         }
 
@@ -847,4 +871,54 @@ String _time(DateTime value) {
 
 String _shortDate(DateTime value) {
   return '${value.day}.${value.month.toString().padLeft(2, '0')}.${value.year}';
+}
+
+
+/// Экран, когда детей ещё нет (ADR-0015).
+///
+/// Раньше здесь был только текст «попросите администратора»: тупик для
+/// родителя, который скачал приложение. Теперь есть кнопка привязки, а новости
+/// доступны на своей вкладке — приложение полезно до привязки.
+class _NoChildrenState extends StatelessWidget {
+  const _NoChildrenState({this.onAddChild});
+
+  final VoidCallback? onAddChild;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.child_care_outlined, size: 56),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Детей пока нет',
+              style: Theme.of(context).textTheme.titleLarge,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            const Text(
+              'Привяжите ребёнка по коду от тренера или оставьте заявку — '
+              'администратор подтвердит.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            if (onAddChild != null)
+              FilledButton(
+                onPressed: onAddChild,
+                child: const Text('Добавить ребёнка'),
+              ),
+            const SizedBox(height: AppSpacing.sm),
+            const Text(
+              'А пока смотрите новости клуба и расписание на своих вкладках.',
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

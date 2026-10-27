@@ -74,6 +74,41 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  /// Самостоятельная регистрация родителя (ADR-0015).
+  ///
+  /// После успеха человек сразу авторизован, но детей у него нет: он видит
+  /// общие разделы клуба и может привязать ребёнка кодом или заявкой.
+  Future<bool> register({
+    required String email,
+    required String password,
+    required String firstName,
+    required String lastName,
+    String? phone,
+  }) async {
+    _busy = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _session = await _repository.register(
+        email: email,
+        password: password,
+        firstName: firstName,
+        lastName: lastName,
+        phone: phone,
+      );
+      _status = AuthStatus.authenticated;
+      return true;
+    } on ApiException catch (error) {
+      _error = describeAuthError(error);
+      _status = AuthStatus.unauthenticated;
+      return false;
+    } finally {
+      _busy = false;
+      notifyListeners();
+    }
+  }
+
   /// Активация приглашения по коду (ADR-0014).
   ///
   /// Отдельный метод, а не «ввод кода как логин»: после активации сразу

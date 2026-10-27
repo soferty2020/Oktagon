@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'auth_controller.dart';
 import 'invite_code_screen.dart';
+import 'register_screen.dart';
 
 /// Экран входа (H1).
 ///
@@ -154,22 +155,33 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Нет доступа? Попросите администратора клуба отправить приглашение.',
+                          'Нет учётной записи? Зарегистрируйтесь — это бесплатно.',
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: const Color(0xFF888888),
                               ),
                         ),
+                        const SizedBox(height: 4),
+                        // Регистрация — основной путь для родителя (ADR-0015):
+                        // без неё приложение бесполезно до звонка администратору.
+                        FilledButton.tonal(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (context) => RegisterScreen(auth: widget.controller),
+                            ),
+                          ),
+                          child: const Text('Зарегистрироваться'),
+                        ),
                         const SizedBox(height: 8),
-                        // Код — основной путь для тренера: ссылку из браузера в
-                        // зале открывать неудобно (ADR-0014).
+                        // Код — путь для тренера: ссылку из браузера в зале
+                        // открывать неудобно (ADR-0014).
                         TextButton(
                           onPressed: () => Navigator.of(context).push(
                             MaterialPageRoute<void>(
                               builder: (context) => InviteCodeScreen(auth: widget.controller),
                             ),
                           ),
-                          child: const Text('У меня есть код'),
+                          child: const Text('У меня есть код приглашения'),
                         ),
                       ],
                     ),

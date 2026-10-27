@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'app_theme.dart';
 import 'core/api_client.dart';
 import 'features/attendance/attendance_repository.dart';
+import 'features/home/onboarding_repository.dart';
 import 'features/auth/auth_controller.dart';
 import 'features/auth/login_screen.dart';
 import 'features/chat/chat_controller.dart';
@@ -36,6 +37,7 @@ class OctagonApp extends StatelessWidget {
     required this.sportsController,
     required this.chatsController,
     required this.attendanceRepository,
+    required this.onboardingRepository,
     required this.trainerDayController,
     required this.trainerCalendarController,
     required this.trainerStudentsController,
@@ -57,6 +59,9 @@ class OctagonApp extends StatelessWidget {
 
   /// Нужен истории посещений и предупреждению об отсутствии (H5, H6).
   final AttendanceRepository attendanceRepository;
+
+  /// Привязка ребёнка (ADR-0015): код от тренера или заявка.
+  final OnboardingRepository onboardingRepository;
 
   final TrainerDayController trainerDayController;
   final TrainerCalendarController trainerCalendarController;
@@ -123,6 +128,7 @@ class OctagonApp extends StatelessWidget {
         sports: sportsController,
         chats: chatsController,
         attendance: attendanceRepository,
+      onboarding: onboardingRepository,
         chatFactory: chatFactory,
       );
     }
