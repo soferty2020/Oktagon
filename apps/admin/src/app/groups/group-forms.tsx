@@ -173,42 +173,6 @@ export function AssignTrainerForm({
 }
 
 /**
- * Добавление спортсмена в группу.
- *
- * Отдельного справочника спортсменов для выбора пока нет, поэтому поле
- * принимает идентификатор спортсмена: его видно в адресной строке карточки.
- * Когда появится карточка спортсмена, поле заменится поиском по ФИО.
- */
-export function AddMemberForm({ groupId }: { groupId: string }) {
-  const [state, formAction, pending] = useActionState(addMemberAction, initialState);
-
-  return (
-    <form action={formAction} className="flex flex-col gap-2">
-      <input type="hidden" name="groupId" value={groupId} />
-      <div className="flex items-end gap-2">
-        <label className={`${labelClass} flex-1`}>
-          Добавить спортсмена (идентификатор)
-          <input
-            name="athleteId"
-            required
-            placeholder="00000000-0000-0000-0000-000000000000"
-            className={inputClass}
-          />
-        </label>
-        <button type="submit" disabled={pending} className={buttonClass}>
-          {pending ? '…' : 'Добавить'}
-        </button>
-      </div>
-      <label className={labelClass}>
-        Дата вступления
-        <input type="date" name="joinedAt" className={inputClass} />
-      </label>
-      <StateMessages state={state} />
-    </form>
-  );
-}
-
-/**
  * Привязка конкретного спортсмена к группе (#68).
  *
  * Открывается из карточки спортсмена по ссылке `/groups?assign=<id>`: человек уже

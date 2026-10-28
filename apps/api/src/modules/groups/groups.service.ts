@@ -330,7 +330,12 @@ export class GroupsService {
   }
 
   private async toGroupView(group: GroupRecord): Promise<GroupView> {
-    const membersCount = await this.groups.countActiveMembers(group.id);
+    const [membersCount, trainers] = await Promise.all([
+      this.groups.countActiveMembers(group.id),
+      // Тренеры нужны и в списке (#71): таблица групп показывала «не назначен»,
+      // хотя тренер есть — он был виден только в карточке.
+      this.groups.listTrainers(group.id),
+    ]);
 
     return {
       id: group.id,
@@ -340,6 +345,7 @@ export class GroupsService {
       hallId: group.hallId,
       hallName: group.hall?.name ?? null,
       activeMembersCount: membersCount,
+      trainers: trainers.map(toTrainerView),
       createdAt: group.createdAt.toISOString(),
       updatedAt: group.updatedAt.toISOString(),
     };

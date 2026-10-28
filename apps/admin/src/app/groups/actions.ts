@@ -232,6 +232,16 @@ export async function addMemberAction(
   return state;
 }
 
+/**
+ * Добавление из списка найденных спортсменов (#71).
+ *
+ * Форма поиска отправляет обычный POST, а не `useActionState`: результат —
+ * обновлённая страница, отдельного состояния с ошибкой здесь не нужно.
+ */
+export async function addMemberFormAction(formData: FormData): Promise<void> {
+  await addMemberAction({}, formData);
+}
+
 export async function endMembershipAction(formData: FormData): Promise<void> {
   const groupId = String(formData.get('groupId') ?? '');
   const athleteId = String(formData.get('athleteId') ?? '');

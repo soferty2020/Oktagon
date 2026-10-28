@@ -22,6 +22,8 @@ interface TrainerView {
   id: string;
   userId: string | null;
   displayName: string;
+  firstName: string;
+  lastName: string;
   phone: string | null;
   bio: string | null;
   isActive: boolean;

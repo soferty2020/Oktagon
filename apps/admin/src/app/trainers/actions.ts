@@ -60,12 +60,14 @@ export async function createTrainerAction(
   _prev: TrainerFormState,
   formData: FormData,
 ): Promise<TrainerFormState> {
-  const displayName = String(formData.get('displayName') ?? '').trim();
+  // Имя и фамилия отдельно (#69): API больше не принимает displayName.
+  const firstName = String(formData.get('firstName') ?? '').trim();
+  const lastName = String(formData.get('lastName') ?? '').trim();
   const phone = optional(formData.get('phone'));
   const bio = optional(formData.get('bio'));
 
-  if (!displayName) {
-    return { error: 'Укажите имя тренера' };
+  if (!firstName || !lastName) {
+    return { error: 'Укажите фамилию и имя тренера' };
   }
 
   const state = await withSession((accessToken) =>
@@ -73,7 +75,8 @@ export async function createTrainerAction(
       accessToken,
       method: 'POST',
       body: {
-        displayName,
+        firstName,
+        lastName,
         ...(phone ? { phone } : {}),
         ...(bio ? { bio } : {}),
       },
@@ -82,7 +85,7 @@ export async function createTrainerAction(
 
   if (!state.error) {
     revalidateTrainers();
-    return { success: `Тренер «${displayName}» добавлен` };
+    return { success: `Тренер «${lastName} ${firstName}» добавлен` };
   }
   return state;
 }
@@ -92,7 +95,8 @@ export async function updateTrainerAction(
   formData: FormData,
 ): Promise<TrainerFormState> {
   const trainerId = String(formData.get('trainerId') ?? '');
-  const displayName = String(formData.get('displayName') ?? '').trim();
+  const firstName = String(formData.get('firstName') ?? '').trim();
+  const lastName = String(formData.get('lastName') ?? '').trim();
   const phone = String(formData.get('phone') ?? '').trim();
   const bio = String(formData.get('bio') ?? '').trim();
   // Чекбокс: отсутствие в форме означает «не активен».
@@ -101,8 +105,8 @@ export async function updateTrainerAction(
   if (!trainerId) {
     return { error: 'Не указан тренер' };
   }
-  if (!displayName) {
-    return { error: 'Укажите имя тренера' };
+  if (!firstName || !lastName) {
+    return { error: 'Укажите фамилию и имя тренера' };
   }
 
   const state = await withSession((accessToken) =>
@@ -112,7 +116,8 @@ export async function updateTrainerAction(
       // Пустые строки передаются как null: так поле очищается. Отправлять
       // `undefined` нельзя — тогда правка «ничего не меняет» молча.
       body: {
-        displayName,
+        firstName,
+        lastName,
         phone: phone === '' ? null : phone,
         bio: bio === '' ? null : bio,
         isActive,

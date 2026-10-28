@@ -56,10 +56,17 @@ export function CreateTrainerForm() {
         </p>
       </div>
 
-      <label className={labelClass}>
-        Имя
-        <input name="displayName" required maxLength={200} className={inputClass} />
-      </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className={labelClass}>
+          Фамилия
+          <input name="lastName" required maxLength={100} className={inputClass} />
+        </label>
+
+        <label className={labelClass}>
+          Имя
+          <input name="firstName" required maxLength={100} className={inputClass} />
+        </label>
+      </div>
 
       <label className={labelClass}>
         Телефон
@@ -80,13 +87,14 @@ export function CreateTrainerForm() {
   );
 }
 
-/** Правка карточки: имя, контакты, активность. */
+/** Правка карточки: ФИО, контакты, активность. */
 export function EditTrainerForm({
   trainer,
 }: {
   trainer: {
     id: string;
-    displayName: string;
+    firstName: string;
+    lastName: string;
     phone: string | null;
     bio: string | null;
     isActive: boolean;
@@ -98,16 +106,29 @@ export function EditTrainerForm({
     <form action={formAction} className="flex flex-col gap-3">
       <input type="hidden" name="trainerId" value={trainer.id} />
 
-      <label className={labelClass}>
-        Имя
-        <input
-          name="displayName"
-          required
-          maxLength={200}
-          defaultValue={trainer.displayName}
-          className={inputClass}
-        />
-      </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className={labelClass}>
+          Фамилия
+          <input
+            name="lastName"
+            required
+            maxLength={100}
+            defaultValue={trainer.lastName}
+            className={inputClass}
+          />
+        </label>
+
+        <label className={labelClass}>
+          Имя
+          <input
+            name="firstName"
+            required
+            maxLength={100}
+            defaultValue={trainer.firstName}
+            className={inputClass}
+          />
+        </label>
+      </div>
 
       <label className={labelClass}>
         Телефон

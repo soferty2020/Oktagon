@@ -16,10 +16,11 @@ interface GroupView {
   name: string;
   description: string | null;
   isActive: boolean;
+  hallId: string | null;
   hallName: string | null;
   activeMembersCount: number;
-  /** API отдает тренеров группы; в таблице показывается первый как основной. */
-  trainers?: { id: string; displayName: string }[];
+  /** Тренеры группы: основной первым. */
+  trainers: { id: string; displayName: string }[];
 }
 
 interface HallView {
@@ -104,75 +105,96 @@ export default async function GroupsPage({
       ) : null}
 
       <div className={canManage ? 'grid gap-6 lg:grid-cols-[2fr_1fr]' : ''}>
-        <div className="rounded-card border border-line bg-white">
-          <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
-              <tr>
-                <th className="px-4 py-3">Название</th>
-                <th className="px-4 py-3">Зал</th>
-                <th className="px-4 py-3">Тренер</th>
-                <th className="px-4 py-3">Участников</th>
-                <th className="px-4 py-3">Статус</th>
-              </tr>
-            </thead>
-            <tbody>
-              {groups.ok && groups.data.length > 0 ? (
-                groups.data.map((group) => (
-                  <tr key={group.id} className="border-b border-line last:border-0">
-                    <td className="px-4 py-3">
+        <div className="flex flex-col gap-6">
+          {!groups.ok ? <Notice tone="error">{describeError(groups.error)}</Notice> : null}
+
+          {groups.ok && groups.data.length === 0 ? (
+            <div className="rounded-card border border-line bg-white">
+              <EmptyState
+                icon="groups"
+                title="Групп пока нет"
+                description="Создайте группу справа: в неё записываются спортсмены и строится расписание."
+              />
+            </div>
+          ) : null}
+
+          {groups.ok
+            ? hallSections(groups.data).map((section) => (
+                <section
+                  className="rounded-card border border-line bg-white"
+                  key={section.key}
+                >
+                  {/* Зал — заголовок секции, а не колонка: иначе группы разных
+                      залов висят одной простынёй (#71). */}
+                  <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
+                    <div>
+                      <h2 className="text-sm font-semibold text-ink">{section.name}</h2>
+                      <p className="mt-0.5 text-xs text-muted">
+                        {section.groups.length}{' '}
+                        {section.groups.length === 1 ? 'группа' : 'групп'}
+                      </p>
+                    </div>
+                    {section.hallId ? (
                       <Link
-                        href={`/groups/${group.id}`}
-                        className="font-medium text-ink underline decoration-line hover:decoration-accent"
+                        className="text-xs text-muted underline hover:text-ink"
+                        href={`/halls#hall-${section.hallId}`}
                       >
-                        {group.name}
+                        Зал
                       </Link>
-                      {group.description ? (
-                        <span className="block text-xs text-muted">{group.description}</span>
-                      ) : null}
-                    </td>
-                    <td className="px-4 py-3 text-muted">
-                      {group.hallName ?? 'не назначен'}
-                    </td>
-                    <td className="px-4 py-3 text-muted">
-                      {group.trainers && group.trainers.length > 0
-                        ? group.trainers.map((trainer) => trainer.displayName).join(', ')
-                        : 'не назначен'}
-                    </td>
-                    <td className="px-4 py-3 text-muted">{group.activeMembersCount}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={
-                          group.isActive
-                            ? 'rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700'
-                            : 'rounded-full bg-canvas px-2 py-1 text-xs text-muted'
-                        }
-                      >
-                        {group.isActive ? 'активна' : 'неактивна'}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="p-0">
-                    {groups.ok ? (
-                      <EmptyState
-                        icon="groups"
-                        title="Групп пока нет"
-                        description="Создайте группу справа: в неё записываются спортсмены и строится расписание."
-                      />
-                    ) : (
-                      <div className="px-4 py-6">
-                        <Notice tone="error">{describeError(groups.error)}</Notice>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-          </div>
+                    ) : null}
+                  </header>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[560px] text-left text-sm">
+                      <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
+                        <tr>
+                          <th className="px-4 py-3">Название</th>
+                          <th className="px-4 py-3">Тренер</th>
+                          <th className="px-4 py-3">Участников</th>
+                          <th className="px-4 py-3">Статус</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {section.groups.map((group) => (
+                          <tr key={group.id} className="border-b border-line last:border-0">
+                            <td className="px-4 py-3">
+                              <Link
+                                className="font-medium text-ink underline decoration-line hover:decoration-accent"
+                                href={`/groups/${group.id}`}
+                              >
+                                {group.name}
+                              </Link>
+                              {group.description ? (
+                                <span className="block text-xs text-muted">
+                                  {group.description}
+                                </span>
+                              ) : null}
+                            </td>
+                            <td className="px-4 py-3 text-muted">
+                              {group.trainers.length > 0
+                                ? group.trainers.map((trainer) => trainer.displayName).join(', ')
+                                : 'не назначен'}
+                            </td>
+                            <td className="px-4 py-3 text-muted">{group.activeMembersCount}</td>
+                            <td className="px-4 py-3">
+                              <span
+                                className={
+                                  group.isActive
+                                    ? 'rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700'
+                                    : 'rounded-full bg-canvas px-2 py-1 text-xs text-muted'
+                                }
+                              >
+                                {group.isActive ? 'активна' : 'неактивна'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              ))
+            : null}
         </div>
 
         {canManage ? (
@@ -181,4 +203,36 @@ export default async function GroupsPage({
       </div>
     </AppShell>
   );
+}
+
+/**
+ * Группы, разложенные по залам.
+ *
+ * Группа без зала попадает в отдельную секцию: это не ошибка, но её нужно
+ * видеть — иначе группа потеряется среди назначенных.
+ */
+function hallSections(groups: GroupView[]) {
+  const sections = new Map<
+    string,
+    { key: string; name: string; hallId: string | null; groups: GroupView[] }
+  >();
+
+  for (const group of groups) {
+    const key = group.hallId ?? '__none__';
+    const existing = sections.get(key) ?? {
+      key,
+      name: group.hallName ?? 'Без зала',
+      hallId: group.hallId,
+      groups: [],
+    };
+    existing.groups.push(group);
+    sections.set(key, existing);
+  }
+
+  return [...sections.values()].sort((left, right) => {
+    // «Без зала» — в конце: это исключение, а не основной список.
+    if (left.hallId === null) return 1;
+    if (right.hallId === null) return -1;
+    return left.name.localeCompare(right.name);
+  });
 }

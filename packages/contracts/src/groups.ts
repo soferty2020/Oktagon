@@ -23,13 +23,19 @@ export interface GroupView {
   hallId: string | null;
   hallName: string | null;
   activeMembersCount: number;
+  /**
+   * Тренеры группы: основной первым.
+   *
+   * Нужны и в списке: иначе таблица групп показывает «не назначен» даже когда
+   * тренер есть — он виден только в карточке.
+   */
+  trainers: GroupTrainerView[];
   createdAt: string;
   updatedAt: string;
 }
 
-/** `GET /groups/{id}` — группа с тренерами и составом. */
+/** `GET /groups/{id}` — группа с составом (тренеры уже в `GroupView`). */
 export interface GroupDetails extends GroupView {
-  trainers: GroupTrainerView[];
   members: GroupMemberView[];
 }
 

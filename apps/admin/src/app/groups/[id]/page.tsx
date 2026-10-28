@@ -3,14 +3,27 @@ import { notFound, redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
 import { StatusBadge } from '@/components/status-badge';
+import { fieldClass } from '@/components/ui';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
-import { archiveGroupAction, endMembershipAction, unassignTrainerAction } from '../actions';
-import { AddMemberForm, AssignTrainerForm, SetGroupHallForm } from '../group-forms';
+import {
+  addMemberFormAction,
+  archiveGroupAction,
+  endMembershipAction,
+  unassignTrainerAction,
+} from '../actions';
+import { AssignTrainerForm, SetGroupHallForm } from '../group-forms';
 
 export const metadata = {
   title: 'Группа — OCTAGON',
 };
+
+/** Кандидат на добавление: имя и фамилия для списка совпадений. */
+interface AthleteSearchItem {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
 
 interface GroupDetails {
   id: string;
@@ -48,19 +61,36 @@ interface TrainerView {
  * Здесь видно, что группа может заниматься в нескольких филиалах, а тренеров и
  * участников можно менять по отдельности: список и карточка — разные сценарии.
  */
-export default async function GroupPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function GroupPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ search?: string }>;
+}) {
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login');
   }
 
   const { id } = await params;
+  const { search } = await searchParams;
+  const searchQuery = (search ?? '').trim();
+
   const { accessToken } = await readTokens();
-  const [group, halls, trainers] = await Promise.all([
+  const [group, halls, trainers, found] = await Promise.all([
     apiFetch<GroupDetails>(`/groups/${id}`, { accessToken }),
     apiFetch<HallView[]>('/halls', { accessToken }),
     apiFetch<TrainerView[]>('/trainers', { accessToken }),
+    // Поиск кандидатов: только по непустому запросу, чтобы не тянуть весь
+    // список спортсменов на каждое открытие группы.
+    searchQuery
+      ? apiFetch<AthleteSearchItem[]>(`/athletes?search=${encodeURIComponent(searchQuery)}`, {
+          accessToken,
+        })
+      : null,
   ]);
+  const searchResults = found?.ok ? found.data.slice(0, 10) : [];
 
   if (!group.ok) {
     if (group.error.status === 404) {
@@ -150,7 +180,14 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
                   className="flex items-center justify-between gap-2 text-sm"
                 >
                   <span className="text-ink">
-                    {trainer.displayName}
+                    {/* ФИО тренера — ссылка на его карточку: из группы нужно
+                        попадать в профиль, а не искать его в списке (#71). */}
+                    <Link
+                      className="underline decoration-line hover:decoration-accent"
+                      href={`/trainers/${trainer.trainerId}`}
+                    >
+                      {trainer.displayName}
+                    </Link>
                     {trainer.isPrimary ? (
                       <span className="ml-2 rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700">
                         основной
@@ -209,7 +246,12 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
               group.data.members.map((member) => (
                 <tr key={member.athleteId} className="border-b border-line last:border-0">
                   <td className="py-2 font-medium text-ink">
-                    {member.lastName} {member.firstName}
+                    <Link
+                      className="underline decoration-line hover:decoration-accent"
+                      href={`/athletes/${member.athleteId}`}
+                    >
+                      {member.lastName} {member.firstName}
+                    </Link>
                   </td>
                   <td className="py-2">
                     <StatusBadge value={member.status} />
@@ -237,7 +279,71 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
 
         {canManage ? (
           <div className="mt-4 border-t border-line pt-4">
-            <AddMemberForm groupId={group.data.id} />
+            {/* Поиск по ФИО вместо ввода UUID: найти спортсмена «по индикатору»
+                невозможно — никто не помнит идентификатор наизусть (#71). */}
+            <form className="flex flex-wrap items-end gap-2" method="get">
+              <label className="flex flex-1 flex-col gap-1 text-xs font-medium text-muted">
+                Найти спортсмена
+                <input
+                  className={fieldClass}
+                  defaultValue={searchQuery}
+                  name="search"
+                  placeholder="Фамилия или имя"
+                />
+              </label>
+              <button
+                className="rounded-md border border-line bg-white px-4 py-2 text-sm text-ink hover:bg-canvas"
+                type="submit"
+              >
+                Найти
+              </button>
+            </form>
+
+            {searchQuery ? (
+              <div className="mt-4">
+                {searchResults.length === 0 ? (
+                  <p className="text-xs text-muted">
+                    Никого не нашли по запросу «{searchQuery}».
+                  </p>
+                ) : (
+                  <ul className="flex flex-col gap-2">
+                    {searchResults.map((athlete) => (
+                      <li
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line px-3 py-2 text-sm"
+                        key={athlete.id}
+                      >
+                        <span className="text-ink">
+                          {athlete.lastName} {athlete.firstName}
+                        </span>
+                        <span className="flex items-center gap-3">
+                          <Link
+                            className="text-xs text-muted underline hover:text-ink"
+                            href={`/athletes/${athlete.id}`}
+                          >
+                            Карточка
+                          </Link>
+                          <form action={addMemberFormAction}>
+                            <input name="groupId" type="hidden" value={group.data.id} />
+                            <input name="athleteId" type="hidden" value={athlete.id} />
+                            <button
+                              className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent/90"
+                              type="submit"
+                            >
+                              Добавить в группу
+                            </button>
+                          </form>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ) : (
+              <p className="mt-3 text-xs text-muted">
+                Начните вводить фамилию — покажем совпадения. Добавить можно только
+                спортсмена без активной группы.
+              </p>
+            )}
           </div>
         ) : null}
       </section>
