@@ -68,6 +68,8 @@ export interface UpdateAthleteInput {
   email?: string | null;
   notes?: string | null;
   status?: AthleteStatus;
+  /** Основной зал спортсмена (#66, #68); `null` очищает. */
+  hallId?: string | null;
 }
 
 export interface LinkAccountInput {
