@@ -65,7 +65,11 @@ describe('FinanceService: отчёты', () => {
     } as unknown as jest.Mocked<FinanceRepository>;
 
     const freezes = { listFrozenAthleteIds: jest.fn().mockResolvedValue([]) };
-    const scope = { assertAthleteAccess: jest.fn().mockResolvedValue({ allowed: true }) };
+    const scope = {
+    assertAthleteAccess: jest.fn().mockResolvedValue({ allowed: true }),
+    // Отчёты проверяются без ограничения зоны доступа.
+    visibleAthleteIds: jest.fn().mockResolvedValue(null),
+  };
     const audit = { recordSafely: jest.fn().mockResolvedValue(null) };
     const debtRules = { getConfigForDate: jest.fn().mockResolvedValue(DEFAULT_DEBT_RULES) };
     const settings = { getClubProfile: jest.fn().mockResolvedValue({ paymentDueDay: null }) };
@@ -118,8 +122,8 @@ describe('FinanceService: отчёты', () => {
 
     it('вычитает возвраты из выручки', async () => {
       repository.listMovementsInRange.mockResolvedValue([
-        { kind: 'PAYMENT', amount: 40000, hallId: null },
-        { kind: 'REFUND', amount: 5000, hallId: null },
+        { kind: 'PAYMENT', athleteId: 'athlete-1', amount: 40000, hallId: null },
+        { kind: 'REFUND', athleteId: 'athlete-1', amount: 5000, hallId: null },
       ]);
 
       const dynamics = await service.dynamics('admin-1', 2026, 10, 1);
@@ -169,6 +173,7 @@ describe('FinanceService: отчёты', () => {
       repository.listPaymentsForExport.mockResolvedValue([
         {
           id: 'pay-2',
+          athleteId: 'athlete-1',
           paidAt: new Date('2026-10-05T10:00:00.000Z'),
           kind: 'PAYMENT',
           amount: 1000,

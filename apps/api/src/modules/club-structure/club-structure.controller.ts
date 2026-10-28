@@ -26,7 +26,7 @@ import {
   type TrainerView,
 } from '@octagon/contracts';
 
-import { AuthGuard } from '../../shared/auth-stub';
+import { AuthGuard, CurrentUser, type AuthenticatedUser } from '../../shared/auth-stub';
 import { PermissionsGuard, RequirePermissions } from '../../shared/permissions.guard';
 import {
   CreateHallDto,
@@ -178,8 +178,14 @@ export class TrainersController {
   @RequirePermissions(PermissionCode.UsersManage)
   @ApiOperation({ summary: 'Связать профиль тренера с аккаунтом' })
   @ApiOkResponse({ description: 'Связь создана; профиль с аккаунтом' })
-  linkAccount(@Param('id') id: string, @Body() dto: LinkTrainerAccountDto): Promise<TrainerView> {
-    return this.club.linkTrainerAccount(id, dto.userId);
+  linkAccount(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() dto: LinkTrainerAccountDto,
+  ): Promise<TrainerView> {
+    // Актор передаётся в сервис: привязка своего аккаунта к чужому профилю
+    // тренера давала бы scope на чужие группы (#50, SEC-07).
+    return this.club.linkTrainerAccount(id, dto.userId, user.id);
   }
 
   @Delete(':id/account')

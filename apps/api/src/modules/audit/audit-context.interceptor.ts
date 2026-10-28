@@ -7,6 +7,7 @@ import {
 import type { Request } from 'express';
 import type { Observable } from 'rxjs';
 
+import { clientIp } from '../../shared/client-ip';
 import { RequestContextService } from '../../shared/request-context.service';
 
 /**
@@ -43,15 +44,4 @@ export class AuditContextInterceptor implements NestInterceptor {
       () => next.handle(),
     );
   }
-}
-
-function clientIp(request: Request): string | null {
-  const forwarded = request.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string' && forwarded.trim() !== '') {
-    const [first] = forwarded.split(',');
-    if (first) {
-      return first.trim();
-    }
-  }
-  return request.ip ?? request.socket?.remoteAddress ?? null;
 }

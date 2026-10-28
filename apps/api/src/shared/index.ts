@@ -4,6 +4,7 @@ export * from './request-id.interceptor';
 export * from './request-context.service';
 export * from './access-token.verifier';
 export * from './auth-stub';
+export * from './client-ip';
 export * from './permissions.guard';
 export * from './security-headers.middleware';
 export * from './token.module';

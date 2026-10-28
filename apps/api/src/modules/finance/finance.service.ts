@@ -506,7 +506,12 @@ export class FinanceService {
     this.assertMonth(month);
 
     const from = new Date(Date.UTC(year, month - 1, 1));
-    const facts = await this.collectDebtFacts(year, month);
+    // Долги видны в той же зоне, что и спортсмены (#50, SEC-08): тренер с
+    // выданным payments.view не должен видеть суммы чужих групп.
+    const visible = await this.visibleAthleteIds(callerUserId);
+    const facts = (await this.collectDebtFacts(year, month)).filter(
+      (fact) => visible === null || visible.has(fact.athleteId),
+    );
     const config = await this.debtRules.getConfigForDate(from);
 
     const summaries: DebtorSummary[] = facts.map((fact) => {
@@ -881,8 +886,12 @@ export class FinanceService {
     }
 
     // Право проверяет контроллер (payments.view): выгрузка — те же финансовые
-    // данные, только в файле, и отдельного права на нее нет.
-    const movements = await this.finance.listPaymentsForExport(fromDate, toDate);
+    // данные, только в файле, и отдельного права на нее нет. Зона доступа та же,
+    // что у списков (#50, SEC-08).
+    const visible = await this.visibleAthleteIds(callerUserId);
+    const movements = (await this.finance.listPaymentsForExport(fromDate, toDate)).filter(
+      (movement) => visible === null || visible.has(movement.athleteId),
+    );
 
     const rows: string[][] = [
       ['Дата', 'Тип', 'Спортсмен', 'Группа', 'Сумма', 'Способ', 'Комментарий'],
@@ -925,12 +934,23 @@ export class FinanceService {
     const from = new Date(Date.UTC(year, month - 1, 1));
     const to = new Date(Date.UTC(year, month, 1));
 
-    const [debtors, movements, athletes, branches] = await Promise.all([
+    const [debtors, movementsAll, athletes, branches] = await Promise.all([
       this.listDebtors(callerUserId, year, month),
       this.finance.listMovementsInRange(from, to),
       this.finance.listActiveAthletes(),
       this.finance.listHalls(),
     ]);
+
+    // Сводка собирается в той же зоне, что и списки (#50, SEC-08).
+    const visible = await this.visibleAthleteIds(callerUserId);
+    const movements =
+      visible === null
+        ? movementsAll
+        : movementsAll.filter((movement) => visible.has(movement.athleteId));
+    const visibleAthletes =
+      visible === null
+        ? athletes
+        : athletes.filter((athlete) => visible.has(athlete.athleteId));
 
     const totals = movements.reduce<FinanceTotals>(
       (acc, movement) => {
@@ -1016,8 +1036,9 @@ export class FinanceService {
       debtors: debtorsOnly.length,
       debtorsWithoutExpected: debtorsOnly.filter((row) => row.expectedAmount === null).length,
       debt,
-      activeAthletes: athletes.filter((athlete) => athlete.status === PrismaAthleteStatus.ACTIVE)
-        .length,
+      activeAthletes: visibleAthletes.filter(
+        (athlete) => athlete.status === PrismaAthleteStatus.ACTIVE,
+      ).length,
       // Зал без движения и без должников не показывается: пустые строки
       // мешали бы сравнивать филиалы между собой.
       branches: [...byHall.values()]
@@ -1079,6 +1100,17 @@ export class FinanceService {
     }
 
     return this.finance.refreshPeriodTotals(period.id, paidAmount, refunds, status);
+  }
+
+  /**
+   * Спортсмены в зоне доступа вызывающего (#50, SEC-08).
+   *
+   * `null` — ограничений нет (SUPERADMIN или scopeAllGroups). Иначе — только
+   * свои: иначе тренер с выданным `payments.view` видит суммы всего клуба.
+   */
+  private async visibleAthleteIds(callerUserId: string): Promise<Set<string> | null> {
+    const ids = await this.scope.visibleAthleteIds(callerUserId);
+    return ids === null ? null : new Set(ids);
   }
 
   private assertMonth(month: number): void {

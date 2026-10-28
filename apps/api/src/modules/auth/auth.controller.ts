@@ -3,6 +3,7 @@ import { ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestj
 import type { AuthSession, UserInvitePreview } from '@octagon/contracts';
 import type { Request } from 'express';
 
+import { clientIp } from '../../shared/client-ip';
 import { AuthService } from './auth.service';
 import { LoginDto, LogoutDto, RefreshDto, RegisterDto } from './auth.dto';
 import { AcceptInviteCodeDto, AcceptInviteDto } from './invite.dto';
@@ -131,15 +132,4 @@ export class AuthController {
     await this.auth.enforceInviteRateLimit(clientIp(request));
     return this.invites.preview(token);
   }
-}
-
-function clientIp(request: Request): string | null {
-  const forwarded = request.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string' && forwarded.trim() !== '') {
-    const [first] = forwarded.split(',');
-    if (first) {
-      return first.trim();
-    }
-  }
-  return request.ip ?? request.socket?.remoteAddress ?? null;
 }

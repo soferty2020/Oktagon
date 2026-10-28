@@ -52,6 +52,8 @@ export interface BillingAthleteRecord {
 /** Движение средств для выгрузки: строка будущего CSV. */
 export interface PaymentExportRecord {
   id: string;
+  /** Нужен для фильтра по зоне доступа (#50, SEC-08). */
+  athleteId: string;
   paidAt: Date;
   kind: PaymentKind;
   amount: number;
@@ -183,7 +185,7 @@ export abstract class FinanceRepository {
   abstract listMovementsInRange(
     from: Date,
     to: Date,
-  ): Promise<{ kind: PaymentKind; amount: number; hallId: string | null }[]>;
+  ): Promise<{ athleteId: string; kind: PaymentKind; amount: number; hallId: string | null }[]>;
 
   /**
    * Движения за период с деталями для выгрузки в CSV.
@@ -538,10 +540,11 @@ export class PrismaFinanceRepository extends FinanceRepository {
   async listMovementsInRange(
     from: Date,
     to: Date,
-  ): Promise<{ kind: PaymentKind; amount: number; hallId: string | null }[]> {
+  ): Promise<{ athleteId: string; kind: PaymentKind; amount: number; hallId: string | null }[]> {
     const movements = await this.prisma.db.paymentTransaction.findMany({
       where: { paidAt: { gte: from, lt: to } },
       select: {
+        athleteId: true,
         kind: true,
         amount: true,
         athlete: {
@@ -558,6 +561,7 @@ export class PrismaFinanceRepository extends FinanceRepository {
     });
 
     return movements.map((movement) => ({
+      athleteId: movement.athleteId,
       kind: movement.kind,
       amount: Number(movement.amount),
       hallId: movement.athlete.memberships[0]?.group.hallId ?? null,
@@ -570,6 +574,7 @@ export class PrismaFinanceRepository extends FinanceRepository {
       orderBy: { paidAt: 'asc' },
       select: {
         id: true,
+        athleteId: true,
         paidAt: true,
         kind: true,
         amount: true,
@@ -592,6 +597,7 @@ export class PrismaFinanceRepository extends FinanceRepository {
 
     return movements.map((movement) => ({
       id: movement.id,
+      athleteId: movement.athleteId,
       paidAt: movement.paidAt,
       kind: movement.kind,
       amount: Number(movement.amount),

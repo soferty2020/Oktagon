@@ -198,7 +198,25 @@ export class ClubStructureService {
    * «тренер» из него получился бы только на бумаге — он не увидел бы занятий.
    * Молчаливое состояние, в котором доступ есть, а возможностей нет, хуже отказа.
    */
-  async linkTrainerAccount(id: string, userId: string): Promise<TrainerView> {
+  async linkTrainerAccount(
+    id: string,
+    userId: string,
+    callerUserId: string,
+  ): Promise<TrainerView> {
+    // Привязать чужой профиль к себе — значит получить доступ к чужим группам.
+    // Себе разрешаем только SUPERADMIN: иначе holder users.manage «повышает»
+    // себя до тренера без согласия владельца профиля (#50, SEC-07).
+    if (userId === callerUserId) {
+      const caller = await this.repository.findAccount(callerUserId);
+
+      if (caller?.role !== UserRole.SUPERADMIN) {
+        throw new ApiException(
+          'FORBIDDEN' satisfies ApiErrorCode,
+          'Нельзя привязать профиль тренера к своему аккаунту',
+        );
+      }
+    }
+
     const trainer = await this.requireTrainer(id);
 
     if (trainer.userId === userId) {

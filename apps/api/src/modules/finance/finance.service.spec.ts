@@ -58,7 +58,7 @@ const refund: PaymentRecord = {
 describe('FinanceService', () => {
   let repository: jest.Mocked<FinanceRepository>;
   let freezes: { listFrozenAthleteIds: jest.Mock };
-  let scope: { assertAthleteAccess: jest.Mock };
+  let scope: { assertAthleteAccess: jest.Mock; visibleAthleteIds: jest.Mock };
   let audit: { recordSafely: jest.Mock };
   let debtRules: { getConfigForDate: jest.Mock };
   let settings: { getClubProfile: jest.Mock };
@@ -115,7 +115,11 @@ describe('FinanceService', () => {
     } as unknown as jest.Mocked<FinanceRepository>;
 
     freezes = { listFrozenAthleteIds: jest.fn().mockResolvedValue([]) };
-    scope = { assertAthleteAccess: jest.fn().mockResolvedValue({ allowed: true }) };
+    scope = {
+    assertAthleteAccess: jest.fn().mockResolvedValue({ allowed: true }),
+    // По умолчанию ограничений нет: тесты финансов не про зону доступа.
+    visibleAthleteIds: jest.fn().mockResolvedValue(null),
+  };
     audit = { recordSafely: jest.fn().mockResolvedValue(null) };
     // Правила долга по умолчанию — BR-004: существующие тесты должны проходить
     // без изменений, это и есть проверка отсутствия регрессии (K5).
@@ -598,9 +602,9 @@ describe('FinanceService', () => {
   describe('сводка за месяц (F8)', () => {
     it('выручка считается по датам движений, возвраты вычитаются', async () => {
       repository.listMovementsInRange.mockResolvedValue([
-        { kind: 'PAYMENT', amount: 25000, hallId: null },
-        { kind: 'PAYMENT', amount: 10000, hallId: null },
-        { kind: 'REFUND', amount: 5000, hallId: null },
+        { kind: 'PAYMENT', athleteId: 'athlete-1', amount: 25000, hallId: null },
+        { kind: 'PAYMENT', athleteId: 'athlete-1', amount: 10000, hallId: null },
+        { kind: 'REFUND', athleteId: 'athlete-1', amount: 5000, hallId: null },
       ]);
 
       const summary = await service.summary('admin-1', 2026, 10);
@@ -639,8 +643,8 @@ describe('FinanceService', () => {
         { id: 'branch-2', name: 'Север' },
       ]);
       repository.listMovementsInRange.mockResolvedValue([
-        { kind: 'PAYMENT', amount: 20000, hallId: 'branch-1' },
-        { kind: 'PAYMENT', amount: 5000, hallId: 'branch-2' },
+        { kind: 'PAYMENT', athleteId: 'athlete-1', amount: 20000, hallId: 'branch-1' },
+        { kind: 'PAYMENT', athleteId: 'athlete-2', amount: 5000, hallId: 'branch-2' },
       ]);
       repository.listPeriodsForMonth.mockResolvedValue([
         { ...period, expectedAmount: 25000, paidAmount: 0 },

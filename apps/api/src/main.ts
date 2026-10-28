@@ -21,6 +21,12 @@ async function bootstrap(): Promise<void> {
 
   app.setGlobalPrefix(apiPrefix);
 
+  // Один доверенный прокси — nginx (#49, SEC-04). Без trust proxy Express
+  // игнорирует X-Forwarded-For, и rate limiting видел бы IP контейнера nginx у
+  // всех клиентов. С ним `request.ip` — адрес клиента, а не подставленный
+  // заголовок: nginx перезаписывает X-Forwarded-For ($remote_addr).
+  app.set('trust proxy', 1);
+
   // Фотографии новостей (#70): файлы лежат в томе, наружу отдаются по /media/.
   // Каталог создаётся на старте: без него первая загрузка падала бы с ENOENT.
   const uploadDir = config.get('UPLOAD_DIR', { infer: true }) ?? './uploads';

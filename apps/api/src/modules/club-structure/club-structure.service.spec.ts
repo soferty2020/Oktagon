@@ -131,7 +131,7 @@ describe('ClubStructureService (#64, #69)', () => {
       repository.findTrainer.mockResolvedValue(trainer);
       repository.findAccount.mockResolvedValue({ role: 'MEMBER', status: 'ACTIVE' });
 
-      await expect(service.linkTrainerAccount('trainer-1', 'user-1')).rejects.toMatchObject({
+      await expect(service.linkTrainerAccount('trainer-1', 'user-1', 'admin-1')).rejects.toMatchObject({
         code: ApiErrorCode.TRAINER_ACCOUNT_ROLE_INVALID,
       });
     });
@@ -142,7 +142,7 @@ describe('ClubStructureService (#64, #69)', () => {
       repository.findTrainerByUserId.mockResolvedValue(null);
       repository.setTrainerAccount.mockResolvedValue({ ...trainer, userId: 'user-1' });
 
-      const result = await service.linkTrainerAccount('trainer-1', 'user-1');
+      const result = await service.linkTrainerAccount('trainer-1', 'user-1', 'admin-1');
 
       expect(result.userId).toBe('user-1');
     });

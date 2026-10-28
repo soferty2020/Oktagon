@@ -4,6 +4,7 @@ import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags
 import { PermissionCode, TrialRequestStatus, type TrialRequestView } from '@octagon/contracts';
 
 import { AuthGuard, CurrentUser, type AuthenticatedUser } from '../../shared/auth-stub';
+import { clientIp } from '../../shared/client-ip';
 import { PermissionsGuard, RequirePermissions } from '../../shared/permissions.guard';
 import { CreateTrialRequestDto, UpdateTrialRequestDto } from './trial-requests.dto';
 import { TrialRequestsService } from './trial-requests.service';
@@ -63,14 +64,4 @@ export class TrialRequestsController {
   ): Promise<TrialRequestView> {
     return this.requests.updateStatus(user.id, id, dto.status);
   }
-}
-
-/** IP клиента с учётом прокси: за nginx `req.ip` уже подменён. */
-function clientIp(request: Request): string | null {
-  const forwarded = request.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string' && forwarded.length > 0) {
-    return forwarded.split(',')[0]?.trim() ?? null;
-  }
-
-  return request.ip ?? null;
 }

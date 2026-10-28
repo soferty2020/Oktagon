@@ -123,10 +123,23 @@ export class RefreshTokenService {
       throw new UnauthorizedException('Refresh-токен истек');
     }
 
-    await this.prisma.db.refreshToken.update({
-      where: { id: stored.id },
+    // Гасим токен условным апдейтом (#49, SEC-05): из двух параллельных
+    // запросов с одним refresh успевает ровно один. Безусловный update
+    // пропускал оба, и у атакующего оставалась действующая пара.
+    const revoked = await this.prisma.db.refreshToken.updateMany({
+      where: { id: stored.id, revokedAt: null },
       data: { revokedAt: new Date() },
     });
+
+    if (revoked.count === 0) {
+      // Пока шла проверка, токен уже погасил другой запрос: это ровно тот
+      // сценарий кражи, ради которого существует reuse detection.
+      await this.revokeAllForUser(stored.userId);
+      this.logger.warn(
+        `Гонка ротации refresh-токена пользователя ${stored.userId}: все токены отозваны`,
+      );
+      throw new UnauthorizedException('Refresh-токен уже использован');
+    }
 
     const refresh = await this.issue(stored.userId);
     return { userId: stored.userId, refresh };

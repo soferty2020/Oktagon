@@ -77,7 +77,9 @@ services:
     env_file: .env.staging
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-octagon}?schema=public
+      # Приложение работает ролью без суперпользователя (#53, SEC-13):
+      # миграции и seed остаются под владельцем схемы.
+      DATABASE_URL: postgresql://octagon_app:${APP_DB_PASSWORD:?задайте APP_DB_PASSWORD в .env.staging}@postgres:5432/${POSTGRES_DB:-octagon}?schema=public
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       # Фотографии новостей (#70): каталог на томе, переживает пересборку.
       UPLOAD_DIR: /data/uploads
