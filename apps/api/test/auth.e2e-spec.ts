@@ -71,6 +71,8 @@ describe('Auth (e2e, без БД)', () => {
       })
       .overrideProvider(IdentityService)
       .useValue({
+        // Guard обновляет роль из БД (#50).
+        getRole: async () => profile.role,
         getProfile: async () => profile,
         listLinkedAthletes: async () => [],
         canAccessAthlete: async () => true,

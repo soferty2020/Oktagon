@@ -33,6 +33,8 @@ describe('Identity access (e2e, без БД)', () => {
       .useValue({ isConfigured: false, isReachable: async () => true })
       .overrideProvider(IdentityService)
       .useValue({
+        // Guard обновляет роль из БД (#50): в e2e «БД» — этот мок.
+        getRole: async () => 'MEMBER',
         getProfile: async (id: string) =>
           id === userId
             ? {

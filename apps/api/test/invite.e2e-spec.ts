@@ -75,7 +75,8 @@ describe('Invites (e2e, без БД)', () => {
       })
       .overrideProvider(IdentityService)
       .useValue({
-        // STAFF без users.manage: право есть только у суперадмина (ADR-0006).
+        // Guard обновляет роль из БД (#50): в e2e «БД» — этот мок.
+        getRole: async (userId: string) => (userId === 'admin-1' ? 'SUPERADMIN' : 'STAFF'),
         getPermissions: async (userId: string) =>
           userId === 'admin-1'
             ? { codes: ['users.manage'], grants: [] }
