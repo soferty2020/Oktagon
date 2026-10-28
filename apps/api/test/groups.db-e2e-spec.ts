@@ -24,9 +24,9 @@ describe('Groups (db e2e, требуется PostgreSQL)', () => {
   let prisma: PrismaService;
   let groups: GroupsService;
   let adminId: string;
-  const created: { groupIds: string[]; branchIds: string[]; athleteIds: string[]; trainerIds: string[] } = {
+  const created: { groupIds: string[]; hallIds: string[]; athleteIds: string[]; trainerIds: string[] } = {
     groupIds: [],
-    branchIds: [],
+    hallIds: [],
     athleteIds: [],
     trainerIds: [],
   };
@@ -67,22 +67,21 @@ describe('Groups (db e2e, требуется PostgreSQL)', () => {
   afterAll(async () => {
     await prisma.db.groupMembership.deleteMany({ where: { groupId: { in: created.groupIds } } });
     await prisma.db.groupTrainer.deleteMany({ where: { groupId: { in: created.groupIds } } });
-    await prisma.db.groupBranch.deleteMany({ where: { groupId: { in: created.groupIds } } });
     await prisma.db.group.deleteMany({ where: { id: { in: created.groupIds } } });
     await prisma.db.trainerProfile.deleteMany({ where: { id: { in: created.trainerIds } } });
     await prisma.db.athlete.deleteMany({ where: { id: { in: created.athleteIds } } });
-    await prisma.db.branch.deleteMany({ where: { id: { in: created.branchIds } } });
+    await prisma.db.hall.deleteMany({ where: { id: { in: created.hallIds } } });
     await prisma.db.user.deleteMany({ where: { id: adminId } });
     await prisma.onModuleDestroy();
   });
 
-  const newBranch = async (name: string): Promise<string> => {
-    const branch = await prisma.db.branch.create({
+  const newHall = async (name: string): Promise<string> => {
+    const hall = await prisma.db.hall.create({
       data: { name },
       select: { id: true },
     });
-    created.branchIds.push(branch.id);
-    return branch.id;
+    created.hallIds.push(hall.id);
+    return hall.id;
   };
 
   const newAthlete = async (lastName: string): Promise<string> => {
@@ -102,39 +101,19 @@ describe('Groups (db e2e, требуется PostgreSQL)', () => {
     created.trainerIds.push(trainer.id);
     return trainer.id;
   };
-
-  it('создает группу и связывает ее с филиалом', async () => {
+  it('создает группу в зале и отдает зал в деталях', async () => {
     const stamp = Date.now();
-    const group = await groups.create({ name: `Группа A ${stamp}` });
+    const hallId = await newHall(`Зал A ${stamp}`);
+
+    const group = await groups.create({ name: `Группа A ${stamp}`, hallId });
     created.groupIds.push(group.id);
 
-    const branchId = await newBranch(`Филиал A ${stamp}`);
-    const details = await groups.linkBranch(adminId, group.id, { branchId, isPrimary: true });
+    expect(group.hallName).toBe(`Зал A ${stamp}`);
 
-    expect(details.branches).toHaveLength(1);
-    expect(details.branches[0]).toMatchObject({ branchId, isPrimary: true });
-    expect(details.primaryBranchName).toBe(`Филиал A ${stamp}`);
+    const details = await groups.get(adminId, group.id);
+    expect(details.hallId).toBe(hallId);
+    expect(details.hallName).toBe(`Зал A ${stamp}`);
   });
-
-  it('связывает группу с несколькими филиалами и хранит один основной', async () => {
-    const stamp = Date.now();
-    const group = await groups.create({ name: `Группа B ${stamp}` });
-    created.groupIds.push(group.id);
-
-    const first = await newBranch(`Филиал B1 ${stamp}`);
-    const second = await newBranch(`Филиал B2 ${stamp}`);
-
-    await groups.linkBranch(adminId, group.id, { branchId: first, isPrimary: true });
-    const details = await groups.linkBranch(adminId, group.id, {
-      branchId: second,
-      isPrimary: true,
-    });
-
-    expect(details.branches).toHaveLength(2);
-    expect(details.branches.filter((branch) => branch.isPrimary)).toHaveLength(1);
-    expect(details.branches.find((branch) => branch.isPrimary)?.branchId).toBe(second);
-  });
-
   it('назначает тренера и запрещает повторное назначение', async () => {
     const stamp = Date.now();
     const group = await groups.create({ name: `Группа C ${stamp}` });

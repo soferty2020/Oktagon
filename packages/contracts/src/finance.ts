@@ -129,14 +129,14 @@ export interface FinanceTotals {
 }
 
 /** Денежные итоги по филиалу: позволяют сравнить филиалы между собой. */
-export interface BranchFinanceSummary extends FinanceTotals {
+export interface HallFinanceSummary extends FinanceTotals {
   /**
    * Основной филиал группы спортсмена. `null` — филиал не назначен: такие
    * суммы сведены в отдельную строку, потому что приписать их первому филиалу
    * значило бы показать руководителю чужие деньги как свои.
    */
-  branchId: string | null;
-  branchName: string;
+  hallId: string | null;
+  hallName: string;
   /** Должников среди спортсменов этого филиала. */
   debtors: number;
   /** Сколько недостает по ожидаемым суммам. */
@@ -165,7 +165,7 @@ export interface FinanceSummary {
   /** Активных спортсменов клуба. */
   activeAthletes: number;
   /** Разбивка по филиалам: выручка, возвраты и задолженность. */
-  branches: BranchFinanceSummary[];
+  branches: HallFinanceSummary[];
 }
 
 export interface UpdateMembershipPeriodInput {

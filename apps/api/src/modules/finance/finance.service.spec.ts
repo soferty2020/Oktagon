@@ -110,8 +110,8 @@ describe('FinanceService', () => {
         ]),
       hasGroupTrainingInMonth: jest.fn().mockResolvedValue(true),
       listMovementsInRange: jest.fn().mockResolvedValue([]),
-      branchesForAthletes: jest.fn().mockResolvedValue(new Map()),
-      listBranches: jest.fn().mockResolvedValue([]),
+      hallsForAthletes: jest.fn().mockResolvedValue(new Map()),
+      listHalls: jest.fn().mockResolvedValue([]),
     } as unknown as jest.Mocked<FinanceRepository>;
 
     freezes = { listFrozenAthleteIds: jest.fn().mockResolvedValue([]) };
@@ -598,9 +598,9 @@ describe('FinanceService', () => {
   describe('сводка за месяц (F8)', () => {
     it('выручка считается по датам движений, возвраты вычитаются', async () => {
       repository.listMovementsInRange.mockResolvedValue([
-        { kind: 'PAYMENT', amount: 25000, branchId: null },
-        { kind: 'PAYMENT', amount: 10000, branchId: null },
-        { kind: 'REFUND', amount: 5000, branchId: null },
+        { kind: 'PAYMENT', amount: 25000, hallId: null },
+        { kind: 'PAYMENT', amount: 10000, hallId: null },
+        { kind: 'REFUND', amount: 5000, hallId: null },
       ]);
 
       const summary = await service.summary('admin-1', 2026, 10);
@@ -634,51 +634,51 @@ describe('FinanceService', () => {
     });
 
     it('раскладывает выручку и долг по филиалам', async () => {
-      repository.listBranches.mockResolvedValue([
+      repository.listHalls.mockResolvedValue([
         { id: 'branch-1', name: 'Центр' },
         { id: 'branch-2', name: 'Север' },
       ]);
       repository.listMovementsInRange.mockResolvedValue([
-        { kind: 'PAYMENT', amount: 20000, branchId: 'branch-1' },
-        { kind: 'PAYMENT', amount: 5000, branchId: 'branch-2' },
+        { kind: 'PAYMENT', amount: 20000, hallId: 'branch-1' },
+        { kind: 'PAYMENT', amount: 5000, hallId: 'branch-2' },
       ]);
       repository.listPeriodsForMonth.mockResolvedValue([
         { ...period, expectedAmount: 25000, paidAmount: 0 },
       ]);
-      repository.branchesForAthletes.mockResolvedValue(
-        new Map([['athlete-1', { branchId: 'branch-1', branchName: 'Центр' }]]),
+      repository.hallsForAthletes.mockResolvedValue(
+        new Map([['athlete-1', { hallId: 'branch-1', hallName: 'Центр' }]]),
       );
 
       const summary = await service.summary('admin-1', 2026, 10);
-      const center = summary.branches.find((branch) => branch.branchId === 'branch-1');
-      const north = summary.branches.find((branch) => branch.branchId === 'branch-2');
+      const center = summary.branches.find((branch) => branch.hallId === 'branch-1');
+      const north = summary.branches.find((branch) => branch.hallId === 'branch-2');
 
       expect(center).toMatchObject({ received: 20000, debtors: 1, debt: 25000 });
       expect(north).toMatchObject({ received: 5000, debtors: 0, debt: 0 });
-      // Филиал с движением, но без должников, остается в сводке: иначе
+      // Зал с движением, но без должников, остается в сводке: иначе
       // сравнение филиалов было бы неполным.
       expect(summary.branches).toHaveLength(2);
-      expect(summary.branches[0]?.branchId).toBe('branch-1');
+      expect(summary.branches[0]?.hallId).toBe('branch-1');
     });
 
     it('спортсмен без филиала попадает в отдельную строку', async () => {
       repository.listPeriodsForMonth.mockResolvedValue([
         { ...period, expectedAmount: 25000, paidAmount: 0 },
       ]);
-      repository.branchesForAthletes.mockResolvedValue(new Map());
+      repository.hallsForAthletes.mockResolvedValue(new Map());
 
       const summary = await service.summary('admin-1', 2026, 10);
 
       expect(summary.branches).toHaveLength(1);
       expect(summary.branches[0]).toMatchObject({
-        branchId: null,
-        branchName: 'Филиал не назначен',
+        hallId: null,
+        hallName: 'Зал не назначен',
         debtors: 1,
       });
     });
 
     it('филиал без движения и долгов в сводку не попадает', async () => {
-      repository.listBranches.mockResolvedValue([
+      repository.listHalls.mockResolvedValue([
         { id: 'branch-1', name: 'Центр' },
         { id: 'branch-2', name: 'Пустой' },
       ]);

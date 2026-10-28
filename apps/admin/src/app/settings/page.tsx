@@ -51,7 +51,7 @@ const CATEGORIES: readonly SettingsCategory[] = [
     title: 'Филиалы и залы',
     description: 'Адреса, контакты и залы: управление в операционном разделе.',
     icon: 'halls',
-    href: '/branches',
+    href: '/halls',
     requiredPermissions: ['branches.manage'],
   },
   {

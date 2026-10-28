@@ -94,14 +94,16 @@ export class ClubStructureService {
     const { groups, sessions } = await this.repository.countHallDependents(id, new Date());
 
     if (groups > 0 || sessions > 0) {
+      const details = [
+        groups > 0 ? `в зале ${groups} групп` : null,
+        sessions > 0 ? `предстоящих занятий: ${sessions}` : null,
+      ]
+        .filter(Boolean)
+        .join(', ');
+
       throw new ApiException(
         'HALL_IN_USE' satisfies ApiErrorCode,
-        [
-          groups > 0 ? `в зале ${groups} групп` : null,
-          sessions > 0 ? `предстоящих занятий: ${sessions}` : null,
-        ]
-          .filter(Boolean)
-          .join(', ') + ': сначала перенесите их в другой зал',
+        `${details}: сначала перенесите их в другой зал`,
         { groups, sessions },
       );
     }

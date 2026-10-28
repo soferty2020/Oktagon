@@ -48,7 +48,7 @@ describe('FinanceService: отчёты', () => {
       listPeriodsForMonth: jest.fn().mockResolvedValue([period]),
       listMovementsInRange: jest
         .fn()
-        .mockResolvedValue([{ kind: 'PAYMENT', amount: 40000, branchId: null }]),
+        .mockResolvedValue([{ kind: 'PAYMENT', amount: 40000, hallId: null }]),
       listPaymentsForExport: jest.fn().mockResolvedValue([
         {
           id: 'pay-1',
@@ -118,8 +118,8 @@ describe('FinanceService: отчёты', () => {
 
     it('вычитает возвраты из выручки', async () => {
       repository.listMovementsInRange.mockResolvedValue([
-        { kind: 'PAYMENT', amount: 40000, branchId: null },
-        { kind: 'REFUND', amount: 5000, branchId: null },
+        { kind: 'PAYMENT', amount: 40000, hallId: null },
+        { kind: 'REFUND', amount: 5000, hallId: null },
       ]);
 
       const dynamics = await service.dynamics('admin-1', 2026, 10, 1);

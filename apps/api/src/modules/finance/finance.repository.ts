@@ -183,7 +183,7 @@ export abstract class FinanceRepository {
   abstract listMovementsInRange(
     from: Date,
     to: Date,
-  ): Promise<{ kind: PaymentKind; amount: number; branchId: string | null }[]>;
+  ): Promise<{ kind: PaymentKind; amount: number; hallId: string | null }[]>;
 
   /**
    * Движения за период с деталями для выгрузки в CSV.
@@ -198,11 +198,11 @@ export abstract class FinanceRepository {
    * Возвращается словарем: сводка раскладывает должников по филиалам, а
    * спортсмен без филиала должен попасть в отдельную строку, а не исчезнуть.
    */
-  abstract branchesForAthletes(
+  abstract hallsForAthletes(
     athleteIds: string[],
-  ): Promise<Map<string, { branchId: string; branchName: string }>>;
+  ): Promise<Map<string, { hallId: string; hallName: string }>>;
   /** Названия филиалов: нужны, чтобы показать движение без должников. */
-  abstract listBranches(): Promise<{ id: string; name: string }[]>;
+  abstract listHalls(): Promise<{ id: string; name: string }[]>;
 }
 
 const PAYMENT_SELECT = {
@@ -538,7 +538,7 @@ export class PrismaFinanceRepository extends FinanceRepository {
   async listMovementsInRange(
     from: Date,
     to: Date,
-  ): Promise<{ kind: PaymentKind; amount: number; branchId: string | null }[]> {
+  ): Promise<{ kind: PaymentKind; amount: number; hallId: string | null }[]> {
     const movements = await this.prisma.db.paymentTransaction.findMany({
       where: { paidAt: { gte: from, lt: to } },
       select: {
@@ -550,19 +550,7 @@ export class PrismaFinanceRepository extends FinanceRepository {
               where: { state: 'ACTIVE' },
               orderBy: { joinedAt: 'desc' },
               take: 1,
-              select: {
-                group: {
-                  select: {
-                    branches: {
-                      // Основной филиал группы; если он не отмечен, берется
-                      // первый по порядку — иначе оплата выпала бы из разбивки.
-                      orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
-                      take: 1,
-                      select: { branchId: true },
-                    },
-                  },
-                },
-              },
+              select: { group: { select: { hallId: true } } },
             },
           },
         },
@@ -572,7 +560,7 @@ export class PrismaFinanceRepository extends FinanceRepository {
     return movements.map((movement) => ({
       kind: movement.kind,
       amount: Number(movement.amount),
-      branchId: movement.athlete.memberships[0]?.group.branches[0]?.branchId ?? null,
+      hallId: movement.athlete.memberships[0]?.group.hallId ?? null,
     }));
   }
 
@@ -615,9 +603,9 @@ export class PrismaFinanceRepository extends FinanceRepository {
     }));
   }
 
-  async branchesForAthletes(
+  async hallsForAthletes(
     athleteIds: string[],
-  ): Promise<Map<string, { branchId: string; branchName: string }>> {
+  ): Promise<Map<string, { hallId: string; hallName: string }>> {
     if (athleteIds.length === 0) {
       return new Map();
     }
@@ -627,32 +615,24 @@ export class PrismaFinanceRepository extends FinanceRepository {
       orderBy: { joinedAt: 'desc' },
       select: {
         athleteId: true,
-        group: {
-          select: {
-            branches: {
-              orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
-              take: 1,
-              select: { branch: { select: { id: true, name: true } } },
-            },
-          },
-        },
+        group: { select: { hall: { select: { id: true, name: true } } } },
       },
     });
 
-    const result = new Map<string, { branchId: string; branchName: string }>();
+    const result = new Map<string, { hallId: string; hallName: string }>();
     for (const membership of memberships) {
       // Первое членство для каждого спортсмена: выборка отсортирована по дате
       // вступления, поэтому более позднее членство перекрывает раннее.
-      const branch = membership.group.branches[0]?.branch;
-      if (branch && !result.has(membership.athleteId)) {
-        result.set(membership.athleteId, { branchId: branch.id, branchName: branch.name });
+      const hall = membership.group.hall;
+      if (hall && !result.has(membership.athleteId)) {
+        result.set(membership.athleteId, { hallId: hall.id, hallName: hall.name });
       }
     }
     return result;
   }
 
-  async listBranches(): Promise<{ id: string; name: string }[]> {
-    return this.prisma.db.branch.findMany({
+  async listHalls(): Promise<{ id: string; name: string }[]> {
+    return this.prisma.db.hall.findMany({
       where: { archivedAt: null },
       orderBy: { name: 'asc' },
       select: { id: true, name: true },

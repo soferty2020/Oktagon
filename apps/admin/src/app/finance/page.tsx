@@ -38,8 +38,8 @@ interface FinanceSummary {
   debt: number;
   activeAthletes: number;
   branches: {
-    branchId: string | null;
-    branchName: string;
+    hallId: string | null;
+    hallName: string;
     received: number;
     refunded: number;
     revenue: number;
@@ -222,7 +222,7 @@ export default async function FinancePage({
           <table className="w-full text-left text-sm">
             <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
               <tr>
-                <th className="px-4 py-3">Филиал</th>
+                <th className="px-4 py-3">Зал</th>
                 <th className="px-4 py-3">Выручка</th>
                 <th className="px-4 py-3">Поступления</th>
                 <th className="px-4 py-3">Возвраты</th>
@@ -233,12 +233,12 @@ export default async function FinancePage({
             <tbody>
               {branchRows.map((branch) => (
                 <tr
-                  key={branch.branchId ?? 'no-branch'}
+                  key={branch.hallId ?? 'no-branch'}
                   className="border-b border-line last:border-0"
                 >
                   <td className="px-4 py-3">
-                    <span className="font-medium text-ink">{branch.branchName}</span>
-                    {branch.branchId === null ? (
+                    <span className="font-medium text-ink">{branch.hallName}</span>
+                    {branch.hallId === null ? (
                       <span className="mt-1 block text-xs text-muted">
                         филиал не назначен — суммы не отнесены к филиалам
                       </span>

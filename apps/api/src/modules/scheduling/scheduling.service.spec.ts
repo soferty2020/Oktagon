@@ -4,6 +4,7 @@ import { AuditService } from '../audit/audit.service';
 import type { GroupsRepository } from '../groups/groups.repository';
 import { ResourceScopeService } from '../identity/resource-scope.service';
 import type {
+  CreateSessionsInput,
   ScheduleSlotRecord,
   ScheduleTemplateRecord,
   SchedulingRepository,
@@ -45,7 +46,6 @@ const session: TrainingSessionRecord = {
   id: 'session-1',
   groupId: 'group-1',
   groupName: 'Дети 7-9 лет',
-  branchId: 'branch-1',
   hallId: 'hall-1',
   hallName: 'Основной зал',
   trainerId: 'trainer-1',
@@ -60,7 +60,7 @@ const session: TrainingSessionRecord = {
 
 describe('SchedulingService', () => {
   let repository: jest.Mocked<SchedulingRepository>;
-  let groups: { exists: jest.Mock; findPrimaryBranchId: jest.Mock };
+  let groups: { exists: jest.Mock; findHallId: jest.Mock };
   let scope: { visibleGroupIds: jest.Mock; assertGroupAccess: jest.Mock };
   let audit: { recordSafely: jest.Mock };
   let service: SchedulingService;
@@ -92,7 +92,7 @@ describe('SchedulingService', () => {
 
     groups = {
       exists: jest.fn().mockResolvedValue(true),
-      findPrimaryBranchId: jest.fn().mockResolvedValue('branch-1'),
+      findHallId: jest.fn().mockResolvedValue('hall-1'),
     };
 
     scope = {
@@ -333,11 +333,9 @@ describe('SchedulingService', () => {
 
       await service.generateSessions('admin-1', { templateId: 'template-1' });
 
-      const [created] = repository.createSessions.mock.calls[0] as [
-        { branchId: string | null; hallId: string | null; trainerId: string | null }[],
-      ];
+      const [created] = repository.createSessions.mock.calls[0] as [CreateSessionsInput[]];
       for (const candidate of created) {
-        expect(candidate.branchId).toBe('branch-1');
+        // Зал берётся из слота шаблона; зал группы — запасной вариант.
         expect(candidate.hallId).toBe('hall-1');
         expect(candidate.trainerId).toBe('trainer-1');
       }
@@ -490,7 +488,7 @@ describe('SchedulingService', () => {
       expect(input.endsAt.toISOString()).toBe('2026-02-11T19:30:00.000Z');
     });
 
-    it('наследует основной филиал группы', async () => {
+    it('наследует зал группы', async () => {
       await service.createSession({
         groupId: 'group-1',
         date: PAST_DATE,
@@ -499,9 +497,9 @@ describe('SchedulingService', () => {
         reason: 'Занесение',
       });
 
-      expect(groups.findPrimaryBranchId).toHaveBeenCalledWith('group-1');
+      expect(groups.findHallId).toHaveBeenCalledWith('group-1');
       expect(repository.createSession).toHaveBeenCalledWith(
-        expect.objectContaining({ branchId: 'branch-1' }),
+        expect.objectContaining({ groupId: 'group-1', hallId: 'hall-1' }),
       );
     });
 

@@ -7,6 +7,8 @@ const group: GroupRecord = {
   id: 'group-1',
   name: 'Дети 7-9 лет',
   description: null,
+  hallId: 'hall-1',
+  hall: { name: 'Центральный зал' },
   isActive: true,
   createdAt: new Date('2026-03-01T10:00:00.000Z'),
   updatedAt: new Date('2026-03-01T10:00:00.000Z'),
@@ -26,18 +28,6 @@ describe('GroupsService', () => {
       update: jest.fn().mockResolvedValue(group),
       archive: jest.fn().mockResolvedValue(undefined),
       countActiveMembers: jest.fn().mockResolvedValue(3),
-      listBranches: jest.fn().mockResolvedValue([
-        { branchId: 'branch-1', branchName: 'Главный', isPrimary: true },
-      ]),
-      findBranchLink: jest.fn().mockResolvedValue(null),
-      linkBranch: jest.fn().mockResolvedValue({
-        branchId: 'branch-1',
-        branchName: 'Главный',
-        isPrimary: false,
-      }),
-      clearPrimaryBranch: jest.fn().mockResolvedValue(undefined),
-      unlinkBranch: jest.fn().mockResolvedValue(true),
-      branchExists: jest.fn().mockResolvedValue(true),
       listTrainers: jest.fn().mockResolvedValue([
         {
           trainerId: 'trainer-1',
@@ -104,15 +94,15 @@ describe('GroupsService', () => {
       expect(list[0]).toMatchObject({
         id: 'group-1',
         activeMembersCount: 3,
-        primaryBranchName: 'Главный',
+        hallName: 'Центральный зал',
       });
     });
 
-    it('отдает детали с филиалами, тренерами и составом', async () => {
+    it('отдает детали с тренерами и составом', async () => {
       const details = await service.get('admin-1', 'group-1');
 
       expect(scope.assertGroupAccess).toHaveBeenCalledWith('admin-1', 'group-1');
-      expect(details.branches).toHaveLength(1);
+      expect(details.hallName).toBe('Центральный зал');
       expect(details.trainers[0]?.displayName).toBe('Тренер Серик');
       expect(details.members[0]?.joinedAt).toBe('2026-09-01');
     });
@@ -136,53 +126,6 @@ describe('GroupsService', () => {
 
       await expect(service.get('admin-1', 'missing')).rejects.toMatchObject({
         code: 'GROUP_NOT_FOUND',
-      });
-    });
-  });
-
-  describe('филиалы группы', () => {
-    it('привязывает филиал и пишет аудит', async () => {
-      await service.linkBranch('admin-1', 'group-1', { branchId: 'branch-1' });
-
-      expect(repository.linkBranch).toHaveBeenCalledWith(
-        expect.objectContaining({ groupId: 'group-1', branchId: 'branch-1' }),
-      );
-      expect(audit.recordSafely).toHaveBeenCalledWith(
-        expect.objectContaining({ action: 'group.branch_linked' }),
-      );
-    });
-
-    it('снимает признак основного филиала при назначении нового', async () => {
-      await service.linkBranch('admin-1', 'group-1', { branchId: 'branch-1', isPrimary: true });
-
-      expect(repository.clearPrimaryBranch).toHaveBeenCalledWith('group-1');
-    });
-
-    it('отклоняет неизвестный филиал', async () => {
-      repository.branchExists.mockResolvedValue(false);
-
-      await expect(
-        service.linkBranch('admin-1', 'group-1', { branchId: 'ghost' }),
-      ).rejects.toMatchObject({ code: 'BRANCH_NOT_FOUND' });
-    });
-
-    it('отклоняет повторную привязку филиала', async () => {
-      repository.findBranchLink.mockResolvedValue({
-        branchId: 'branch-1',
-        branchName: 'Главный',
-        isPrimary: false,
-      });
-
-      await expect(
-        service.linkBranch('admin-1', 'group-1', { branchId: 'branch-1' }),
-      ).rejects.toMatchObject({ code: 'GROUP_BRANCH_ALREADY_LINKED' });
-    });
-
-    it('отклоняет снятие непривязанного филиала', async () => {
-      repository.unlinkBranch.mockResolvedValue(false);
-
-      await expect(service.unlinkBranch('admin-1', 'group-1', 'branch-9')).rejects.toMatchObject({
-        code: 'GROUP_BRANCH_NOT_LINKED',
       });
     });
   });

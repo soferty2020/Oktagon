@@ -16,13 +16,13 @@ interface GroupView {
   name: string;
   description: string | null;
   isActive: boolean;
-  primaryBranchName: string | null;
+  hallName: string | null;
   activeMembersCount: number;
   /** API отдает тренеров группы; в таблице показывается первый как основной. */
   trainers?: { id: string; displayName: string }[];
 }
 
-interface BranchView {
+interface HallView {
   id: string;
   name: string;
   isActive: boolean;
@@ -49,13 +49,13 @@ export default async function GroupsPage() {
   const { accessToken } = await readTokens();
   const canManage = user.permissions.includes('groups.edit');
 
-  const [groups, branches, trainers] = await Promise.all([
+  const [groups, halls, trainers] = await Promise.all([
     apiFetch<GroupView[]>('/groups', { accessToken }),
-    canManage ? apiFetch<BranchView[]>('/branches', { accessToken }) : null,
+    canManage ? apiFetch<HallView[]>('/halls', { accessToken }) : null,
     canManage ? apiFetch<TrainerView[]>('/trainers', { accessToken }) : null,
   ]);
 
-  const branchOptions = (branches?.ok ? branches.data : [])
+  const hallOptions = (halls?.ok ? halls.data : [])
     .filter((branch) => branch.isActive)
     .map((branch) => ({ id: branch.id, name: branch.name }));
   const trainerOptions = (trainers?.ok ? trainers.data : [])
@@ -98,7 +98,7 @@ export default async function GroupsPage() {
                       ) : null}
                     </td>
                     <td className="px-4 py-3 text-muted">
-                      {group.primaryBranchName ?? 'не назначен'}
+                      {group.hallName ?? 'не назначен'}
                     </td>
                     <td className="px-4 py-3 text-muted">
                       {group.trainers && group.trainers.length > 0
@@ -142,7 +142,7 @@ export default async function GroupsPage() {
         </div>
 
         {canManage ? (
-          <CreateGroupForm branches={branchOptions} trainers={trainerOptions} />
+          <CreateGroupForm halls={hallOptions} trainers={trainerOptions} />
         ) : null}
       </div>
     </AppShell>

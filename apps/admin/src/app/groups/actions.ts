@@ -70,7 +70,7 @@ export async function createGroupAction(
 ): Promise<GroupFormState> {
   const name = String(formData.get('name') ?? '').trim();
   const description = String(formData.get('description') ?? '').trim();
-  const branchId = String(formData.get('branchId') ?? '').trim();
+  const hallId = String(formData.get('hallId') ?? '').trim();
   const trainerId = String(formData.get('trainerId') ?? '').trim();
 
   if (!name) {
@@ -81,7 +81,7 @@ export async function createGroupAction(
     apiFetch('/groups', {
       accessToken,
       method: 'POST',
-      body: { name, ...(description ? { description } : {}) },
+      body: { name, ...(description ? { description } : {}), ...(hallId ? { hallId } : {}) },
     }),
   );
   if (created.error || !created.data) {
@@ -89,22 +89,9 @@ export async function createGroupAction(
   }
   const groupId = created.data.id;
 
-  // Связи создаются после группы: если филиал или тренер не подошли, группа уже
-  // существует, и об этом нужно сказать прямо, а не терять результат.
+  // Тренер назначается после группы: если он не подошёл, группа уже существует,
+  // и об этом нужно сказать прямо, а не терять результат.
   const warnings: string[] = [];
-
-  if (branchId) {
-    const linked = await withSession((accessToken) =>
-      apiFetch(`/groups/${groupId}/branches`, {
-        accessToken,
-        method: 'POST',
-        body: { branchId, isPrimary: true },
-      }),
-    );
-    if (linked.error) {
-      warnings.push(`филиал не привязан: ${linked.error}`);
-    }
-  }
 
   if (trainerId) {
     const assigned = await withSession((accessToken) =>
@@ -142,45 +129,37 @@ export async function archiveGroupAction(formData: FormData): Promise<void> {
   revalidatePath('/');
 }
 
-export async function linkBranchAction(
+/**
+ * Перенос группы в другой зал (#65).
+ *
+ * Группа живёт в одном зале: смена зала перевозит и её спортсменов. Отдельного
+ * «списка филиалов группы» больше нет — зал один.
+ */
+export async function setGroupHallAction(
   _prev: GroupFormState,
   formData: FormData,
 ): Promise<GroupFormState> {
   const groupId = String(formData.get('groupId') ?? '');
-  const branchId = String(formData.get('branchId') ?? '').trim();
-  const isPrimary = formData.get('isPrimary') === 'on';
+  const hallId = String(formData.get('hallId') ?? '').trim();
 
-  if (!branchId) {
-    return { error: 'Выберите филиал' };
+  if (!hallId) {
+    return { error: 'Выберите зал' };
   }
 
   const state = await withSession(
     (accessToken) =>
-      apiFetch(`/groups/${groupId}/branches`, {
+      apiFetch(`/groups/${groupId}`, {
         accessToken,
-        method: 'POST',
-        body: { branchId, isPrimary },
+        method: 'PATCH',
+        body: { hallId },
       }),
-    'Филиал привязан',
+    'Зал группы обновлён',
   );
 
   if (!state.error) {
     revalidatePath(`/groups/${groupId}`);
   }
   return state;
-}
-
-export async function unlinkBranchAction(formData: FormData): Promise<void> {
-  const groupId = String(formData.get('groupId') ?? '');
-  const branchId = String(formData.get('branchId') ?? '');
-  if (!groupId || !branchId) {
-    return;
-  }
-
-  await withSession((accessToken) =>
-    apiFetch(`/groups/${groupId}/branches/${branchId}`, { accessToken, method: 'DELETE' }),
-  );
-  revalidatePath(`/groups/${groupId}`);
 }
 
 export async function assignTrainerAction(

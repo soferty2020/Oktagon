@@ -5,8 +5,8 @@ import { AppShell, Notice, PageHeader } from '@/components/app-shell';
 import { StatusBadge } from '@/components/status-badge';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
-import { archiveGroupAction, endMembershipAction, unassignTrainerAction, unlinkBranchAction } from '../actions';
-import { AddMemberForm, AssignTrainerForm, LinkBranchForm } from '../group-forms';
+import { archiveGroupAction, endMembershipAction, unassignTrainerAction } from '../actions';
+import { AddMemberForm, AssignTrainerForm, SetGroupHallForm } from '../group-forms';
 
 export const metadata = {
   title: 'Группа — OCTAGON',
@@ -17,9 +17,9 @@ interface GroupDetails {
   name: string;
   description: string | null;
   isActive: boolean;
-  primaryBranchName: string | null;
+  hallId: string | null;
+  hallName: string | null;
   activeMembersCount: number;
-  branches: { branchId: string; branchName: string; isPrimary: boolean }[];
   trainers: { trainerId: string; displayName: string; isPrimary: boolean; assignedAt: string }[];
   members: {
     athleteId: string;
@@ -30,7 +30,7 @@ interface GroupDetails {
   }[];
 }
 
-interface BranchView {
+interface HallView {
   id: string;
   name: string;
   isActive: boolean;
@@ -56,9 +56,9 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
 
   const { id } = await params;
   const { accessToken } = await readTokens();
-  const [group, branches, trainers] = await Promise.all([
+  const [group, halls, trainers] = await Promise.all([
     apiFetch<GroupDetails>(`/groups/${id}`, { accessToken }),
-    apiFetch<BranchView[]>('/branches', { accessToken }),
+    apiFetch<HallView[]>('/halls', { accessToken }),
     apiFetch<TrainerView[]>('/trainers', { accessToken }),
   ]);
 
@@ -76,10 +76,9 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
   }
 
   const canManage = user.permissions.includes('groups.edit');
-  const linkedBranchIds = new Set(group.data.branches.map((branch) => branch.branchId));
-  const availableBranches = (branches.ok ? branches.data : [])
-    .filter((branch) => branch.isActive && !linkedBranchIds.has(branch.id))
-    .map((branch) => ({ id: branch.id, name: branch.name }));
+  const availableHalls = (halls.ok ? halls.data : [])
+    .filter((hall) => hall.isActive)
+    .map((hall) => ({ id: hall.id, name: hall.name }));
 
   const assignedTrainerIds = new Set(group.data.trainers.map((trainer) => trainer.trainerId));
   const availableTrainers = (trainers.ok ? trainers.data : [])
@@ -100,9 +99,9 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <div className="rounded-card border border-line bg-white p-4">
-          <p className="text-xs text-muted">Основной филиал</p>
+          <p className="text-xs text-muted">Зал</p>
           <p className="mt-1 text-sm font-medium text-ink">
-            {group.data.primaryBranchName ?? 'не назначен'}
+            {group.data.hallName ?? 'не назначен'}
           </p>
         </div>
         <div className="rounded-card border border-line bg-white p-4">
@@ -121,47 +120,19 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-card border border-line bg-white p-5">
-          <h2 className="text-sm font-semibold text-ink">Филиалы</h2>
-          <ul className="mt-3 flex flex-col gap-2">
-            {group.data.branches.length === 0 ? (
-              <li className="text-sm text-muted">Филиалы не привязаны</li>
-            ) : (
-              group.data.branches.map((branch) => (
-                <li
-                  key={branch.branchId}
-                  className="flex items-center justify-between gap-2 text-sm"
-                >
-                  <span className="text-ink">
-                    {branch.branchName}
-                    {branch.isPrimary ? (
-                      <span className="ml-2 rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700">
-                        основной
-                      </span>
-                    ) : null}
-                  </span>
-                  {canManage ? (
-                    <form action={unlinkBranchAction}>
-                      <input type="hidden" name="groupId" value={group.data.id} />
-                      <input type="hidden" name="branchId" value={branch.branchId} />
-                      <button
-                        type="submit"
-                        className="text-xs text-muted underline hover:text-red-700"
-                      >
-                        Отвязать
-                      </button>
-                    </form>
-                  ) : null}
-                </li>
-              ))
-            )}
-          </ul>
+          <h2 className="text-sm font-semibold text-ink">Зал</h2>
+          <p className="mt-3 text-sm text-ink">
+            {group.data.hallName ?? 'Зал не назначен: группа без площадки'}
+          </p>
 
           {canManage ? (
             <div className="mt-4 border-t border-line pt-4">
-              {availableBranches.length > 0 ? (
-                <LinkBranchForm groupId={group.data.id} branches={availableBranches} />
+              {availableHalls.length > 0 ? (
+                <SetGroupHallForm groupId={group.data.id} halls={availableHalls} />
               ) : (
-                <p className="text-xs text-muted">Все активные филиалы уже привязаны</p>
+                <p className="text-xs text-muted">
+                  Активных залов нет — создайте зал в разделе «Залы»
+                </p>
               )}
             </div>
           ) : null}

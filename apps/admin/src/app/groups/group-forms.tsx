@@ -8,7 +8,7 @@ import {
   addMemberAction,
   assignTrainerAction,
   createGroupAction,
-  linkBranchAction,
+  setGroupHallAction,
   type GroupFormState,
 } from '@/app/groups/actions';
 
@@ -36,12 +36,12 @@ function StateMessages({ state }: { state: GroupFormState }) {
   );
 }
 
-/** Создание группы с необязательной привязкой филиала и тренера (C6–C7). */
+/** Создание группы с залом и необязательным тренером (C6–C7, #65). */
 export function CreateGroupForm({
-  branches,
+  halls,
   trainers,
 }: {
-  branches: { id: string; name: string }[];
+  halls: { id: string; name: string }[];
   trainers: { id: string; displayName: string }[];
 }) {
   const [state, formAction, pending] = useActionState(createGroupAction, initialState);
@@ -64,12 +64,12 @@ export function CreateGroupForm({
       </label>
 
       <label className={labelClass}>
-        Основной филиал
-        <select name="branchId" className={inputClass} defaultValue="">
+        Зал
+        <select name="hallId" className={inputClass} defaultValue="">
           <option value="">не назначать</option>
-          {branches.map((branch) => (
-            <option key={branch.id} value={branch.id}>
-              {branch.name}
+          {halls.map((hall) => (
+            <option key={hall.id} value={hall.id}>
+              {hall.name}
             </option>
           ))}
         </select>
@@ -96,41 +96,37 @@ export function CreateGroupForm({
   );
 }
 
-/** Привязка филиала к существующей группе. */
-export function LinkBranchForm({
+/** Перенос группы в другой зал: зал у группы один (#65). */
+export function SetGroupHallForm({
   groupId,
-  branches,
+  halls,
 }: {
   groupId: string;
-  branches: { id: string; name: string }[];
+  halls: { id: string; name: string }[];
 }) {
-  const [state, formAction, pending] = useActionState(linkBranchAction, initialState);
+  const [state, formAction, pending] = useActionState(setGroupHallAction, initialState);
 
   return (
     <form action={formAction} className="flex flex-col gap-2">
       <input type="hidden" name="groupId" value={groupId} />
       <div className="flex items-end gap-2">
         <label className={`${labelClass} flex-1`}>
-          Привязать филиал
-          <select name="branchId" required className={inputClass} defaultValue="">
+          Зал группы
+          <select name="hallId" required className={inputClass} defaultValue="">
             <option value="" disabled>
-              выберите филиал
+              выберите зал
             </option>
-            {branches.map((branch) => (
-              <option key={branch.id} value={branch.id}>
-                {branch.name}
+            {halls.map((hall) => (
+              <option key={hall.id} value={hall.id}>
+                {hall.name}
               </option>
             ))}
           </select>
         </label>
         <button type="submit" disabled={pending} className={buttonClass}>
-          {pending ? '…' : 'Привязать'}
+          {pending ? '…' : 'Перенести'}
         </button>
       </div>
-      <label className="flex items-center gap-2 text-xs text-muted">
-        <input type="checkbox" name="isPrimary" />
-        сделать основным
-      </label>
       <StateMessages state={state} />
     </form>
   );
