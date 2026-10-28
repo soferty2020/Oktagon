@@ -2,20 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { UserRole, UserStatus } from '../../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 
-export interface BranchRecord {
+export interface HallRecord {
   id: string;
   name: string;
   address: string | null;
   phone: string | null;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface HallRecord {
-  id: string;
-  branchId: string;
-  name: string;
   capacity: number | null;
   isActive: boolean;
 }
@@ -24,88 +15,70 @@ export interface TrainerRecord {
   id: string;
   userId: string | null;
   displayName: string;
+  firstName: string | null;
+  lastName: string | null;
   phone: string | null;
   bio: string | null;
   isActive: boolean;
 }
 
-export interface CreateBranchInput {
-  name: string;
-  address?: string | null;
-  phone?: string | null;
-}
-
-export interface UpdateBranchInput {
-  name?: string;
-  address?: string | null;
-  phone?: string | null;
-  isActive?: boolean;
-}
-
 export interface CreateHallInput {
-  branchId: string;
   name: string;
+  address?: string | null;
+  phone?: string | null;
   capacity?: number | null;
 }
 
 export interface UpdateHallInput {
   name?: string;
+  address?: string | null;
+  phone?: string | null;
   capacity?: number | null;
   isActive?: boolean;
 }
 
 export interface CreateTrainerInput {
-  displayName: string;
+  firstName: string;
+  lastName: string;
   phone?: string | null;
   bio?: string | null;
   userId?: string | null;
 }
 
 export interface UpdateTrainerInput {
-  displayName?: string;
+  firstName?: string;
+  lastName?: string;
   phone?: string | null;
   bio?: string | null;
   isActive?: boolean;
 }
 
 /**
- * Доступ к структуре клуба.
+ * Доступ к структуре клуба: залы и тренеры.
  *
  * Абстрактный класс как DI-токен: сервис не зависит от Prisma и тестируется
- * без БД (docs/13-architecture.md).
+ * без БД (docs/13-architecture.md). Филиалов больше нет (#64): зал — площадка,
+ * группа живёт внутри зала.
  */
 export abstract class ClubStructureRepository {
-  abstract listBranches(options: { isActive?: boolean }): Promise<BranchRecord[]>;
-  abstract findBranch(id: string): Promise<BranchRecord | null>;
-  abstract createBranch(input: CreateBranchInput): Promise<BranchRecord>;
-  abstract updateBranch(id: string, input: UpdateBranchInput): Promise<BranchRecord>;
-  /** Мягкое удаление: archivedAt (docs/08-database.md). */
-  abstract archiveBranch(id: string, at: Date): Promise<void>;
-
-  abstract listHalls(branchId: string): Promise<HallRecord[]>;
+  abstract listHalls(options: { isActive?: boolean }): Promise<HallRecord[]>;
   abstract findHall(id: string): Promise<HallRecord | null>;
-  /**
-   * Зал с таким названием в филиале.
-   *
-   * Пара «филиал + название» уникальна в схеме. Проверка нужна до записи: иначе
-   * Prisma вернет P2002, и администратор увидит 500 вместо понятной причины.
-   * `excludeId` исключает сам зал при переименовании.
-   */
-  abstract findHallByName(
-    branchId: string,
-    name: string,
-    excludeId?: string,
-  ): Promise<HallRecord | null>;
   abstract createHall(input: CreateHallInput): Promise<HallRecord>;
   abstract updateHall(id: string, input: UpdateHallInput): Promise<HallRecord>;
   abstract archiveHall(id: string, at: Date): Promise<void>;
   /**
-   * Сколько у зала занятий, которые еще не начались.
+   * Сколько в зале групп и предстоящих занятий.
    *
-   * Архивный зал пропадает из выбора в расписании, поэтому сначала нужно
-   * перенести предстоящие занятия. Прошедшие не мешают: они остаются историей.
+   * Зал удаляется только пустым: иначе группы останутся без площадки, а
+   * расписание будет ссылаться на архивный зал.
    */
-  abstract countUpcomingSessions(hallId: string, from: Date): Promise<number>;
+  /** Группы зала: карточка зала — точка входа в его группы (#65). */
+  abstract listHallGroups(hallId: string): Promise<{ id: string; name: string }[]>;
+
+  abstract countHallDependents(
+    hallId: string,
+    from: Date,
+  ): Promise<{ groups: number; sessions: number }>;
 
   abstract listTrainers(options: { isActive?: boolean }): Promise<TrainerRecord[]>;
   abstract findTrainer(id: string): Promise<TrainerRecord | null>;
@@ -132,20 +105,11 @@ export abstract class ClubStructureRepository {
   abstract findAccount(userId: string): Promise<{ role: UserRole; status: UserStatus } | null>;
 }
 
-const BRANCH_SELECT = {
+const HALL_SELECT = {
   id: true,
   name: true,
   address: true,
   phone: true,
-  isActive: true,
-  createdAt: true,
-  updatedAt: true,
-} as const;
-
-const HALL_SELECT = {
-  id: true,
-  branchId: true,
-  name: true,
   capacity: true,
   isActive: true,
 } as const;
@@ -154,10 +118,17 @@ const TRAINER_SELECT = {
   id: true,
   userId: true,
   displayName: true,
+  firstName: true,
+  lastName: true,
   phone: true,
   bio: true,
   isActive: true,
 } as const;
+
+/** «Фамилия Имя» — единый вид тренера во всех списках (#69). */
+export function trainerDisplayName(firstName: string, lastName: string): string {
+  return `${lastName} ${firstName}`.trim();
+}
 
 @Injectable()
 export class PrismaClubStructureRepository extends ClubStructureRepository {
@@ -165,45 +136,12 @@ export class PrismaClubStructureRepository extends ClubStructureRepository {
     super();
   }
 
-  async listBranches(options: { isActive?: boolean }): Promise<BranchRecord[]> {
-    return this.prisma.db.branch.findMany({
+  async listHalls(options: { isActive?: boolean }): Promise<HallRecord[]> {
+    return this.prisma.db.hall.findMany({
       where: {
         archivedAt: null,
         ...(options.isActive === undefined ? {} : { isActive: options.isActive }),
       },
-      orderBy: { name: 'asc' },
-      select: BRANCH_SELECT,
-    });
-  }
-
-  async findBranch(id: string): Promise<BranchRecord | null> {
-    return this.prisma.db.branch.findFirst({
-      where: { id, archivedAt: null },
-      select: BRANCH_SELECT,
-    });
-  }
-
-  async createBranch(input: CreateBranchInput): Promise<BranchRecord> {
-    return this.prisma.db.branch.create({
-      data: { name: input.name, address: input.address ?? null, phone: input.phone ?? null },
-      select: BRANCH_SELECT,
-    });
-  }
-
-  async updateBranch(id: string, input: UpdateBranchInput): Promise<BranchRecord> {
-    return this.prisma.db.branch.update({ where: { id }, data: input, select: BRANCH_SELECT });
-  }
-
-  async archiveBranch(id: string, at: Date): Promise<void> {
-    await this.prisma.db.branch.update({
-      where: { id },
-      data: { archivedAt: at, isActive: false },
-    });
-  }
-
-  async listHalls(branchId: string): Promise<HallRecord[]> {
-    return this.prisma.db.hall.findMany({
-      where: { branchId, archivedAt: null },
       orderBy: { name: 'asc' },
       select: HALL_SELECT,
     });
@@ -216,8 +154,9 @@ export class PrismaClubStructureRepository extends ClubStructureRepository {
   async createHall(input: CreateHallInput): Promise<HallRecord> {
     return this.prisma.db.hall.create({
       data: {
-        branchId: input.branchId,
         name: input.name,
+        address: input.address ?? null,
+        phone: input.phone ?? null,
         capacity: input.capacity ?? null,
       },
       select: HALL_SELECT,
@@ -235,33 +174,31 @@ export class PrismaClubStructureRepository extends ClubStructureRepository {
     });
   }
 
-  async findHallByName(
-    branchId: string,
-    name: string,
-    excludeId?: string,
-  ): Promise<HallRecord | null> {
-    return this.prisma.db.hall.findFirst({
-      // Архивированные залы не мешают создать зал с тем же названием: они уже
-      // не участвуют в расписании, а уникальность в схеме остается.
-      where: {
-        branchId,
-        name,
-        archivedAt: null,
-        ...(excludeId ? { id: { not: excludeId } } : {}),
-      },
-      select: HALL_SELECT,
+  async listHallGroups(hallId: string): Promise<{ id: string; name: string }[]> {
+    return this.prisma.db.group.findMany({
+      where: { hallId, archivedAt: null },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true },
     });
   }
 
-  async countUpcomingSessions(hallId: string, from: Date): Promise<number> {
-    return this.prisma.db.trainingSession.count({
-      where: {
-        hallId,
-        startsAt: { gte: from },
-        // Отмененные занятия не требуют зала: они не мешают архивированию.
-        status: { not: 'CANCELLED' },
-      },
-    });
+  async countHallDependents(
+    hallId: string,
+    from: Date,
+  ): Promise<{ groups: number; sessions: number }> {
+    const [groups, sessions] = await Promise.all([
+      this.prisma.db.group.count({ where: { hallId, archivedAt: null } }),
+      this.prisma.db.trainingSession.count({
+        where: {
+          hallId,
+          startsAt: { gte: from },
+          // Отменённые занятия не держат зал: они не состоятся.
+          status: { not: 'CANCELLED' },
+        },
+      }),
+    ]);
+
+    return { groups, sessions };
   }
 
   async listTrainers(options: { isActive?: boolean }): Promise<TrainerRecord[]> {
@@ -270,7 +207,7 @@ export class PrismaClubStructureRepository extends ClubStructureRepository {
         archivedAt: null,
         ...(options.isActive === undefined ? {} : { isActive: options.isActive }),
       },
-      orderBy: { displayName: 'asc' },
+      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
       select: TRAINER_SELECT,
     });
   }
@@ -290,10 +227,12 @@ export class PrismaClubStructureRepository extends ClubStructureRepository {
   }
 
   async createTrainer(input: CreateTrainerInput): Promise<TrainerRecord> {
-    // Отдельные ветки: со связанным аккаунтом Prisma требует relation connect,
-    // без аккаунта — явный userId: null (unchecked-вариант входа).
+    const firstName = input.firstName.trim();
+    const lastName = input.lastName.trim();
     const base = {
-      displayName: input.displayName,
+      firstName,
+      lastName,
+      displayName: trainerDisplayName(firstName, lastName),
       phone: input.phone ?? null,
       bio: input.bio ?? null,
     };
@@ -314,9 +253,26 @@ export class PrismaClubStructureRepository extends ClubStructureRepository {
   }
 
   async updateTrainer(id: string, input: UpdateTrainerInput): Promise<TrainerRecord> {
+    const data: Record<string, unknown> = { ...input };
+
+    // Имя и фамилия правятся вместе: displayName всегда их сумма, иначе в
+    // списках появится «Иванов Иван» рядом с «Петров».
+    if (input.firstName !== undefined || input.lastName !== undefined) {
+      const current = await this.prisma.db.trainerProfile.findUnique({
+        where: { id },
+        select: { firstName: true, lastName: true },
+      });
+
+      const firstName = (input.firstName ?? current?.firstName ?? '').trim();
+      const lastName = (input.lastName ?? current?.lastName ?? '').trim();
+      data.displayName = trainerDisplayName(firstName, lastName);
+      data.firstName = firstName;
+      data.lastName = lastName;
+    }
+
     return this.prisma.db.trainerProfile.update({
       where: { id },
-      data: input,
+      data,
       select: TRAINER_SELECT,
     });
   }

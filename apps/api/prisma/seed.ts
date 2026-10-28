@@ -106,22 +106,20 @@ async function seedSuperadmin(): Promise<string | undefined> {
 }
 
 async function seedClubStructure(): Promise<void> {
-  const existing = await prisma.branch.count();
+  const existing = await prisma.hall.count();
   if (existing > 0) {
-    console.log(`Филиалы уже есть (${existing}) — структура клуба не изменяется.`);
+    console.log(`Залы уже есть (${existing}) — структура клуба не изменяется.`);
     return;
   }
 
-  const branch = await prisma.branch.create({
+  const hall = await prisma.hall.create({
     data: {
-      name: 'Главный филиал',
+      name: 'Основной зал',
       address: 'укажите адрес',
-      halls: { create: [{ name: 'Основной зал' }] },
     },
-    include: { halls: true },
   });
 
-  console.log(`Создан филиал "${branch.name}" (${branch.halls.length} зал) — заполните данные клуба.`);
+  console.log(`Создан зал "${hall.name}" — заполните адрес и группы.`);
 }
 
 async function main(): Promise<void> {

@@ -1,30 +1,23 @@
 /**
- * Контракт структуры клуба: филиалы, залы, тренеры
- * (docs/00-project-overview.md, docs/22-erd.md).
+ * Контракт структуры клуба: залы и тренеры (#64, #69, ADR-0016).
+ *
+ * Филиал упразднён: клуб делится по адресам, где проходят тренировки, а адрес —
+ * свойство зала. Внутри зала — группы.
  */
 
-/** `GET /api/v1/branches`. */
-export interface BranchView {
+/** `GET /api/v1/halls`. */
+export interface HallView {
   id: string;
   name: string;
   address: string | null;
   phone: string | null;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/** `GET /api/v1/branches/{id}` — филиал вместе с залами. */
-export interface BranchDetails extends BranchView {
-  halls: HallView[];
-}
-
-export interface HallView {
-  id: string;
-  branchId: string;
-  name: string;
   capacity: number | null;
   isActive: boolean;
+}
+
+/** `GET /api/v1/halls/{id}` — зал вместе с группами. */
+export interface HallDetails extends HallView {
+  groups: { id: string; name: string }[];
 }
 
 /** `GET /api/v1/trainers`. */
@@ -32,47 +25,33 @@ export interface TrainerView {
   id: string;
   /** Аккаунт тренера, если он может входить в систему. */
   userId: string | null;
+  /** «Фамилия Имя» — собирается на сервере, чтобы списки не расходились. */
   displayName: string;
+  firstName: string | null;
+  lastName: string | null;
   phone: string | null;
   bio: string | null;
   isActive: boolean;
 }
 
-export interface CreateBranchInput {
-  name: string;
-  address?: string | null;
-  phone?: string | null;
-}
-
-export interface UpdateBranchInput {
-  name?: string;
-  address?: string | null;
-  phone?: string | null;
-  isActive?: boolean;
-}
-
 export interface CreateHallInput {
-  branchId: string;
   name: string;
+  address?: string | null;
+  phone?: string | null;
   capacity?: number | null;
 }
 
 export interface UpdateHallInput {
   name?: string;
+  address?: string | null;
+  phone?: string | null;
   capacity?: number | null;
   isActive?: boolean;
-  /**
-   * Перенос зала в другой филиал.
-   *
-   * Нужен для исправления ошибки при заведении: зал могли создать не в том
-   * филиале. Занятия при этом не меняют филиал — он берется из первичной группы
-   * (`TrainingSession.branchId`), поэтому отчеты по филиалам не искажаются.
-   */
-  branchId?: string;
 }
 
 export interface CreateTrainerInput {
-  displayName: string;
+  firstName: string;
+  lastName: string;
   phone?: string | null;
   bio?: string | null;
   /** Существующий аккаунт: логин тренеру не обязателен (docs/04-roles-permissions.md). */
@@ -80,7 +59,8 @@ export interface CreateTrainerInput {
 }
 
 export interface UpdateTrainerInput {
-  displayName?: string;
+  firstName?: string;
+  lastName?: string;
   phone?: string | null;
   bio?: string | null;
   isActive?: boolean;
@@ -104,10 +84,8 @@ export interface LinkTrainerAccountInput {
 /**
  * Права, которыми управляются справочники клуба.
  *
- * В `docs/04-roles-permissions.md` нет отдельных прав для тренеров, поэтому
- * изменение профиля тренера опирается на `users.manage` и `branches.manage`:
- * профиль тренера связан с аккаунтом и расписанием. Это решение зафиксировано
- * в docs/26-implementation-foundation.md и требует подтверждения в ADR, если
- * появится отдельная роль администратора клуба.
+ * Имена прав исторические (`branches.*`), хотя филиалов больше нет: переименование
+ * затронуло бы миграции прав и выданные пользователям разрешения. Смысл прежний —
+ * управление площадками клуба и профилями тренеров.
  */
 export const TRAINER_MANAGE_PERMISSIONS = ['users.manage', 'branches.manage'] as const;

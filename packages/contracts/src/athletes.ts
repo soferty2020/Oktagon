@@ -59,7 +59,7 @@ export interface AthleteDetails extends AthleteView {
    */
   group: { id: string; name: string } | null;
   trainer: { id: string; displayName: string } | null;
-  branch: { id: string; name: string } | null;
+  hall: { id: string; name: string } | null;
 }
 
 export interface CreateAthleteInput {

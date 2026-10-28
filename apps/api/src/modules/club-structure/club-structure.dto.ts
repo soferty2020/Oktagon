@@ -11,9 +11,9 @@ import {
   MinLength,
 } from 'class-validator';
 
-/** Филиалы (C1). */
-export class CreateBranchDto {
-  @ApiProperty({ example: 'Главный филиал', maxLength: 200 })
+/** Залы (#64): филиалов больше нет, адрес — свойство зала. */
+export class CreateHallDto {
+  @ApiProperty({ example: 'Центральный зал', maxLength: 200 })
   @IsString()
   @MinLength(1)
   @MaxLength(200)
@@ -30,73 +30,6 @@ export class CreateBranchDto {
   @IsString()
   @MaxLength(32)
   phone?: string;
-}
-
-export class UpdateBranchDto {
-  @ApiPropertyOptional({ maxLength: 200 })
-  @IsOptional()
-  @IsString()
-  @MinLength(1)
-  @MaxLength(200)
-  name?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  address?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  @MaxLength(32)
-  phone?: string;
-
-  @ApiPropertyOptional({ description: 'false — филиал временно закрыт' })
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
-}
-
-export class ListBranchesQueryDto {
-  @ApiPropertyOptional({ description: 'Фильтр по активности' })
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
-}
-
-/** Залы (C2). */
-export class CreateHallDto {
-  @ApiProperty({ format: 'uuid' })
-  @IsUUID()
-  branchId!: string;
-
-  @ApiProperty({ example: 'Основной зал', maxLength: 200 })
-  @IsString()
-  @MinLength(1)
-  @MaxLength(200)
-  name!: string;
-
-  @ApiPropertyOptional({ example: 40, minimum: 1, maximum: 1000 })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Max(1000)
-  capacity?: number;
-}
-
-/**
- * Создание зала на вложенном маршруте `/branches/{id}/halls`.
- *
- * `branchId` берется из пути, поэтому в теле его быть не должно:
- * ValidationPipe настроен с forbidNonWhitelisted и отклонил бы лишнее поле.
- */
-export class CreateBranchHallDto {
-  @ApiProperty({ example: 'Основной зал', maxLength: 200 })
-  @IsString()
-  @MinLength(1)
-  @MaxLength(200)
-  name!: string;
 
   @ApiPropertyOptional({ example: 40, minimum: 1, maximum: 1000 })
   @IsOptional()
@@ -114,6 +47,18 @@ export class UpdateHallDto {
   @MaxLength(200)
   name?: string;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  address?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
+  phone?: string;
+
   @ApiPropertyOptional({ minimum: 1, maximum: 1000 })
   @IsOptional()
   @IsInt()
@@ -121,31 +66,32 @@ export class UpdateHallDto {
   @Max(1000)
   capacity?: number;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'false — зал временно закрыт' })
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
-
-  /**
-   * Перенос зала в другой филиал.
-   *
-   * Отдельное поле нужно, чтобы исправить ошибку при заведении: зал могли
-   * создать не в том филиале. Занятия не меняют филиал — он берется из
-   * первичной группы.
-   */
-  @ApiPropertyOptional({ format: 'uuid', description: 'Перенести зал в другой филиал' })
-  @IsOptional()
-  @IsUUID()
-  branchId?: string;
 }
 
-/** Тренеры (C3). */
+export class ListHallsQueryDto {
+  @ApiPropertyOptional({ description: 'Фильтр по активности' })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}
+
+/** Тренеры (#69): имя и фамилия отдельно. */
 export class CreateTrainerDto {
-  @ApiProperty({ example: 'Тренер Серик', maxLength: 200 })
+  @ApiProperty({ example: 'Иван' })
   @IsString()
   @MinLength(1)
-  @MaxLength(200)
-  displayName!: string;
+  @MaxLength(100)
+  firstName!: string;
+
+  @ApiProperty({ example: 'Иванов' })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(100)
+  lastName!: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -169,12 +115,19 @@ export class CreateTrainerDto {
 }
 
 export class UpdateTrainerDto {
-  @ApiPropertyOptional({ maxLength: 200 })
+  @ApiPropertyOptional({ maxLength: 100 })
   @IsOptional()
   @IsString()
   @MinLength(1)
-  @MaxLength(200)
-  displayName?: string;
+  @MaxLength(100)
+  firstName?: string;
+
+  @ApiPropertyOptional({ maxLength: 100 })
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(100)
+  lastName?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

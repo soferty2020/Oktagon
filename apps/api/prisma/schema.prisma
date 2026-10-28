@@ -299,11 +299,15 @@ model Athlete {
   phone       String?
   email       String?
   notes       String?
+  /// Основной зал спортсмена (#66, ADR-0016): где он обычно занимается.
+  /// Группа выбирается из групп этого зала; занятие может быть в другом зале.
+  hallId      String?       @map("hall_id") @db.Uuid
   archivedAt  DateTime?     @map("archived_at")
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
 
   userLinks         UserAthlete[]
+  hall              Hall?             @relation(fields: [hallId], references: [id])
   certifications    Certification[]
   certificationParticipants CertificationParticipant[]
   competitionParticipants CompetitionParticipant[]
@@ -343,39 +347,28 @@ model UserAthlete {
 // Club structure
 // ---------------------------------------------------------------------------
 
-model Branch {
+
+
+/// Зал — единственная площадка клуба (#64, ADR-0016).
+///
+/// Филиал упразднён: клуб делится по адресам, где проходят тренировки, а адрес —
+/// свойство зала. Внутри зала — группы; занятие может проходить в другом зале.
+model Hall {
   id         String    @id @default(uuid()) @db.Uuid
   name       String
   address    String?
   phone      String?
+  capacity   Int?
   isActive   Boolean   @default(true) @map("is_active")
   archivedAt DateTime? @map("archived_at")
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")
 
-  halls            Hall[]
-  groupBranches    GroupBranch[]
+  groups           Group[]
+  athletes         Athlete[]
   trainingSessions TrainingSession[]
 
-  @@map("branches")
-}
-
-/// Branch и Hall разделены, хотя MVP использует связь 1:1 (docs/22-erd.md).
-model Hall {
-  id        String    @id @default(uuid()) @db.Uuid
-  branchId  String    @map("branch_id") @db.Uuid
-  name      String
-  capacity  Int?
-  isActive  Boolean   @default(true) @map("is_active")
-  archivedAt DateTime? @map("archived_at")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-
-  branch           Branch            @relation(fields: [branchId], references: [id])
-  trainingSessions TrainingSession[]
-
-  @@unique([branchId, name])
-  @@index([branchId])
+  @@index([name])
   @@map("halls")
 }
 
@@ -388,6 +381,10 @@ model TrainerProfile {
   /// тренера». Несколько NULL допустимы: уникальный индекс Postgres считает
   /// NULL-значения различными, поэтому тренеров без аккаунта может быть много.
   userId      String?   @unique @map("user_id") @db.Uuid
+  /// Имя и фамилия отдельно (#69): `displayName` собирается из них для списков.
+  /// Nullable — у записей, созданных до разделения, поля заполняет миграция.
+  firstName   String?   @map("first_name")
+  lastName    String?   @map("last_name")
   displayName String    @map("display_name")
   phone       String?
   bio         String?
@@ -413,37 +410,25 @@ model Group {
   id          String    @id @default(uuid()) @db.Uuid
   name        String
   description String?
+  /// Зал, в котором занимается группа (#64, ADR-0016). Группа вне зала
+  /// не существует: иерархия — зал → группы.
+  hallId      String?   @map("hall_id") @db.Uuid
   isActive    Boolean   @default(true) @map("is_active")
   archivedAt  DateTime? @map("archived_at")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
-  branches         GroupBranch[]
+  hall             Hall?             @relation(fields: [hallId], references: [id])
   trainers         GroupTrainer[]
   memberships      GroupMembership[]
   scheduleTemplates ScheduleTemplate[]
   trainingSessions TrainingSession[]
   conversations    Conversation[]
 
+  @@index([hallId])
   @@map("groups")
 }
 
-/// Группа может заниматься в нескольких филиалах (docs/00-project-overview.md).
-model GroupBranch {
-  id        String   @id @default(uuid()) @db.Uuid
-  groupId   String   @map("group_id") @db.Uuid
-  branchId  String   @map("branch_id") @db.Uuid
-  /// Основной филиал группы.
-  isPrimary Boolean  @default(false) @map("is_primary")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  group  Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  branch Branch @relation(fields: [branchId], references: [id])
-
-  @@unique([groupId, branchId])
-  @@index([branchId])
-  @@map("group_branches")
-}
 
 model GroupTrainer {
   id               String    @id @default(uuid()) @db.Uuid
@@ -529,7 +514,6 @@ model ScheduleTemplateSlot {
 model TrainingSession {
   id                 String                @id @default(uuid()) @db.Uuid
   groupId            String                @map("group_id") @db.Uuid
-  branchId           String?               @map("branch_id") @db.Uuid
   hallId             String?               @map("hall_id") @db.Uuid
   trainerProfileId   String?               @map("trainer_profile_id") @db.Uuid
   scheduleTemplateId String?               @map("schedule_template_id") @db.Uuid
@@ -544,7 +528,6 @@ model TrainingSession {
   updatedAt          DateTime              @updatedAt @map("updated_at")
 
   group            Group             @relation(fields: [groupId], references: [id])
-  branch           Branch?           @relation(fields: [branchId], references: [id])
   hall             Hall?             @relation(fields: [hallId], references: [id])
   trainerProfile   TrainerProfile?   @relation(fields: [trainerProfileId], references: [id])
   scheduleTemplate ScheduleTemplate? @relation(fields: [scheduleTemplateId], references: [id])

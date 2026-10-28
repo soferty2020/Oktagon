@@ -1,18 +1,10 @@
 /**
- * Контракт групп (docs/22-erd.md: Group, GroupBranch, GroupTrainer,
- * GroupMembership; docs/00-project-overview.md: группа может заниматься в
- * нескольких филиалах).
+ * Контракт групп (docs/22-erd.md: Group, GroupTrainer, GroupMembership).
+ *
+ * Группа живёт в одном зале (#65, ADR-0016): иерархия — зал → группы.
  */
 
 import type { AthleteStatus } from './domain';
-
-/** Филиал, в котором занимается группа. */
-export interface GroupBranchView {
-  branchId: string;
-  branchName: string;
-  /** Основной филиал группы. */
-  isPrimary: boolean;
-}
 
 /** Тренер, ведущий группу. */
 export interface GroupTrainerView {
@@ -27,16 +19,16 @@ export interface GroupView {
   name: string;
   description: string | null;
   isActive: boolean;
-  /** Основной филиал, если он назначен. */
-  primaryBranchName: string | null;
+  /** Зал группы, если назначен. */
+  hallId: string | null;
+  hallName: string | null;
   activeMembersCount: number;
   createdAt: string;
   updatedAt: string;
 }
 
-/** `GET /groups/{id}` — группа с филиалами, тренерами и составом. */
+/** `GET /groups/{id}` — группа с тренерами и составом. */
 export interface GroupDetails extends GroupView {
-  branches: GroupBranchView[];
   trainers: GroupTrainerView[];
   members: GroupMemberView[];
 }
@@ -52,17 +44,15 @@ export interface GroupMemberView {
 export interface CreateGroupInput {
   name: string;
   description?: string | null;
+  /** Зал, в котором занимается группа. */
+  hallId?: string | null;
 }
 
 export interface UpdateGroupInput {
   name?: string;
   description?: string | null;
+  hallId?: string | null;
   isActive?: boolean;
-}
-
-export interface AssignGroupBranchInput {
-  branchId: string;
-  isPrimary?: boolean;
 }
 
 export interface AssignGroupTrainerInput {
