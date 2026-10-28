@@ -76,6 +76,8 @@ describe('Заявки на пробную тренировку (db e2e)', () =>
         childAge: 8,
         comment: 'Хочет попробовать',
         source: 'site',
+        // Без согласия заявка не принимается (#56).
+        consent: true,
       })
       .expect(201);
 
@@ -89,7 +91,7 @@ describe('Заявки на пробную тренировку (db e2e)', () =>
 
     await request(app.getHttpServer())
       .post('/api/v1/trial-requests')
-      .send({ name, phone: '+70000000000', website: 'http://spam.example' })
+      .send({ name, phone: '+70000000000', website: 'http://spam.example', consent: true })
       .expect(201);
 
     const saved = await prisma.db.trialRequest.findFirst({ where: { name } });
@@ -112,7 +114,7 @@ describe('Заявки на пробную тренировку (db e2e)', () =>
 
     await request(app.getHttpServer())
       .post('/api/v1/trial-requests')
-      .send({ name, phone: '+79990000001' })
+      .send({ name, phone: '+79990000001', consent: true })
       .expect(201);
 
     const list = await request(app.getHttpServer())
