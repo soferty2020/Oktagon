@@ -1,4 +1,4 @@
-﻿import { UserStatus } from '../generated/prisma';
+import { UserStatus } from '../generated/prisma';
 import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 
@@ -8,6 +8,7 @@ import { AuthRepository, PrismaAuthRepository } from '../src/modules/auth/auth.r
 import { InviteRepository, PrismaInviteRepository } from '../src/modules/auth/invite.repository';
 import { InviteService } from '../src/modules/auth/invite.service';
 import { PasswordService } from '../src/modules/auth/password.service';
+import { IdentityService } from '../src/modules/identity/identity.service';
 
 /**
  * РџРѕР»РЅС‹Р№ С†РёРєР» РїСЂРёРіР»Р°С€РµРЅРёСЏ РЅР° СЂРµР°Р»СЊРЅРѕР№ Р‘Р” (B3):
@@ -54,6 +55,11 @@ describe('InviteService (db e2e, С‚СЂРµР±СѓРµС‚СЃСЏ PostgreS
         PasswordService,
         { provide: ConfigService, useValue: config },
         { provide: AuditService, useValue: { recordSafely: async () => null } },
+        // Роль актора читается из БД (ADR-0006); в e2e актор — SUPERADMIN.
+        {
+          provide: IdentityService,
+          useValue: { getProfile: async () => ({ role: 'SUPERADMIN' }) },
+        },
         InviteService,
       ],
     }).compile();
