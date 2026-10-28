@@ -115,6 +115,9 @@ export class AthletesController {
       email: dto.email ?? null,
       notes: dto.notes ?? null,
       status: dto.status,
+      // Зал не подставляем через `?? null`: отсутствие поля означает «не
+      // трогать», а null — «снять привязку» (#68).
+      hallId: dto.hallId,
     });
   }
 
