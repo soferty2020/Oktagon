@@ -102,6 +102,10 @@ COPY --from=build --chown=octagon:octagon /repo/apps/api/generated ./apps/api/ge
 COPY --from=build --chown=octagon:octagon /repo/apps/api/prisma ./apps/api/prisma
 COPY --from=build --chown=octagon:octagon /repo/apps/api/package.json ./apps/api/package.json
 
+# Каталог загрузок (#70): том `uploads` наследует владельца из образа при первом
+# создании. Без этого контейнер под octagon не смог бы писать в /data/uploads.
+RUN mkdir -p /data/uploads && chown -R octagon:octagon /data
+
 USER octagon
 EXPOSE 3000
 WORKDIR /repo/apps/api
