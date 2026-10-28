@@ -78,6 +78,11 @@ export class PermissionsGuard implements CanActivate {
       request.effectivePermissions ?? (await this.resolver.getPermissions(request.user.id));
     request.effectivePermissions = permissions;
 
+    // Роль в `request.user` пришла из access-токена и живёт до 15 минут. Решения
+    // о «своё/чужое» принимаются по ней, поэтому обновляем её из БД (ADR-0006):
+    // понижённый администратор не должен сохранять права руководителя (#50).
+    request.user.role = await this.resolver.getRole(request.user.id);
+
     const missing = required.filter((permission) => !hasPermission(permissions, permission));
     if (missing.length > 0) {
       throw new ApiException('FORBIDDEN', 'Недостаточно прав для выполнения операции', {

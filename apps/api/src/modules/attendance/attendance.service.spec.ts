@@ -48,7 +48,11 @@ const absence: PlannedAbsenceRecord = {
 describe('AttendanceService', () => {
   let repository: jest.Mocked<AttendanceRepository>;
   let groups: { listRosterAsOf: jest.Mock };
-  let scope: { assertGroupAccess: jest.Mock; assertAthleteAccess: jest.Mock };
+  let scope: {
+    assertGroupAccess: jest.Mock;
+    assertAthleteAccess: jest.Mock;
+    visibleAthleteIds: jest.Mock;
+  };
   let audit: { recordSafely: jest.Mock };
   let service: AttendanceService;
 
@@ -72,6 +76,8 @@ describe('AttendanceService', () => {
     scope = {
       assertGroupAccess: jest.fn().mockResolvedValue({ allowed: true, reason: 'role_superadmin' }),
       assertAthleteAccess: jest.fn().mockResolvedValue({ allowed: true, reason: 'role_superadmin' }),
+    // Без ограничений: тесты журнала не про зону доступа.
+    visibleAthleteIds: jest.fn().mockResolvedValue(null),
     };
     audit = { recordSafely: jest.fn().mockResolvedValue(null) };
 

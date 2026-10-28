@@ -52,7 +52,7 @@ export class AttendanceService {
     const session = await this.requireSession(sessionId);
     await this.scope.assertGroupAccess(callerUserId, session.groupId);
 
-    return this.buildView(session);
+    return this.buildView(session, callerUserId);
   }
 
   /**
@@ -70,7 +70,7 @@ export class AttendanceService {
     await this.scope.assertGroupAccess(callerUserId, session.groupId);
 
     if (input.marks.length === 0) {
-      return this.buildView(session);
+      return this.buildView(session, callerUserId);
     }
 
     const roster = await this.groups.listRosterAsOf(session.groupId, session.startsAt);
@@ -119,7 +119,7 @@ export class AttendanceService {
       `Посещаемость занятия ${sessionId}: новых ${created.length}, изменено ${updated.length}`,
     );
 
-    return this.buildView(session);
+    return this.buildView(session, callerUserId);
   }
 
   /** Снимает отметку: спортсмена могли отметить по ошибке. */
@@ -146,7 +146,7 @@ export class AttendanceService {
       before: { athleteId, reset: true },
     });
 
-    return this.buildView(session);
+    return this.buildView(session, callerUserId);
   }
 
   /** Родитель сообщает о планируемом отсутствии (BR-008). */
@@ -183,7 +183,7 @@ export class AttendanceService {
       after: { athleteId: input.athleteId },
     });
 
-    return this.buildView(session);
+    return this.buildView(session, callerUserId);
   }
 
   /** Отменяет предупреждение об отсутствии: спортсмен придет. */
@@ -210,7 +210,7 @@ export class AttendanceService {
       before: { athleteId },
     });
 
-    return this.buildView(session);
+    return this.buildView(session, callerUserId);
   }
 
   /**
@@ -292,17 +292,28 @@ export class AttendanceService {
 
   // --- Вспомогательное -----------------------------------------------------
 
-  private async buildView(session: SessionRecord): Promise<SessionAttendanceView> {
+  private async buildView(
+    session: SessionRecord,
+    callerUserId: string,
+  ): Promise<SessionAttendanceView> {
     const [roster, marks, absences] = await Promise.all([
       this.groups.listRosterAsOf(session.groupId, session.startsAt),
       this.attendance.listAttendance(session.id),
       this.attendance.listPlannedAbsences(session.id),
     ]);
 
+    // Родитель видит только своих детей (#50): roster всей группы раскрывал
+    // имена и статусы чужих. Тренер и админ ограничений не получают.
+    const visible = await this.scope.visibleAthleteIds(callerUserId);
+    const allowedRoster =
+      visible === null
+        ? roster
+        : roster.filter((member) => visible.includes(member.athleteId));
+
     const marksByAthlete = new Map(marks.map((mark) => [mark.athleteId, mark]));
     const absencesByAthlete = new Map(absences.map((absence) => [absence.athleteId, absence]));
 
-    const entries: SessionRosterEntry[] = roster.map((member) => {
+    const entries: SessionRosterEntry[] = allowedRoster.map((member) => {
       const mark = marksByAthlete.get(member.athleteId);
       const absence = absencesByAthlete.get(member.athleteId);
 

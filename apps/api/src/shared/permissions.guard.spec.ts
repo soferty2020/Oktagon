@@ -25,7 +25,11 @@ describe('PermissionsGuard', () => {
     }) as unknown as ExecutionContext;
 
   const resolverWith = (codes: string[]): PermissionResolver =>
-    ({ getPermissions: jest.fn().mockResolvedValue({ codes }) }) as unknown as PermissionResolver;
+    ({
+      getPermissions: jest.fn().mockResolvedValue({ codes }),
+      // Роль guard обновляет из БД, чтобы не доверять токену (#50).
+      getRole: jest.fn().mockResolvedValue('STAFF'),
+    }) as unknown as PermissionResolver;
 
   it('пропускает маршрут без требования прав', async () => {
     const guard = new PermissionsGuard(resolverWith([]));

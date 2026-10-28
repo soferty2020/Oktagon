@@ -196,7 +196,7 @@ describe('Groups (db e2e, требуется PostgreSQL)', () => {
     // Спортсмен свободен и может быть добавлен в другую группу.
     const moved = await groups.addMember(adminId, second.id, { athleteId });
     expect(moved.members).toHaveLength(1);
-    await expect(groups.getActiveMembership(athleteId)).resolves.toMatchObject({
+    await expect(groups.getActiveMembership(adminId, athleteId)).resolves.toMatchObject({
       groupId: second.id,
     });
   });
@@ -207,10 +207,10 @@ describe('Groups (db e2e, требуется PostgreSQL)', () => {
     created.groupIds.push(group.id);
     const athleteId = await newAthlete(`Участник H ${stamp}`);
 
-    await expect(groups.getActiveMembership(athleteId)).resolves.toBeNull();
+    await expect(groups.getActiveMembership(adminId, athleteId)).resolves.toBeNull();
     await groups.addMember(adminId, group.id, { athleteId, joinedAt: '2026-09-01' });
 
-    await expect(groups.getActiveMembership(athleteId)).resolves.toMatchObject({
+    await expect(groups.getActiveMembership(adminId, athleteId)).resolves.toMatchObject({
       groupId: group.id,
       groupName: `Группа H ${stamp}`,
       joinedAt: '2026-09-01',

@@ -16,7 +16,12 @@ const group: GroupRecord = {
 
 describe('GroupsService', () => {
   let repository: jest.Mocked<GroupsRepository>;
-  let scope: { visibleGroupIds: jest.Mock; assertGroupAccess: jest.Mock };
+  let scope: {
+    visibleGroupIds: jest.Mock;
+    assertGroupAccess: jest.Mock;
+    assertAthleteAccess: jest.Mock;
+    visibleAthleteIds: jest.Mock;
+  };
   let audit: { recordSafely: jest.Mock };
   let service: GroupsService;
 
@@ -71,6 +76,8 @@ describe('GroupsService', () => {
     scope = {
       visibleGroupIds: jest.fn().mockResolvedValue(null),
       assertGroupAccess: jest.fn().mockResolvedValue({ allowed: true, reason: 'role_superadmin' }),
+      assertAthleteAccess: jest.fn().mockResolvedValue({ allowed: true }),
+      visibleAthleteIds: jest.fn().mockResolvedValue(null),
     };
 
     audit = { recordSafely: jest.fn().mockResolvedValue(null) };
@@ -271,7 +278,7 @@ describe('GroupsService', () => {
         joinedAt: new Date('2026-09-01T00:00:00.000Z'),
       });
 
-      await expect(service.getActiveMembership('athlete-1')).resolves.toMatchObject({
+      await expect(service.getActiveMembership('admin-1', 'athlete-1')).resolves.toMatchObject({
         groupId: 'group-1',
         groupName: 'Дети 7-9 лет',
         joinedAt: '2026-09-01',
@@ -279,7 +286,7 @@ describe('GroupsService', () => {
     });
 
     it('возвращает null, если действующей группы нет', async () => {
-      await expect(service.getActiveMembership('athlete-1')).resolves.toBeNull();
+      await expect(service.getActiveMembership('admin-1', 'athlete-1')).resolves.toBeNull();
     });
   });
 });

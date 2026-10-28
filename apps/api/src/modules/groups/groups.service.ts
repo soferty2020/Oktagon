@@ -68,10 +68,18 @@ export class GroupsService {
     await this.scope.assertGroupAccess(callerUserId, groupId);
 
     const group = await this.requireGroup(groupId);
-    const [trainers, members] = await Promise.all([
+    const [trainers, allMembers] = await Promise.all([
       this.groups.listTrainers(groupId),
       this.groups.listMembers(groupId),
     ]);
+
+    // Родитель видит состав только своих детей (#50). Тренер и админ — всех:
+    // у них scope либо покрывает группу, либо не ограничен.
+    const visible = await this.scope.visibleAthleteIds(callerUserId);
+    const members =
+      visible === null
+        ? allMembers
+        : allMembers.filter((member) => visible.includes(member.athleteId));
 
     return {
       ...(await this.toGroupView(group)),
@@ -291,7 +299,13 @@ export class GroupsService {
   }
 
   /** Действующая группа спортсмена: нужна админке при переводе между группами. */
-  async getActiveMembership(athleteId: string): Promise<ActiveMembershipView | null> {
+  async getActiveMembership(
+    callerUserId: string,
+    athleteId: string,
+  ): Promise<ActiveMembershipView | null> {
+    // Scope обязателен: иначе по UUID можно узнать группу чужого ребёнка (#50).
+    await this.scope.assertAthleteAccess(callerUserId, athleteId);
+
     const active = await this.groups.findActiveMembership(athleteId);
     return active ? toActiveMembershipView(active) : null;
   }

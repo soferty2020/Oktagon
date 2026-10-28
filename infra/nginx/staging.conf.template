@@ -48,6 +48,10 @@ server {
     add_header Referrer-Policy no-referrer always;
     # HSTS у админки (#52): без него первый запрос по http можно перехватить.
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    # CSP (#51): скрипты не ограничиваем — Next вставляет inline-загрузчик, и
+    # строгий script-src без nonce ломает приложение. Закрываем то, что не
+    # ломается: кадры, base, плагины и отправку форм на чужой домен.
+    add_header Content-Security-Policy "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'" always;
 
     client_max_body_size 2m;
 

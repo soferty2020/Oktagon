@@ -69,8 +69,12 @@ export class GroupsController {
   @RequirePermissions(PermissionCode.GroupsView)
   @ApiOperation({ summary: 'Действующая группа спортсмена' })
   @ApiOkResponse({ description: 'Активное членство либо null' })
-  activeMembership(@Param('athleteId') athleteId: string): Promise<ActiveMembershipView | null> {
-    return this.groups.getActiveMembership(athleteId);
+  activeMembership(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('athleteId') athleteId: string,
+  ): Promise<ActiveMembershipView | null> {
+    // Без scope любой родитель по UUID узнавал группу чужого ребёнка (#50).
+    return this.groups.getActiveMembership(user.id, athleteId);
   }
 
   @Get(':id')
