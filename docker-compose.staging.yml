@@ -45,11 +45,26 @@ services:
     restart: unless-stopped
     # Redis держит только лимиты и сессионные счетчики: данные не критичны, но
     # RDB раз в минуту дешев и переживает перезапуск контейнера.
-    command: ['redis-server', '--save', '60', '1', '--maxmemory-policy', 'allkeys-lru']
+    # requirepass (#53): без пароля Redis доступен любому контейнеру сети.
+    command:
+      [
+        'redis-server',
+        '--save',
+        '60',
+        '1',
+        '--maxmemory-policy',
+        'allkeys-lru',
+        '--requirepass',
+        '${REDIS_PASSWORD:?задайте REDIS_PASSWORD в .env.staging}',
+      ]
     volumes:
       - redis-data:/data
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      # Пароль передаётся через переменную окружения контейнера, а не в командной
+      # строке healthcheck: иначе он виден в `docker ps`.
+      test: ['CMD-SHELL', 'redis-cli -a "$$REDIS_PASSWORD" ping | grep -q PONG']
+      environment:
+        REDIS_PASSWORD: ${REDIS_PASSWORD:?задайте REDIS_PASSWORD в .env.staging}
       interval: 10s
       timeout: 5s
       retries: 10
@@ -63,7 +78,7 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-octagon}?schema=public
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       # Фотографии новостей (#70): каталог на томе, переживает пересборку.
       UPLOAD_DIR: /data/uploads
     volumes:
