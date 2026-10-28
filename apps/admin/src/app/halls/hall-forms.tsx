@@ -77,7 +77,8 @@ export function HallCard({
   );
 
   return (
-    <section className="rounded-card border border-line bg-white p-6">
+    // Якорь: из карточки спортсмена плашка зала ведёт прямо к этому блоку (#68).
+    <section className="rounded-card border border-line bg-white p-6" id={`hall-${hall.id}`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold text-ink">{hall.name}</h2>

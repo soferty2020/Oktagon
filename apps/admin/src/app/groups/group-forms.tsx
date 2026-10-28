@@ -207,3 +207,70 @@ export function AddMemberForm({ groupId }: { groupId: string }) {
     </form>
   );
 }
+
+/**
+ * Привязка конкретного спортсмена к группе (#68).
+ *
+ * Открывается из карточки спортсмена по ссылке `/groups?assign=<id>`: человек уже
+ * выбран, остаётся выбрать группу — иначе он попал бы в общий список групп без
+ * понятного следующего шага.
+ */
+export function AssignAthleteForm({
+  athlete,
+  groups,
+}: {
+  athlete: { id: string; firstName: string; lastName: string };
+  groups: { id: string; name: string; hallName: string | null }[];
+}) {
+  const [state, formAction, pending] = useActionState(addMemberAction, initialState);
+
+  return (
+    <form
+      action={formAction}
+      className="flex flex-col gap-3 rounded-card border border-accent/30 bg-accent-soft/40 p-5"
+    >
+      <input type="hidden" name="athleteId" value={athlete.id} />
+
+      <div>
+        <h2 className="text-sm font-semibold text-ink">
+          Привязать: {athlete.lastName} {athlete.firstName}
+        </h2>
+        <p className="mt-1 text-xs text-muted">
+          Выберите группу — спортсмен сразу попадёт в её состав.
+        </p>
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-[2fr_1fr]">
+        <label className={labelClass}>
+          Группа
+          <select name="groupId" required defaultValue="" className={inputClass}>
+            <option value="" disabled>
+              выберите группу
+            </option>
+            {groups.map((group) => (
+              <option key={group.id} value={group.id}>
+                {group.name}
+                {group.hallName ? ` — ${group.hallName}` : ''}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className={labelClass}>
+          Дата вступления
+          <input type="date" name="joinedAt" className={inputClass} />
+        </label>
+      </div>
+
+      <StateMessages state={state} />
+
+      <div className="flex flex-wrap gap-2">
+        <button type="submit" disabled={pending} className={buttonClass}>
+          {pending ? 'Привязываем…' : 'Привязать к группе'}
+        </button>
+        <a className="text-xs text-muted underline hover:text-ink" href={`/athletes/${athlete.id}`}>
+          Вернуться к карточке
+        </a>
+      </div>
+    </form>
+  );
+}

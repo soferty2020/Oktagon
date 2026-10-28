@@ -37,7 +37,7 @@ interface AthleteDetails {
   updatedAt: string;
   group: { id: string; name: string } | null;
   trainer: { id: string; displayName: string } | null;
-  branch: { id: string; name: string } | null;
+  hall: { id: string; name: string } | null;
   linkedAccounts: { userId: string; email: string; relation: string; isPrimary: boolean }[];
 }
 
@@ -344,8 +344,21 @@ function ProfileHero({
             </p>
 
             <div className="mt-3 flex flex-wrap gap-2">
-              <Chip icon="group" label={athlete.group?.name ?? 'Не в группе'} />
-              <Chip icon="pin" label={athlete.branch?.name ?? 'Филиал не назначен'} />
+              {/* Плашка ведёт туда, где это меняется: группа — в раздел групп,
+                  зал — в залы. «Не в группе» открывает форму привязки с уже
+                  выбранным спортсменом (#68). */}
+              <Chip
+                action={athlete.group ? undefined : 'Привязать'}
+                href={athlete.group ? `/groups/${athlete.group.id}` : `/groups?assign=${athlete.id}`}
+                icon="group"
+                label={athlete.group?.name ?? 'Не в группе'}
+              />
+              <Chip
+                action={athlete.hall ? undefined : 'Выбрать'}
+                href={athlete.hall ? `/halls#hall-${athlete.hall.id}` : '/halls'}
+                icon="pin"
+                label={athlete.hall?.name ?? 'Зал не назначен'}
+              />
             </div>
           </div>
         </div>
@@ -395,12 +408,42 @@ function ProfileHero({
   );
 }
 
-function Chip({ icon, label }: { icon: IconName; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-3 rounded-full border border-line bg-white py-2 pl-3.5 pr-4 text-xs text-[#3A3A42]">
+/**
+ * Плашка с фактом (группа, зал) — и ссылкой туда, где факт меняется (#68).
+ *
+ * Плашка без значения — не тупик: рядом с ней действие («Привязать»,
+ * «Выбрать»), и клик открывает форму привязки, а не справочник.
+ */
+function Chip({
+  icon,
+  label,
+  href,
+  action,
+}: {
+  icon: IconName;
+  label: string;
+  href?: string;
+  action?: string;
+}) {
+  const className =
+    'inline-flex items-center gap-3 rounded-full border border-line bg-white py-2 pl-3.5 pr-4 text-xs text-[#3A3A42]';
+
+  const content = (
+    <>
       <Icon className="h-4 w-4 text-[#8A8A92]" name={icon} />
       {label}
-    </span>
+      {action ? <span className="text-accent-text">{action}</span> : null}
+    </>
+  );
+
+  if (!href) {
+    return <span className={className}>{content}</span>;
+  }
+
+  return (
+    <Link className={`${className} transition-colors hover:border-accent`} href={href}>
+      {content}
+    </Link>
   );
 }
 

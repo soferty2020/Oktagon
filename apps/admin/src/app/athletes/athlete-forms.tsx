@@ -2,7 +2,7 @@
 
 import { fieldClass } from '@/components/ui';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 
 import { RANKS } from '@octagon/contracts';
 
@@ -150,11 +150,27 @@ interface AthleteValues {
   phone: string | null;
   email: string | null;
   notes: string | null;
+  hallId: string | null;
+  groupId: string | null;
 }
 
-/** Изменение карточки: контакты, заметки и статус (BR-006). */
-export function EditAthleteForm({ athlete }: { athlete: AthleteValues }) {
+/** Изменение карточки: контакты, заметки, статус, зал и группа (BR-006, #68). */
+export function EditAthleteForm({
+  athlete,
+  halls,
+  groups,
+}: {
+  athlete: AthleteValues;
+  halls: { id: string; name: string }[];
+  groups: { id: string; name: string; hallId: string | null }[];
+}) {
   const [state, formAction, pending] = useActionState(updateAthleteAction, initialState);
+  const [hallId, setHallId] = useState(athlete.hallId ?? '');
+  const [groupId, setGroupId] = useState(athlete.groupId ?? '');
+
+  // Группа выбирается только из выбранного зала: спортсмен не может ходить в
+  // группу другого зала (#66). Если зал не выбран — показываем все группы.
+  const visibleGroups = hallId ? groups.filter((group) => group.hallId === hallId) : groups;
 
   return (
     <form
@@ -163,6 +179,8 @@ export function EditAthleteForm({ athlete }: { athlete: AthleteValues }) {
     >
       <h2 className="text-sm font-semibold text-ink">Карточка</h2>
       <input type="hidden" name="athleteId" value={athlete.id} />
+      {/* Текущая группа: по ней action понимает, нужно ли закрывать членство. */}
+      <input type="hidden" name="currentGroupId" value={athlete.groupId ?? ''} />
 
       <div className="grid gap-3 sm:grid-cols-2">
         <label className={labelClass}>
@@ -261,6 +279,46 @@ export function EditAthleteForm({ athlete }: { athlete: AthleteValues }) {
             defaultValue={athlete.beltAwardedAt ?? ''}
             className={inputClass}
           />
+        </label>
+        <label className={labelClass}>
+          Зал
+          {/* Смена зала сбрасывает группу: группы принадлежат залам, и выбор
+              «зал Б, группа зала А» сохранить нельзя (#66, #68). */}
+          <select
+            name="hallId"
+            onChange={(event) => {
+              setHallId(event.target.value);
+              setGroupId('');
+            }}
+            value={hallId}
+            className={inputClass}
+          >
+            <option value="">Не назначен</option>
+            {halls.map((hall) => (
+              <option key={hall.id} value={hall.id}>
+                {hall.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className={labelClass}>
+          Группа
+          <select
+            name="groupId"
+            onChange={(event) => setGroupId(event.target.value)}
+            value={groupId}
+            className={inputClass}
+          >
+            <option value="">Без группы</option>
+            {visibleGroups.map((group) => (
+              <option key={group.id} value={group.id}>
+                {group.name}
+              </option>
+            ))}
+          </select>
+          {hallId && visibleGroups.length === 0 ? (
+            <span className="text-[11px] text-muted">В этом зале пока нет групп</span>
+          ) : null}
         </label>
       </div>
 

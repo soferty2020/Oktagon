@@ -60,6 +60,8 @@ export interface AthleteDetails extends AthleteView {
   group: { id: string; name: string } | null;
   trainer: { id: string; displayName: string } | null;
   hall: { id: string; name: string } | null;
+  /** Основной зал спортсмена (#66): плоское поле для формы правки. */
+  hallId: string | null;
 }
 
 export interface CreateAthleteInput {
@@ -94,6 +96,8 @@ export interface UpdateAthleteInput {
   phone?: string | null;
   email?: string | null;
   notes?: string | null;
+  /** Основной зал спортсмена (#66, #68); `null` очищает. */
+  hallId?: string | null;
   status?: AthleteStatus;
 }
 

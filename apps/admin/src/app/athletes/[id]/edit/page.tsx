@@ -26,6 +26,19 @@ interface AthleteDetails {
   phone: string | null;
   email: string | null;
   notes: string | null;
+  hallId: string | null;
+  group: { id: string; name: string } | null;
+}
+
+interface HallView {
+  id: string;
+  name: string;
+}
+
+interface GroupView {
+  id: string;
+  name: string;
+  hallId: string | null;
 }
 
 /**
@@ -52,7 +65,11 @@ export default async function EditAthletePage({ params }: { params: Promise<{ id
 
   const { id } = await params;
   const { accessToken } = await readTokens();
-  const athlete = await apiFetch<AthleteDetails>(`/athletes/${id}`, { accessToken });
+  const [athlete, halls, groups] = await Promise.all([
+    apiFetch<AthleteDetails>(`/athletes/${id}`, { accessToken }),
+    apiFetch<HallView[]>('/halls', { accessToken }),
+    apiFetch<GroupView[]>('/groups', { accessToken }),
+  ]);
 
   if (!athlete.ok) {
     if (athlete.error.status === 404) {
@@ -85,7 +102,14 @@ export default async function EditAthletePage({ params }: { params: Promise<{ id
         }`}
       />
 
-      <EditAthleteForm athlete={athlete.data} />
+      <EditAthleteForm
+        athlete={{
+          ...athlete.data,
+          groupId: athlete.data.group?.id ?? null,
+        }}
+        groups={groups.ok ? groups.data.map(({ id, name, hallId }) => ({ id, name, hallId })) : []}
+        halls={halls.ok ? halls.data.map(({ id, name }) => ({ id, name })) : []}
+      />
     </AppShell>
   );
 }

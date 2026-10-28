@@ -18,6 +18,8 @@ export interface AthleteRecord {
   phone: string | null;
   email: string | null;
   notes: string | null;
+  /** Основной зал спортсмена (#66); null — не назначен. */
+  hallId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -120,11 +122,13 @@ const ATHLETE_SELECT = {
   phone: true,
   email: true,
   notes: true,
+  // Основной зал спортсмена (#66): свой, а не зал группы.
+  hallId: true,
   createdAt: true,
   updatedAt: true,
 } as const;
 
-/** Текущая группа, тренер и филиал: только для карточки, не для списка. */
+/** Текущая группа, тренер и зал: только для карточки, не для списка. */
 const AFFILIATION_SELECT = {
   group: {
     select: {
@@ -300,23 +304,32 @@ export class PrismaAthletesRepository extends AthletesRepository {
   }
 
   async findAffiliation(athleteId: string): Promise<AthleteAffiliation> {
-    const membership = await this.prisma.db.groupMembership.findFirst({
-      where: { athleteId, state: 'ACTIVE' },
-      orderBy: { joinedAt: 'desc' },
-      select: AFFILIATION_SELECT,
-    });
+    const [athlete, membership] = await Promise.all([
+      this.prisma.db.athlete.findUnique({
+        where: { id: athleteId },
+        select: { hall: { select: { id: true, name: true } } },
+      }),
+      this.prisma.db.groupMembership.findFirst({
+        where: { athleteId, state: 'ACTIVE' },
+        orderBy: { joinedAt: 'desc' },
+        select: AFFILIATION_SELECT,
+      }),
+    ]);
+
+    // Свой зал спортсмена старше зала группы: переезд в другой зал не должен
+    // переписываться групповой привязкой (#66).
+    const ownHall = athlete?.hall ?? null;
 
     if (!membership) {
-      return { group: null, trainer: null, hall: null };
+      return { group: null, trainer: null, hall: ownHall };
     }
 
     const trainer = membership.group.trainers[0]?.trainerProfile ?? null;
-    const hall = membership.group.hall;
 
     return {
       group: { id: membership.group.id, name: membership.group.name },
       trainer: trainer ? { id: trainer.id, displayName: trainer.displayName } : null,
-      hall,
+      hall: ownHall ?? membership.group.hall,
     };
   }
 }

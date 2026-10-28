@@ -85,6 +85,7 @@ export class AthletesService {
       group: affiliation.group,
       trainer: affiliation.trainer,
       hall: affiliation.hall,
+    hallId: athlete.hallId ?? null,
       linkedAccounts: accounts.map((account) => ({
         userId: account.userId,
         email: account.email,
@@ -270,6 +271,8 @@ function toUpdateRecord(input: UpdateAthleteInput): UpdateAthleteRecordInput {
     email: input.email,
     notes: input.notes,
     status: input.status,
+    // Основной зал (#66): `null` очищает привязку, отсутствие поля — не трогает.
+    ...(input.hallId === undefined ? {} : { hallId: input.hallId }),
   };
 
   // Ступень (ADR-0012) — источник истины: пояс выводится из неё. Присланный

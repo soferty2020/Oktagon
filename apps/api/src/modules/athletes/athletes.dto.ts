@@ -146,6 +146,13 @@ export class UpdateAthleteDto {
   @IsOptional()
   @IsEnum(AthleteStatus)
   status?: AthleteStatus;
+
+  /** Основной зал спортсмена (#66); `null` очищает привязку. */
+  @ApiPropertyOptional({ format: 'uuid', nullable: true })
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsUUID()
+  hallId?: string | null;
 }
 
 export class ListAthletesQueryDto {

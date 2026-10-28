@@ -149,6 +149,9 @@ export async function updateAthleteAction(
   // строкой перезаписал бы реальную ступень через 400 или сброс.
   const rank = optionalText(formData, 'rank');
   const beltAwardedAt = optionalText(formData, 'beltAwardedAt');
+  const hallId = optionalText(formData, 'hallId');
+  const groupId = optionalText(formData, 'groupId');
+  const currentGroupId = optionalText(formData, 'currentGroupId');
 
   const state = await withSession(
     (accessToken) =>
@@ -168,10 +171,37 @@ export async function updateAthleteAction(
           ...(rank ? { rank } : {}),
           beltAwardedAt: beltAwardedAt ?? null,
           ...(status ? { status } : {}),
+          // Зал: пустой выбор — «не назначен», а не «не трогать» (#68).
+          hallId: hallId ?? null,
         },
       }),
     'Карточка обновлена',
   );
+
+  // Группа меняется отдельным вызовом: состав группы — не поле карточки.
+  // Ошибку привязки не прячем: карточка уже сохранена, и об этом нужно сказать.
+  if (!state.error && groupId !== currentGroupId) {
+    if (groupId) {
+      const assigned = await withSession((accessToken) =>
+        apiFetch(`/groups/${groupId}/members`, {
+          accessToken,
+          method: 'POST',
+          body: { athleteId },
+        }),
+      );
+
+      if (assigned.error) {
+        return { success: 'Карточка обновлена', error: `группа не изменена: ${assigned.error}` };
+      }
+    } else if (currentGroupId) {
+      await withSession((accessToken) =>
+        apiFetch(`/groups/${currentGroupId}/members/${athleteId}`, {
+          accessToken,
+          method: 'DELETE',
+        }),
+      );
+    }
+  }
 
   if (!state.error) {
     revalidatePath(`/athletes/${athleteId}`);

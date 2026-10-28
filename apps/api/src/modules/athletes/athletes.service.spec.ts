@@ -20,6 +20,7 @@ const athlete: AthleteRecord = {
   phone: '+7 700 111 22 33',
   email: 'ali@example.com',
   notes: 'заметка клуба',
+  hallId: null,
   createdAt: new Date('2026-03-01T10:00:00.000Z'),
   updatedAt: new Date('2026-03-01T10:00:00.000Z'),
 };

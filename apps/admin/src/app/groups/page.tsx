@@ -5,7 +5,7 @@ import { AppShell, Notice, PageHeader } from '@/components/app-shell';
 import { EmptyState } from '@/components/empty-state';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
-import { CreateGroupForm } from './group-forms';
+import { AssignAthleteForm, CreateGroupForm } from './group-forms';
 
 export const metadata = {
   title: 'Группы — OCTAGON',
@@ -34,33 +34,52 @@ interface TrainerView {
   isActive: boolean;
 }
 
+interface AthleteView {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
 /**
  * Справочник групп (C6).
  *
  * Список приходит уже ограниченным scope: тренер видит только свои группы
  * (docs/21-permission-matrix.md).
  */
-export default async function GroupsPage() {
+export default async function GroupsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ assign?: string }>;
+}) {
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login');
   }
 
+  const { assign } = await searchParams;
   const { accessToken } = await readTokens();
   const canManage = user.permissions.includes('groups.edit');
 
-  const [groups, halls, trainers] = await Promise.all([
+  const [groups, halls, trainers, assigned] = await Promise.all([
     apiFetch<GroupView[]>('/groups', { accessToken }),
     canManage ? apiFetch<HallView[]>('/halls', { accessToken }) : null,
     canManage ? apiFetch<TrainerView[]>('/trainers', { accessToken }) : null,
+    // Спортсмен из ссылки «Не в группе» (#68): показываем его карточку в форме.
+    assign ? apiFetch<AthleteView>(`/athletes/${assign}`, { accessToken }) : null,
   ]);
 
   const hallOptions = (halls?.ok ? halls.data : [])
-    .filter((branch) => branch.isActive)
-    .map((branch) => ({ id: branch.id, name: branch.name }));
+    .filter((hall) => hall.isActive)
+    .map((hall) => ({ id: hall.id, name: hall.name }));
   const trainerOptions = (trainers?.ok ? trainers.data : [])
     .filter((trainer) => trainer.isActive)
     .map((trainer) => ({ id: trainer.id, displayName: trainer.displayName }));
+
+  const groupOptions = (groups.ok ? groups.data : []).map((group) => ({
+    id: group.id,
+    name: group.name,
+    hallName: group.hallName,
+  }));
 
   return (
     <AppShell user={user}>
@@ -69,6 +88,21 @@ export default async function GroupsPage() {
         description="Список ограничен зоной доступа текущего пользователя"
       />
 
+      {assigned?.ok && canManage ? (
+        <div className="mb-6">
+          <AssignAthleteForm
+            athlete={assigned.data}
+            groups={groupOptions}
+          />
+        </div>
+      ) : null}
+
+      {assigned && !assigned.ok ? (
+        <div className="mb-6">
+          <Notice tone="error">{describeError(assigned.error)}</Notice>
+        </div>
+      ) : null}
+
       <div className={canManage ? 'grid gap-6 lg:grid-cols-[2fr_1fr]' : ''}>
         <div className="rounded-card border border-line bg-white">
           <div className="overflow-x-auto">
@@ -76,7 +110,7 @@ export default async function GroupsPage() {
             <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
               <tr>
                 <th className="px-4 py-3">Название</th>
-                <th className="px-4 py-3">Основной филиал</th>
+                <th className="px-4 py-3">Зал</th>
                 <th className="px-4 py-3">Тренер</th>
                 <th className="px-4 py-3">Участников</th>
                 <th className="px-4 py-3">Статус</th>
@@ -121,7 +155,7 @@ export default async function GroupsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="p-0">
+                  <td colSpan={5} className="p-0">
                     {groups.ok ? (
                       <EmptyState
                         icon="groups"
