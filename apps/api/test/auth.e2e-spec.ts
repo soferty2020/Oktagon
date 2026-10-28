@@ -84,6 +84,12 @@ describe('Auth (e2e, без БД)', () => {
           remaining: 0,
           retryAfterSeconds: 30,
         }),
+        // По email лимит только проверяется (#49, SEC-28).
+        peek: async () => ({
+          allowed: rateLimitAllowed,
+          remaining: 0,
+          retryAfterSeconds: 30,
+        }),
       })
       .compile();
 
