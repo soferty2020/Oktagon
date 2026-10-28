@@ -102,6 +102,54 @@ export class IdentityService {
   }
 
   /**
+   * Блокировка и разблокировка аккаунта (#56, SEC-15).
+   *
+   * Заблокированный сотрудник теряет доступ: `requireProfile` отказывает ему на
+   * любом маршруте, а сессии отзываются вызывающим кодом (auth-модуль).
+   * Себя и SUPERADMIN блокировать нельзя — иначе клуб останется без управления.
+   */
+  async setUserStatus(
+    callerUserId: string,
+    userId: string,
+    status: 'ACTIVE' | 'BLOCKED',
+  ): Promise<void> {
+    if (callerUserId === userId && status === 'BLOCKED') {
+      throw new ApiException(
+        'FORBIDDEN' satisfies ApiErrorCode,
+        'Нельзя заблокировать собственный аккаунт',
+      );
+    }
+
+    // findProfile, а не requireProfile: заблокированный аккаунт нужно уметь
+    // разблокировать, а requireProfile на нём бросает USER_BLOCKED.
+    const record = await this.repository.findProfile(userId);
+    if (!record) {
+      throw new ApiException('NOT_FOUND' satisfies ApiErrorCode, 'Пользователь не найден');
+    }
+
+    if (record.role === 'SUPERADMIN' && status === 'BLOCKED') {
+      throw new ApiException(
+        'FORBIDDEN' satisfies ApiErrorCode,
+        'Администратора клуба заблокировать нельзя',
+      );
+    }
+
+    if (record.status === status) {
+      return;
+    }
+
+    await this.repository.setStatus(userId, status as UserStatus);
+
+    await this.audit.recordSafely({
+      action: status === 'BLOCKED' ? AuditAction.USER_BLOCKED : AuditAction.USER_UNBLOCKED,
+      entityType: AuditEntityType.USER,
+      entityId: userId,
+      before: { status: record.status },
+      after: { status },
+    });
+  }
+
+  /**
    * Связанные спортсмены для `GET /me/athletes`.
    *
    * По docs/00-project-overview.md аккаунт не равен карточке спортсмена, поэтому

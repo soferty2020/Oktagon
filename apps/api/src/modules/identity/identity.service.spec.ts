@@ -141,9 +141,52 @@ describe('IdentityService', () => {
       findProfile: jest.fn(),
       listLinkedAthletes: jest.fn(),
       listCoachedAthleteIds: jest.fn(),
+      setStatus: jest.fn().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<IdentityRepository>;
     audit = { recordSafely: jest.fn().mockResolvedValue(null) };
     service = new IdentityService(repository, audit as unknown as AuditService);
+  });
+
+  describe('блокировка аккаунта (#56)', () => {
+    it('блокирует сотрудника и пишет аудит', async () => {
+      repository.findProfile.mockResolvedValue({ ...baseRecord, role: 'STAFF' });
+
+      await service.setUserStatus('admin-1', 'user-1', 'BLOCKED');
+
+      expect(repository.setStatus).toHaveBeenCalledWith('user-1', 'BLOCKED');
+      expect(audit.recordSafely).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'user.blocked', entityId: 'user-1' }),
+      );
+    });
+
+    it('не даёт заблокировать себя', async () => {
+      await expect(service.setUserStatus('user-1', 'user-1', 'BLOCKED')).rejects.toMatchObject({
+        code: 'FORBIDDEN',
+      });
+
+      expect(repository.setStatus).not.toHaveBeenCalled();
+    });
+
+    it('не даёт заблокировать администратора клуба', async () => {
+      repository.findProfile.mockResolvedValue({ ...baseRecord, role: 'SUPERADMIN' });
+
+      await expect(service.setUserStatus('admin-2', 'user-1', 'BLOCKED')).rejects.toMatchObject({
+        code: 'FORBIDDEN',
+      });
+
+      expect(repository.setStatus).not.toHaveBeenCalled();
+    });
+
+    it('разблокирует заблокированного: профиль читается в обход проверки статуса', async () => {
+      repository.findProfile.mockResolvedValue({
+        ...baseRecord,
+        status: PrismaUserStatus.BLOCKED,
+      });
+
+      await service.setUserStatus('admin-1', 'user-1', 'ACTIVE');
+
+      expect(repository.setStatus).toHaveBeenCalledWith('user-1', 'ACTIVE');
+    });
   });
 
   it('отдает профиль по идентификатору пользователя', async () => {

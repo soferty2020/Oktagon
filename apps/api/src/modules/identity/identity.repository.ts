@@ -94,6 +94,13 @@ export abstract class IdentityRepository {
   abstract listUsers(
     query: ListUsersRecordQuery,
   ): Promise<{ items: UserListRecord[]; total: number }>;
+  /**
+   * Меняет статус аккаунта (#56, SEC-15).
+   *
+   * Блокировка нужна при увольнении: иначе сотрудник сохраняет доступ, пока
+   * живёт его access-токен, и может войти заново по паролю.
+   */
+  abstract setStatus(userId: string, status: UserStatus): Promise<void>;
   /** РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂС‹ СЃРїРѕСЂС‚СЃРјРµРЅРѕРІ, РєРѕС‚РѕСЂС‹Рµ Р·Р°РЅРёРјР°СЋС‚СЃСЏ РІ РіСЂСѓРїРїР°С… С‚СЂРµРЅРµСЂР°. */
   abstract listCoachedAthleteIds(trainerUserId: string): Promise<string[]>;
   /** Р“СЂСѓРїРїС‹, РєРѕС‚РѕСЂС‹Рµ РІРµРґРµС‚ СЃРѕС‚СЂСѓРґРЅРёРє (Р°РєС‚РёРІРЅС‹Рµ РЅР°Р·РЅР°С‡РµРЅРёСЏ). */
@@ -267,6 +274,13 @@ export class PrismaIdentityRepository extends IdentityRepository {
     ]);
 
     return { items, total };
+  }
+
+  async setStatus(userId: string, status: UserStatus): Promise<void> {
+    await this.prisma.db.user.update({
+      where: { id: userId },
+      data: { status },
+    });
   }
 
   async listCoachedAthleteIds(trainerUserId: string): Promise<string[]> {
