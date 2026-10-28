@@ -22,6 +22,12 @@ export class CreateGroupDto {
   @IsString()
   @MaxLength(2000)
   description?: string;
+
+  /** Зал группы (#65): без него группа не привязана к площадке. */
+  @ApiPropertyOptional({ format: 'uuid', nullable: true })
+  @IsOptional()
+  @IsUUID()
+  hallId?: string | null;
 }
 
 export class UpdateGroupDto {
@@ -37,6 +43,11 @@ export class UpdateGroupDto {
   @IsString()
   @MaxLength(2000)
   description?: string;
+
+  @ApiPropertyOptional({ format: 'uuid', nullable: true, description: 'Перенос группы в другой зал' })
+  @IsOptional()
+  @IsUUID()
+  hallId?: string | null;
 
   @ApiPropertyOptional({ description: 'false — группа временно не набирается' })
   @IsOptional()

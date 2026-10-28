@@ -38,11 +38,14 @@ export interface GroupListQuery {
 export interface CreateGroupInput {
   name: string;
   description?: string | null;
+  /** Зал, в котором занимается группа (#65). */
+  hallId?: string | null;
 }
 
 export interface UpdateGroupInput {
   name?: string;
   description?: string | null;
+  hallId?: string | null;
   isActive?: boolean;
 }
 
@@ -166,7 +169,11 @@ export class PrismaGroupsRepository extends GroupsRepository {
 
   async create(input: CreateGroupInput): Promise<GroupRecord> {
     return this.prisma.db.group.create({
-      data: { name: input.name, description: input.description ?? null },
+      data: {
+        name: input.name,
+        description: input.description ?? null,
+        hallId: input.hallId ?? null,
+      },
       select: GROUP_SELECT,
     });
   }
