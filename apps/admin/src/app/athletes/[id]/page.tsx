@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { beltGradeLabel } from '@octagon/contracts';
 
 import { AppShell, Notice } from '@/components/app-shell';
+import { BeltBadge } from '@/components/belt-badge';
 import { secondaryButtonClass } from '@/components/ui';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { describePermission } from '@/lib/permissions';
@@ -379,10 +380,10 @@ function ProfileHero({
 
             <div>
               <p className="text-xs text-[#8A7A6A]">Пояс</p>
-              <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-accent-soft py-1.5 pl-2 pr-4 text-[13px] font-medium text-accent-text">
-                <span className="h-5 w-1 rounded-full bg-accent" />
-                {beltGradeLabel(athlete.beltGrade) ?? athlete.beltGrade}
-              </p>
+              <div className="mt-2">
+                {/* Цвет бейджа — цвет пояса, а не акцент темы (#73). */}
+                <BeltBadge code={athlete.beltGrade} />
+              </div>
             </div>
           </div>
 
