@@ -117,6 +117,13 @@ export default async function SchedulePage({
 
   if (sessions.ok) {
     for (const session of sessions.data) {
+      // Отменённое занятие в календаре не показываем: отмена — это решение, что
+      // занятия не будет, и оно не должно выглядеть как действующее. История
+      // отмены остаётся в списке занятий и в журнале.
+      if (session.status === 'CANCELLED') {
+        continue;
+      }
+
       events.push({
         id: session.id,
         kind: 'session',

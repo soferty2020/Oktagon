@@ -119,6 +119,11 @@ export default async function DashboardPage() {
   const calendarEvents: CalendarEvent[] = [];
   if (calendarSessions.ok) {
     for (const session of calendarSessions.data) {
+      // Отменённые занятия в календаре не показываем — см. /schedule.
+      if (session.status === 'CANCELLED') {
+        continue;
+      }
+
       calendarEvents.push({
         id: session.id,
         kind: 'session',
