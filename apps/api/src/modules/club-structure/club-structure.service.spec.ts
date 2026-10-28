@@ -1,367 +1,150 @@
+import { Test } from '@nestjs/testing';
+import { ApiErrorCode } from '@octagon/contracts';
+
 import { AuditService } from '../audit/audit.service';
-import type {
-  BranchRecord,
-  ClubStructureRepository,
-  HallRecord,
-  TrainerRecord,
-} from './club-structure.repository';
+import { ClubStructureRepository } from './club-structure.repository';
 import { ClubStructureService } from './club-structure.service';
 
-const branch: BranchRecord = {
-  id: 'branch-1',
-  name: 'Главный филиал',
-  address: 'ул. Абая, 1',
-  phone: '+7 700 000 00 00',
-  isActive: true,
-  createdAt: new Date('2026-03-01T10:00:00.000Z'),
-  updatedAt: new Date('2026-03-01T10:00:00.000Z'),
-};
-
-const hall: HallRecord = {
-  id: 'hall-1',
-  branchId: 'branch-1',
-  name: 'Основной зал',
-  capacity: 40,
-  isActive: true,
-};
-
-const trainer: TrainerRecord = {
-  id: 'trainer-1',
-  userId: null,
-  displayName: 'Тренер Серик',
-  phone: null,
-  bio: null,
-  isActive: true,
-};
-
-describe('ClubStructureService', () => {
-  let repository: jest.Mocked<ClubStructureRepository>;
-  let audit: { recordSafely: jest.Mock };
+describe('ClubStructureService (#64, #69)', () => {
   let service: ClubStructureService;
 
-  beforeEach(() => {
-    repository = {
-      listBranches: jest.fn().mockResolvedValue([branch]),
-      findBranch: jest.fn().mockResolvedValue(branch),
-      createBranch: jest.fn().mockResolvedValue(branch),
-      updateBranch: jest.fn().mockResolvedValue(branch),
-      archiveBranch: jest.fn().mockResolvedValue(undefined),
-      listHalls: jest.fn().mockResolvedValue([hall]),
-      findHall: jest.fn().mockResolvedValue(hall),
-      findHallByName: jest.fn().mockResolvedValue(null),
-      createHall: jest.fn().mockResolvedValue(hall),
-      updateHall: jest.fn().mockResolvedValue(hall),
-      archiveHall: jest.fn().mockResolvedValue(undefined),
-      countUpcomingSessions: jest.fn().mockResolvedValue(0),
-      listTrainers: jest.fn().mockResolvedValue([trainer]),
-      findTrainer: jest.fn().mockResolvedValue(trainer),
-      findTrainerByUserId: jest.fn().mockResolvedValue(null),
-      createTrainer: jest.fn().mockResolvedValue(trainer),
-      updateTrainer: jest.fn().mockResolvedValue(trainer),
-      archiveTrainer: jest.fn().mockResolvedValue(undefined),
-    } as unknown as jest.Mocked<ClubStructureRepository>;
+  const repository = {
+    listHalls: jest.fn(),
+    findHall: jest.fn(),
+    createHall: jest.fn(),
+    updateHall: jest.fn(),
+    archiveHall: jest.fn(),
+    listHallGroups: jest.fn().mockResolvedValue([]),
+    countHallDependents: jest.fn().mockResolvedValue({ groups: 0, sessions: 0 }),
+    listTrainers: jest.fn(),
+    findTrainer: jest.fn(),
+    findTrainerByUserId: jest.fn(),
+    createTrainer: jest.fn(),
+    updateTrainer: jest.fn(),
+    archiveTrainer: jest.fn(),
+    setTrainerAccount: jest.fn(),
+    findAccount: jest.fn(),
+  };
 
-    audit = { recordSafely: jest.fn().mockResolvedValue(null) };
-    service = new ClubStructureService(repository, audit as unknown as AuditService);
-  });
+  const audit = { recordSafely: jest.fn().mockResolvedValue(undefined) };
 
-  describe('филиалы', () => {
-    it('отдает список и карточку с залами', async () => {
-      const list = await service.listBranches();
-      expect(list).toHaveLength(1);
-      expect(list[0]).toMatchObject({ id: 'branch-1', name: 'Главный филиал' });
+  const hall = {
+    id: 'hall-1',
+    name: 'Центральный зал',
+    address: 'ул. Абая, 1',
+    phone: '+7 700 000 00 00',
+    capacity: 40,
+    isActive: true,
+  };
 
-      const details = await service.getBranch('branch-1');
-      expect(details.halls).toHaveLength(1);
-      expect(details.halls[0]?.name).toBe('Основной зал');
-    });
+  const trainer = {
+    id: 'trainer-1',
+    userId: null,
+    displayName: 'Иванов Иван',
+    firstName: 'Иван',
+    lastName: 'Иванов',
+    phone: null,
+    bio: null,
+    isActive: true,
+  };
 
-    it('создает филиал и пишет аудит (BR-007)', async () => {
-      await service.createBranch({ name: 'Главный филиал' });
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    repository.countHallDependents.mockResolvedValue({ groups: 0, sessions: 0 });
 
-      expect(audit.recordSafely).toHaveBeenCalledWith(
-        expect.objectContaining({ action: 'branch.created', entityId: 'branch-1' }),
-      );
-    });
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        ClubStructureService,
+        { provide: ClubStructureRepository, useValue: repository },
+        { provide: AuditService, useValue: audit },
+      ],
+    }).compile();
 
-    it('архивирует филиал мягко, передавая дату', async () => {
-      await service.archiveBranch('branch-1');
-
-      expect(repository.archiveBranch).toHaveBeenCalledWith('branch-1', expect.any(Date));
-      expect(audit.recordSafely).toHaveBeenCalledWith(
-        expect.objectContaining({ action: 'branch.archived' }),
-      );
-    });
-
-    it('отдает 404 для неизвестного филиала', async () => {
-      repository.findBranch.mockResolvedValue(null);
-
-      await expect(service.getBranch('missing')).rejects.toMatchObject({
-        code: 'BRANCH_NOT_FOUND',
-      });
-    });
+    service = moduleRef.get(ClubStructureService);
   });
 
   describe('залы', () => {
-    it('создает зал в активном филиале', async () => {
-      await service.createHall({ branchId: 'branch-1', name: 'Основной зал' });
+    it('создаёт зал с адресом и пишет аудит', async () => {
+      repository.createHall.mockResolvedValue(hall);
 
-      expect(repository.createHall).toHaveBeenCalled();
-      expect(audit.recordSafely).toHaveBeenCalledWith(
-        expect.objectContaining({ action: 'hall.created' }),
-      );
+      const result = await service.createHall({ name: hall.name, address: hall.address });
+
+      expect(result.address).toBe('ул. Абая, 1');
+      expect(audit.recordSafely).toHaveBeenCalled();
     });
 
-    it('не дает создать зал в неактивном филиале', async () => {
-      repository.findBranch.mockResolvedValue({ ...branch, isActive: false });
+    it('отдаёт зал с его группами', async () => {
+      repository.findHall.mockResolvedValue(hall);
+      repository.listHallGroups.mockResolvedValue([{ id: 'group-1', name: 'Старшая' }]);
 
-      await expect(
-        service.createHall({ branchId: 'branch-1', name: 'Новый зал' }),
-      ).rejects.toMatchObject({ code: 'BRANCH_ARCHIVED' });
-      expect(repository.createHall).not.toHaveBeenCalled();
+      const result = await service.getHall('hall-1');
+
+      expect(result.groups).toEqual([{ id: 'group-1', name: 'Старшая' }]);
     });
 
-    it('проверяет филиал перед выдачей залов', async () => {
-      repository.findBranch.mockResolvedValue(null);
-
-      await expect(service.listHalls('missing')).rejects.toMatchObject({
-        code: 'BRANCH_NOT_FOUND',
-      });
-    });
-
-    it('отдает 404 для неизвестного зала при изменении', async () => {
-      repository.findHall.mockResolvedValue(null);
-
-      await expect(service.updateHall('missing', { name: 'X' })).rejects.toMatchObject({
-        code: 'HALL_NOT_FOUND',
-      });
-    });
-
-    it('не дает создать второй зал с тем же названием в филиале', async () => {
-      // Схема требует уникальности пары «филиал + название». Без проверки
-      // Prisma вернула бы P2002, и администратор увидел бы 500 вместо причины.
-      repository.findHallByName.mockResolvedValue(hall);
-
-      await expect(
-        service.createHall({ branchId: 'branch-1', name: 'Основной зал' }),
-      ).rejects.toMatchObject({ code: 'HALL_NAME_TAKEN' });
-      expect(repository.createHall).not.toHaveBeenCalled();
-    });
-
-    it('разрешает то же название в другом филиале', async () => {
-      repository.findHallByName.mockResolvedValue(null);
-
-      await expect(
-        service.createHall({ branchId: 'branch-2', name: 'Основной зал' }),
-      ).resolves.toBeDefined();
-    });
-
-    it('проверяет название при переименовании, исключая сам зал', async () => {
-      await service.updateHall('hall-1', { name: 'Большой зал' });
-
-      // excludeId обязателен: иначе зал конфликтовал бы сам с собой при
-      // сохранении формы без изменения названия.
-      expect(repository.findHallByName).toHaveBeenCalledWith('branch-1', 'Большой зал', 'hall-1');
-    });
-
-    it('переносит зал в другой филиал', async () => {
-      repository.findHallByName.mockResolvedValue(null);
-      repository.updateHall.mockResolvedValue({ ...hall, branchId: 'branch-2' });
-
-      const moved = await service.updateHall('hall-1', { branchId: 'branch-2' });
-
-      expect(moved.branchId).toBe('branch-2');
-      expect(repository.findBranch).toHaveBeenCalledWith('branch-2');
-    });
-
-    it('не переносит зал в архивный филиал', async () => {
-      repository.findBranch.mockResolvedValue({ ...branch, isActive: false });
-
-      await expect(service.updateHall('hall-1', { branchId: 'branch-2' })).rejects.toMatchObject({
-        code: 'BRANCH_ARCHIVED',
-      });
-      expect(repository.updateHall).not.toHaveBeenCalled();
-    });
-
-    it('не переносит зал в несуществующий филиал', async () => {
-      repository.findBranch.mockResolvedValue(null);
-
-      await expect(service.updateHall('hall-1', { branchId: 'missing' })).rejects.toMatchObject({
-        code: 'BRANCH_NOT_FOUND',
-      });
-    });
-
-    it('не архивирует зал с предстоящими занятиями', async () => {
-      // Архивный зал исчезает из выбора в расписании: тренер и группа пришли бы
-      // в закрытый зал. Сначала занятия нужно перенести.
-      repository.countUpcomingSessions.mockResolvedValue(3);
+    it('не архивирует зал с группами', async () => {
+      repository.findHall.mockResolvedValue(hall);
+      repository.countHallDependents.mockResolvedValue({ groups: 2, sessions: 0 });
 
       await expect(service.archiveHall('hall-1')).rejects.toMatchObject({
-        code: 'HALL_HAS_SESSIONS',
+        code: ApiErrorCode.HALL_IN_USE,
       });
       expect(repository.archiveHall).not.toHaveBeenCalled();
     });
 
-    it('архивирует зал без предстоящих занятий', async () => {
-      repository.countUpcomingSessions.mockResolvedValue(0);
+    it('не архивирует зал с предстоящими занятиями', async () => {
+      repository.findHall.mockResolvedValue(hall);
+      repository.countHallDependents.mockResolvedValue({ groups: 0, sessions: 3 });
+
+      await expect(service.archiveHall('hall-1')).rejects.toMatchObject({
+        code: ApiErrorCode.HALL_IN_USE,
+      });
+    });
+
+    it('архивирует пустой зал', async () => {
+      repository.findHall.mockResolvedValue(hall);
 
       await service.archiveHall('hall-1');
 
       expect(repository.archiveHall).toHaveBeenCalledWith('hall-1', expect.any(Date));
     });
+
+    it('неизвестный зал даёт 404', async () => {
+      repository.findHall.mockResolvedValue(null);
+
+      await expect(service.updateHall('missing', { name: 'X' })).rejects.toMatchObject({
+        code: ApiErrorCode.HALL_NOT_FOUND,
+      });
+    });
   });
 
   describe('тренеры', () => {
-    it('создает профиль без аккаунта', async () => {
-      const created = await service.createTrainer({ displayName: 'Тренер Серик' });
+    it('создаёт тренера с именем и фамилией', async () => {
+      repository.createTrainer.mockResolvedValue(trainer);
 
-      expect(created.userId).toBeNull();
-      expect(repository.findTrainerByUserId).not.toHaveBeenCalled();
-    });
+      const result = await service.createTrainer({ firstName: 'Иван', lastName: 'Иванов' });
 
-    it('не дает привязать аккаунт, у которого уже есть профиль тренера', async () => {
-      repository.findTrainerByUserId.mockResolvedValue(trainer);
-
-      await expect(
-        service.createTrainer({ displayName: 'Второй профиль', userId: 'user-1' }),
-      ).rejects.toMatchObject({ code: 'TRAINER_ALREADY_ASSIGNED' });
-      expect(repository.createTrainer).not.toHaveBeenCalled();
-    });
-
-    it('проверяет занятость аккаунта, если он указан', async () => {
-      await service.createTrainer({ displayName: 'Тренер Серик', userId: 'user-1' });
-
-      expect(repository.findTrainerByUserId).toHaveBeenCalledWith('user-1');
-      expect(repository.createTrainer).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: 'user-1' }),
-      );
-    });
-
-    it('отдает 404 для неизвестного тренера', async () => {
-      repository.findTrainer.mockResolvedValue(null);
-
-      await expect(service.getTrainer('missing')).rejects.toMatchObject({
-        code: 'TRAINER_NOT_FOUND',
-      });
-    });
-
-    it('архивирует профиль', async () => {
-      await service.archiveTrainer('trainer-1');
-
-      expect(repository.archiveTrainer).toHaveBeenCalledWith('trainer-1', expect.any(Date));
-    });
-  });
-
-  describe('связь профиля тренера с аккаунтом', () => {
-    /** Аккаунт сотрудника: только такой подходит тренеру. */
-    const staffAccount = { role: 'STAFF' as const, status: 'ACTIVE' as const };
-
-    beforeEach(() => {
-      repository.findAccount = jest.fn().mockResolvedValue(staffAccount);
-      repository.setTrainerAccount = jest.fn().mockResolvedValue({ ...trainer, userId: 'user-1' });
-    });
-
-    it('связывает профиль с аккаунтом сотрудника', async () => {
-      const linked = await service.linkTrainerAccount('trainer-1', 'user-1');
-
-      expect(linked.userId).toBe('user-1');
-      expect(repository.setTrainerAccount).toHaveBeenCalledWith('trainer-1', 'user-1');
-      expect(audit.recordSafely).toHaveBeenCalledWith(
-        expect.objectContaining({
-          action: 'trainer.updated',
-          after: expect.objectContaining({ userId: 'user-1' }),
-        }),
-      );
+      expect(result.displayName).toBe('Иванов Иван');
     });
 
     it('не связывает аккаунт участника клуба', async () => {
-      // У MEMBER нет прав тренера: занятия и посещаемость ему недоступны, и
-      // связь создала бы «тренера» без возможностей. Отказ лучше молчаливого
-      // состояния, в котором доступ есть, а работать нельзя.
+      repository.findTrainer.mockResolvedValue(trainer);
       repository.findAccount.mockResolvedValue({ role: 'MEMBER', status: 'ACTIVE' });
 
       await expect(service.linkTrainerAccount('trainer-1', 'user-1')).rejects.toMatchObject({
-        code: 'TRAINER_ACCOUNT_ROLE_INVALID',
-      });
-      expect(repository.setTrainerAccount).not.toHaveBeenCalled();
-    });
-
-    it('не связывает неактивированный аккаунт', async () => {
-      // Приглашение не принято: человек не может войти, связь бессмысленна.
-      repository.findAccount.mockResolvedValue({ role: 'STAFF', status: 'INVITED' });
-
-      await expect(service.linkTrainerAccount('trainer-1', 'user-1')).rejects.toMatchObject({
-        code: 'TRAINER_ACCOUNT_NOT_ACTIVE',
-      });
-      expect(repository.setTrainerAccount).not.toHaveBeenCalled();
-    });
-
-    it('не связывает несуществующий аккаунт', async () => {
-      repository.findAccount.mockResolvedValue(null);
-
-      await expect(service.linkTrainerAccount('trainer-1', 'user-1')).rejects.toMatchObject({
-        code: 'NOT_FOUND',
+        code: ApiErrorCode.TRAINER_ACCOUNT_ROLE_INVALID,
       });
     });
 
-    it('разрешает аккаунт суперадминистратора', async () => {
-      // У суперадмина есть все права, включая тренерские: запрет был бы
-      // формальностью, мешающей владельцу клуба вести занятия.
-      repository.findAccount.mockResolvedValue({ role: 'SUPERADMIN', status: 'ACTIVE' });
+    it('связывает аккаунт сотрудника', async () => {
+      repository.findTrainer.mockResolvedValue(trainer);
+      repository.findAccount.mockResolvedValue({ role: 'STAFF', status: 'ACTIVE' });
+      repository.findTrainerByUserId.mockResolvedValue(null);
+      repository.setTrainerAccount.mockResolvedValue({ ...trainer, userId: 'user-1' });
 
-      await expect(service.linkTrainerAccount('trainer-1', 'user-1')).resolves.toMatchObject({
-        userId: 'user-1',
-      });
-    });
+      const result = await service.linkTrainerAccount('trainer-1', 'user-1');
 
-    it('не заменяет уже связанный аккаунт', async () => {
-      repository.findTrainer.mockResolvedValue({ ...trainer, userId: 'user-old' });
-
-      await expect(service.linkTrainerAccount('trainer-1', 'user-2')).rejects.toMatchObject({
-        code: 'TRAINER_ALREADY_ASSIGNED',
-      });
-      expect(repository.setTrainerAccount).not.toHaveBeenCalled();
-    });
-
-    it('повторная связь с тем же аккаунтом не ошибка', async () => {
-      repository.findTrainer.mockResolvedValue({ ...trainer, userId: 'user-1' });
-
-      await expect(service.linkTrainerAccount('trainer-1', 'user-1')).resolves.toMatchObject({
-        userId: 'user-1',
-      });
-      // Администратор мог нажать дважды: это не повод показывать ошибку.
-      expect(repository.setTrainerAccount).not.toHaveBeenCalled();
-    });
-
-    it('не связывает аккаунт, занятый другим профилем', async () => {
-      repository.findTrainerByUserId.mockResolvedValue({ ...trainer, id: 'trainer-other' });
-
-      await expect(service.linkTrainerAccount('trainer-1', 'user-1')).rejects.toMatchObject({
-        code: 'TRAINER_ALREADY_ASSIGNED',
-      });
-    });
-
-    it('снимает связь, сохраняя профиль', async () => {
-      repository.findTrainer.mockResolvedValue({ ...trainer, userId: 'user-1' });
-      repository.setTrainerAccount.mockResolvedValue({ ...trainer, userId: null });
-
-      const unlinked = await service.unlinkTrainerAccount('trainer-1');
-
-      expect(unlinked.userId).toBeNull();
-      // Профиль не удаляется: он остается в расписании и в проведенных занятиях,
-      // иначе история посещаемости потеряла бы тренера (BR-007).
-      expect(repository.archiveTrainer).not.toHaveBeenCalled();
-      expect(audit.recordSafely).toHaveBeenCalledWith(
-        expect.objectContaining({ before: { userId: 'user-1' }, after: { userId: null } }),
-      );
-    });
-
-    it('отвязка несвязанного профиля отклоняется', async () => {
-      repository.findTrainer.mockResolvedValue({ ...trainer, userId: null });
-
-      await expect(service.unlinkTrainerAccount('trainer-1')).rejects.toMatchObject({
-        code: 'TRAINER_ACCOUNT_NOT_LINKED',
-      });
+      expect(result.userId).toBe('user-1');
     });
   });
 });

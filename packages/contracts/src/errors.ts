@@ -74,6 +74,8 @@ export const ApiErrorCode = {
    * тренер и группа пришли бы в закрытый зал. Сначала занятия нужно перенести.
    */
   HALL_HAS_SESSIONS: 'HALL_HAS_SESSIONS',
+  /** В зале есть группы или предстоящие занятия: удалять нельзя (#64). */
+  HALL_IN_USE: 'HALL_IN_USE',
   TRAINER_ALREADY_ASSIGNED: 'TRAINER_ALREADY_ASSIGNED',
   TRAINER_NOT_FOUND: 'TRAINER_NOT_FOUND',
   /** Профиль тренера не связан с аккаунтом: отвязывать нечего. */
@@ -254,6 +256,7 @@ export const API_ERROR_HTTP_STATUS: Readonly<Record<ApiErrorCode, number>> = {
   HALL_NOT_FOUND: 404,
   HALL_NAME_TAKEN: 409,
   HALL_HAS_SESSIONS: 409,
+  HALL_IN_USE: 409,
   TRAINER_ALREADY_ASSIGNED: 409,
   TRAINER_NOT_FOUND: 404,
   TRAINER_ACCOUNT_NOT_LINKED: 404,

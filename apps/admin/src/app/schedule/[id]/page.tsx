@@ -30,14 +30,10 @@ interface ScheduleTemplateView {
   }[];
 }
 
-interface BranchView {
-  id: string;
-  name: string;
-}
-
 interface HallView {
   id: string;
   name: string;
+  isActive: boolean;
 }
 
 interface TrainerView {
@@ -87,9 +83,9 @@ export default async function ScheduleTemplatePage({
   const { accessToken } = await readTokens();
   const canEdit = user.permissions.includes('schedule.edit');
 
-  const [template, branches, trainers] = await Promise.all([
+  const [template, hallsResult, trainers] = await Promise.all([
     apiFetch<ScheduleTemplateView>(`/schedule-templates/${id}`, { accessToken }),
-    apiFetch<BranchView[]>('/branches', { accessToken }),
+    apiFetch<HallView[]>('/halls', { accessToken }),
     apiFetch<TrainerView[]>('/trainers', { accessToken }),
   ]);
 
@@ -105,20 +101,10 @@ export default async function ScheduleTemplatePage({
     );
   }
 
-  // Залы собираются по филиалам: отдельного плоского справочника нет.
-  const halls: HallView[] = [];
-  if (branches.ok) {
-    const perBranch = await Promise.all(
-      branches.data.map((branch) =>
-        apiFetch<HallView[]>(`/branches/${branch.id}/halls`, { accessToken }),
-      ),
-    );
-    for (const result of perBranch) {
-      if (result.ok) {
-        halls.push(...result.data);
-      }
-    }
-  }
+  // Плоский справочник залов: филиала больше нет, зал — самостоятельная единица.
+  const halls: HallView[] = hallsResult.ok
+    ? hallsResult.data.filter((hall) => hall.isActive)
+    : [];
 
   const trainerOptions = (trainers.ok ? trainers.data : [])
     .filter((trainer) => trainer.isActive)

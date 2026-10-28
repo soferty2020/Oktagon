@@ -8,7 +8,7 @@ import {
   PaymentKind,
   paymentMonthLabel,
   paymentStatusMessage,
-  type BranchFinanceSummary,
+  type HallFinanceSummary,
   type AthletePaymentStatusView,
   type DebtorSummary,
   type DebtRulesConfig,
@@ -916,8 +916,8 @@ export class FinanceService {
    * - **задолженность — по расчетному месяцу**: долг за сентябрь остается
    *   сентябрьским, даже если его закрыли в октябре (BR-004).
    *
-   * Филиал берется у группы спортсмена; спортсмен без филиала попадает в
-   * отдельную строку «Филиал не назначен».
+   * Зал берется у группы спортсмена; спортсмен без филиала попадает в
+   * отдельную строку «Зал не назначен».
    */
   async summary(callerUserId: string, year: number, month: number): Promise<FinanceSummary> {
     this.assertMonth(month);
@@ -929,7 +929,7 @@ export class FinanceService {
       this.listDebtors(callerUserId, year, month),
       this.finance.listMovementsInRange(from, to),
       this.finance.listActiveAthletes(),
-      this.finance.listBranches(),
+      this.finance.listHalls(),
     ]);
 
     const totals = movements.reduce<FinanceTotals>(
@@ -948,44 +948,44 @@ export class FinanceService {
     // Расходы на филиалы: выручка по филиалу движения, задолженность — по
     // филиалу спортсмена. Спортсмены без филиала сведены в одну строку.
     const debtorsOnly = debtors.filter((row) => row.isDebtor);
-    const branchByAthlete = await this.finance.branchesForAthletes(
+    const hallByAthlete = await this.finance.hallsForAthletes(
       debtorsOnly.map((row) => row.athleteId),
     );
 
-    const byBranch = new Map<string, BranchFinanceSummary>();
-    const ensureBranch = (branchId: string | null, branchName: string): BranchFinanceSummary => {
-      const key = branchId ?? NO_BRANCH_KEY;
-      const existing = byBranch.get(key);
+    const byHall = new Map<string, HallFinanceSummary>();
+    const ensureHall = (hallId: string | null, hallName: string): HallFinanceSummary => {
+      const key = hallId ?? NO_HALL_KEY;
+      const existing = byHall.get(key);
       if (existing) {
         return existing;
       }
 
-      const created: BranchFinanceSummary = {
-        branchId,
-        branchName,
+      const created: HallFinanceSummary = {
+        hallId,
+        hallName,
         received: 0,
         refunded: 0,
         revenue: 0,
         debtors: 0,
         debt: 0,
       };
-      byBranch.set(key, created);
+      byHall.set(key, created);
       return created;
     };
 
-    // Филиалы заводятся заранее: движение по филиалу без должников тоже должно
+    // Залы заводятся заранее: движение по филиалу без должников тоже должно
     // попасть в сводку, иначе сравнение филиалов было бы неполным.
     for (const branch of branches) {
-      ensureBranch(branch.id, branch.name);
+      ensureHall(branch.id, branch.name);
     }
 
-    const branchNameById = new Map(branches.map((branch) => [branch.id, branch.name]));
+    const hallNameById = new Map(branches.map((branch) => [branch.id, branch.name]));
 
     for (const movement of movements) {
-      const branchId = movement.branchId;
-      const row = ensureBranch(
-        branchId,
-        branchId ? (branchNameById.get(branchId) ?? 'Филиал удален') : NO_BRANCH_NAME,
+      const hallId = movement.hallId;
+      const row = ensureHall(
+        hallId,
+        hallId ? (hallNameById.get(hallId) ?? 'Зал удалён') : NO_HALL_NAME,
       );
       if (movement.kind === PaymentKind.REFUND) {
         row.refunded += movement.amount;
@@ -996,8 +996,8 @@ export class FinanceService {
     }
 
     for (const debtor of debtorsOnly) {
-      const branch = branchByAthlete.get(debtor.athleteId) ?? null;
-      const row = ensureBranch(branch?.branchId ?? null, branch?.branchName ?? NO_BRANCH_NAME);
+      const branch = hallByAthlete.get(debtor.athleteId) ?? null;
+      const row = ensureHall(branch?.hallId ?? null, branch?.hallName ?? NO_HALL_NAME);
       row.debtors += 1;
       row.debt += Math.max((debtor.expectedAmount ?? 0) - debtor.paidAmount, 0);
     }
@@ -1018,11 +1018,11 @@ export class FinanceService {
       debt,
       activeAthletes: athletes.filter((athlete) => athlete.status === PrismaAthleteStatus.ACTIVE)
         .length,
-      // Филиал без движения и без должников не показывается: пустые строки
+      // Зал без движения и без должников не показывается: пустые строки
       // мешали бы сравнивать филиалы между собой.
-      branches: [...byBranch.values()]
+      branches: [...byHall.values()]
         .filter((row) => row.received > 0 || row.refunded > 0 || row.debtors > 0)
-        .sort((a, b) => b.revenue - a.revenue || a.branchName.localeCompare(b.branchName)),
+        .sort((a, b) => b.revenue - a.revenue || a.hallName.localeCompare(b.hallName)),
     };
   }
 
@@ -1132,13 +1132,13 @@ export class FinanceService {
 }
 
 /**
- * Филиалы в сводке: у спортсмена без группы или без филиала своя строка.
+ * Залы в сводке: у спортсмена без группы или без филиала своя строка.
  *
  * Ключ не пересекается с UUID филиалов, поэтому «без филиала» не может слиться с
  * настоящим филиалом.
  */
-const NO_BRANCH_KEY = '__no_branch__';
-const NO_BRANCH_NAME = 'Филиал не назначен';
+const NO_HALL_KEY = '__no_branch__';
+const NO_HALL_NAME = 'Зал не назначен';
 
 /** Статус периода выводится из движений и ручной отметки, а не вводится руками.
  *

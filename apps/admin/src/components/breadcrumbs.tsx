@@ -14,7 +14,7 @@ import { usePathname } from 'next/navigation';
  * пришлось бы дублировать в 29 файлах и оно разошлось бы с навигацией.
  */
 const SECTIONS: readonly { prefix: string; title: string }[] = [
-  { prefix: '/branches', title: 'Филиалы и залы' },
+  { prefix: '/halls', title: 'Залы' },
   { prefix: '/groups', title: 'Группы' },
   { prefix: '/athletes', title: 'Спортсмены' },
   { prefix: '/trainers', title: 'Тренеры' },

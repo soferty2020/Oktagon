@@ -5,10 +5,8 @@ import {
   AuditEntityType,
   type ActiveMembershipView,
   type AddGroupMemberInput,
-  type AssignGroupBranchInput,
   type AssignGroupTrainerInput,
   type CreateGroupInput,
-  type GroupBranchView,
   type GroupDetails,
   type GroupMemberView,
   type GroupTrainerView,
@@ -24,7 +22,6 @@ import { ResourceScopeService } from '../identity/resource-scope.service';
 import { GroupsRepository } from './groups.repository';
 import type {
   ActiveMembershipRecord,
-  GroupBranchRecord,
   GroupMemberRecord,
   GroupRecord,
   GroupTrainerRecord,
@@ -71,15 +68,13 @@ export class GroupsService {
     await this.scope.assertGroupAccess(callerUserId, groupId);
 
     const group = await this.requireGroup(groupId);
-    const [branches, trainers, members] = await Promise.all([
-      this.groups.listBranches(groupId),
+    const [trainers, members] = await Promise.all([
       this.groups.listTrainers(groupId),
       this.groups.listMembers(groupId),
     ]);
 
     return {
       ...(await this.toGroupView(group)),
-      branches: branches.map(toBranchView),
       trainers: trainers.map(toTrainerView),
       members: members.map(toMemberView),
     };
@@ -142,66 +137,7 @@ export class GroupsService {
    * (docs/00-project-overview.md), поэтому связь many-to-many; «основным»
    * помечается только один филиал.
    */
-  async linkBranch(
-    callerUserId: string,
-    groupId: string,
-    input: AssignGroupBranchInput,
-  ): Promise<GroupDetails> {
-    await this.scope.assertGroupAccess(callerUserId, groupId);
-    await this.requireGroup(groupId);
 
-    if (!(await this.groups.branchExists(input.branchId))) {
-      throw new ApiException('BRANCH_NOT_FOUND' satisfies ApiErrorCode, 'Филиал не найден', {
-        branchId: input.branchId,
-      });
-    }
-
-    if (await this.groups.findBranchLink(groupId, input.branchId)) {
-      throw new ApiException(
-        'GROUP_BRANCH_ALREADY_LINKED' satisfies ApiErrorCode,
-        'Филиал уже привязан к группе',
-      );
-    }
-
-    const isPrimary = input.isPrimary ?? false;
-    if (isPrimary) {
-      await this.groups.clearPrimaryBranch(groupId);
-    }
-    await this.groups.linkBranch({ groupId, branchId: input.branchId, isPrimary });
-
-    await this.audit.recordSafely({
-      action: AuditAction.GROUP_BRANCH_LINKED,
-      entityType: AuditEntityType.GROUP_BRANCH,
-      entityId: groupId,
-      after: { branchId: input.branchId, isPrimary },
-    });
-
-    return this.get(callerUserId, groupId);
-  }
-
-  async unlinkBranch(
-    callerUserId: string,
-    groupId: string,
-    branchId: string,
-  ): Promise<GroupDetails> {
-    await this.scope.assertGroupAccess(callerUserId, groupId);
-
-    if (!(await this.groups.unlinkBranch(groupId, branchId))) {
-      throw new ApiException(
-        'GROUP_BRANCH_NOT_LINKED' satisfies ApiErrorCode,
-        'Филиал не привязан к этой группе',
-      );
-    }
-
-    await this.audit.recordSafely({
-      action: AuditAction.GROUP_BRANCH_UNLINKED,
-      entityType: AuditEntityType.GROUP_BRANCH,
-      entityId: groupId,
-      before: { branchId },
-    });
-
-    return this.get(callerUserId, groupId);
-  }
 
   // --- Тренеры группы (C7) -------------------------------------------------
 
@@ -380,18 +316,15 @@ export class GroupsService {
   }
 
   private async toGroupView(group: GroupRecord): Promise<GroupView> {
-    const [branches, membersCount] = await Promise.all([
-      this.groups.listBranches(group.id),
-      this.groups.countActiveMembers(group.id),
-    ]);
-    const primary = branches.find((branch) => branch.isPrimary);
+    const membersCount = await this.groups.countActiveMembers(group.id);
 
     return {
       id: group.id,
       name: group.name,
       description: group.description,
       isActive: group.isActive,
-      primaryBranchName: primary ? primary.branchName : null,
+      hallId: group.hallId,
+      hallName: group.hall?.name ?? null,
       activeMembersCount: membersCount,
       createdAt: group.createdAt.toISOString(),
       updatedAt: group.updatedAt.toISOString(),
@@ -399,13 +332,6 @@ export class GroupsService {
   }
 }
 
-function toBranchView(branch: GroupBranchRecord): GroupBranchView {
-  return {
-    branchId: branch.branchId,
-    branchName: branch.branchName,
-    isPrimary: branch.isPrimary,
-  };
-}
 
 function toTrainerView(trainer: GroupTrainerRecord): GroupTrainerView {
   return {

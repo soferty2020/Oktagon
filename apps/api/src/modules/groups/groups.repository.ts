@@ -6,15 +6,11 @@ export interface GroupRecord {
   id: string;
   name: string;
   description: string | null;
+  hallId: string | null;
+  hall: { name: string } | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-}
-
-export interface GroupBranchRecord {
-  branchId: string;
-  branchName: string;
-  isPrimary: boolean;
 }
 
 export interface GroupTrainerRecord {
@@ -81,18 +77,6 @@ export abstract class GroupsRepository {
   abstract archive(id: string, at: Date): Promise<void>;
   abstract countActiveMembers(groupId: string): Promise<number>;
 
-  abstract listBranches(groupId: string): Promise<GroupBranchRecord[]>;
-  abstract findBranchLink(groupId: string, branchId: string): Promise<GroupBranchRecord | null>;
-  abstract linkBranch(input: {
-    groupId: string;
-    branchId: string;
-    isPrimary: boolean;
-  }): Promise<GroupBranchRecord>;
-  /** Снимает признак основного филиала у остальных связей группы. */
-  abstract clearPrimaryBranch(groupId: string): Promise<void>;
-  abstract unlinkBranch(groupId: string, branchId: string): Promise<boolean>;
-  abstract branchExists(branchId: string): Promise<boolean>;
-
   abstract listTrainers(groupId: string): Promise<GroupTrainerRecord[]>;
   abstract findActiveTrainer(
     groupId: string,
@@ -130,14 +114,16 @@ export abstract class GroupsRepository {
   abstract athleteExists(athleteId: string): Promise<boolean>;
   /** Есть ли активная группа: нужно модулю расписания для проверки ссылки. */
   abstract exists(groupId: string): Promise<boolean>;
-  /** Основной филиал группы: занятие наследует его при материализации. */
-  abstract findPrimaryBranchId(groupId: string): Promise<string | null>;
+  /** Зал группы: занятие наследует его при материализации. */
+  abstract findHallId(groupId: string): Promise<string | null>;
 }
 
 const GROUP_SELECT = {
   id: true,
   name: true,
   description: true,
+  hallId: true,
+  hall: { select: { name: true } },
   isActive: true,
   createdAt: true,
   updatedAt: true,
@@ -202,65 +188,13 @@ export class PrismaGroupsRepository extends GroupsRepository {
     });
   }
 
-  async listBranches(groupId: string): Promise<GroupBranchRecord[]> {
-    const links = await this.prisma.db.groupBranch.findMany({
-      where: { groupId, branch: { archivedAt: null } },
-      orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
-      select: { branchId: true, isPrimary: true, branch: { select: { name: true } } },
+  async findHallId(groupId: string): Promise<string | null> {
+    const group = await this.prisma.db.group.findUnique({
+      where: { id: groupId },
+      select: { hallId: true },
     });
 
-    return links.map((link) => ({
-      branchId: link.branchId,
-      branchName: link.branch.name,
-      isPrimary: link.isPrimary,
-    }));
-  }
-
-  async findBranchLink(groupId: string, branchId: string): Promise<GroupBranchRecord | null> {
-    const link = await this.prisma.db.groupBranch.findUnique({
-      where: { groupId_branchId: { groupId, branchId } },
-      select: { branchId: true, isPrimary: true, branch: { select: { name: true } } },
-    });
-
-    if (!link) {
-      return null;
-    }
-    return { branchId: link.branchId, branchName: link.branch.name, isPrimary: link.isPrimary };
-  }
-
-  async linkBranch(input: {
-    groupId: string;
-    branchId: string;
-    isPrimary: boolean;
-  }): Promise<GroupBranchRecord> {
-    const link = await this.prisma.db.groupBranch.upsert({
-      where: { groupId_branchId: { groupId: input.groupId, branchId: input.branchId } },
-      create: input,
-      update: { isPrimary: input.isPrimary },
-      select: { branchId: true, isPrimary: true, branch: { select: { name: true } } },
-    });
-
-    return { branchId: link.branchId, branchName: link.branch.name, isPrimary: link.isPrimary };
-  }
-
-  async clearPrimaryBranch(groupId: string): Promise<void> {
-    await this.prisma.db.groupBranch.updateMany({
-      where: { groupId, isPrimary: true },
-      data: { isPrimary: false },
-    });
-  }
-
-  async unlinkBranch(groupId: string, branchId: string): Promise<boolean> {
-    const result = await this.prisma.db.groupBranch.deleteMany({ where: { groupId, branchId } });
-    return result.count > 0;
-  }
-
-  async branchExists(branchId: string): Promise<boolean> {
-    const branch = await this.prisma.db.branch.findFirst({
-      where: { id: branchId, archivedAt: null },
-      select: { id: true },
-    });
-    return branch !== null;
+    return group?.hallId ?? null;
   }
 
   async listTrainers(groupId: string): Promise<GroupTrainerRecord[]> {
@@ -484,11 +418,4 @@ export class PrismaGroupsRepository extends GroupsRepository {
     return group !== null;
   }
 
-  async findPrimaryBranchId(groupId: string): Promise<string | null> {
-    const link = await this.prisma.db.groupBranch.findFirst({
-      where: { groupId, isPrimary: true, branch: { archivedAt: null } },
-      select: { branchId: true },
-    });
-    return link?.branchId ?? null;
-  }
 }

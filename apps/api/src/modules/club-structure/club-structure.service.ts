@@ -3,14 +3,11 @@ import {
   ApiErrorCode,
   AuditAction,
   AuditEntityType,
-  type BranchDetails,
-  type BranchView,
-  type CreateBranchInput,
   type CreateHallInput,
   type CreateTrainerInput,
+  type HallDetails,
   type HallView,
   type TrainerView,
-  type UpdateBranchInput,
   type UpdateHallInput,
   type UpdateTrainerInput,
 } from '@octagon/contracts';
@@ -21,17 +18,13 @@ import { UserRole, UserStatus } from '../../../generated/prisma';
 // Обычный импорт, не `import type`: ClubStructureRepository — DI-токен, его
 // значение должно попасть в метаданные конструктора (emitDecoratorMetadata).
 import { ClubStructureRepository } from './club-structure.repository';
-import type { BranchRecord, HallRecord, TrainerRecord } from './club-structure.repository';
+import type { HallRecord, TrainerRecord } from './club-structure.repository';
 
 /**
- * Структура клуба: филиалы, залы, тренеры (issues C1–C3).
+ * Структура клуба: залы и тренеры (issues #64, #69).
  *
- * Спецификация: docs/00-project-overview.md (три филиала, рост до 5+),
- * docs/22-erd.md (Branch, Hall, TrainerProfile), BR-007 (аудит изменений),
- * docs/08-database.md (мягкое удаление через archivedAt).
- *
- * Branch и Hall разделены даже при связи 1:1 в MVP: так требует ERD, чтобы
- * переход к нескольким залам не менял модель.
+ * Филиалов больше нет: клуб делится по адресам, где проходят тренировки, а адрес —
+ * свойство зала. Внутри зала — группы; занятие может проходить в другом зале.
  *
  * Автора изменения в аудит подставляет AuditService из контекста запроса,
  * поэтому actorUserId в методы не передается.
@@ -45,123 +38,45 @@ export class ClubStructureService {
     private readonly audit: AuditService,
   ) {}
 
-  // --- Филиалы -------------------------------------------------------------
-
-  async listBranches(options: { isActive?: boolean } = {}): Promise<BranchView[]> {
-    const branches = await this.repository.listBranches(options);
-    return branches.map(toBranchView);
-  }
-
-  async getBranch(id: string): Promise<BranchDetails> {
-    const branch = await this.requireBranch(id);
-    const halls = await this.repository.listHalls(id);
-    return { ...toBranchView(branch), halls: halls.map(toHallView) };
-  }
-
-  async createBranch(input: CreateBranchInput): Promise<BranchView> {
-    const branch = await this.repository.createBranch(input);
-    this.logger.log(`Филиал создан: ${branch.name} (${branch.id})`);
-
-    await this.audit.recordSafely({
-      action: AuditAction.BRANCH_CREATED,
-      entityType: AuditEntityType.BRANCH,
-      entityId: branch.id,
-      after: { name: branch.name, address: branch.address },
-    });
-
-    return toBranchView(branch);
-  }
-
-  async updateBranch(id: string, input: UpdateBranchInput): Promise<BranchView> {
-    const before = await this.requireBranch(id);
-    const branch = await this.repository.updateBranch(id, input);
-
-    await this.audit.recordSafely({
-      action: AuditAction.BRANCH_UPDATED,
-      entityType: AuditEntityType.BRANCH,
-      entityId: id,
-      before: { name: before.name, isActive: before.isActive },
-      after: { name: branch.name, isActive: branch.isActive },
-    });
-
-    return toBranchView(branch);
-  }
-
-  /** Мягкое удаление: филиал уходит из справочников, история сохраняется. */
-  async archiveBranch(id: string): Promise<void> {
-    const branch = await this.requireBranch(id);
-    await this.repository.archiveBranch(id, new Date());
-
-    await this.audit.recordSafely({
-      action: AuditAction.BRANCH_ARCHIVED,
-      entityType: AuditEntityType.BRANCH,
-      entityId: id,
-      before: { name: branch.name, isActive: branch.isActive },
-    });
-  }
-
   // --- Залы ----------------------------------------------------------------
 
-  async listHalls(branchId: string): Promise<HallView[]> {
-    await this.requireBranch(branchId);
-    const halls = await this.repository.listHalls(branchId);
+  async listHalls(options: { isActive?: boolean } = {}): Promise<HallView[]> {
+    const halls = await this.repository.listHalls(options);
     return halls.map(toHallView);
   }
 
-  async createHall(input: CreateHallInput): Promise<HallView> {
-    const branch = await this.requireBranch(input.branchId);
-    this.assertBranchActive(branch);
-    await this.assertHallNameFree(input.branchId, input.name);
+  /** Зал с группами: карточка зала — точка входа в его группы (#65). */
+  async getHall(id: string): Promise<HallDetails> {
+    const hall = await this.requireHall(id);
+    const groups = await this.repository.listHallGroups(id);
 
+    return { ...toHallView(hall), groups };
+  }
+
+  async createHall(input: CreateHallInput): Promise<HallView> {
     const hall = await this.repository.createHall(input);
+    this.logger.log(`Зал создан: ${hall.name} (${hall.id})`);
 
     await this.audit.recordSafely({
       action: AuditAction.HALL_CREATED,
       entityType: AuditEntityType.HALL,
       entityId: hall.id,
-      after: { name: hall.name, branchId: hall.branchId },
+      after: { name: hall.name, address: hall.address },
     });
 
     return toHallView(hall);
   }
 
-  /**
-   * Изменение зала, включая перенос в другой филиал.
-   *
-   * Перенос нужен для исправления ошибки при заведении: зал могли создать не в
-   * том филиале. Занятия при этом не меняют филиал — он берется из первичной
-   * группы (`TrainingSession.branchId`), поэтому отчеты по филиалам остаются
-   * верными. Проверяется только уникальность названия в новом филиале: иначе
-   * Prisma вернула бы P2002 и администратор увидел бы 500.
-   */
   async updateHall(id: string, input: UpdateHallInput): Promise<HallView> {
     const before = await this.requireHall(id);
-
-    const branchChanged = input.branchId !== undefined && input.branchId !== before.branchId;
-    if (branchChanged) {
-      const branch = await this.requireBranch(input.branchId as string);
-      this.assertBranchActive(branch);
-    }
-
-    const nextBranchId = input.branchId ?? before.branchId;
-    const nextName = input.name ?? before.name;
-    if (branchChanged || (input.name !== undefined && input.name !== before.name)) {
-      await this.assertHallNameFree(nextBranchId, nextName, id);
-    }
-
     const hall = await this.repository.updateHall(id, input);
 
     await this.audit.recordSafely({
       action: AuditAction.HALL_UPDATED,
       entityType: AuditEntityType.HALL,
       entityId: id,
-      before: { name: before.name, isActive: before.isActive, branchId: before.branchId },
-      after: {
-        name: hall.name,
-        isActive: hall.isActive,
-        branchId: hall.branchId,
-        ...(branchChanged ? { movedFrom: before.branchId } : {}),
-      },
+      before: { name: before.name, address: before.address, isActive: before.isActive },
+      after: { name: hall.name, address: hall.address, isActive: hall.isActive },
     });
 
     return toHallView(hall);
@@ -170,19 +85,26 @@ export class ClubStructureService {
   /**
    * Архивирование зала.
    *
-   * Запрещено, если в зале есть предстоящие занятия: архивный зал исчезает из
-   * выбора в расписании, и тренер с группой пришли бы в закрытый зал. Прошедшие
-   * занятия не мешают — они остаются историей посещаемости (BR-007).
+   * Запрещено, пока в зале есть группы или предстоящие занятия: группы остались
+   * бы без площадки, а тренер с детьми пришёл бы в закрытый зал. Прошедшие
+   * занятия не мешают — они остаются историей (BR-007).
    */
   async archiveHall(id: string): Promise<void> {
     const hall = await this.requireHall(id);
+    const { groups, sessions } = await this.repository.countHallDependents(id, new Date());
 
-    const upcoming = await this.repository.countUpcomingSessions(id, new Date());
-    if (upcoming > 0) {
+    if (groups > 0 || sessions > 0) {
+      const details = [
+        groups > 0 ? `в зале ${groups} групп` : null,
+        sessions > 0 ? `предстоящих занятий: ${sessions}` : null,
+      ]
+        .filter(Boolean)
+        .join(', ');
+
       throw new ApiException(
-        'HALL_HAS_SESSIONS' satisfies ApiErrorCode,
-        `В зале ${upcoming} предстоящих занятий: сначала перенесите их`,
-        { upcoming },
+        'HALL_IN_USE' satisfies ApiErrorCode,
+        `${details}: сначала перенесите их в другой зал`,
+        { groups, sessions },
       );
     }
 
@@ -192,24 +114,8 @@ export class ClubStructureService {
       action: AuditAction.HALL_ARCHIVED,
       entityType: AuditEntityType.HALL,
       entityId: id,
-      before: { name: hall.name, branchId: hall.branchId },
+      before: { name: hall.name, address: hall.address },
     });
-  }
-
-  /** Проверяет, что название зала свободно в филиале. */
-  private async assertHallNameFree(
-    branchId: string,
-    name: string,
-    excludeId?: string,
-  ): Promise<void> {
-    const existing = await this.repository.findHallByName(branchId, name, excludeId);
-    if (existing) {
-      throw new ApiException(
-        'HALL_NAME_TAKEN' satisfies ApiErrorCode,
-        `В филиале уже есть зал «${name}»`,
-        { hallId: existing.id },
-      );
-    }
   }
 
   // --- Тренеры -------------------------------------------------------------
@@ -388,14 +294,6 @@ export class ClubStructureService {
 
   // --- Вспомогательное -----------------------------------------------------
 
-  private async requireBranch(id: string): Promise<BranchRecord> {
-    const branch = await this.repository.findBranch(id);
-    if (!branch) {
-      throw new ApiException('BRANCH_NOT_FOUND' satisfies ApiErrorCode, 'Филиал не найден');
-    }
-    return branch;
-  }
-
   private async requireHall(id: string): Promise<HallRecord> {
     const hall = await this.repository.findHall(id);
     if (!hall) {
@@ -411,35 +309,14 @@ export class ClubStructureService {
     }
     return trainer;
   }
-
-  /** В неактивном филиале нельзя заводить залы: это скрыло бы данные. */
-  private assertBranchActive(branch: BranchRecord): void {
-    if (!branch.isActive) {
-      throw new ApiException(
-        'BRANCH_ARCHIVED' satisfies ApiErrorCode,
-        'Филиал неактивен: сначала включите его',
-      );
-    }
-  }
-}
-
-function toBranchView(branch: BranchRecord): BranchView {
-  return {
-    id: branch.id,
-    name: branch.name,
-    address: branch.address,
-    phone: branch.phone,
-    isActive: branch.isActive,
-    createdAt: branch.createdAt.toISOString(),
-    updatedAt: branch.updatedAt.toISOString(),
-  };
 }
 
 function toHallView(hall: HallRecord): HallView {
   return {
     id: hall.id,
-    branchId: hall.branchId,
     name: hall.name,
+    address: hall.address,
+    phone: hall.phone,
     capacity: hall.capacity,
     isActive: hall.isActive,
   };
@@ -450,6 +327,8 @@ function toTrainerView(trainer: TrainerRecord): TrainerView {
     id: trainer.id,
     userId: trainer.userId,
     displayName: trainer.displayName,
+    firstName: trainer.firstName,
+    lastName: trainer.lastName,
     phone: trainer.phone,
     bio: trainer.bio,
     isActive: trainer.isActive,

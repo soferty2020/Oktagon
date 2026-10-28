@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { IdentityModule } from '../identity/identity.module';
-import { BranchesController, HallsController, TrainersController } from './club-structure.controller';
+import { HallsController, TrainersController } from './club-structure.controller';
 import { ClubStructureRepository, PrismaClubStructureRepository } from './club-structure.repository';
 import { ClubStructureService } from './club-structure.service';
 
@@ -16,7 +16,7 @@ import { ClubStructureService } from './club-structure.service';
  */
 @Module({
   imports: [IdentityModule],
-  controllers: [BranchesController, HallsController, TrainersController],
+  controllers: [HallsController, TrainersController],
   providers: [
     ClubStructureService,
     PrismaClubStructureRepository,

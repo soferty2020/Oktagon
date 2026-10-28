@@ -30,15 +30,8 @@ interface GroupView {
   isActive: boolean;
 }
 
-interface BranchView {
-  id: string;
-  name: string;
-  isActive: boolean;
-}
-
 interface HallView {
   id: string;
-  branchId: string;
   name: string;
   isActive: boolean;
 }
@@ -92,13 +85,13 @@ export default async function SessionsPage({
   // активные тренеры. Неактивные не предлагаются — занятие в закрытом зале или с
   // уволенным тренером создавать бессмысленно.
   let manualGroups: { id: string; name: string }[] = [];
-  let manualHalls: { id: string; name: string; branchName: string }[] = [];
+  let manualHalls: { id: string; name: string }[] = [];
   let manualTrainers: { id: string; name: string }[] = [];
 
   if (canEdit) {
-    const [groupsResult, branchesResult, trainersResult] = await Promise.all([
+    const [groupsResult, hallsResult, trainersResult] = await Promise.all([
       apiFetch<GroupView[]>('/groups', { accessToken }),
-      apiFetch<BranchView[]>('/branches', { accessToken }),
+      apiFetch<HallView[]>('/halls', { accessToken }),
       apiFetch<TrainerView[]>('/trainers?isActive=true', { accessToken }),
     ]);
 
@@ -114,25 +107,10 @@ export default async function SessionsPage({
         .map((trainer) => ({ id: trainer.id, name: trainer.displayName }));
     }
 
-    if (branchesResult.ok) {
-      const activeBranches = branchesResult.data.filter((branch) => branch.isActive);
-      const hallLists = await Promise.all(
-        activeBranches.map(async (branch) => {
-          const halls = await apiFetch<HallView[]>(`/branches/${branch.id}/halls`, { accessToken });
-          return {
-            branchName: branch.name,
-            halls: halls.ok ? halls.data.filter((hall) => hall.isActive) : [],
-          };
-        }),
-      );
-
-      manualHalls = hallLists.flatMap((list) =>
-        list.halls.map((hall) => ({
-          id: hall.id,
-          name: hall.name,
-          branchName: list.branchName,
-        })),
-      );
+    if (hallsResult.ok) {
+      manualHalls = hallsResult.data
+        .filter((hall) => hall.isActive)
+        .map((hall) => ({ id: hall.id, name: hall.name }));
     }
   }
 

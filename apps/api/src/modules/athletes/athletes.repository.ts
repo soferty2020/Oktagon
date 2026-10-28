@@ -31,7 +31,7 @@ export interface AthleteRecord {
 export interface AthleteAffiliation {
   group: { id: string; name: string } | null;
   trainer: { id: string; displayName: string } | null;
-  branch: { id: string; name: string } | null;
+  hall: { id: string; name: string } | null;
 }
 
 export interface AthleteAccountRecord {
@@ -130,12 +130,8 @@ const AFFILIATION_SELECT = {
     select: {
       id: true,
       name: true,
-      // Филиал у группы не один: связь через GroupBranch, основной — isPrimary.
-      branches: {
-        orderBy: { isPrimary: 'desc' },
-        take: 1,
-        select: { branch: { select: { id: true, name: true } } },
-      },
+      // Зал группы: филиалов больше нет, группа живёт в одном зале (#64).
+      hall: { select: { id: true, name: true } },
       trainers: {
         where: { unassignedAt: null },
         orderBy: { isPrimary: 'desc' },
@@ -311,16 +307,16 @@ export class PrismaAthletesRepository extends AthletesRepository {
     });
 
     if (!membership) {
-      return { group: null, trainer: null, branch: null };
+      return { group: null, trainer: null, hall: null };
     }
 
     const trainer = membership.group.trainers[0]?.trainerProfile ?? null;
-    const branch = membership.group.branches[0]?.branch ?? null;
+    const hall = membership.group.hall;
 
     return {
       group: { id: membership.group.id, name: membership.group.name },
       trainer: trainer ? { id: trainer.id, displayName: trainer.displayName } : null,
-      branch,
+      hall,
     };
   }
 }

@@ -30,7 +30,6 @@ import { AuthGuard, CurrentUser, type AuthenticatedUser } from '../../shared/aut
 import { PermissionsGuard, RequirePermissions } from '../../shared/permissions.guard';
 import {
   AddGroupMemberDto,
-  AssignGroupBranchDto,
   AssignGroupTrainerDto,
   CreateGroupDto,
   ListGroupsQueryDto,
@@ -109,36 +108,6 @@ export class GroupsController {
   @ApiNoContentResponse({ description: 'Группа архивирована' })
   archive(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string): Promise<void> {
     return this.groups.archive(user.id, id);
-  }
-
-  // --- Филиалы группы ------------------------------------------------------
-
-  @Post(':id/branches')
-  @HttpCode(HttpStatus.OK)
-  @RequirePermissions(PermissionCode.GroupsEdit)
-  @ApiOperation({ summary: 'Привязать филиал к группе' })
-  @ApiOkResponse({ description: 'Группа с обновленными связями' })
-  linkBranch(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
-    @Body() dto: AssignGroupBranchDto,
-  ): Promise<GroupDetails> {
-    return this.groups.linkBranch(user.id, id, {
-      branchId: dto.branchId,
-      isPrimary: dto.isPrimary,
-    });
-  }
-
-  @Delete(':id/branches/:branchId')
-  @RequirePermissions(PermissionCode.GroupsEdit)
-  @ApiOperation({ summary: 'Снять привязку филиала' })
-  @ApiOkResponse({ description: 'Группа с обновленными связями' })
-  unlinkBranch(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
-    @Param('branchId') branchId: string,
-  ): Promise<GroupDetails> {
-    return this.groups.unlinkBranch(user.id, id, branchId);
   }
 
   // --- Тренеры группы ------------------------------------------------------

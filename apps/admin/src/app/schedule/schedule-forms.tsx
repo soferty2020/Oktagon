@@ -313,7 +313,7 @@ export function CreateSessionForm({
   today,
 }: {
   groups: { id: string; name: string }[];
-  halls: { id: string; name: string; branchName: string }[];
+  halls: { id: string; name: string }[];
   trainers: { id: string; name: string }[];
   today: string;
 }) {
@@ -367,7 +367,7 @@ export function CreateSessionForm({
             <option value="">без зала</option>
             {halls.map((hall) => (
               <option key={hall.id} value={hall.id}>
-                {hall.branchName} · {hall.name}
+                {hall.name}
               </option>
             ))}
           </select>

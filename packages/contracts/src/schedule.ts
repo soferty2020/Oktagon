@@ -83,7 +83,6 @@ export interface TrainingSessionView {
   id: string;
   groupId: string;
   groupName: string;
-  branchId: string | null;
   hallId: string | null;
   hallName: string | null;
   trainerId: string | null;

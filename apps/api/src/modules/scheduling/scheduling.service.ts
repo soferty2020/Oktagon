@@ -338,7 +338,7 @@ export class SchedulingService {
       removed = await this.schedule.deleteFutureSessions(template.id, now);
     }
 
-    const branchId = await this.groups.findPrimaryBranchId(template.groupId);
+    const hallId = await this.groups.findHallId(template.groupId);
     const candidates = template.slots.flatMap((slot) =>
       slotOccurrences(
         range,
@@ -380,8 +380,8 @@ export class SchedulingService {
       )
       .map((candidate) => ({
         groupId: template.groupId,
-        branchId,
-        hallId: candidate.slot.hallId,
+        // Зал слота важнее зала группы: группа может тренироваться в другом зале.
+        hallId: candidate.slot.hallId ?? hallId,
         trainerId: candidate.slot.trainerId,
         scheduleTemplateId: template.id,
         startsAt: candidate.occurrence.startsAt,
@@ -453,14 +453,13 @@ export class SchedulingService {
       }
     }
 
-    const branchId = await this.groups.findPrimaryBranchId(input.groupId);
+    const groupHallId = await this.groups.findHallId(input.groupId);
 
     let session: TrainingSessionRecord;
     try {
       session = await this.schedule.createSession({
         groupId: input.groupId,
-        branchId,
-        hallId: input.hallId ?? null,
+        hallId: input.hallId ?? groupHallId,
         trainerId: input.trainerId ?? null,
         scheduleTemplateId: null,
         startsAt,
@@ -922,7 +921,6 @@ export class SchedulingService {
       id: session.id,
       groupId: session.groupId,
       groupName: session.groupName,
-      branchId: session.branchId,
       hallId: session.hallId,
       hallName: session.hallName,
       trainerId: session.trainerId,

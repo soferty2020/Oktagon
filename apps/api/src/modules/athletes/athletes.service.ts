@@ -81,10 +81,10 @@ export class AthletesService {
     return {
       ...toAthleteView(athlete, canViewContacts),
       notes: athlete.notes,
-      // Группа, тренер и филиал: null — не назначено, интерфейс покажет empty state.
+      // Группа, тренер и зал: null — не назначено, интерфейс покажет empty state.
       group: affiliation.group,
       trainer: affiliation.trainer,
-      branch: affiliation.branch,
+      hall: affiliation.hall,
       linkedAccounts: accounts.map((account) => ({
         userId: account.userId,
         email: account.email,

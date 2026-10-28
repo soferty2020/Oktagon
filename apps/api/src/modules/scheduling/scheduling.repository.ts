@@ -30,7 +30,6 @@ export interface TrainingSessionRecord {
   id: string;
   groupId: string;
   groupName: string;
-  branchId: string | null;
   hallId: string | null;
   hallName: string | null;
   trainerId: string | null;
@@ -70,7 +69,6 @@ export interface UpdateSlotInput {
 
 export interface CreateSessionsInput {
   groupId: string;
-  branchId: string | null;
   hallId: string | null;
   trainerId: string | null;
   scheduleTemplateId: string | null;
@@ -98,11 +96,6 @@ export interface UpdateSessionInput {
   changeReason?: string | null;
   cancelledAt?: Date | null;
   cancelledById?: string | null;
-}
-
-export interface GroupDefaultsRecord {
-  /** Основной филиал группы, если он назначен. */
-  branchId: string | null;
 }
 
 /**
@@ -176,7 +169,6 @@ const SLOT_SELECT = {
 const SESSION_SELECT = {
   id: true,
   groupId: true,
-  branchId: true,
   hallId: true,
   trainerProfileId: true,
   scheduleTemplateId: true,
@@ -451,7 +443,6 @@ export class PrismaSchedulingRepository extends SchedulingRepository {
     const result = await this.prisma.db.trainingSession.createMany({
       data: input.map((session) => ({
         groupId: session.groupId,
-        branchId: session.branchId,
         hallId: session.hallId,
         trainerProfileId: session.trainerId,
         scheduleTemplateId: session.scheduleTemplateId,
@@ -475,7 +466,6 @@ export class PrismaSchedulingRepository extends SchedulingRepository {
     const session = await this.prisma.db.trainingSession.create({
       data: {
         groupId: input.groupId,
-        branchId: input.branchId,
         hallId: input.hallId,
         trainerProfileId: input.trainerId,
         scheduleTemplateId: input.scheduleTemplateId,
@@ -540,7 +530,6 @@ export class PrismaSchedulingRepository extends SchedulingRepository {
     sessions: {
       id: string;
       groupId: string;
-      branchId: string | null;
       hallId: string | null;
       trainerProfileId: string | null;
       scheduleTemplateId: string | null;
@@ -592,7 +581,6 @@ export class PrismaSchedulingRepository extends SchedulingRepository {
       id: session.id,
       groupId: session.groupId,
       groupName: groupNames.get(session.groupId) ?? '',
-      branchId: session.branchId,
       hallId: session.hallId,
       hallName: session.hallId ? (hallNames.get(session.hallId) ?? null) : null,
       trainerId: session.trainerProfileId,
