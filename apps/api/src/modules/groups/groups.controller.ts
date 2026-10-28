@@ -86,7 +86,11 @@ export class GroupsController {
   @ApiOperation({ summary: 'Создать группу' })
   @ApiCreatedResponse({ description: 'Группа создана' })
   create(@Body() dto: CreateGroupDto): Promise<GroupView> {
-    return this.groups.create({ name: dto.name, description: dto.description ?? null });
+    return this.groups.create({
+      name: dto.name,
+      description: dto.description ?? null,
+      hallId: dto.hallId ?? null,
+    });
   }
 
   @Patch(':id')
