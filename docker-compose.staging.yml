@@ -64,6 +64,10 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-octagon}?schema=public
       REDIS_URL: redis://redis:6379
+      # Фотографии новостей (#70): каталог на томе, переживает пересборку.
+      UPLOAD_DIR: /data/uploads
+    volumes:
+      - uploads:/data/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -190,6 +194,10 @@ services:
     restart: 'no'
 
 volumes:
+  # Загруженные файлы: фотографии новостей (#70). Без тома они исчезали бы
+  # при каждом пересоздании контейнера api.
+  uploads:
+
   postgres-data:
   redis-data:
   # Сертификаты и служебное состояние certbot: живут между перезапусками,

@@ -9,16 +9,21 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
 import {
+  ApiErrorCode,
   PermissionCode,
   type NewsCommentView,
   type NewsPostDetails,
@@ -26,6 +31,7 @@ import {
 } from '@octagon/contracts';
 
 import { AuthGuard, CurrentUser, type AuthenticatedUser } from '../../shared/auth-stub';
+import { ApiException } from '../../shared/api-exception';
 import { PermissionsGuard, RequirePermissions } from '../../shared/permissions.guard';
 import {
   CreateNewsCommentDto,
@@ -33,6 +39,7 @@ import {
   ListNewsQueryDto,
   UpdateNewsPostDto,
 } from './news.dto';
+import { MAX_IMAGE_BYTES, NewsImagesService, type UploadedImage } from './news-images.service';
 import { NewsService } from './news.service';
 
 /**
@@ -60,7 +67,10 @@ import { NewsService } from './news.service';
 @UseGuards(AuthGuard, PermissionsGuard)
 @Controller('news')
 export class NewsController {
-  constructor(private readonly news: NewsService) {}
+  constructor(
+    private readonly news: NewsService,
+    private readonly images: NewsImagesService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Список новостей клуба' })
@@ -129,6 +139,44 @@ export class NewsController {
   @ApiOkResponse({ description: 'Новость в архиве; из ленты исчезает, история сохраняется' })
   archive(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string): Promise<NewsPostView> {
     return this.news.archive(user.id, id);
+  }
+
+  /**
+   * Фотография новости (#70).
+   *
+   * Файл приходит multipart-полем `file`, в памяти: 5 МБ и три штуки на новость —
+   * пределы, за которыми карточка перестаёт быть читаемой. Проверка MIME — в
+   * сервисе, по содержимому запроса, а не по расширению.
+   */
+  @Post(':id/images')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_IMAGE_BYTES } }))
+  @ApiOperation({ summary: 'Загрузить фотографию новости' })
+  @ApiCreatedResponse({ description: 'Фотография сохранена; не больше трёх на новость' })
+  uploadImage(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @UploadedFile() file?: UploadedImage,
+  ) {
+    if (!file) {
+      throw new ApiException(
+        'VALIDATION_FAILED' satisfies ApiErrorCode,
+        'Файл не передан в поле file',
+      );
+    }
+
+    return this.images.addImage(user.id, id, file);
+  }
+
+  @Delete(':id/images/:imageId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Удалить фотографию новости' })
+  @ApiNoContentResponse({ description: 'Фото и файл удалены' })
+  removeImage(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Param('imageId') imageId: string,
+  ): Promise<void> {
+    return this.images.removeImage(user.id, id, imageId);
   }
 
   @Post(':id/comments')

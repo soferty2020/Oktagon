@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { IdentityModule } from '../identity/identity.module';
 import { NewsCommentsController, NewsController } from './news.controller';
 import { NewsRepository, PrismaNewsRepository } from './news.repository';
+import { NewsImagesService } from './news-images.service';
 import { NewsService } from './news.service';
 
 /**
@@ -20,6 +21,7 @@ import { NewsService } from './news.service';
   controllers: [NewsController, NewsCommentsController],
   providers: [
     NewsService,
+    NewsImagesService,
     PrismaNewsRepository,
     { provide: NewsRepository, useExisting: PrismaNewsRepository },
   ],

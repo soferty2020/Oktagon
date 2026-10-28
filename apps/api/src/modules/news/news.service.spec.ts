@@ -17,6 +17,7 @@ const post: NewsPostRecord = {
   createdAt: new Date('2026-10-01T09:00:00.000Z'),
   updatedAt: new Date('2026-10-01T10:00:00.000Z'),
   commentsCount: 0,
+  images: [],
 };
 
 const draft: NewsPostRecord = {

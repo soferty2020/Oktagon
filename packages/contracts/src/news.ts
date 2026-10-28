@@ -39,6 +39,16 @@ export interface NewsCommentView {
   createdAt: string;
 }
 
+/** Фотография новости (#70). Первая по позиции — обложка в списке. */
+export interface NewsImageView {
+  id: string;
+  /** Публичный адрес: `/media/news/<файл>`. */
+  url: string;
+  width: number | null;
+  height: number | null;
+  position: number;
+}
+
 /** Новость клуба. */
 export interface NewsPostView {
   id: string;
@@ -52,6 +62,7 @@ export interface NewsPostView {
   createdAt: string;
   updatedAt: string;
   commentsCount: number;
+  images: NewsImageView[];
   /** Может ли текущий пользователь править, публиковать или архивировать. */
   canEdit: boolean;
 }

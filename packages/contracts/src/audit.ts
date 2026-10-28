@@ -112,6 +112,8 @@ export const AuditAction = {
   NEWS_UPDATED: 'news.updated',
   NEWS_ARCHIVED: 'news.archived',
   NEWS_COMMENT_DELETED: 'news.comment_deleted',
+  NEWS_IMAGE_ADDED: 'news.image_added',
+  NEWS_IMAGE_REMOVED: 'news.image_removed',
   CONVERSATION_CREATED: 'chat.conversation_created',
   CONVERSATION_MEMBER_ADDED: 'chat.member_added',
   CONVERSATION_MEMBER_REMOVED: 'chat.member_removed',

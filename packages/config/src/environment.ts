@@ -43,6 +43,12 @@ export interface AppEnvironment {
   AUTH_RATE_LIMIT_TTL_SECONDS: number;
   AUTH_RATE_LIMIT_MAX: number;
   INVITE_TTL_HOURS: number;
+  /**
+   * Каталог загруженных файлов (фотографии новостей, #70).
+   *
+   * В контейнере — том `/data/uploads`; локально — `./uploads`.
+   */
+  UPLOAD_DIR?: string;
   LOG_LEVEL: string;
 }
 
@@ -66,6 +72,7 @@ export const ENVIRONMENT_DEFAULTS = {
   AUTH_RATE_LIMIT_TTL_SECONDS: 60,
   AUTH_RATE_LIMIT_MAX: 10,
   INVITE_TTL_HOURS: 72,
+  UPLOAD_DIR: './uploads',
   LOG_LEVEL: 'info',
 } as const;
 

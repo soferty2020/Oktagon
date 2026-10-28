@@ -74,7 +74,8 @@ server {
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_prefer_server_ciphers off;
 
-    client_max_body_size 2m;
+    # Фотографии новостей (#70): до 5 МБ каждая, лимит с запасом на multipart.
+      client_max_body_size 6m;
 
     location / {
         proxy_pass http://api:3000;

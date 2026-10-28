@@ -1,6 +1,9 @@
+import { mkdir } from 'node:fs/promises';
+
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule } from '@nestjs/swagger';
 import { NodeEnv, resolveCorsOrigins, type AppEnvironment } from '@octagon/config';
 
@@ -10,13 +13,19 @@ import { ApiExceptionFilter, SecurityHeadersMiddleware } from './shared';
 
 async function bootstrap(): Promise<void> {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule, { bufferLogs: false });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: false });
   const config = app.get(ConfigService<AppEnvironment, true>);
 
   const apiPrefix = config.get('API_PREFIX', { infer: true });
   const port = config.get('PORT', { infer: true });
 
   app.setGlobalPrefix(apiPrefix);
+
+  // Фотографии новостей (#70): файлы лежат в томе, наружу отдаются по /media/.
+  // Каталог создаётся на старте: без него первая загрузка падала бы с ENOENT.
+  const uploadDir = config.get('UPLOAD_DIR', { infer: true }) ?? './uploads';
+  await mkdir(uploadDir, { recursive: true });
+  app.useStaticAssets(uploadDir, { prefix: '/media/' });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

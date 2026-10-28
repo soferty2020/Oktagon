@@ -16,6 +16,16 @@ export interface NewsPostRecord {
   createdAt: Date;
   updatedAt: Date;
   commentsCount: number;
+  images: NewsImageRecord[];
+}
+
+/** Фотография новости (#70). */
+export interface NewsImageRecord {
+  id: string;
+  path: string;
+  width: number | null;
+  height: number | null;
+  position: number;
 }
 
 export interface NewsCommentRecord {
@@ -69,6 +79,17 @@ export abstract class NewsRepository {
     body: string;
   }): Promise<NewsCommentRecord>;
   abstract softDeleteComment(id: string, deletedAt: Date): Promise<NewsCommentRecord>;
+
+  /** Добавляет фотографию: не больше трёх на новость (#70). */
+  abstract addImage(input: {
+    postId: string;
+    path: string;
+    position: number;
+  }): Promise<NewsImageRecord>;
+  abstract listImages(postId: string): Promise<NewsImageRecord[]>;
+  abstract countImages(postId: string): Promise<number>;
+  abstract findImage(imageId: string): Promise<NewsImageRecord | null>;
+  abstract deleteImage(imageId: string): Promise<void>;
 }
 
 const POST_SELECT = {
@@ -84,6 +105,10 @@ const POST_SELECT = {
   updatedAt: true,
   author: { select: { firstName: true, lastName: true } },
   _count: { select: { comments: { where: { deletedAt: null } } } },
+  images: {
+    select: { id: true, path: true, width: true, height: true, position: true },
+    orderBy: { position: 'asc' },
+  },
 } as const;
 
 const COMMENT_SELECT = {
@@ -238,6 +263,38 @@ export class PrismaNewsRepository extends NewsRepository {
 
     return toCommentRecord(comment);
   }
+
+  async addImage(input: { postId: string; path: string; position: number }): Promise<NewsImageRecord> {
+    return this.prisma.db.newsImage.create({
+      data: { postId: input.postId, path: input.path, position: input.position },
+      select: { id: true, path: true, width: true, height: true, position: true },
+    });
+  }
+
+  async listImages(postId: string): Promise<NewsImageRecord[]> {
+    return this.prisma.db.newsImage.findMany({
+      where: { postId },
+      orderBy: { position: 'asc' },
+      select: { id: true, path: true, width: true, height: true, position: true },
+    });
+  }
+
+  async countImages(postId: string): Promise<number> {
+    return this.prisma.db.newsImage.count({ where: { postId } });
+  }
+
+  async findImage(imageId: string): Promise<NewsImageRecord | null> {
+    const image = await this.prisma.db.newsImage.findUnique({
+      where: { id: imageId },
+      select: { id: true, path: true, width: true, height: true, position: true },
+    });
+
+    return image ?? null;
+  }
+
+  async deleteImage(imageId: string): Promise<void> {
+    await this.prisma.db.newsImage.delete({ where: { id: imageId } });
+  }
 }
 
 function toPostRecord(post: {
@@ -253,6 +310,7 @@ function toPostRecord(post: {
   updatedAt: Date;
   author: { firstName: string; lastName: string };
   _count: { comments: number };
+  images: { id: string; path: string; width: number | null; height: number | null; position: number }[];
 }): NewsPostRecord {
   return {
     id: post.id,
@@ -268,6 +326,7 @@ function toPostRecord(post: {
     createdAt: post.createdAt,
     updatedAt: post.updatedAt,
     commentsCount: post._count.comments,
+    images: post.images,
   };
 }
 

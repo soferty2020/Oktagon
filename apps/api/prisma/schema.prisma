@@ -702,9 +702,27 @@ model NewsPost {
 
   author   User          @relation(fields: [authorId], references: [id])
   comments NewsComment[]
+  images   NewsImage[]
 
   @@index([status, publishedAt])
   @@map("news_posts")
+}
+
+/// Фотография новости (#70): не больше трёх на запись, первая — обложка.
+model NewsImage {
+  id        String   @id @default(uuid()) @db.Uuid
+  postId    String   @map("post_id") @db.Uuid
+  /// Путь относительно каталога загрузок; наружу отдаётся как `/media/...`.
+  path      String
+  width     Int?
+  height    Int?
+  position  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post NewsPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@map("news_images")
 }
 
 model NewsComment {

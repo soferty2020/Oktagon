@@ -12,6 +12,7 @@ import {
   EditNewsForm,
   PublishNewsForm,
 } from '../news-forms';
+import { NewsImagesBlock } from '../news-images';
 
 export const metadata = {
   title: 'Новость — OCTAGON',
@@ -40,6 +41,13 @@ interface NewsPostDetails {
   updatedAt: string;
   commentsCount: number;
   canEdit: boolean;
+  images: {
+    id: string;
+    url: string;
+    width: number | null;
+    height: number | null;
+    position: number;
+  }[];
   comments: NewsCommentView[];
 }
 
@@ -123,6 +131,10 @@ export default async function NewsPostPage({ params }: { params: Promise<{ id: s
           </div>
         </section>
       ) : null}
+
+      <div className="mt-6">
+        <NewsImagesBlock canEdit={data.canEdit && !data.archivedAt} images={data.images} postId={data.id} />
+      </div>
 
       <section className="mt-6 rounded-card border border-line bg-white p-5">
         <h2 className="text-sm font-semibold text-ink">Комментарии: {data.commentsCount}</h2>

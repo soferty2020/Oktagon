@@ -357,6 +357,14 @@ function toPostView(
     createdAt: post.createdAt.toISOString(),
     updatedAt: post.updatedAt.toISOString(),
     commentsCount: post.commentsCount,
+    // Публичный адрес: файлы раздаёт API по /media, в базе путь относительный.
+    images: post.images.map((image) => ({
+      id: image.id,
+      url: `/media/${image.path}`,
+      width: image.width,
+      height: image.height,
+      position: image.position,
+    })),
     canEdit: post.authorId === callerUserId || canEditOthers,
   };
 }
