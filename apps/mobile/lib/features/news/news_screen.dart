@@ -208,6 +208,21 @@ class _NewsCard extends StatelessWidget {
               style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
             ),
           ],
+          // Обложка (#70): первая фотография новости. Список показывает её
+          // крупно, а не строкой «есть фото»: новость читают глазами.
+          if (post.coverUrl != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppRadius.card),
+              child: Image.network(
+                post.coverUrl!,
+                fit: BoxFit.cover,
+                height: 180,
+                width: double.infinity,
+                errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+              ),
+            ),
+          ],
           const SizedBox(height: AppSpacing.sm),
           Text(
             post.body,

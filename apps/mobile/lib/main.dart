@@ -43,6 +43,9 @@ void main() {
   final config = ApiConfig.fromEnvironment();
   final client = HttpApiClient(config: config);
 
+  // Обложки новостей (#70) лежат вне /api/v1: базой служит тот же хост без префикса.
+  final mediaBase = config.baseUrl.replaceAll('/api/v1', '');
+
   final authController = AuthController(
     repository: AuthRepository(
       client: client,
@@ -62,7 +65,7 @@ void main() {
     groups: GroupRepository(client: client),
     schedule: ScheduleRepository(client: client),
     attendance: attendanceRepository,
-    news: NewsRepository(client: client),
+    news: NewsRepository(client: client, mediaBase: mediaBase),
     payments: PaymentStatusRepository(client: client),
   );
 
@@ -70,7 +73,9 @@ void main() {
     repository: ScheduleRepository(client: client),
   );
 
-  final newsController = NewsController(repository: NewsRepository(client: client));
+  final newsController = NewsController(
+    repository: NewsRepository(client: client, mediaBase: mediaBase),
+  );
 
   // Мероприятия ребёнка (#41): один запрос отдаёт аттестации и соревнования
   // своих спортсменов, уже отфильтрованные по правам и публикации.

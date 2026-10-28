@@ -11,6 +11,7 @@ class NewsPost {
     required this.body,
     required this.isPinned,
     required this.publishedAt,
+    this.coverUrl,
   });
 
   final String id;
@@ -19,7 +20,10 @@ class NewsPost {
   final bool isPinned;
   final DateTime? publishedAt;
 
-  factory NewsPost.fromJson(Map<String, dynamic> json) {
+  /// Обложка новости (#70): первая фотография, абсолютный адрес.
+  final String? coverUrl;
+
+  factory NewsPost.fromJson(Map<String, dynamic> json, {String? mediaBase}) {
     final published = json['publishedAt'];
     return NewsPost(
       id: json['id'] as String,
@@ -27,15 +31,22 @@ class NewsPost {
       body: (json['body'] as String?) ?? '',
       isPinned: json['isPinned'] == true,
       publishedAt: published is String ? DateTime.tryParse(published)?.toLocal() : null,
+      coverUrl: _coverUrl(json, mediaBase),
     );
   }
 }
 
 /// Новости клуба.
 class NewsRepository {
-  NewsRepository({required ApiClient client}) : _client = client;
+  NewsRepository({required ApiClient client, String? mediaBase})
+      : _client = client,
+        _mediaBase = mediaBase;
 
   final ApiClient _client;
+
+  /// База для картинок: /media/... лежит вне /api/v1, поэтому адрес
+  /// собирается из того же хоста без префикса API.
+  final String? _mediaBase;
 
   /// Все опубликованные новости, закрепленные сверху.
   ///
@@ -49,7 +60,10 @@ class NewsRepository {
       return const [];
     }
 
-    final posts = raw.whereType<Map<String, dynamic>>().map(NewsPost.fromJson).toList();
+    final posts = raw
+        .whereType<Map<String, dynamic>>()
+        .map((item) => NewsPost.fromJson(item, mediaBase: _mediaBase))
+        .toList();
 
     posts.sort((left, right) {
       // Закрепленное всегда выше: клуб закрепил объявление, потому что оно важно
@@ -70,4 +84,30 @@ class NewsRepository {
     final posts = await listPublished(token);
     return posts.isEmpty ? null : posts.first;
   }
+}
+
+/// Первая фотография новости как обложка (#70).
+String? _coverUrl(Map<String, dynamic> json, String? mediaBase) {
+  final images = json['images'];
+  if (images is! List || images.isEmpty) {
+    return null;
+  }
+
+  final first = images.first;
+  if (first is! Map<String, dynamic>) {
+    return null;
+  }
+
+  final url = first['url'] as String?;
+  if (url == null || url.isEmpty) {
+    return null;
+  }
+
+  // API отдаёт относительный путь: абсолютный собирает клиент, потому что
+  // публичный адрес знает только он.
+  if (url.startsWith('http') || mediaBase == null) {
+    return url;
+  }
+
+  return '$mediaBase$url';
 }
