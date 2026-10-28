@@ -9,12 +9,13 @@ import {
   type UserInviteCreated,
   type UserInvitePreview,
   type UserInviteView,
-  type UserRole,
+  UserRole,
 } from '@octagon/contracts';
 
 import type { AppEnvironment } from '@octagon/config';
 import { ApiException } from '../../shared/api-exception';
 import { AuditService } from '../audit/audit.service';
+import { IdentityService } from '../identity/identity.service';
 import { AuthRepository } from './auth.repository';
 import { InviteRepository, type InviteRecord } from './invite.repository';
 import { generateLinkCode, hashLinkCode } from '../../shared/link-code';
@@ -40,9 +41,13 @@ export interface CreateInviteInput {
 }
 
 export interface AcceptInviteInput {
+  /**
+   * Токен приглашения — единственный секрет приёма.
+   *
+   * `inviteId` убран осознанно: UUID виден в списке приглашений и в аудите, и
+   * приём по нему позволял забрать pending-приглашение, зная только id и email.
+   */
   token?: string;
-  /** Идентификатор приглашения, если администратор передал его напрямую. */
-  inviteId?: string;
   email: string;
   password: string;
   firstName: string;
@@ -80,12 +85,26 @@ export class InviteService {
     private readonly users: AuthRepository,
     private readonly passwords: PasswordService,
     private readonly audit: AuditService,
+    private readonly identity: IdentityService,
     private readonly config: ConfigService<AppEnvironment, true>,
   ) {}
 
   /** Создает приглашение. Перевыпуск гасит предыдущие неиспользованные. */
   async create(input: CreateInviteInput): Promise<UserInviteCreated> {
     const email = input.email.trim().toLowerCase();
+
+    // Приглашение не должно быть способом повысить свою роль: SUPERADMIN
+    // приглашает только SUPERADMIN (роль читается из БД, ADR-0006).
+    if (input.role === UserRole.SUPERADMIN) {
+      const actor = await this.identity.getProfile(input.createdBy);
+
+      if (actor.role !== UserRole.SUPERADMIN) {
+        throw new ApiException(
+          'FORBIDDEN' satisfies ApiErrorCode,
+          'Пригласить администратора может только администратор',
+        );
+      }
+    }
 
     const existing = await this.users.findUserForAuth(email);
     if (existing && existing.status !== 'INVITED') {
@@ -171,6 +190,18 @@ export class InviteService {
     input: AcceptInviteInput,
   ): Promise<{ userId: string; email: string; role: UserRole }> {
     const invite = await this.resolveInvite(input);
+    return this.activate(invite, input);
+  }
+
+  /**
+   * Общая часть приёма: проверки, атомарное гашение, активация.
+   *
+   * Один путь для ссылки и кода: правила не должны разъезжаться.
+   */
+  private async activate(
+    invite: InviteRecord,
+    input: AcceptInviteInput,
+  ): Promise<{ userId: string; email: string; role: UserRole }> {
     const email = input.email.trim().toLowerCase();
 
     if (invite.expiresAt.getTime() <= Date.now()) {
@@ -236,8 +267,7 @@ export class InviteService {
       );
     }
 
-    return this.accept({
-      inviteId: invite.id,
+    return this.activate(invite, {
       email: input.email,
       password: input.password,
       firstName: input.firstName,
@@ -247,7 +277,15 @@ export class InviteService {
     });
   }
 
-  private async resolveInvite(input: AcceptInviteInput): Promise<InviteRecord> {    if (input.token) {
+  /**
+   * Приглашение ищется только по токену.
+   *
+   * Приём по `inviteId` убран: UUID — не секрет, он виден в списке приглашений,
+   * в ответе на создание и в аудите. Единственный секрет — токен (или короткий
+   * код в отдельном эндпоинте).
+   */
+  private async resolveInvite(input: AcceptInviteInput): Promise<InviteRecord> {
+    if (input.token) {
       const byToken = await this.invites.findByTokenHash(hashInviteToken(input.token));
       if (!byToken) {
         throw new ApiException('INVITE_INVALID' satisfies ApiErrorCode, 'Приглашение не найдено');
@@ -255,17 +293,9 @@ export class InviteService {
       return byToken;
     }
 
-    if (input.inviteId) {
-      const byId = await this.invites.findById(input.inviteId);
-      if (!byId) {
-        throw new ApiException('INVITE_INVALID' satisfies ApiErrorCode, 'Приглашение не найдено');
-      }
-      return byId;
-    }
-
     throw new ApiException(
       'INVITE_INVALID' satisfies ApiErrorCode,
-      'Укажите token или inviteId приглашения',
+      'Укажите токен приглашения',
     );
   }
 

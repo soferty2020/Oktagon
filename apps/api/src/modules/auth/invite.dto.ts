@@ -5,7 +5,6 @@ import {
   IsEnum,
   IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -29,11 +28,6 @@ export class AcceptInviteDto {
   @IsString()
   @MinLength(16)
   token?: string;
-
-  @ApiPropertyOptional({ description: 'Идентификатор приглашения (альтернатива токену)' })
-  @IsOptional()
-  @IsUUID()
-  inviteId?: string;
 
   @ApiProperty({ example: 'trainer@example.com' })
   @IsEmail({}, { message: 'email должен быть корректным адресом' })

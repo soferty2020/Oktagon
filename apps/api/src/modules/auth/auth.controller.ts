@@ -78,7 +78,6 @@ export class AuthController {
     await this.auth.enforceInviteRateLimit(clientIp(request));
     return this.invites.accept({
       token: dto.token,
-      inviteId: dto.inviteId,
       email: dto.email,
       password: dto.password,
       firstName: dto.firstName,

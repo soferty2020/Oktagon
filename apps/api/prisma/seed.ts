@@ -58,6 +58,28 @@ export function fingerprint(value: string): string {
   return createHash('sha256').update(value).digest('hex').slice(0, 12);
 }
 
+/**
+ * Пароли-плейсхолдеры из примеров окружения (#47).
+ *
+ * Если такой пароль доехал до staging/production, администратор фактически
+ * опубликован в репозитории: seed обязан отказаться.
+ */
+const PLACEHOLDER_SECRETS = [
+  'changeme-octagon-2026!',
+  'замените_на_сгенерированный',
+  'change-me',
+  'changeme',
+  'placeholder',
+  'replace-me',
+];
+
+export function isPlaceholderSecret(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  return PLACEHOLDER_SECRETS.some(
+    (placeholder) => normalized === placeholder || normalized.includes('замените_'),
+  );
+}
+
 async function seedPermissions(): Promise<number> {
   for (const permission of PERMISSIONS) {
     await prisma.permission.upsert({
@@ -83,6 +105,15 @@ async function seedSuperadmin(): Promise<string | undefined> {
     throw new Error('SUPERADMIN_PASSWORD должен быть не короче 12 символов');
   }
 
+  // Пароль из репозитория — самый вероятный сценарий выката «по инструкции».
+  // В staging/production такой пароль не принимаем вовсе (#47).
+  const environment = process.env.NODE_ENV ?? 'local';
+  if (environment !== 'local' && environment !== 'test' && isPlaceholderSecret(password)) {
+    throw new Error(
+      'SUPERADMIN_PASSWORD совпадает с плейсхолдером из репозитория: задайте настоящий пароль',
+    );
+  }
+
   const [firstName, ...rest] = (process.env.SUPERADMIN_NAME ?? 'Super Admin').split(' ');
   const passwordHash = await hashPassword(password);
 
@@ -101,7 +132,8 @@ async function seedSuperadmin(): Promise<string | undefined> {
     select: { id: true, email: true },
   });
 
-  console.log(`Суперадмин готов: ${user.email} (пароль ${password.length} симв., sha256:${fingerprint(password)})`);
+  // Отпечаток пароля в лог не печатаем: это подсказка для подбора (#47).
+  console.log(`Суперадмин готов: ${user.email} (пароль ${password.length} симв.)`);
   return user.id;
 }
 

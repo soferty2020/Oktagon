@@ -90,6 +90,26 @@ export class PermissionGrantService {
       );
     }
 
+    // Выдача прав — не способ поднять себе доступ: нельзя выдать право себе и
+    // нельзя выдать код, которого у выдающего нет (#50).
+    if (userId === grantedById) {
+      throw new ApiException(
+        'FORBIDDEN' satisfies ApiErrorCode,
+        'Нельзя выдать право самому себе',
+      );
+    }
+
+    const actor = await this.identity.getProfile(grantedById);
+    if (
+      actor.role !== 'SUPERADMIN' &&
+      !actor.permissions.codes.includes(code as PermissionCode)
+    ) {
+      throw new ApiException(
+        'FORBIDDEN' satisfies ApiErrorCode,
+        `Нельзя выдать право "${code}": у вас его нет`,
+      );
+    }
+
     const granted = await this.repository.grantPermission({
       userId,
       code,

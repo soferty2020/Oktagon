@@ -48,12 +48,23 @@ describe('PermissionGrantService', () => {
     } as unknown as jest.Mocked<IdentityRepository>;
 
     identity = {
-      getProfile: jest.fn().mockResolvedValue({
-        id: 'user-1',
-        role: UserRole.STAFF,
-        scopeAllGroups: false,
-        permissions: { codes: ['attendance.view'], grants: [] },
-      }),
+      // Актор (admin-1) — SUPERADMIN, цель (user-1) — STAFF: так проверка
+      // «нельзя выдать больше, чем имеешь» не мешает базовым тестам (#50).
+      getProfile: jest.fn().mockImplementation(async (id: string) =>
+        id === 'admin-1'
+          ? {
+              id,
+              role: UserRole.SUPERADMIN,
+              scopeAllGroups: true,
+              permissions: { codes: Object.values(PermissionCode), grants: [] },
+            }
+          : {
+              id,
+              role: UserRole.STAFF,
+              scopeAllGroups: false,
+              permissions: { codes: ['attendance.view'], grants: [] },
+            },
+      ),
       getRolePermissions: jest.fn().mockResolvedValue(['attendance.view']),
     };
 
@@ -90,6 +101,29 @@ describe('PermissionGrantService', () => {
       expect(repository.grantPermission).toHaveBeenCalledWith(
         expect.objectContaining({ expiresAt }),
       );
+    });
+
+    it('не даёт выдать право самому себе (#50)', async () => {
+      await expect(
+        service.grant('admin-1', PermissionCode.UsersManage, 'admin-1'),
+      ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+
+      expect(repository.grantPermission).not.toHaveBeenCalled();
+    });
+
+    it('не даёт выдать право, которого нет у выдающего (#50)', async () => {
+      identity.getProfile.mockImplementation(async (id: string) => ({
+        id,
+        role: UserRole.STAFF,
+        scopeAllGroups: false,
+        permissions: { codes: ['attendance.view'], grants: [] },
+      }));
+
+      await expect(
+        service.grant('user-1', PermissionCode.UsersManage, 'staff-2'),
+      ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+
+      expect(repository.grantPermission).not.toHaveBeenCalled();
     });
 
     it('отклоняет право, которого нет в каталоге permissions', async () => {

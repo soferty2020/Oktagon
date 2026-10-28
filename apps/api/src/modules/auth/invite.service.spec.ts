@@ -1,6 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 
 import { AuditService } from '../audit/audit.service';
+import { IdentityService } from '../identity/identity.service';
 import { AuthRepository, type AuthUserRecord } from './auth.repository';
 import { InviteRepository, type InviteRecord } from './invite.repository';
 import { InviteService, generateInviteCode, hashInviteCode } from './invite.service';
@@ -32,6 +33,7 @@ describe('InviteService', () => {
   let users: jest.Mocked<AuthRepository>;
   let passwords: { hash: jest.Mock };
   let audit: { recordSafely: jest.Mock };
+  let identity: { getProfile: jest.Mock };
   let service: InviteService;
 
   const config = {
@@ -59,17 +61,45 @@ describe('InviteService', () => {
 
     passwords = { hash: jest.fn().mockResolvedValue('$argon2id$hash') };
     audit = { recordSafely: jest.fn().mockResolvedValue(null) };
+    // По умолчанию приглашение создаёт SUPERADMIN: тесты create не должны
+    // спотыкаться о проверку роли (#49).
+    identity = {
+      getProfile: jest.fn().mockResolvedValue({ role: 'SUPERADMIN' }),
+    };
 
     service = new InviteService(
       invites,
       users,
       passwords as unknown as PasswordService,
       audit as unknown as AuditService,
+      identity as unknown as IdentityService,
       config,
     );
   });
 
   describe('create', () => {
+    it('не даёт пригласить SUPERADMIN тому, кто им не является (#49)', async () => {
+      identity.getProfile.mockResolvedValue({ role: 'STAFF' });
+
+      await expect(
+        service.create({ email: 'boss@example.com', role: 'SUPERADMIN', createdBy: 'staff-1' }),
+      ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+
+      expect(invites.create).not.toHaveBeenCalled();
+    });
+
+    it('разрешает SUPERADMIN пригласить SUPERADMIN', async () => {
+      await service.create({
+        email: 'boss@example.com',
+        role: 'SUPERADMIN',
+        createdBy: 'admin-1',
+      });
+
+      expect(invites.create).toHaveBeenCalledWith(
+        expect.objectContaining({ role: 'SUPERADMIN' }),
+      );
+    });
+
     it('создает приглашение и возвращает токен один раз', async () => {
       const created = await service.create({
         email: ' Trainer@Example.com ',
@@ -155,16 +185,13 @@ describe('InviteService', () => {
       expect(hash).not.toBe(input.token);
     });
 
-    it('принимает приглашение по inviteId', async () => {
-      await service.accept({ ...input, token: undefined, inviteId: 'invite-1' });
+    it('не принимает приглашение без токена: UUID приглашения секретом не является', async () => {
+      await expect(service.accept({ ...input, token: undefined })).rejects.toMatchObject({
+        code: 'INVITE_INVALID',
+      });
 
-      expect(invites.findById).toHaveBeenCalledWith('invite-1');
-    });
-
-    it('требует токен или inviteId', async () => {
-      await expect(
-        service.accept({ ...input, token: undefined, inviteId: undefined }),
-      ).rejects.toMatchObject({ code: 'INVITE_INVALID' });
+      // Приём по id убран: id виден в списке приглашений и в аудите.
+      expect(invites.findById).not.toHaveBeenCalled();
     });
 
     it('отказывает, если приглашение не найдено', async () => {
