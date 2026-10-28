@@ -93,6 +93,14 @@ export abstract class AthletesRepository {
   /** Мягкое удаление: archivedAt и статус ARCHIVED (docs/08-database.md). */
   abstract archive(id: string, at: Date): Promise<void>;
 
+  /**
+   * Стирает ПДн и архивирует карточку (#56, SEC-15).
+   *
+   * Запрос «удалите данные ребёнка» должен выполняться: история тренировок и
+   * оплат остаётся, но ФИО, контакты и дата рождения обезличиваются.
+   */
+  abstract erase(id: string, at: Date): Promise<void>;
+
   abstract listAccounts(athleteId: string): Promise<AthleteAccountRecord[]>;
   abstract findAccount(athleteId: string, userId: string): Promise<AthleteAccountRecord | null>;
   abstract linkAccount(input: LinkAccountInput): Promise<AthleteAccountRecord>;
@@ -211,6 +219,27 @@ export class PrismaAthletesRepository extends AthletesRepository {
     await this.prisma.db.athlete.update({
       where: { id },
       data: { archivedAt: at, status: AthleteStatus.ARCHIVED },
+    });
+  }
+
+  async erase(id: string, at: Date): Promise<void> {
+    // Связи с аккаунтами удаляются: иначе родитель продолжит видеть карточку.
+    await this.prisma.db.userAthlete.deleteMany({ where: { athleteId: id } });
+
+    await this.prisma.db.athlete.update({
+      where: { id },
+      data: {
+        firstName: 'Удалённый',
+        lastName: `athlete-${id.slice(0, 8)}`,
+        middleName: null,
+        birthDate: null,
+        phone: null,
+        email: null,
+        notes: null,
+        hallId: null,
+        archivedAt: at,
+        status: AthleteStatus.ARCHIVED,
+      },
     });
   }
 

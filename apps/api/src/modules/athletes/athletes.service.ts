@@ -145,6 +145,29 @@ export class AthletesService {
   }
 
   /**
+   * Стирает ПДн по запросу (#56, SEC-15).
+   *
+   * Отличается от архивации: архив оставляет ФИО и контакты, а здесь они
+   * заменяются заглушкой. История тренировок, оплат и аттестаций сохраняется —
+   * она нужна клубу, но уже не привязана к человеку. В аудит пишется только
+   * факт и идентификаторы, без самих данных.
+   */
+  async erase(callerUserId: string, athleteId: string): Promise<void> {
+    await this.scope.assertAthleteAccess(callerUserId, athleteId);
+
+    const athlete = await this.requireAthlete(athleteId);
+    await this.repository.erase(athleteId, new Date());
+
+    await this.audit.recordSafely({
+      action: AuditAction.ATHLETE_ERASED,
+      entityType: AuditEntityType.ATHLETE,
+      entityId: athleteId,
+      before: { status: athlete.status },
+      after: { erased: true },
+    });
+  }
+
+  /**
    * Связывает аккаунт со спортсменом (C5).
    *
    * Аккаунтов у спортсмена может быть несколько (например, оба родителя), но

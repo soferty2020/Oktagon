@@ -43,6 +43,7 @@ describe('AthletesService', () => {
       create: jest.fn().mockResolvedValue(athlete),
       update: jest.fn().mockResolvedValue(athlete),
       archive: jest.fn().mockResolvedValue(undefined),
+    erase: jest.fn().mockResolvedValue(undefined),
       listAccounts: jest.fn().mockResolvedValue([]),
       findAffiliation: jest
         .fn()

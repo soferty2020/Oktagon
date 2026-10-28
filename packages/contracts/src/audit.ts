@@ -51,6 +51,8 @@ export const AuditAction = {
   ATHLETE_CREATED: 'athlete.created',
   ATHLETE_UPDATED: 'athlete.updated',
   ATHLETE_ARCHIVED: 'athlete.archived',
+  /** ПДн стерты по запросу: карточка обезличена (#56, SEC-15). */
+  ATHLETE_ERASED: 'athlete.erased',
   ATHLETE_CERTIFIED: 'athlete.certified',
   ATHLETE_CERTIFICATION_CANCELLED: 'athlete.certification_cancelled',
   ATHLETE_ACCOUNT_LINKED: 'athlete.account_linked',

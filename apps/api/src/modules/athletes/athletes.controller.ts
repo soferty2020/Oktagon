@@ -130,6 +130,21 @@ export class AthletesController {
     return this.athletes.archive(user.id, id);
   }
 
+  /**
+   * Стирание ПДн (#56, SEC-15).
+   *
+   * Отдельный маршрут, а не флаг архивации: это необратимая операция с данными
+   * ребёнка, и она должна быть явной в API и в аудите.
+   */
+  @Post(':id/erase')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PermissionCode.AthletesEdit)
+  @ApiOperation({ summary: 'Стереть персональные данные спортсмена' })
+  @ApiNoContentResponse({ description: 'ПДн обезличены, история сохранена' })
+  erase(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string): Promise<void> {
+    return this.athletes.erase(user.id, id);
+  }
+
   @Post(':id/accounts')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(PermissionCode.AthletesEdit)
