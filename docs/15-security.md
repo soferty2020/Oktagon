@@ -38,7 +38,11 @@ Security review проведен на коммите `6521694` (эпик J). Н�
 | Персональные данные в журнале замаскированы | `redact` в `AuditService.listForView` | `settings.db-e2e-spec.ts` («•••» вместо телефона) |
 | Справочник поясов неизменяем | только `GET /belt-grades` | `settings.db-e2e-spec.ts` (POST/DELETE → 404) |
 | Секретов в ответах настроек нет | контракт `ClubProfileView` | `settings.db-e2e-spec.ts` (точный набор полей) |
-| File upload validation | загрузки файлов в MVP нет | — |
+| Загрузка фото проверяется | MIME и размер в `NewsImagesService`, лимит nginx | `news-images.service.spec.ts` |
+| Согласие на обработку ПДн в заявке | `consent` обязателен в `CreateTrialRequestDto`; дата и редакция пишутся в заявку | `trial-requests.service.spec.ts` |
+| Удаление ПДн | `POST /athletes/:id/erase` — обезличивание, история остаётся | `athletes.service.spec.ts` |
+| Блокировка аккаунта | `PATCH /users/:id/status`, отзыв всех refresh-токенов | `identity.service.spec.ts` |
+| Ретенция | `infra/scripts/octagon-retention.sh`: аудит 365 дней, финальные заявки 180 | cron 1-го числа |
 
 **Найдено и исправлено при проверке:**
 

@@ -15,6 +15,14 @@ import {
 } from './trial-requests.repository';
 
 /**
+ * Редакция согласия на обработку ПДн (#56, SEC-15).
+ *
+ * Меняем при изменении текста: старые заявки остаются привязаны к той версии,
+ * под которой их собирали.
+ */
+export const CONSENT_VERSION = '2026-11';
+
+/**
  * Заявки на пробную тренировку (ADR-0013).
  *
  * Публичная форма — единственный пишущий эндпоинт без токена, поэтому здесь
@@ -65,6 +73,16 @@ export class TrialRequestsService {
       }
     }
 
+    // Согласие — не формальность: без него обрабатывать данные ребёнка нечем
+    // (#56, SEC-15). DTO уже требует consent=true, здесь страховка на случай
+    // вызова сервиса в обход контроллера.
+    if (input.consent !== true) {
+      throw new ApiException(
+        'VALIDATION_FAILED' satisfies ApiErrorCode,
+        'Нужно согласие на обработку персональных данных',
+      );
+    }
+
     const record = await this.repository.create({
       name: input.name.trim(),
       phone: input.phone.trim(),
@@ -73,6 +91,10 @@ export class TrialRequestsService {
       childAge: input.childAge ?? null,
       comment: input.comment?.trim() || null,
       source: input.source?.trim() || null,
+      // Версия фиксируется вместе с датой: если текст согласия изменится,
+      // будет видно, под какой редакцией собирали данные.
+      consentAcceptedAt: new Date(),
+      consentVersion: CONSENT_VERSION,
     });
 
     this.logger.log(`Заявка ${record.id}: создана`);

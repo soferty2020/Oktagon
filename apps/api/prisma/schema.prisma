@@ -1308,6 +1308,11 @@ model TrialRequest {
   /// Откуда пришла: сайт, Instagram, звонок. Свободный текст — источников много.
   source   String? @db.VarChar(100)
 
+  /// Согласие на обработку ПДн (#56, SEC-15): когда и какая редакция.
+  /// Без него заявка не принимается — обрабатывать данные ребёнка нечем.
+  consentAcceptedAt DateTime? @map("consent_accepted_at")
+  consentVersion    String?   @map("consent_version") @db.VarChar(32)
+
   status TrialRequestStatus @default(NEW)
 
   processedAt   DateTime? @map("processed_at")

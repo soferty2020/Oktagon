@@ -16,6 +16,8 @@ export interface TrialRequestRecord {
   processedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  consentAcceptedAt: Date | null;
+  consentVersion: string | null;
   processedBy: { id: string; email: string } | null;
 }
 
@@ -32,6 +34,8 @@ const TRIAL_SELECT = {
   processedAt: true,
   createdAt: true,
   updatedAt: true,
+  consentAcceptedAt: true,
+  consentVersion: true,
   processedBy: { select: { id: true, email: true } },
 } as const;
 
@@ -60,8 +64,19 @@ export class TrialRequestsRepository {
     childAge?: number | null;
     comment?: string | null;
     source?: string | null;
+    consentAcceptedAt?: Date | null;
+    consentVersion?: string | null;
   }): Promise<TrialRequestRecord> {
-    return this.prisma.db.trialRequest.create({ data: input, select: TRIAL_SELECT });
+    return this.prisma.db.trialRequest.create({
+      data: {
+        ...input,
+        // `undefined` в data Prisma означает «не задано»: старые вызовы без
+        // согласия не должны падать на nullable-полях.
+        consentAcceptedAt: input.consentAcceptedAt ?? null,
+        consentVersion: input.consentVersion ?? null,
+      },
+      select: TRIAL_SELECT,
+    });
   }
 
   async updateStatus(
@@ -92,6 +107,8 @@ export function toTrialRequestView(record: TrialRequestRecord): TrialRequestView
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
     processedAt: record.processedAt?.toISOString() ?? null,
+    consentAcceptedAt: record.consentAcceptedAt?.toISOString() ?? null,
+    consentVersion: record.consentVersion,
     processedBy: record.processedBy,
   };
 }

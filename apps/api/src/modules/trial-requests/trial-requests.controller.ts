@@ -27,7 +27,8 @@ export class PublicTrialRequestsController {
     @Body() dto: CreateTrialRequestDto,
     @Req() request: Request,
   ): Promise<{ ok: true }> {
-    await this.requests.submit(dto, clientIp(request));
+    // `dto` уже содержит consent: DTO пропускает только `true`.
+    await this.requests.submit({ ...dto, consent: dto.consent === true }, clientIp(request));
 
     // Ответ одинаковый и при отсеянной заявке: бот не должен понять, что сработал
     // honeypot, иначе начнёт подбирать поля.

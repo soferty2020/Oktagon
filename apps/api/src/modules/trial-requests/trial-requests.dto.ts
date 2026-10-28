@@ -1,5 +1,16 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsEnum, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+  MinLength,
+} from 'class-validator';
 import { TrialRequestStatus } from '@octagon/contracts';
 
 /**
@@ -57,6 +68,16 @@ export class CreateTrialRequestDto {
   @IsOptional()
   @IsString()
   website?: string;
+
+  /**
+   * Согласие на обработку ПДн (#56, SEC-15).
+   *
+   * Обязательно и только `true`: без согласия обрабатывать данные ребёнка
+   * нечем. Значение пишется в заявку вместе с версией согласия.
+   */
+  @ApiProperty({ example: true, description: 'Согласие на обработку персональных данных' })
+  @IsIn([true], { message: 'Нужно согласие на обработку персональных данных' })
+  consent!: boolean;
 }
 
 /** Смена статуса администратором. */

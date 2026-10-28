@@ -53,7 +53,7 @@ describe('TrialRequestsService', () => {
   });
 
   it('создаёт заявку и обрезает пробелы', async () => {
-    await service.submit({ name: '  Анна ', phone: ' +79991234567 ' }, '1.2.3.4');
+    await service.submit({ name: '  Анна ', phone: ' +79991234567 ', consent: true }, '1.2.3.4');
 
     expect(repository.create).toHaveBeenCalledWith(
       expect.objectContaining({ name: 'Анна', phone: '+79991234567' }),
@@ -62,7 +62,7 @@ describe('TrialRequestsService', () => {
 
   it('honeypot: заявка не создаётся, но ошибки нет', async () => {
     const result = await service.submit(
-      { name: 'Бот', phone: '+70000000000', website: 'http://spam' },
+      { name: 'Бот', phone: '+70000000000', website: 'http://spam', consent: true },
       '1.2.3.4',
     );
 
@@ -74,12 +74,12 @@ describe('TrialRequestsService', () => {
     rateLimiter.consume.mockResolvedValue({ allowed: false, remaining: 0, retryAfterSeconds: 600 });
 
     await expect(
-      service.submit({ name: 'Анна', phone: '+79991234567' }, '1.2.3.4'),
+      service.submit({ name: 'Анна', phone: '+79991234567', consent: true }, '1.2.3.4'),
     ).rejects.toMatchObject({ code: 'RATE_LIMITED' });
   });
 
   it('без IP (доверенный прокси не передал) заявка проходит', async () => {
-    await service.submit({ name: 'Анна', phone: '+79991234567' }, null);
+    await service.submit({ name: 'Анна', phone: '+79991234567', consent: true }, null);
 
     expect(rateLimiter.consume).not.toHaveBeenCalled();
   });
