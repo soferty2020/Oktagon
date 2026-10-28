@@ -96,7 +96,12 @@ export default async function SchedulePage({
   const [templates, groups, sessions] = await Promise.all([
     apiFetch<ScheduleTemplateView[]>('/schedule-templates', { accessToken }),
     apiFetch<GroupView[]>('/groups', { accessToken }),
-    apiFetch<SessionView[]>(`/schedule/sessions?from=${from}&to=${to}`, { accessToken }),
+    // API занятий — `/training-sessions`, а не `/schedule/sessions`: второе —
+    // маршрут админки, а не API.
+    apiFetch<SessionView[]>(
+      `/training-sessions?from=${from}T00:00:00.000Z&to=${addDays(to, 1)}T00:00:00.000Z`,
+      { accessToken },
+    ),
   ]);
 
   const { year, quarter } = currentQuarter();

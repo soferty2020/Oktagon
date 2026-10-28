@@ -108,8 +108,9 @@ export default async function DashboardPage() {
   const calendarFrom = monthRange(year, month).from;
   const calendarTo = addDays(startOfWeek(calendarFrom), 41);
   const [calendarSessions, calendarTemplates] = await Promise.all([
+    // API занятий — `/training-sessions`: `/schedule/sessions` в API нет.
     apiFetch<SessionView[]>(
-      `/schedule/sessions?from=${calendarFrom}&to=${calendarTo}`,
+      `/training-sessions?from=${calendarFrom}T00:00:00.000Z&to=${addDays(calendarTo, 1)}T00:00:00.000Z`,
       { accessToken },
     ),
     apiFetch<TemplateForCalendar[]>('/schedule-templates', { accessToken }),
