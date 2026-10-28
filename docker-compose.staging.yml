@@ -43,6 +43,10 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    # Пароль нужен и серверу, и healthcheck: передаём переменной, чтобы он не
+    # оказался в командной строке контейнера (`docker ps`).
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?задайте REDIS_PASSWORD в .env.staging}
     # Redis держит только лимиты и сессионные счетчики: данные не критичны, но
     # RDB раз в минуту дешев и переживает перезапуск контейнера.
     # requirepass (#53): без пароля Redis доступен любому контейнеру сети.
@@ -60,11 +64,7 @@ services:
     volumes:
       - redis-data:/data
     healthcheck:
-      # Пароль передаётся через переменную окружения контейнера, а не в командной
-      # строке healthcheck: иначе он виден в `docker ps`.
       test: ['CMD-SHELL', 'redis-cli -a "$$REDIS_PASSWORD" ping | grep -q PONG']
-      environment:
-        REDIS_PASSWORD: ${REDIS_PASSWORD:?задайте REDIS_PASSWORD в .env.staging}
       interval: 10s
       timeout: 5s
       retries: 10
