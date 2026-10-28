@@ -3,7 +3,19 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
+import { ScheduleCalendar, type CalendarView } from '@/components/schedule-calendar';
 import { apiFetch, describeError } from '@/lib/api/client';
+import {
+  addDays,
+  type CalendarEvent,
+  clubDate,
+  clubTime,
+  expandDraftSlots,
+  monthRange,
+  startOfWeek,
+  todayInClub,
+  type TemplateForCalendar,
+} from '@/lib/schedule/calendar';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
 import { CreateTemplateForm } from './schedule-forms';
 
@@ -20,12 +32,30 @@ interface ScheduleTemplateView {
   validFrom: string;
   validTo: string;
   publishedAt: string | null;
-  slots: { id: string }[];
+  slots: {
+    id: string;
+    weekday: string;
+    startTime: string;
+    endTime: string;
+    hallName: string | null;
+    trainerName: string | null;
+  }[];
+}
+
+interface SessionView {
+  id: string;
+  groupName: string;
+  hallName: string | null;
+  trainerName: string | null;
+  startsAt: string;
+  endsAt: string;
+  status: string;
 }
 
 interface GroupView {
   id: string;
   name: string;
+  hallName: string | null;
   isActive: boolean;
 }
 
@@ -36,37 +66,88 @@ function currentQuarter(): { year: number; quarter: number } {
 }
 
 /**
- * Расписание: квартальные шаблоны (эпик D).
+ * Расписание: календарь и квартальные шаблоны (эпик D).
  *
  * Шаблон — это регулярность на квартал, а не отдельные занятия. Занятия
  * создаются материализацией и живут отдельно, поэтому правка занятия не
  * переписывает расписание (BR-009).
  */
-export default async function SchedulePage() {
+export default async function SchedulePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string; anchor?: string }>;
+}) {
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login');
   }
 
+  const { view: rawView, anchor: rawAnchor } = await searchParams;
+  const view: CalendarView = rawView === 'week' ? 'week' : 'month';
+  const anchor = /^\d{4}-\d{2}-\d{2}$/.test(rawAnchor ?? '') ? (rawAnchor as string) : todayInClub();
+
+  // Календарь тянет соседние дни: месяц показываем сеткой с хвостами недель.
+  const from = view === 'week' ? startOfWeek(anchor) : startOfWeek(monthRange(...anchorMonth(anchor)).from);
+  const to = view === 'week' ? addDays(from, 6) : addDays(from, 41);
+
   const { accessToken } = await readTokens();
   const canEdit = user.permissions.includes('schedule.edit');
 
-  const [templates, groups] = await Promise.all([
+  const [templates, groups, sessions] = await Promise.all([
     apiFetch<ScheduleTemplateView[]>('/schedule-templates', { accessToken }),
     apiFetch<GroupView[]>('/groups', { accessToken }),
+    apiFetch<SessionView[]>(`/schedule/sessions?from=${from}&to=${to}`, { accessToken }),
   ]);
 
   const { year, quarter } = currentQuarter();
   const groupOptions = (groups.ok ? groups.data : [])
     .filter((group) => group.isActive)
-    .map((group) => ({ id: group.id, name: group.name }));
+    .map((group) => ({
+      id: group.id,
+      name: group.name,
+      hallName: group.hallName,
+    }));
+
+  const events: CalendarEvent[] = [];
+
+  if (sessions.ok) {
+    for (const session of sessions.data) {
+      events.push({
+        id: session.id,
+        kind: 'session',
+        date: clubDate(session.startsAt),
+        startTime: clubTime(session.startsAt),
+        endTime: clubTime(session.endsAt),
+        title: session.groupName,
+        hallName: session.hallName,
+        trainerName: session.trainerName,
+        status: session.status,
+        href: `/schedule/sessions/${session.id}/attendance`,
+      });
+    }
+  }
+
+  // Черновики шаблонов видно в календаре с пометкой (#72): планировщику нужно
+  // понимать, что получится после публикации, не публикуя вслепую.
+  if (templates.ok) {
+    events.push(...expandDraftSlots(templates.data as TemplateForCalendar[], from, to));
+  }
 
   return (
     <AppShell user={user}>
       <PageHeader
         title="Расписание"
-        description="Квартальные шаблоны: регулярность группы на четверть года"
+        description="Календарь занятий и квартальные шаблоны группы"
       />
+
+      <div className="mb-6">
+        <ScheduleCalendar
+          anchor={anchor}
+          baseHref="/schedule"
+          events={events}
+          view={view}
+        />
+      </div>
 
       <div className={canEdit ? 'grid gap-6 lg:grid-cols-[2fr_1fr]' : ''}>
         <div className="flex flex-col gap-3">
@@ -117,6 +198,8 @@ export default async function SchedulePage() {
             </Notice>
           )}
 
+          {!sessions.ok ? <Notice tone="error">{describeError(sessions.error)}</Notice> : null}
+
           <div>
             <Link
               href="/schedule/sessions"
@@ -139,4 +222,10 @@ export default async function SchedulePage() {
       </div>
     </AppShell>
   );
+}
+
+/** Год и месяц из `YYYY-MM-DD` — для `monthRange`. */
+function anchorMonth(anchor: string): [number, number] {
+  const [year, month] = anchor.split('-').map(Number);
+  return [year ?? 2026, month ?? 1];
 }

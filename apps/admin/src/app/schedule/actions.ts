@@ -197,13 +197,17 @@ export async function generateSessionsAction(
   const templateId = String(formData.get('templateId') ?? '');
   const regenerate = formData.get('regenerate') === 'on';
 
-  const state = await withSession<{ created: number; skipped: number; removed: number }>(
-    (accessToken) =>
-      apiFetch(`/schedule-templates/${templateId}/generate`, {
-        accessToken,
-        method: 'POST',
-        body: { regenerate },
-      }),
+  const state = await withSession<{
+    created: number;
+    skipped: number;
+    removed: number;
+    warnings: string[];
+  }>((accessToken) =>
+    apiFetch(`/schedule-templates/${templateId}/generate`, {
+      accessToken,
+      method: 'POST',
+      body: { regenerate },
+    }),
   );
 
   if (state.error) {
@@ -216,12 +220,15 @@ export async function generateSessionsAction(
   const created = state.data?.created ?? 0;
   const skipped = state.data?.skipped ?? 0;
   const removed = state.data?.removed ?? 0;
+  const warnings = state.data?.warnings ?? [];
 
   return {
     success:
       `Создано занятий: ${created}` +
       (skipped > 0 ? `, уже было: ${skipped}` : '') +
-      (removed > 0 ? `, удалено при пересоздании: ${removed}` : ''),
+      (removed > 0 ? `, удалено при пересоздании: ${removed}` : '') +
+      // Накладки не блокируют генерацию (#72), но о них нужно сказать.
+      (warnings.length > 0 ? `. ${warnings.join(' ')}` : ''),
   };
 }
 

@@ -361,7 +361,7 @@ describe('SchedulingService', () => {
       expect(result.skipped).toBe(1);
     });
 
-    it('отклоняет генерацию при занятости тренера в другой группе', async () => {
+    it('предупреждает о занятости тренера, но создает занятия', async () => {
       repository.findTemplate.mockResolvedValue(publishedTemplate);
       repository.listSessions.mockResolvedValue([
         {
@@ -374,13 +374,15 @@ describe('SchedulingService', () => {
         },
       ]);
 
-      await expect(
-        service.generateSessions('admin-1', { templateId: 'template-1' }),
-      ).rejects.toMatchObject({ code: 'TRAINING_SESSION_CONFLICT' });
-      expect(repository.createSessions).not.toHaveBeenCalled();
+      // Общая тренировка — не ошибка: занятия создаются, накладка видна в warnings (#72).
+      const result = await service.generateSessions('admin-1', { templateId: 'template-1' });
+
+      expect(result.warnings.length).toBeGreaterThan(0);
+      expect(result.warnings[0]).toContain('тренер уже занят');
+      expect(repository.createSessions).toHaveBeenCalled();
     });
 
-    it('отклоняет генерацию при занятости зала в другой группе', async () => {
+    it('предупреждает о занятости зала, но создает занятия', async () => {
       repository.findTemplate.mockResolvedValue(publishedTemplate);
       repository.listSessions.mockResolvedValue([
         {
@@ -394,9 +396,11 @@ describe('SchedulingService', () => {
         },
       ]);
 
-      await expect(
-        service.generateSessions('admin-1', { templateId: 'template-1' }),
-      ).rejects.toMatchObject({ code: 'TRAINING_SESSION_CONFLICT' });
+      const result = await service.generateSessions('admin-1', { templateId: 'template-1' });
+
+      expect(result.warnings.length).toBeGreaterThan(0);
+      expect(result.warnings[0]).toContain('зал уже занят');
+      expect(repository.createSessions).toHaveBeenCalled();
     });
 
     it('не считает конфликтом отмененное занятие', async () => {

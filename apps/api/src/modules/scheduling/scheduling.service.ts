@@ -359,17 +359,19 @@ export class SchedulingService {
 
     const conflicts = this.findConflicts(template, upcoming, existing);
 
-    if (conflicts.length > 0) {
-      throw new ApiException(
-        'TRAINING_SESSION_CONFLICT' satisfies ApiErrorCode,
-        `Расписание пересекается с другими занятиями (${conflicts.length}). ` +
-          `Например, ${conflicts[0]?.localDate} в ${conflicts[0]?.localTime}: ` +
-          `${
-            conflicts[0]?.kind === 'TRAINER_BUSY' ? 'тренер уже занят' : 'зал уже занят'
-          } в группе «${conflicts[0]?.withGroupName}»`,
-        { conflicts: conflicts.slice(0, 20) },
-      );
-    }
+    // Пересечения не блокируют генерацию (#72): общая тренировка — две группы в
+    // одном зале в одно время — нормальный сценарий. Но и молчать нельзя:
+    // возвращаем предупреждения, их показывает админка.
+    const warnings =
+      conflicts.length === 0
+        ? []
+        : [
+            `Пересечения: ${conflicts.length}. Например, ${conflicts[0]?.localDate} в ` +
+              `${conflicts[0]?.localTime}: ` +
+              `${
+                conflicts[0]?.kind === 'TRAINER_BUSY' ? 'тренер уже занят' : 'зал уже занят'
+              } в группе «${conflicts[0]?.withGroupName}»`,
+          ];
 
     const toCreate = upcoming
       .filter(
@@ -402,7 +404,7 @@ export class SchedulingService {
       `Материализация шаблона ${template.id}: создано ${created}, пропущено ${skipped}, удалено ${removed}`,
     );
 
-    return { created, skipped, removed };
+    return { created, skipped, removed, warnings };
   }
 
   // --- Занятия -------------------------------------------------------------

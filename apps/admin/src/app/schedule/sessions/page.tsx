@@ -27,6 +27,7 @@ interface TrainingSessionView {
 interface GroupView {
   id: string;
   name: string;
+  hallName: string | null;
   isActive: boolean;
 }
 
@@ -84,7 +85,7 @@ export default async function SessionsPage({
   // Данные для формы занятия вручную: активные группы, залы активных филиалов и
   // активные тренеры. Неактивные не предлагаются — занятие в закрытом зале или с
   // уволенным тренером создавать бессмысленно.
-  let manualGroups: { id: string; name: string }[] = [];
+  let manualGroups: { id: string; name: string; hallName: string | null }[] = [];
   let manualHalls: { id: string; name: string }[] = [];
   let manualTrainers: { id: string; name: string }[] = [];
 
@@ -98,7 +99,7 @@ export default async function SessionsPage({
     if (groupsResult.ok) {
       manualGroups = groupsResult.data
         .filter((group) => group.isActive)
-        .map((group) => ({ id: group.id, name: group.name }));
+        .map((group) => ({ id: group.id, name: group.name, hallName: group.hallName }));
     }
 
     if (trainersResult.ok) {

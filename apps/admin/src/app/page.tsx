@@ -4,8 +4,20 @@ import { redirect } from 'next/navigation';
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
 import { PaidAgainstDebt, ProgressList } from '@/components/charts';
 import { Icon } from '@/components/icons';
+import { ScheduleCalendar } from '@/components/schedule-calendar';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { formatAmount, MONTH_NAMES } from '@/lib/money';
+import {
+  addDays,
+  type CalendarEvent,
+  clubDate,
+  clubTime,
+  expandDraftSlots,
+  monthRange,
+  startOfWeek,
+  todayInClub,
+  type TemplateForCalendar,
+} from '@/lib/schedule/calendar';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
 
 export const metadata = {
@@ -27,6 +39,17 @@ interface TrainingSession {
   trainerName: string | null;
   hallName: string | null;
   startsAt: string;
+  status: string;
+}
+
+/** Занятие для календаря: поля совпадают с `TrainingSessionView` API. */
+interface SessionView {
+  id: string;
+  groupName: string;
+  hallName: string | null;
+  trainerName: string | null;
+  startsAt: string;
+  endsAt: string;
   status: string;
 }
 
@@ -79,6 +102,41 @@ export default async function DashboardPage() {
       { accessToken },
     ),
   ]);
+
+  // Календарь месяца в Обзоре (#72): видно, где и какие занятия по дням, без
+  // перехода в Расписание.
+  const calendarFrom = monthRange(year, month).from;
+  const calendarTo = addDays(startOfWeek(calendarFrom), 41);
+  const [calendarSessions, calendarTemplates] = await Promise.all([
+    apiFetch<SessionView[]>(
+      `/schedule/sessions?from=${calendarFrom}&to=${calendarTo}`,
+      { accessToken },
+    ),
+    apiFetch<TemplateForCalendar[]>('/schedule-templates', { accessToken }),
+  ]);
+
+  const calendarEvents: CalendarEvent[] = [];
+  if (calendarSessions.ok) {
+    for (const session of calendarSessions.data) {
+      calendarEvents.push({
+        id: session.id,
+        kind: 'session',
+        date: clubDate(session.startsAt),
+        startTime: clubTime(session.startsAt),
+        endTime: clubTime(session.endsAt),
+        title: session.groupName,
+        hallName: session.hallName,
+        trainerName: session.trainerName,
+        status: session.status,
+        href: `/schedule/sessions/${session.id}/attendance`,
+      });
+    }
+  }
+  if (calendarTemplates.ok) {
+    calendarEvents.push(
+      ...expandDraftSlots(calendarTemplates.data, calendarFrom, calendarTo),
+    );
+  }
 
   const financeData = finance?.ok ? finance.data : null;
   const groupList = groups.ok ? groups.data : [];
@@ -208,6 +266,16 @@ export default async function DashboardPage() {
           </section>
         ) : null}
       </div>
+
+      <section className="mt-4">
+        <ScheduleCalendar
+          anchor={todayInClub()}
+          baseHref="/schedule"
+          compact
+          events={calendarEvents}
+          view="month"
+        />
+      </section>
 
       <section className="mt-4 rounded-card border border-line bg-white p-5">
         <div className="mb-4 flex items-baseline justify-between gap-2">

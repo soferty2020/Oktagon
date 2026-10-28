@@ -54,7 +54,7 @@ export function CreateTemplateForm({
   defaultYear,
   defaultQuarter,
 }: {
-  groups: { id: string; name: string }[];
+  groups: { id: string; name: string; hallName: string | null }[];
   defaultYear: number;
   defaultQuarter: number;
 }) {
@@ -75,7 +75,8 @@ export function CreateTemplateForm({
           </option>
           {groups.map((group) => (
             <option key={group.id} value={group.id}>
-              {group.name}
+              {/* Зал в подписи: «Младшая» есть в двух залах (#72). */}
+              {group.hallName ? `${group.hallName} · ${group.name}` : group.name}
             </option>
           ))}
         </select>
@@ -312,7 +313,7 @@ export function CreateSessionForm({
   trainers,
   today,
 }: {
-  groups: { id: string; name: string }[];
+  groups: { id: string; name: string; hallName: string | null }[];
   halls: { id: string; name: string }[];
   trainers: { id: string; name: string }[];
   today: string;
@@ -338,7 +339,8 @@ export function CreateSessionForm({
             </option>
             {groups.map((group) => (
               <option key={group.id} value={group.id}>
-                {group.name}
+                {/* Зал обязателен в подписи: «Младшая» есть в двух залах (#72). */}
+                {group.hallName ? `${group.hallName} · ${group.name}` : group.name}
               </option>
             ))}
           </select>
