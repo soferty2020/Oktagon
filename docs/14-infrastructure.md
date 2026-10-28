@@ -23,7 +23,32 @@ Components:
 - versioned object storage;
 - проверка восстановления не реже одного раза на релизный цикл.
 
-### Как снимается дамп
+### Staging/production: шифрование, restore-drill и offsite
+
+Рабочий скрипт — `infra/scripts/octagon-backup.sh` (на сервере
+`/usr/local/bin/octagon-backup.sh`, cron 02:30):
+
+1. `pg_dump --format=custom --no-owner --no-privileges` в `/srv/octagon/backups`;
+2. шифрование GPG AES256, ключ `/root/.octagon-backup.key` (600). Ключ **не**
+   выгружается вместе с дампом: без него файл на Диске бесполезен;
+3. **restore-drill**: дамп восстанавливается в отдельную БД
+   `octagon_restore_check`, проверяется число таблиц (меньше 30 — ошибка),
+   БД удаляется. Битый бэкап виден сразу, а не при аварии;
+4. offsite: `infra/scripts/octagon-disk-upload.sh` заливает `.gpg` на
+   Яндекс.Диск по REST API (rclone для Диска требует refresh-token, поэтому
+   работаем напрямую), проверяет размер и удаляет объекты старше 90 дней;
+5. локально держим 14 дней, на Диске — 90.
+
+Токен Диска лежит в `/root/.octagon-backup.env` (600). Логи — в
+`/var/log/octagon-backup.log`: `offsite: ok` или `offsite: FAILED`.
+
+Проверить загрузку вручную:
+
+```bash
+bash /usr/local/bin/octagon-backup.sh
+```
+
+### Как снимается дамп (локально)
 
 ```bash
 node scripts/backup-db.mjs                 # в .tools/backups, срок хранения 14 дней
