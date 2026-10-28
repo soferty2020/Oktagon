@@ -857,6 +857,15 @@ export class FinanceService {
       ]);
     }
 
+    // Выгрузка — это вынос ПДн из системы: фиксируем кто и что выгрузил
+    // (#56, SEC-20).
+    await this.audit.recordSafely({
+      action: AuditAction.FINANCE_EXPORTED,
+      entityType: AuditEntityType.PAYMENT_TRANSACTION,
+      entityId: null,
+      after: { kind: 'debtors', year, month, rows: rows.length - 1 },
+    });
+
     return {
       filename: `debtors-${year}-${String(month).padStart(2, '0')}.csv`,
       content: toCsv(rows),
@@ -908,6 +917,13 @@ export class FinanceService {
         movement.note ?? '',
       ]);
     }
+
+    await this.audit.recordSafely({
+      action: AuditAction.FINANCE_EXPORTED,
+      entityType: AuditEntityType.PAYMENT_TRANSACTION,
+      entityId: null,
+      after: { kind: 'payments', from, to, rows: rows.length - 1 },
+    });
 
     return {
       filename: `payments-${from}-${to}.csv`,
@@ -1263,8 +1279,14 @@ function sumOutstanding(entries: Array<{ decision: { isDebtor: boolean; outstand
 function toCsv(rows: string[][]): string {
   // `escape` — имя глобальной функции; локальная переменная перекрыла бы её и
   // сбивала бы читателя.
-  const escapeCell = (value: string): string =>
-    /[";\n\r]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+  const escapeCell = (value: string): string => {
+    // Формула-инъекция (#56, SEC-20): имя «=...», «+...», «-...» или «@...»
+    // Excel выполнит как формулу — с внешними ссылками и DDE. Ставим апостроф:
+    // Excel покажет текст, а не вычислит его.
+    const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+
+    return /[";\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
+  };
 
   return `\uFEFF${rows.map((row) => row.map(escapeCell).join(';')).join('\r\n')}\r\n`;
 }

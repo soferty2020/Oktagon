@@ -31,6 +31,27 @@ export class RateLimiterService {
   ) {}
 
   /**
+   * Проверяет окно, не расходуя попытку (#49, SEC-28).
+   *
+   * Нужен для лимита по email: считать нужно только неудачные входы, иначе
+   * десять попыток постороннего блокируют вход владельцу аккаунта.
+   */
+  async peek(key: string, max: number, windowSeconds: number): Promise<RateLimitResult> {
+    const client = this.clientOverride ?? this.redis.client;
+    const redisKey = `ratelimit:${key}`;
+
+    const raw = await client.get(redisKey);
+    const count = raw === null ? 0 : Number(raw);
+    const ttl = await client.ttl(redisKey);
+
+    return {
+      allowed: count < max,
+      remaining: Math.max(0, max - count),
+      retryAfterSeconds: ttl > 0 ? ttl : windowSeconds,
+    };
+  }
+
+  /**
    * Учитывает попытку и сообщает, разрешена ли она.
    *
    * @param key уникальный ключ окна (назначение + субъект).

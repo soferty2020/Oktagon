@@ -30,7 +30,7 @@ describe('AuthService', () => {
   let passwords: { hash: jest.Mock; verify: jest.Mock };
   let tokens: { issueAccessToken: jest.Mock; verifyAccessToken: jest.Mock };
   let refreshTokens: { issue: jest.Mock; rotate: jest.Mock; revoke: jest.Mock };
-  let rateLimiter: { consume: jest.Mock };
+  let rateLimiter: { consume: jest.Mock; peek: jest.Mock };
   let config: { get: (key: string) => unknown };
   let identity: { getProfile: jest.Mock };
   let audit: { recordSafely: jest.Mock };
@@ -59,6 +59,8 @@ describe('AuthService', () => {
     };
     rateLimiter = {
       consume: jest.fn().mockResolvedValue({ allowed: true, remaining: 9, retryAfterSeconds: 60 }),
+      // По email лимит только проверяется, инкремент — на неудаче (#49).
+      peek: jest.fn().mockResolvedValue({ allowed: true, remaining: 9, retryAfterSeconds: 60 }),
     };
     identity = { getProfile: jest.fn().mockResolvedValue(profile) };
     audit = { recordSafely: jest.fn().mockResolvedValue(null) };
@@ -157,7 +159,8 @@ describe('AuthService', () => {
       remaining: 0,
       retryAfterSeconds: 60,
     });
-    rateLimiter.consume.mockResolvedValueOnce({
+    // По email лимит только проверяется (peek), инкремент — на неудаче (#49).
+    rateLimiter.peek.mockResolvedValueOnce({
       allowed: false,
       remaining: 0,
       retryAfterSeconds: 42,
@@ -186,8 +189,11 @@ describe('AuthService', () => {
   it('проверяет и IP, и email', async () => {
     await service.login({ email: 'parent@example.com', password: 'x', ip: '10.0.0.1' });
 
-    const keys = rateLimiter.consume.mock.calls.map(([key]) => key);
-    expect(keys).toEqual(['auth:ip:10.0.0.1', 'auth:email:parent@example.com']);
+    // IP расходует попытку (consume), email — только проверяется (peek).
+    expect(rateLimiter.consume.mock.calls.map(([key]) => key)).toContain('auth:ip:10.0.0.1');
+    expect(rateLimiter.peek.mock.calls.map(([key]) => key)).toContain(
+      'auth:email:parent@example.com',
+    );
   });
 
   it('ротирует refresh-токен и отдает новую сессию', async () => {

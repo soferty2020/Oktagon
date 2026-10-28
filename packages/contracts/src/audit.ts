@@ -102,6 +102,8 @@ export const AuditAction = {
   PAYMENT_REFUNDED: 'finance.payment_refunded',
   PAYMENT_REFUND_VOIDED: 'finance.payment_refund_voided',
   PERIOD_MARKED_FULLY_PAID: 'finance.period_marked_fully_paid',
+  /** Выгрузка финансовых данных в CSV (#56, SEC-20). */
+  FINANCE_EXPORTED: 'finance.exported',
   PERIOD_FULLY_PAID_UNMARKED: 'finance.period_fully_paid_unmarked',
 
   // Заморозки (BR-005, BR-007)

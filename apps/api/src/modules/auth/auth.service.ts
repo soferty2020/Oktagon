@@ -57,6 +57,14 @@ export class AuthService {
     const passwordOk = await this.passwords.verify(input.password, user?.passwordHash ?? null);
 
     if (!user || !passwordOk) {
+      // В лимит по email считаются только неудачи: успешный вход не должен
+      // приближать блокировку аккаунта (#49, SEC-28).
+      await this.rateLimiter.consume(
+        `auth:email:${email}`,
+        this.config.get('AUTH_RATE_LIMIT_MAX', { infer: true }),
+        this.config.get('AUTH_RATE_LIMIT_TTL_SECONDS', { infer: true }),
+      );
+
       await this.audit.recordSafely({
         action: AuditAction.AUTH_LOGIN_FAILED,
         entityType: AuditEntityType.USER,
@@ -319,7 +327,9 @@ export class AuthService {
       }
     }
 
-    const byEmail = await this.rateLimiter.consume(`auth:email:${email}`, max, windowSeconds);
+    // По email только проверяем: попытку расходует неудачный вход
+    // (см. login), иначе десять запросов постороннего блокируют владельца.
+    const byEmail = await this.rateLimiter.peek(`auth:email:${email}`, max, windowSeconds);
     if (!byEmail.allowed) {
       this.logger.warn('Превышен лимит попыток входа по email');
       throw new ApiException(

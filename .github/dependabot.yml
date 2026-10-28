@@ -1,0 +1,34 @@
+# Обновления зависимостей (#54, SEC-32).
+#
+# Без этого уязвимость в транзитивной зависимости остаётся незамеченной: в CI нет
+# постоянного аудита, а lockfile обновляется только вручную.
+version: 2
+updates:
+  # npm-зависимости монорепозитория.
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+    open-pull-requests-limit: 5
+    groups:
+      # Патчи и минорные — одним PR: иначе их количество делает ревью
+      # бессмысленным и обновления копятся.
+      minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - 'minor'
+          - 'patch'
+    labels:
+      - 'dependencies'
+
+  # Сами GitHub Actions: тег `@v4` может быть перезаписан, SHA — нет.
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+    labels:
+      - 'dependencies'

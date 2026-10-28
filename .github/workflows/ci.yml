@@ -11,6 +11,11 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Минимальные права GITHUB_TOKEN (#54, SEC-32): по умолчанию он шире, чем нужно
+# сборке. Ветку и релизы workflow не меняет — только читает код.
+permissions:
+  contents: read
+
 env:
   NODE_VERSION: '22'
   # Тестовый контур: значения не секреты, используются только в CI.
@@ -77,6 +82,13 @@ jobs:
         # --ignore-scripts: Prisma Client генерируется отдельным шагом в
         # apps/api/generated/prisma (см. docs/27-local-development.md).
         run: pnpm install --frozen-lockfile --ignore-scripts
+
+      # Аудит зависимостей (#54, SEC-32). Пока не блокирует сборку: сначала
+      # нужно увидеть реальный список, а не ломать main первой же находкой.
+      # После разбора — убрать `continue-on-error`.
+      - name: Audit dependencies
+        continue-on-error: true
+        run: pnpm audit --prod --audit-level=high
 
       - name: Generate Prisma Client
         run: pnpm db:generate

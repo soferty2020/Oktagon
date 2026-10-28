@@ -163,6 +163,29 @@ describe('FinanceService: отчёты', () => {
       ).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
     });
 
+    it('нейтрализует формулу в ячейке (#56, SEC-20)', async () => {
+      repository.listPaymentsForExport.mockResolvedValue([
+        {
+          id: 'pay-formula',
+          athleteId: 'athlete-1',
+          paidAt: new Date('2026-10-05T10:00:00.000Z'),
+          kind: 'PAYMENT',
+          amount: 1000,
+          method: 'CASH',
+          athleteLastName: '=HYPERLINK("http://evil","жми")',
+          athleteFirstName: 'Али',
+          groupName: null,
+          note: null,
+        },
+      ]);
+
+      const file = await service.exportPaymentsCsv('admin-1', '2026-10-01', '2026-11-01');
+
+      // Апостроф перед «=» не даёт Excel выполнить формулу.
+      expect(file.content).toContain("'=HYPERLINK");
+      expect(file.content).not.toMatch(/(^|;)=HYPERLINK/);
+    });
+
     it('движения: отклоняет некорректную дату', async () => {
       await expect(
         service.exportPaymentsCsv('admin-1', 'вчера', '2026-11-01'),

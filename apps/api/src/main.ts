@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule } from '@nestjs/swagger';
+import type { NextFunction, Request, Response } from 'express';
 import { NodeEnv, resolveCorsOrigins, type AppEnvironment } from '@octagon/config';
 
 import { AppModule } from './app.module';
@@ -31,7 +32,28 @@ async function bootstrap(): Promise<void> {
   // Каталог создаётся на старте: без него первая загрузка падала бы с ENOENT.
   const uploadDir = config.get('UPLOAD_DIR', { infer: true }) ?? './uploads';
   await mkdir(uploadDir, { recursive: true });
-  app.useStaticAssets(uploadDir, { prefix: '/media/' });
+
+  // Раздача только того, что загружал сервис новостей (#56, SEC-18): имя —
+  // UUID и расширение из белого списка. Иначе статика отдавала бы любой файл,
+  // попавший в каталог, включая случайно скопированный.
+  // Проверка регистрируется ДО статики: иначе express.static отдал бы файл
+  // раньше, чем мы до него доберёмся.
+  const mediaFile = /^\/news\/[0-9a-f-]{36}\.(jpg|png|webp)$/i;
+  app.use('/media', (request: Request, response: Response, next: NextFunction) => {
+    if (!mediaFile.test(request.path)) {
+      response.status(404).end();
+      return;
+    }
+    next();
+  });
+  app.useStaticAssets(uploadDir, {
+    prefix: '/media/',
+    setHeaders: (response) => {
+      // Тип фиксирован расширением, а не угадывается браузером.
+      response.setHeader('X-Content-Type-Options', 'nosniff');
+      response.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    },
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
