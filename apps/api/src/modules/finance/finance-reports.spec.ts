@@ -104,13 +104,15 @@ describe('FinanceService: отчёты', () => {
       expect(dynamics.points).toHaveLength(12);
     });
 
-    it('не считает сумму долга, если есть должники без ожидаемой суммы', async () => {
+    it('спортсмен без ожидаемой суммы не искажает сумму долга', async () => {
       repository.listPeriodsForMonth.mockResolvedValue([]);
 
       const dynamics = await service.dynamics('admin-1', 2026, 10, 1);
 
+      // Суммы нет — это не долг: он равен нулю, а спортсмен учтён отдельно.
       expect(dynamics.points[0].debtorsWithoutExpected).toBe(1);
-      expect(dynamics.points[0].debt).toBeNull();
+      expect(dynamics.points[0].debtors).toBe(0);
+      expect(dynamics.points[0].debt).toBe(0);
     });
 
     it('считает долг как остаток по ожидаемым суммам', async () => {

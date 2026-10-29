@@ -1,8 +1,4 @@
-import {
-  DebtExpectedMissing,
-  DebtFreezePolicy,
-  type DebtRulesConfig,
-} from '@octagon/contracts';
+import { DebtFreezePolicy, type DebtRulesConfig } from '@octagon/contracts';
 
 /** Почему спортсмен не считается должником. */
 export const DebtReason = {
@@ -35,6 +31,14 @@ export interface DebtDecision {
   /** Остаток; `null`, если ожидаемая сумма не задана. */
   outstanding: number | null;
   reason: DebtReason | null;
+  /**
+   * Ожидаемая сумма не задана — это отдельное состояние, а не долг.
+   *
+   * Спортсмен, которому клуб ещё не назначил сумму, не должен попадать в
+   * должники: взыскивать нечего. Но и молчать нельзя — администратор должен
+   * видеть список тех, кому сумму нужно проставить.
+   */
+  expectedMissing: boolean;
 }
 
 /**
@@ -58,21 +62,18 @@ export function evaluateDebt(config: DebtRulesConfig, facts: DebtFacts): DebtDec
     facts.expectedAmount === null ? null : roundMoney(facts.expectedAmount - facts.paidAmount);
 
   if (reason !== null) {
-    return { isDebtor: false, outstanding, reason };
+    return { isDebtor: false, outstanding, reason, expectedMissing: outstanding === null };
   }
 
   if (outstanding === null) {
-    // Суммы нет: клуб еще не решил, сколько брать. По умолчанию такой спортсмен
-    // требует внимания и попадает в список.
-    return {
-      isDebtor: config.expectedMissing === DebtExpectedMissing.DEBTOR,
-      outstanding: null,
-      reason: null,
-    };
+    // Суммы нет: клуб еще не решил, сколько брать. Это не долг — взыскивать
+    // нечего. Но и не «всё в порядке»: спортсмен попадает в отдельный список
+    // «Не установлена сумма», который администратор должен разобрать.
+    return { isDebtor: false, outstanding: null, reason: null, expectedMissing: true };
   }
 
   const tolerance = resolveTolerance(config, facts.expectedAmount ?? 0);
-  return { isDebtor: outstanding > tolerance, outstanding, reason: null };
+  return { isDebtor: outstanding > tolerance, outstanding, reason: null, expectedMissing: false };
 }
 
 /** Основание не считать должником; `null`, если оснований нет. */

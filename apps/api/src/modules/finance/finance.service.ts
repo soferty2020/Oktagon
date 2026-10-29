@@ -529,6 +529,7 @@ export class FinanceService {
         refundedAmount: fact.refundedAmount,
         expectedAmount: fact.expectedAmount,
         isDebtor: decision.isDebtor,
+        expectedMissing: decision.expectedMissing,
         reason: decision.reason as DebtorExemption | null,
       };
     });
@@ -798,17 +799,14 @@ export class FinanceService {
       }
 
       const debtorRows = debtors.filter((row) => row.isDebtor);
-      const withoutExpected = debtorRows.filter((row) => row.expectedAmount === null).length;
+      // «Сумма не задана» — отдельный показатель, а не долг: в сумму долга
+      // такие спортсмены не входят, иначе цифра была бы выдуманной.
+      const withoutExpected = debtors.filter((row) => row.expectedAmount === null).length;
 
-      // Сумма долга не считается, если есть должники без ожидаемой суммы:
-      // сложить известные остатки значило бы скрыть неопределенность.
-      const debt =
-        withoutExpected > 0
-          ? null
-          : debtorRows.reduce(
-              (sum, row) => sum + (Number(row.expectedAmount ?? 0) - row.paidAmount),
-              0,
-            );
+      const debt = debtorRows.reduce(
+        (sum, row) => sum + (Number(row.expectedAmount ?? 0) - row.paidAmount),
+        0,
+      );
 
       points.push({
         year: pointYear,
@@ -1050,7 +1048,9 @@ export class FinanceService {
       totals,
       expected,
       debtors: debtorsOnly.length,
-      debtorsWithoutExpected: debtorsOnly.filter((row) => row.expectedAmount === null).length,
+      // Без заданной суммы — не должники, но их нужно посчитать отдельно:
+      // иначе руководитель не увидит, кому сумму ещё не проставили.
+      debtorsWithoutExpected: debtors.filter((row) => row.expectedAmount === null).length,
       debt,
       activeAthletes: visibleAthletes.filter(
         (athlete) => athlete.status === PrismaAthleteStatus.ACTIVE,

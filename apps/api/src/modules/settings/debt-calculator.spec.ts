@@ -32,13 +32,19 @@ describe('правила задолженности: матрица ADR-0014', (
     ...overrides,
   });
 
-  it('1. незаданная сумма, дефолт — должник без остатка', () => {
+  it('1. незаданная сумма — не должник, отдельный статус', () => {
     const decision = evaluateDebt(DEFAULT_DEBT_RULES, facts({ expectedAmount: null }));
 
-    expect(decision).toEqual({ isDebtor: true, outstanding: null, reason: null });
+    // Взыскивать нечего: это работа администратора, а не долг.
+    expect(decision).toEqual({
+      isDebtor: false,
+      outstanding: null,
+      reason: null,
+      expectedMissing: true,
+    });
   });
 
-  it('2. незаданная сумма, NOT_DEBTOR — не должник', () => {
+  it('2. незаданная сумма при любой настройке — не должник', () => {
     const decision = evaluateDebt(
       withRules({ expectedMissing: DebtExpectedMissing.NOT_DEBTOR }),
       facts({ expectedAmount: null }),
@@ -46,6 +52,7 @@ describe('правила задолженности: матрица ADR-0014', (
 
     expect(decision.isDebtor).toBe(false);
     expect(decision.outstanding).toBeNull();
+    expect(decision.expectedMissing).toBe(true);
   });
 
   it('3. частичная оплата без допуска — должник с остатком', () => {
@@ -203,6 +210,7 @@ describe('правила задолженности: матрица ADR-0014', (
       facts({ expectedAmount: null }),
     );
 
-    expect(decision.isDebtor).toBe(true);
+    expect(decision.isDebtor).toBe(false);
+    expect(decision.expectedMissing).toBe(true);
   });
 });

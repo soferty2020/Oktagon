@@ -491,6 +491,10 @@ describe('FinanceService', () => {
 
   describe('задолженность (BR-004)', () => {
     it('активный спортсмен без оплаты и с тренировками — должник', async () => {
+      repository.listPeriodsForMonth.mockResolvedValue([
+        { ...period, expectedAmount: 25000, paidAmount: 0 },
+      ]);
+
       const debtors = await service.listDebtors('admin-1', 2026, 10);
 
       expect(debtors).toHaveLength(1);
@@ -591,6 +595,12 @@ describe('FinanceService', () => {
         { athleteId: 'athlete-2', joinedAt: new Date('2026-09-01'), leftAt: null },
       ]);
       freezes.listFrozenAthleteIds.mockResolvedValue(['athlete-2']);
+      // Долг считается только при заданной сумме: athlete-1 должен быть
+      // должником, athlete-2 — замороженным.
+      repository.listPeriodsForMonth.mockResolvedValue([
+        { ...period, athleteId: 'athlete-1', expectedAmount: 25000, paidAmount: 0 },
+        { ...period, athleteId: 'athlete-2', expectedAmount: 25000, paidAmount: 0 },
+      ]);
 
       const debtors = await service.listDebtors('admin-1', 2026, 10);
 
@@ -632,7 +642,7 @@ describe('FinanceService', () => {
 
       const summary = await service.summary('admin-1', 2026, 10);
 
-      expect(summary.debtors).toBe(1);
+      expect(summary.debtors).toBe(0);
       expect(summary.debtorsWithoutExpected).toBe(1);
       expect(summary.debt).toBe(0);
     });

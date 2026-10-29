@@ -26,6 +26,8 @@ interface PeriodRow {
   refundedAmount: number;
   expectedAmount: number | null;
   isDebtor: boolean;
+  /** Ожидаемая сумма не задана — отдельное состояние, не долг. */
+  expectedMissing: boolean;
   reason: string | null;
 }
 
@@ -74,7 +76,14 @@ export default async function PeriodsPage({
     partial: withStatus.filter((row) => row.status.key === 'partial').length,
     debt: withStatus.filter((row) => row.status.key === 'debt').length,
     exempt: withStatus.filter((row) => row.status.key === 'exempt').length,
+    expectedMissing: withStatus.filter((row) => row.status.key === 'expectedMissing').length,
   };
+
+  // «Не установлена сумма» — отдельный список: это не долг, а работа для
+  // администратора (проставить сумму). В таблице периодов их нет, иначе они
+  // выглядят как должники, которыми не являются.
+  const needsAmount = withStatus.filter((row) => row.status.key === 'expectedMissing');
+  const periodRows = withStatus.filter((row) => row.status.key !== 'expectedMissing');
 
   const debtTotal = rows.reduce(
     (sum, row) => sum + Math.max((row.expectedAmount ?? 0) - row.paidAmount, 0),
@@ -110,9 +119,40 @@ export default async function PeriodsPage({
               <span className="font-medium text-emerald-700">{counts.paid}</span> · частично{' '}
               <span className="font-medium text-amber-700">{counts.partial}</span> · долг{' '}
               <span className="font-medium text-red-700">{counts.debt}</span> · освобождено{' '}
-              <span className="font-medium text-ink">{counts.exempt}</span>
+              <span className="font-medium text-ink">{counts.exempt}</span> · без суммы{' '}
+              <span className="font-medium text-amber-700">{counts.expectedMissing}</span>
             </p>
           </div>
+
+          {needsAmount.length > 0 ? (
+            <section className="mt-6 rounded-card border border-amber-200 bg-amber-50/40 p-4">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className="text-sm font-semibold text-ink">
+                  Не установлена сумма ({needsAmount.length})
+                </h2>
+                <p className="text-xs text-muted">
+                  Это не долг: сумму ещё не назначили, период не посчитать
+                </p>
+              </div>
+
+              <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {needsAmount.map((row) => (
+                  <li
+                    className="flex items-center justify-between gap-2 rounded-md border border-amber-200 bg-white px-3 py-2 text-sm"
+                    key={row.athleteId}
+                  >
+                    <Link
+                      className="truncate text-ink underline decoration-line hover:decoration-accent"
+                      href={`/finance/athletes/${row.athleteId}?${monthQuery(year, month)}`}
+                    >
+                      {row.lastName} {row.firstName}
+                    </Link>
+                    <span className="shrink-0 text-xs text-muted">задать сумму →</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
           {debts && !debts.ok ? (
             <div className="mt-4">
@@ -157,7 +197,7 @@ export default async function PeriodsPage({
                     </tr>
                   </thead>
                   <tbody>
-                    {withStatus.map((row) => (
+                    {periodRows.map((row) => (
                       <tr key={row.athleteId} className="border-b border-line last:border-0">
                         <td className="px-4 py-3">
                           <Link
@@ -216,6 +256,16 @@ export default async function PeriodsPage({
  * ничего — разные поводы для звонка.
  */
 function periodStatus(row: PeriodRow): { key: string; label: string; className: string } {
+  // Суммы нет — это не долг: взыскивать нечего. Но период не посчитать, поэтому
+  // такие спортсмены идут отдельным списком «требует внимания».
+  if (row.expectedMissing) {
+    return {
+      key: 'expectedMissing',
+      label: 'Не установлена сумма',
+      className: 'bg-amber-50 text-amber-700',
+    };
+  }
+
   if (row.isDebtor) {
     if (row.paidAmount > 0) {
       return { key: 'partial', label: 'Частично', className: 'bg-amber-50 text-amber-700' };
