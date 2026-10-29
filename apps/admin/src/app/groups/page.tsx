@@ -4,7 +4,8 @@ import { AppShell, PageHeader } from '@/components/app-shell';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
 import { AssignAthleteForm } from './group-forms';
-import { formatSchedule, GroupsBoard } from './groups-board';
+import { GroupsBoard } from './groups-board';
+import { formatSchedule } from './schedule-format';
 
 export const metadata = {
   title: 'Группы — OCTAGON',
