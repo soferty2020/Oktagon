@@ -218,7 +218,7 @@ export class PrismaSchedulingRepository extends SchedulingRepository {
       },
     });
 
-    return template ? toTemplateRecord(template) : null;
+    return template ? this.toTemplateRecord(template) : null;
   }
 
   async findTemplate(id: string): Promise<ScheduleTemplateRecord | null> {
@@ -237,7 +237,7 @@ export class PrismaSchedulingRepository extends SchedulingRepository {
       },
     });
 
-    return template ? toTemplateRecord(template) : null;
+    return template ? this.toTemplateRecord(template) : null;
   }
 
   async listTemplates(filter: {
@@ -271,7 +271,7 @@ export class PrismaSchedulingRepository extends SchedulingRepository {
       },
     });
 
-    return templates.map(toTemplateRecord);
+    return Promise.all(templates.map((template) => this.toTemplateRecord(template)));
   }
 
   async createTemplate(input: CreateTemplateInput): Promise<ScheduleTemplateRecord> {
@@ -296,7 +296,7 @@ export class PrismaSchedulingRepository extends SchedulingRepository {
       },
     });
 
-    return toTemplateRecord(template);
+    return this.toTemplateRecord(template);
   }
 
   async publishTemplate(id: string, publishedAt: Date): Promise<ScheduleTemplateRecord> {
@@ -316,7 +316,7 @@ export class PrismaSchedulingRepository extends SchedulingRepository {
       },
     });
 
-    return toTemplateRecord(template);
+    return this.toTemplateRecord(template);
   }
 
   async deleteTemplate(id: string): Promise<void> {
@@ -627,46 +627,75 @@ export class PrismaSchedulingRepository extends SchedulingRepository {
       trainerName: trainer?.displayName ?? null,
     };
   }
-}
 
-function toTemplateRecord(template: {
-  id: string;
-  groupId: string;
-  year: number;
-  quarter: number;
-  validFrom: Date;
-  validTo: Date;
-  publishedAt: Date | null;
-  group: { name: string };
-  slots: {
+  /**
+   * Шаблон с названиями залов и тренеров.
+   *
+   * Названия подтягиваются двумя запросами на шаблон, а не на слот: слотов
+   * немного, а N+1 на каждом слоте — лишние раунд-трипы.
+   */
+  private async toTemplateRecord(template: {
     id: string;
-    weekday: Weekday;
-    startTime: Date;
-    endTime: Date;
-    hallId: string | null;
-    trainerProfileId: string | null;
-  }[];
-}): ScheduleTemplateRecord {
-  return {
-    id: template.id,
-    groupId: template.groupId,
-    groupName: template.group.name,
-    year: template.year,
-    quarter: template.quarter,
-    validFrom: template.validFrom,
-    validTo: template.validTo,
-    publishedAt: template.publishedAt,
-    // Названия зала и тренера подтягиваются отдельно: в списке шаблонов слотов
-    // мало, поэтому это дешевле, чем join по каждому.
-    slots: template.slots.map((slot) => ({
-      id: slot.id,
-      weekday: slot.weekday,
-      startTime: timeToHhMm(slot.startTime),
-      endTime: timeToHhMm(slot.endTime),
-      hallId: slot.hallId,
-      hallName: null,
-      trainerId: slot.trainerProfileId,
-      trainerName: null,
-    })),
-  };
+    groupId: string;
+    year: number;
+    quarter: number;
+    validFrom: Date;
+    validTo: Date;
+    publishedAt: Date | null;
+    group: { name: string };
+    slots: {
+      id: string;
+      weekday: Weekday;
+      startTime: Date;
+      endTime: Date;
+      hallId: string | null;
+      trainerProfileId: string | null;
+    }[];
+  }): Promise<ScheduleTemplateRecord> {
+    const hallIds = [...new Set(template.slots.map((slot) => slot.hallId).filter(Boolean))];
+    const trainerIds = [
+      ...new Set(template.slots.map((slot) => slot.trainerProfileId).filter(Boolean)),
+    ];
+
+    const [halls, trainers] = await Promise.all([
+      hallIds.length > 0
+        ? this.prisma.db.hall.findMany({
+            where: { id: { in: hallIds as string[] } },
+            select: { id: true, name: true },
+          })
+        : Promise.resolve([]),
+      trainerIds.length > 0
+        ? this.prisma.db.trainerProfile.findMany({
+            where: { id: { in: trainerIds as string[] } },
+            select: { id: true, displayName: true },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const hallNames = new Map(halls.map((hall) => [hall.id, hall.name]));
+    const trainerNames = new Map(trainers.map((trainer) => [trainer.id, trainer.displayName]));
+
+    return {
+      id: template.id,
+      groupId: template.groupId,
+      groupName: template.group.name,
+      year: template.year,
+      quarter: template.quarter,
+      validFrom: template.validFrom,
+      validTo: template.validTo,
+      publishedAt: template.publishedAt,
+      slots: template.slots.map((slot) => ({
+        id: slot.id,
+        weekday: slot.weekday,
+        startTime: timeToHhMm(slot.startTime),
+        endTime: timeToHhMm(slot.endTime),
+        hallId: slot.hallId,
+        hallName: slot.hallId ? (hallNames.get(slot.hallId) ?? null) : null,
+        trainerId: slot.trainerProfileId,
+        trainerName: slot.trainerProfileId
+          ? (trainerNames.get(slot.trainerProfileId) ?? null)
+          : null,
+      })),
+    };
+  }
 }
