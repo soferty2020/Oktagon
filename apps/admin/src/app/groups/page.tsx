@@ -1,11 +1,10 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
-import { AppShell, Notice, PageHeader } from '@/components/app-shell';
-import { EmptyState } from '@/components/empty-state';
+import { AppShell, PageHeader } from '@/components/app-shell';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
-import { AssignAthleteForm, CreateGroupForm } from './group-forms';
+import { AssignAthleteForm } from './group-forms';
+import { formatSchedule, GroupsBoard } from './groups-board';
 
 export const metadata = {
   title: 'Группы — OCTAGON',
@@ -19,13 +18,13 @@ interface GroupView {
   hallId: string | null;
   hallName: string | null;
   activeMembersCount: number;
-  /** Тренеры группы: основной первым. */
   trainers: { id: string; displayName: string }[];
 }
 
 interface HallView {
   id: string;
   name: string;
+  address: string | null;
   isActive: boolean;
 }
 
@@ -41,198 +40,146 @@ interface AthleteView {
   lastName: string;
 }
 
+interface SlotView {
+  weekday: string;
+  startTime: string;
+  endTime: string;
+}
+
+interface TemplateView {
+  groupId: string;
+  slots: SlotView[];
+}
+
 /**
- * Справочник групп (C6).
+ * Группы клуба (C6): залы, состав и расписание.
  *
  * Список приходит уже ограниченным scope: тренер видит только свои группы
- * (docs/21-permission-matrix.md).
+ * (docs/21-permission-matrix.md). Поиск идёт в API (`?search=`), чтобы не
+ * ограничиваться загруженной страницей; зал, тренер и статус фильтруются в
+ * браузере — эти поля есть у каждой группы.
  */
 export default async function GroupsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ assign?: string }>;
+  searchParams: Promise<{ assign?: string; search?: string }>;
 }) {
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login');
   }
 
-  const { assign } = await searchParams;
+  const { assign, search } = await searchParams;
+  const query = (search ?? '').trim();
   const { accessToken } = await readTokens();
   const canManage = user.permissions.includes('groups.edit');
 
-  const [groups, halls, trainers, assigned] = await Promise.all([
-    apiFetch<GroupView[]>('/groups', { accessToken }),
-    canManage ? apiFetch<HallView[]>('/halls', { accessToken }) : null,
-    canManage ? apiFetch<TrainerView[]>('/trainers', { accessToken }) : null,
-    // Спортсмен из ссылки «Не в группе» (#68): показываем его карточку в форме.
+  const [groups, halls, trainers, templates, assigned] = await Promise.all([
+    apiFetch<GroupView[]>(`/groups${query ? `?search=${encodeURIComponent(query)}` : ''}`, {
+      accessToken,
+    }),
+    apiFetch<HallView[]>('/halls', { accessToken }),
+    apiFetch<TrainerView[]>('/trainers', { accessToken }),
+    apiFetch<TemplateView[]>('/schedule-templates', { accessToken }),
     assign ? apiFetch<AthleteView>(`/athletes/${assign}`, { accessToken }) : null,
   ]);
 
-  const hallOptions = (halls?.ok ? halls.data : [])
-    .filter((hall) => hall.isActive)
-    .map((hall) => ({ id: hall.id, name: hall.name }));
-  const trainerOptions = (trainers?.ok ? trainers.data : [])
-    .filter((trainer) => trainer.isActive)
-    .map((trainer) => ({ id: trainer.id, displayName: trainer.displayName }));
+  const groupList = groups.ok ? groups.data : [];
+  const hallList = (halls.ok ? halls.data : []).filter((hall) => hall.isActive);
+  const trainerList = (trainers.ok ? trainers.data : []).filter((trainer) => trainer.isActive);
+  const templateByGroup = new Map(
+    (templates.ok ? templates.data : []).map((template) => [
+      template.groupId,
+      template.slots.map((slot) => ({
+        weekday: slot.weekday,
+        start: slot.startTime.slice(0, 5),
+        end: slot.endTime.slice(0, 5),
+      })),
+    ]),
+  );
 
-  const groupOptions = (groups.ok ? groups.data : []).map((group) => ({
+  const items = groupList.map((group) => ({
     id: group.id,
     name: group.name,
+    description: group.description,
+    isActive: group.isActive,
+    hallId: group.hallId,
     hallName: group.hallName,
+    activeMembersCount: group.activeMembersCount,
+    trainers: group.trainers ?? [],
+    schedule: formatSchedule(templateByGroup.get(group.id) ?? []),
   }));
+
+  const activeGroups = items.filter((group) => group.isActive);
+  const athletesTotal = activeGroups.reduce((sum, group) => sum + group.activeMembersCount, 0);
+  const withoutTrainer = activeGroups.filter((group) => group.trainers.length === 0).length;
 
   return (
     <AppShell user={user}>
       <PageHeader
         title="Группы"
-        description="Список ограничен зоной доступа текущего пользователя"
+        description="Учебные группы клуба: тренеры, состав и расписание по залам."
       />
 
       {assigned?.ok && canManage ? (
-        <div className="mb-6">
+        <div className="mt-4">
           <AssignAthleteForm
             athlete={assigned.data}
-            groups={groupOptions}
+            groups={groupList.map((group) => ({
+              id: group.id,
+              name: group.name,
+              hallName: group.hallName,
+            }))}
           />
         </div>
       ) : null}
 
-      {assigned && !assigned.ok ? (
-        <div className="mb-6">
-          <Notice tone="error">{describeError(assigned.error)}</Notice>
-        </div>
+      {!groups.ok ? (
+        <p className="mt-4 rounded-card border border-line bg-white px-4 py-3 text-sm text-danger">
+          {describeError(groups.error)}
+        </p>
       ) : null}
 
-      <div className={canManage ? 'grid gap-6 lg:grid-cols-[2fr_1fr]' : ''}>
-        <div className="flex flex-col gap-6">
-          {!groups.ok ? <Notice tone="error">{describeError(groups.error)}</Notice> : null}
+      <section className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Kpi label="Всего групп" note={`в ${hallList.length} залах`} value={activeGroups.length} />
+        <Kpi label="Всего спортсменов" note="во всех группах" value={athletesTotal} />
+        <Kpi label="Без тренера" note="нужно назначить" tone="warn" value={withoutTrainer} />
+      </section>
 
-          {groups.ok && groups.data.length === 0 ? (
-            <div className="rounded-card border border-line bg-white">
-              <EmptyState
-                icon="groups"
-                title="Групп пока нет"
-                description="Создайте группу справа: в неё записываются спортсмены и строится расписание."
-              />
-            </div>
-          ) : null}
-
-          {groups.ok
-            ? hallSections(groups.data).map((section) => (
-                <section
-                  className="rounded-card border border-line bg-white"
-                  key={section.key}
-                >
-                  {/* Зал — заголовок секции, а не колонка: иначе группы разных
-                      залов висят одной простынёй (#71). */}
-                  <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
-                    <div>
-                      <h2 className="text-sm font-semibold text-ink">{section.name}</h2>
-                      <p className="mt-0.5 text-xs text-muted">
-                        {section.groups.length}{' '}
-                        {section.groups.length === 1 ? 'группа' : 'групп'}
-                      </p>
-                    </div>
-                    {section.hallId ? (
-                      <Link
-                        className="text-xs text-muted underline hover:text-ink"
-                        href={`/halls#hall-${section.hallId}`}
-                      >
-                        Зал
-                      </Link>
-                    ) : null}
-                  </header>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[560px] text-left text-sm">
-                      <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
-                        <tr>
-                          <th className="px-4 py-3">Название</th>
-                          <th className="px-4 py-3">Тренер</th>
-                          <th className="px-4 py-3">Участников</th>
-                          <th className="px-4 py-3">Статус</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {section.groups.map((group) => (
-                          <tr key={group.id} className="border-b border-line last:border-0">
-                            <td className="px-4 py-3">
-                              <Link
-                                className="font-medium text-ink underline decoration-line hover:decoration-accent"
-                                href={`/groups/${group.id}`}
-                              >
-                                {group.name}
-                              </Link>
-                              {group.description ? (
-                                <span className="block text-xs text-muted">
-                                  {group.description}
-                                </span>
-                              ) : null}
-                            </td>
-                            <td className="px-4 py-3 text-muted">
-                              {group.trainers.length > 0
-                                ? group.trainers.map((trainer) => trainer.displayName).join(', ')
-                                : 'не назначен'}
-                            </td>
-                            <td className="px-4 py-3 text-muted">{group.activeMembersCount}</td>
-                            <td className="px-4 py-3">
-                              <span
-                                className={
-                                  group.isActive
-                                    ? 'rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700'
-                                    : 'rounded-full bg-canvas px-2 py-1 text-xs text-muted'
-                                }
-                              >
-                                {group.isActive ? 'активна' : 'неактивна'}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </section>
-              ))
-            : null}
-        </div>
-
-        {canManage ? (
-          <CreateGroupForm halls={hallOptions} trainers={trainerOptions} />
-        ) : null}
-      </div>
+      <GroupsBoard
+        canManage={canManage}
+        groups={items}
+        halls={hallList.map((hall) => ({ id: hall.id, name: hall.name, address: hall.address }))}
+        search={query}
+        trainers={trainerList.map((trainer) => ({ id: trainer.id, name: trainer.displayName }))}
+      />
     </AppShell>
   );
 }
 
-/**
- * Группы, разложенные по залам.
- *
- * Группа без зала попадает в отдельную секцию: это не ошибка, но её нужно
- * видеть — иначе группа потеряется среди назначенных.
- */
-function hallSections(groups: GroupView[]) {
-  const sections = new Map<
-    string,
-    { key: string; name: string; hallId: string | null; groups: GroupView[] }
-  >();
-
-  for (const group of groups) {
-    const key = group.hallId ?? '__none__';
-    const existing = sections.get(key) ?? {
-      key,
-      name: group.hallName ?? 'Без зала',
-      hallId: group.hallId,
-      groups: [],
-    };
-    existing.groups.push(group);
-    sections.set(key, existing);
-  }
-
-  return [...sections.values()].sort((left, right) => {
-    // «Без зала» — в конце: это исключение, а не основной список.
-    if (left.hallId === null) return 1;
-    if (right.hallId === null) return -1;
-    return left.name.localeCompare(right.name);
-  });
+/** Показатель в шапке: число и подпись, без декоративных иконок. */
+function Kpi({
+  label,
+  note,
+  value,
+  tone,
+}: {
+  label: string;
+  note: string;
+  value: number;
+  tone?: 'warn';
+}) {
+  return (
+    <div className="rounded-card border border-line bg-white px-5 py-4">
+      <p
+        className={`text-2xl font-semibold leading-none ${
+          tone === 'warn' ? 'text-accent-text' : 'text-ink'
+        }`}
+      >
+        {value}
+      </p>
+      <p className="mt-2 text-sm text-muted">{label}</p>
+      <p className="mt-0.5 text-xs text-muted">{note}</p>
+    </div>
+  );
 }

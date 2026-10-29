@@ -1,0 +1,199 @@
+{
+  "halls": [
+    {
+      "id": "8f93b7d6-9ce2-4b6f-8369-db070549f9b0",
+      "name": "Заречная 4",
+      "address": "укажите адрес"
+    },
+    {
+      "id": "1d1ef32a-230e-4ad2-b650-38d0f939e397",
+      "name": "Охотская 84",
+      "address": "укажите адрес"
+    },
+    {
+      "id": "5bce67d7-cd14-4fc4-8ef0-83aaee9fa3ff",
+      "name": "Проезд энергетиков 29/1",
+      "address": "укажите адрес"
+    }
+  ],
+  "groups": [
+    {
+      "id": "3ae5d5fd-a5bf-4502-976e-cf7d91bfed4b",
+      "name": "Дети 5-7 лет",
+      "hallId": "8f93b7d6-9ce2-4b6f-8369-db070549f9b0",
+      "description": null,
+      "members": 5,
+      "trainers": [
+        {
+          "trainerId": "ab67003f-ee61-46d3-8698-9e9f569822f9",
+          "displayName": "Третьяков Алексей",
+          "isPrimary": true,
+          "assignedAt": "2026-10-28T14:36:29.250Z"
+        }
+      ],
+      "schedule": [
+        {
+          "weekday": "MONDAY",
+          "start": "18:00",
+          "end": "19:30"
+        },
+        {
+          "weekday": "WEDNESDAY",
+          "start": "18:00",
+          "end": "19:30"
+        },
+        {
+          "weekday": "FRIDAY",
+          "start": "10:00",
+          "end": "11:30"
+        }
+      ]
+    },
+    {
+      "id": "14049352-9174-4455-ae99-4c4048b364bc",
+      "name": "Младшая",
+      "hallId": "5bce67d7-cd14-4fc4-8ef0-83aaee9fa3ff",
+      "description": null,
+      "members": 6,
+      "trainers": [
+        {
+          "trainerId": "ab67003f-ee61-46d3-8698-9e9f569822f9",
+          "displayName": "Третьяков Алексей",
+          "isPrimary": true,
+          "assignedAt": "2026-10-28T14:37:06.552Z"
+        }
+      ],
+      "schedule": [
+        {
+          "weekday": "TUESDAY",
+          "start": "18:00",
+          "end": "19:30"
+        },
+        {
+          "weekday": "THURSDAY",
+          "start": "18:00",
+          "end": "19:30"
+        },
+        {
+          "weekday": "SATURDAY",
+          "start": "10:00",
+          "end": "11:15"
+        }
+      ]
+    },
+    {
+      "id": "c3760cbf-1fcf-48d4-b030-cb2145559e92",
+      "name": "Начальная группа",
+      "hallId": "1d1ef32a-230e-4ad2-b650-38d0f939e397",
+      "description": null,
+      "members": 5,
+      "trainers": [],
+      "schedule": [
+        {
+          "weekday": "TUESDAY",
+          "start": "18:00",
+          "end": "19:30"
+        },
+        {
+          "weekday": "THURSDAY",
+          "start": "18:00",
+          "end": "19:30"
+        },
+        {
+          "weekday": "SATURDAY",
+          "start": "10:00",
+          "end": "11:30"
+        }
+      ]
+    },
+    {
+      "id": "d6542827-242e-4894-83de-0ba79c1183ad",
+      "name": "Продолжающие",
+      "hallId": "1d1ef32a-230e-4ad2-b650-38d0f939e397",
+      "description": null,
+      "members": 5,
+      "trainers": [],
+      "schedule": [
+        {
+          "weekday": "TUESDAY",
+          "start": "18:00",
+          "end": "19:30"
+        },
+        {
+          "weekday": "THURSDAY",
+          "start": "18:00",
+          "end": "19:30"
+        },
+        {
+          "weekday": "SATURDAY",
+          "start": "10:00",
+          "end": "11:30"
+        }
+      ]
+    },
+    {
+      "id": "101baea8-00fe-4073-98c1-ff5d4b0ef4a4",
+      "name": "Старшая",
+      "hallId": "5bce67d7-cd14-4fc4-8ef0-83aaee9fa3ff",
+      "description": null,
+      "members": 5,
+      "trainers": [
+        {
+          "trainerId": "ab67003f-ee61-46d3-8698-9e9f569822f9",
+          "displayName": "Третьяков Алексей",
+          "isPrimary": true,
+          "assignedAt": "2026-10-29T07:24:48.061Z"
+        }
+      ],
+      "schedule": [
+        {
+          "weekday": "TUESDAY",
+          "start": "18:00",
+          "end": "19:30"
+        },
+        {
+          "weekday": "THURSDAY",
+          "start": "18:00",
+          "end": "19:30"
+        },
+        {
+          "weekday": "SATURDAY",
+          "start": "10:00",
+          "end": "11:30"
+        }
+      ]
+    },
+    {
+      "id": "bd2a116c-94ee-4343-86dc-ce37e5751135",
+      "name": "Школьники 8-12 лет",
+      "hallId": "8f93b7d6-9ce2-4b6f-8369-db070549f9b0",
+      "description": null,
+      "members": 5,
+      "trainers": [],
+      "schedule": [
+        {
+          "weekday": "TUESDAY",
+          "start": "18:00",
+          "end": "19:30"
+        },
+        {
+          "weekday": "THURSDAY",
+          "start": "18:00",
+          "end": "19:30"
+        },
+        {
+          "weekday": "SATURDAY",
+          "start": "10:00",
+          "end": "11:30"
+        }
+      ]
+    }
+  ],
+  "trainers": [
+    {
+      "id": "ab67003f-ee61-46d3-8698-9e9f569822f9",
+      "name": "Третьяков Алексей"
+    }
+  ],
+  "athletesTotal": 32
+}
