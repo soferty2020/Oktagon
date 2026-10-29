@@ -40,7 +40,10 @@ export interface CalendarEvent {
   startTime: string;
   endTime: string;
   title: string;
+  groupId: string | null;
+  hallId: string | null;
   hallName: string | null;
+  trainerId: string | null;
   trainerName: string | null;
   status: string | null;
   href: string;
@@ -49,6 +52,7 @@ export interface CalendarEvent {
 /** Шаблон в том виде, в котором его отдает API. */
 export interface TemplateForCalendar {
   id: string;
+  groupId: string;
   groupName: string;
   validFrom: string;
   validTo: string;
@@ -58,9 +62,42 @@ export interface TemplateForCalendar {
     weekday: string;
     startTime: string;
     endTime: string;
+    hallId: string | null;
     hallName: string | null;
+    trainerId: string | null;
     trainerName: string | null;
   }[];
+}
+
+/**
+ * Цвет группы для календаря.
+ *
+ * Цвет — не украшение: по нему в сетке видно, где чья группа. Берется из
+ * фиксированной палитры по идентификатору, поэтому у группы он не меняется
+ * между загрузками страницы.
+ */
+const GROUP_COLORS = [
+  { bg: '#FFF1E3', border: '#FFB26B', text: '#B4550A', dot: '#FF7A00' },
+  { bg: '#EAF1FF', border: '#9DBBFF', text: '#1E4FA3', dot: '#2F6FEB' },
+  { bg: '#E8F7EE', border: '#9ADBB4', text: '#1B6B3D', dot: '#2E9E5B' },
+  { bg: '#F1ECFF', border: '#C3B2FF', text: '#4A2FA3', dot: '#7C4DFF' },
+  { bg: '#FDECEC', border: '#F2A9A9', text: '#9B1C1C', dot: '#E5484D' },
+  { bg: '#E6F6F6', border: '#9CD9D9', text: '#0B5F5F', dot: '#00A3A3' },
+] as const;
+
+export type GroupColor = (typeof GROUP_COLORS)[number];
+
+export function groupColor(groupId: string | null | undefined): GroupColor {
+  if (!groupId) {
+    return GROUP_COLORS[0];
+  }
+
+  let hash = 0;
+  for (const char of groupId) {
+    hash = (hash * 31 + char.charCodeAt(0)) % 997;
+  }
+
+  return GROUP_COLORS[hash % GROUP_COLORS.length] ?? GROUP_COLORS[0];
 }
 
 /** Дата в поясе клуба как `YYYY-MM-DD`. */
@@ -153,13 +190,14 @@ export function weekdayOf(date: string): WeekdayName {
 }
 
 /**
- * Черновики шаблонов, развернутые в даты периода.
+ * Слоты шаблонов, развернутые в даты периода.
  *
- * Черновик — это еще не занятия: пока шаблон не опубликован, материализации
- * нет. Но планировщику нужно видеть, что получится, поэтому показываем слоты
- * с пометкой (#72).
+ * Календарь показывает регулярность, а не материализованные занятия: слот
+ * повторяется каждую неделю, и по нему видно, как выглядит расписание группы.
+ * Черновик отличается пометкой: пока шаблон не опубликован, занятий нет, но
+ * планировщику нужно видеть, что получится (#72).
  */
-export function expandDraftSlots(
+export function expandTemplateSlots(
   templates: TemplateForCalendar[],
   from: string,
   to: string,
@@ -167,9 +205,7 @@ export function expandDraftSlots(
   const events: CalendarEvent[] = [];
 
   for (const template of templates) {
-    if (template.publishedAt) {
-      continue;
-    }
+    const kind = template.publishedAt ? 'session' : 'draft';
 
     for (const slot of template.slots) {
       for (let date = from; date <= to; date = addDays(date, 1)) {
@@ -182,14 +218,17 @@ export function expandDraftSlots(
 
         events.push({
           id: `${template.id}-${slot.id}-${date}`,
-          kind: 'draft',
+          kind,
           date,
           startTime: slot.startTime.slice(0, 5),
           endTime: slot.endTime.slice(0, 5),
           title: template.groupName,
+          groupId: template.groupId,
+          hallId: slot.hallId,
           hallName: slot.hallName,
+          trainerId: slot.trainerId,
           trainerName: slot.trainerName,
-          status: 'черновик',
+          status: template.publishedAt ? null : 'черновик',
           href: `/schedule/${template.id}`,
         });
       }

@@ -48,7 +48,12 @@ function StateMessages({ state }: { state: ScheduleFormState }) {
   );
 }
 
-/** Создание шаблона расписания на квартал. */
+/**
+ * Создание шаблона расписания на квартал.
+ *
+ * Панель, а не колонка справа: по макету это действие стоит рядом с KPI
+ * (docs/28-admin-screens.md), и поля выстраиваются в строку.
+ */
 export function CreateTemplateForm({
   groups,
   defaultYear,
@@ -63,27 +68,47 @@ export function CreateTemplateForm({
   return (
     <form
       action={formAction}
-      className="flex flex-col gap-3 rounded-card border border-line bg-white p-5"
+      className="rounded-card border border-line bg-white p-4"
     >
-      <h2 className="text-sm font-semibold text-ink">Расписание на квартал</h2>
+      <div className="flex items-start gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+          <svg
+            aria-hidden
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.6}
+            viewBox="0 0 24 24"
+          >
+            <rect height="16" rx="2" width="18" x="3" y="5" />
+            <path d="M3 10h18M8 3v4M16 3v4" />
+          </svg>
+        </span>
+        <div>
+          <h2 className="text-sm font-semibold text-ink">Создать квартальное расписание</h2>
+          <p className="mt-0.5 text-xs text-muted">
+            Автоматически создаст занятия для выбранной группы
+          </p>
+        </div>
+      </div>
 
-      <label className={labelClass}>
-        Группа
-        <select name="groupId" required className={inputClass} defaultValue="">
-          <option value="" disabled>
-            выберите группу
-          </option>
-          {groups.map((group) => (
-            <option key={group.id} value={group.id}>
-              {/* Зал в подписи: «Младшая» есть в двух залах (#72). */}
-              {group.hallName ? `${group.hallName} · ${group.name}` : group.name}
+      <div className="mt-3 grid gap-2 sm:grid-cols-[2fr_1fr_1fr_auto]">
+        <label className={labelClass}>
+          Группа
+          <select name="groupId" required className={inputClass} defaultValue="">
+            <option value="" disabled>
+              Выберите группу
             </option>
-          ))}
-        </select>
-      </label>
+            {groups.map((group) => (
+              <option key={group.id} value={group.id}>
+                {/* Зал в подписи: «Младшая» есть в двух залах (#72). */}
+                {group.hallName ? `${group.hallName} · ${group.name}` : group.name}
+              </option>
+            ))}
+          </select>
+        </label>
 
-      <div className="flex gap-3">
-        <label className={`${labelClass} flex-1`}>
+        <label className={labelClass}>
           Год
           <input
             type="number"
@@ -95,26 +120,28 @@ export function CreateTemplateForm({
             className={inputClass}
           />
         </label>
-        <label className={`${labelClass} flex-1`}>
+
+        <label className={labelClass}>
           Квартал
           <select name="quarter" defaultValue={String(defaultQuarter)} className={inputClass}>
             {[1, 2, 3, 4].map((quarter) => (
               <option key={quarter} value={quarter}>
-                {quarter}
+                {quarter} квартал
               </option>
             ))}
           </select>
         </label>
+
+        <button
+          type="submit"
+          disabled={pending}
+          className="h-[38px] self-end rounded-md bg-accent px-5 text-sm font-medium text-white hover:bg-accent/90 disabled:opacity-60"
+        >
+          {pending ? 'Создание…' : 'Создать'}
+        </button>
       </div>
 
       <StateMessages state={state} />
-
-      <button type="submit" disabled={pending} className={buttonClass}>
-        {pending ? 'Сохранение…' : 'Создать расписание'}
-      </button>
-      <p className="text-xs text-muted">
-        Расписание на квартал у группы одно: повторное создание будет отклонено.
-      </p>
     </form>
   );
 }

@@ -12,7 +12,7 @@ import {
   type CalendarEvent,
   clubDate,
   clubTime,
-  expandDraftSlots,
+  expandTemplateSlots,
   monthRange,
   startOfWeek,
   todayInClub,
@@ -45,7 +45,9 @@ interface TrainingSession {
 /** Занятие для календаря: поля совпадают с `TrainingSessionView` API. */
 interface SessionView {
   id: string;
+  groupId: string;
   groupName: string;
+  hallId: string | null;
   hallName: string | null;
   trainerName: string | null;
   startsAt: string;
@@ -131,7 +133,10 @@ export default async function DashboardPage() {
         startTime: clubTime(session.startsAt),
         endTime: clubTime(session.endsAt),
         title: session.groupName,
+        groupId: session.groupId,
+        hallId: session.hallId,
         hallName: session.hallName,
+        trainerId: null,
         trainerName: session.trainerName,
         status: session.status,
         href: `/schedule/sessions/${session.id}/attendance`,
@@ -139,8 +144,9 @@ export default async function DashboardPage() {
     }
   }
   if (calendarTemplates.ok) {
+    // Регулярность из слотов: так же, как на экране «Расписание».
     calendarEvents.push(
-      ...expandDraftSlots(calendarTemplates.data, calendarFrom, calendarTo),
+      ...expandTemplateSlots(calendarTemplates.data, calendarFrom, calendarTo),
     );
   }
 
