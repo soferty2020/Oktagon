@@ -76,6 +76,7 @@ export class AthletesService {
     const athlete = await this.requireAthlete(athleteId);
     const accounts = await this.repository.listAccounts(athleteId);
     const affiliation = await this.repository.findAffiliation(athleteId);
+    const sportsHistory = await this.repository.listSportsHistory(athleteId);
     const canViewContacts = await this.canViewContacts(callerUserId);
 
     return {
@@ -86,6 +87,7 @@ export class AthletesService {
       trainer: affiliation.trainer,
       hall: affiliation.hall,
     hallId: athlete.hallId ?? null,
+      sportsHistory,
       linkedAccounts: accounts.map((account) => ({
         userId: account.userId,
         email: account.email,

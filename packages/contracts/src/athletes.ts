@@ -42,9 +42,32 @@ ull — миграция не смогла вывести ступень одн�
   updatedAt: string;
 }
 
+/** Участие в соревновании: строка спортивной истории в карточке (#79). */
+export interface AthleteSportsEntry {
+  competitionId: string;
+  competitionTitle: string;
+  /** Дата начала турнира, ISO-8601. */
+  startsAt: string;
+  level: string;
+  discipline: string;
+  /** Категория на момент участия: снимок, а не текущее название справочника. */
+  category: string;
+  result: string;
+  place: number | null;
+  medal: string | null;
+}
+
 /** Детали карточки: заметки клуба и связанные аккаунты. */
 export interface AthleteDetails extends AthleteView {
   notes: string | null;
+  /**
+   * Спортивная история: опубликованные турниры, где спортсмен участвовал.
+   *
+   * Нужна в карточке: тренер должен видеть достижения там же, где тренировки и
+   * пояс, а не искать их в разделе «Соревнования». Неопубликованные турниры не
+   * показываются — их результат ещё не подтверждён клубом.
+   */
+  sportsHistory: AthleteSportsEntry[];
   linkedAccounts: Array<{
     userId: string;
     email: string;

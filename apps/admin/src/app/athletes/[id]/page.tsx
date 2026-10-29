@@ -39,6 +39,18 @@ interface AthleteDetails {
   group: { id: string; name: string } | null;
   trainer: { id: string; displayName: string } | null;
   hall: { id: string; name: string } | null;
+  /** Спортивная история: опубликованные турниры (#79). */
+  sportsHistory: {
+    competitionId: string;
+    competitionTitle: string;
+    startsAt: string;
+    level: string;
+    discipline: string;
+    category: string;
+    result: string;
+    place: number | null;
+    medal: string | null;
+  }[];
   linkedAccounts: { userId: string; email: string; relation: string; isPrimary: boolean }[];
 }
 
@@ -192,6 +204,7 @@ export default async function AthletePage({
           {activeTab === 'profile' ? (
             <>
               <ContactsCard athlete={person} />
+              <SportsHistoryCard entries={person.sportsHistory} />
               <HistoryCard history={history} />
             </>
           ) : null}
@@ -477,6 +490,71 @@ function ContactsCard({ athlete }: { athlete: AthleteDetails }) {
           </div>
         ))}
       </dl>
+    </section>
+  );
+}
+
+/** Спортивная история: турниры, категории, места и медали (#79). */
+function SportsHistoryCard({ entries }: { entries: AthleteDetails['sportsHistory'] }) {
+  const RESULT_LABELS: Record<string, string> = {
+    PLACED: 'Занял место',
+    PARTICIPATED: 'Участие',
+    DISQUALIFIED: 'Дисквалификация',
+    PENDING: 'Ожидает итога',
+  };
+  const MEDAL_LABELS: Record<string, string> = {
+    GOLD: 'золото',
+    SILVER: 'серебро',
+    BRONZE: 'бронза',
+  };
+
+  return (
+    <section className="rounded-card border border-line bg-white p-6">
+      <h2 className="text-base font-semibold text-ink">Достижения</h2>
+      <p className="mt-1 text-xs text-muted">Опубликованные турниры и результаты</p>
+
+      {entries.length === 0 ? (
+        <p className="mt-4 rounded-lg border border-dashed border-line px-4 py-8 text-center text-sm text-muted">
+          Спортивной истории пока нет — результаты появятся после публикации турнира.
+        </p>
+      ) : (
+        <ul className="mt-4 flex flex-col divide-y divide-line">
+          {entries.map((entry) => (
+            <li
+              className="flex flex-wrap items-center justify-between gap-3 py-3"
+              key={`${entry.competitionId}-${entry.category}-${entry.discipline}`}
+            >
+              <div className="min-w-0">
+                <Link
+                  className="text-sm font-medium text-ink underline decoration-line hover:decoration-accent"
+                  href={`/competitions/${entry.competitionId}`}
+                >
+                  {entry.competitionTitle}
+                </Link>
+                <p className="mt-0.5 text-xs text-muted">
+                  {new Date(entry.startsAt).toLocaleDateString('ru-RU', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })}{' '}
+                  · {entry.discipline === 'KUMITE' ? 'Кумитэ' : 'Ката'} · {entry.category}
+                </p>
+              </div>
+
+              <span className="flex items-center gap-2 text-xs">
+                <span className="text-ink">
+                  {entry.place ? `${entry.place} место` : (RESULT_LABELS[entry.result] ?? entry.result)}
+                </span>
+                {entry.medal ? (
+                  <span className="rounded-full bg-amber-50 px-2 py-0.5 text-amber-700">
+                    {MEDAL_LABELS[entry.medal] ?? entry.medal}
+                  </span>
+                ) : null}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

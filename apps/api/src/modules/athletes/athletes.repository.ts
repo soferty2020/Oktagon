@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { AthleteSportsEntry } from '@octagon/contracts';
 import { AthleteStatus, BeltGrade, Gender } from '../../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -116,6 +117,15 @@ export abstract class AthletesRepository {
    * подставляет первое попавшееся: «не в группе» — нормальное состояние.
    */
   abstract findAffiliation(athleteId: string): Promise<AthleteAffiliation>;
+
+  /**
+   * Спортивная история: опубликованные турниры спортсмена (#79).
+   *
+   * Черновики не попадают: результат ещё не подтверждён, и показывать его в
+   * карточке раньше публикации — то же, что раскрыть итог аттестации до
+   * публикации (#39).
+   */
+  abstract listSportsHistory(athleteId: string): Promise<AthleteSportsEntry[]>;
 }
 
 const ATHLETE_SELECT = {
@@ -362,5 +372,41 @@ export class PrismaAthletesRepository extends AthletesRepository {
       trainer: trainer ? { id: trainer.id, displayName: trainer.displayName } : null,
       hall: ownHall ?? membership.group.hall,
     };
+  }
+
+  async listSportsHistory(athleteId: string): Promise<AthleteSportsEntry[]> {
+    const entries = await this.prisma.db.competitionEntry.findMany({
+      where: {
+        // Только опубликованные: до публикации результат не подтверждён клубом.
+        participant: { athleteId, competition: { status: 'PUBLISHED' } },
+      },
+      orderBy: { participant: { competition: { startsAt: 'desc' } } },
+      select: {
+        discipline: true,
+        categorySnapshot: true,
+        result: true,
+        place: true,
+        medal: true,
+        participant: {
+          select: {
+            competition: {
+              select: { id: true, title: true, startsAt: true, level: true },
+            },
+          },
+        },
+      },
+    });
+
+    return entries.map((entry) => ({
+      competitionId: entry.participant.competition.id,
+      competitionTitle: entry.participant.competition.title,
+      startsAt: entry.participant.competition.startsAt.toISOString(),
+      level: entry.participant.competition.level,
+      discipline: entry.discipline,
+      category: entry.categorySnapshot,
+      result: entry.result,
+      place: entry.place,
+      medal: entry.medal === 'NONE' ? null : entry.medal,
+    }));
   }
 }

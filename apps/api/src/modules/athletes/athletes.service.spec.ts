@@ -48,6 +48,7 @@ describe('AthletesService', () => {
       findAffiliation: jest
         .fn()
         .mockResolvedValue({ group: null, trainer: null, branch: null }),
+      listSportsHistory: jest.fn().mockResolvedValue([]),
       findAccount: jest.fn().mockResolvedValue(null),
       linkAccount: jest.fn().mockResolvedValue({
         userId: 'user-1',
