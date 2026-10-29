@@ -4,6 +4,7 @@ import { AuditService } from '../audit/audit.service';
 import { ResourceScopeService } from '../identity/resource-scope.service';
 import type { PermissionResolver } from '../../shared/permissions.guard';
 import type { AthleteRecord, AthletesRepository } from './athletes.repository';
+import type { AthleteView } from '@octagon/contracts';
 import { AthletesService } from './athletes.service';
 
 const athlete: AthleteRecord = {
@@ -39,6 +40,7 @@ describe('AthletesService', () => {
   beforeEach(() => {
     repository = {
       list: jest.fn().mockResolvedValue([athlete]),
+      count: jest.fn().mockResolvedValue(0),
       find: jest.fn().mockResolvedValue(athlete),
       create: jest.fn().mockResolvedValue(athlete),
       update: jest.fn().mockResolvedValue(athlete),
@@ -85,7 +87,7 @@ describe('AthletesService', () => {
 
   describe('список', () => {
     it('суперадмин видит всех и контакты', async () => {
-      const list = await service.list('admin-1');
+      const list = (await service.list('admin-1')) as AthleteView[];
 
       expect(list).toHaveLength(1);
       expect(list[0]?.phone).toBe('+7 700 111 22 33');
@@ -94,15 +96,16 @@ describe('AthletesService', () => {
     it('ограничивает выборку по scope тренера', async () => {
       scope.visibleAthleteIds.mockResolvedValue(['athlete-9']);
 
-      const list = await service.list('coach-1');
+      await service.list('coach-1');
 
-      expect(list).toHaveLength(0);
+      // Зона видимости уходит в запрос: пагинация считается по тем же строкам.
+      expect(repository.list).toHaveBeenCalledWith(expect.objectContaining({ athleteIds: ['athlete-9'] }));
     });
 
     it('пропускает спортсмена, если он в зоне видимости', async () => {
       scope.visibleAthleteIds.mockResolvedValue(['athlete-1']);
 
-      const list = await service.list('coach-1');
+      const list = (await service.list('coach-1')) as AthleteView[];
 
       expect(list).toHaveLength(1);
     });
@@ -113,16 +116,44 @@ describe('AthletesService', () => {
         grants: [],
       });
 
-      const list = await service.list('coach-1');
+      const list = (await service.list('coach-1')) as AthleteView[];
 
       expect(list[0]?.phone).toBeNull();
       expect(list[0]?.email).toBeNull();
     });
 
-    it('передает фильтры в репозиторий', async () => {
-      await service.list('admin-1', { status: 'ACTIVE', search: 'Али' });
+    it('передает фильтры и сортировку в репозиторий', async () => {
+      await service.list('admin-1', {
+        status: 'ACTIVE',
+        search: 'Али',
+        hallId: 'hall-1',
+        groupId: 'group-1',
+        sortBy: 'birthDate',
+        sortOrder: 'desc',
+      });
 
-      expect(repository.list).toHaveBeenCalledWith({ status: 'ACTIVE', search: 'Али' });
+      expect(repository.list).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'ACTIVE',
+          search: 'Али',
+          hallId: 'hall-1',
+          groupId: 'group-1',
+          sortBy: 'birthDate',
+          sortOrder: 'desc',
+        }),
+      );
+    });
+
+    it('с page отдаёт страницу и общее число', async () => {
+      repository.list.mockResolvedValue([{ ...athlete, lastName: 'Абдрахманова' }]);
+      repository.count.mockResolvedValue(32);
+
+      const page = await service.list('admin-1', { page: 2, limit: 10 });
+
+      expect(page).toMatchObject({ total: 32, page: 2, limit: 10 });
+      expect(repository.list).toHaveBeenCalledWith(
+        expect.objectContaining({ skip: 10, take: 10 }),
+      );
     });
   });
 

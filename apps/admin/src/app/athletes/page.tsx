@@ -1,148 +1,148 @@
-import { describePermission } from '@/lib/permissions';
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
-import { AppShell, Notice, PageHeader } from '@/components/app-shell';
-import { EmptyState } from '@/components/empty-state';
-import { StatusBadge } from '@/components/status-badge';
-import { fieldClass, secondaryButtonClass } from '@/components/ui';
+import { AppShell, PageHeader } from '@/components/app-shell';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
-import { CreateAthleteForm } from './athlete-forms';
+import { AthletesBoard, type AthleteRow } from './athletes-board';
 
-export const metadata = {
-  title: 'Спортсмены — OCTAGON',
-};
+export const metadata = { title: 'Спортсмены — OCTAGON' };
 
-interface AthleteView {
-  id: string;
-  firstName: string;
-  lastName: string;
-  middleName: string | null;
-  birthDate: string | null;
-  status: string;
-  phone: string | null;
-  email: string | null;
+interface Page {
+  items: AthleteRow[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
+interface GroupView {
+  id: string;
+  name: string;
+  hallId: string | null;
+  isActive: boolean;
+}
+
+interface HallView {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
+const SORTS = ['lastName', 'birthDate', 'status'] as const;
+type SortBy = (typeof SORTS)[number];
+
 /**
- * Справочник спортсменов (C4).
+ * Реестр спортсменов (#81): серверные поиск, фильтры, сортировка и пагинация.
  *
- * Контакты приходят пустыми, если у пользователя нет права
- * `athletes.contacts.view`: фильтрация выполняется на backend, интерфейс лишь
- * показывает прочерк (docs/15-security.md).
+ * Сортировка считается в базе, а не в браузере: иначе на страницу 2 попадали
+ * бы не те строки. URL — источник состояния, ссылка на карточку возвращает
+ * в список с теми же параметрами.
  */
 export default async function AthletesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<Record<string, string | undefined>>;
 }) {
-  const params = await searchParams;
-  const query = (params.q ?? '').trim().toLowerCase();
-
   const user = await getCurrentUser();
-  if (!user) {
-    redirect('/login');
-  }
+  if (!user) redirect('/login');
 
+  const params = await searchParams;
+  const page = Math.max(1, Number(params.page ?? 1) || 1);
+  const sortBy: SortBy = SORTS.includes((params.sortBy ?? '') as SortBy)
+    ? ((params.sortBy ?? 'lastName') as SortBy)
+    : 'lastName';
+  const sortOrder = params.sortOrder === 'desc' ? 'desc' : 'asc';
+  const search = (params.search ?? '').trim();
   const { accessToken } = await readTokens();
-  // Поиск серверный (#28): API ищет `contains` по фамилии, имени и отчеству.
-  // Раньше фильтровался уже загруженный список — на 300+ спортсменах поиск
-  // молчал про тех, кто не попал в первую загрузку.
-  const path = query ? `/athletes?search=${encodeURIComponent(query)}` : '/athletes';
-  const result = await apiFetch<AthleteView[]>(path, { accessToken });
-  const canViewContacts = user.permissions.includes('athletes.contacts.view');
-  const canEdit = user.permissions.includes('athletes.edit');
 
-  const rows = result.ok ? result.data : [];
+  const query = new URLSearchParams({
+    page: String(page),
+    limit: '20',
+    sortBy,
+    sortOrder,
+    ...(search ? { search } : {}),
+    ...(params.hallId ? { hallId: params.hallId } : {}),
+    ...(params.groupId ? { groupId: params.groupId } : {}),
+    ...(params.status ? { status: params.status } : {}),
+  });
+
+  const [result, all, groups, halls] = await Promise.all([
+    apiFetch<Page>(`/athletes?${query.toString()}`, { accessToken }),
+    apiFetch<AthleteRow[]>('/athletes', { accessToken }),
+    apiFetch<GroupView[]>('/groups', { accessToken }),
+    apiFetch<HallView[]>('/halls', { accessToken }),
+  ]);
+
+  const everyone = all.ok ? all.data : [];
+  const groupList = (groups.ok ? groups.data : []).filter((group) => group.isActive);
+
+  // Группа спортсмена: имя нужно в таблице, отдельного поля в списке нет (#81).
+  const memberships = await Promise.all(
+    groupList.map((group) =>
+      apiFetch<{ members: { athleteId: string }[] }>(`/groups/${group.id}`, { accessToken }),
+    ),
+  );
+  const groupByAthlete: Record<string, string> = {};
+  for (const [index, details] of memberships.entries()) {
+    for (const member of details.ok ? details.data.members : []) {
+      groupByAthlete[member.athleteId] = groupList[index]?.name ?? '';
+    }
+  }
+  const hallList = (halls.ok ? halls.data : []).filter((hall) => hall.isActive);
+
+  const active = everyone.filter((athlete) => athlete.status === 'ACTIVE').length;
+  const archived = everyone.length - active;
 
   return (
     <AppShell user={user}>
       <PageHeader
         title="Спортсмены"
-        description="Список ограничен зоной доступа текущего пользователя"
+        description="Реестр спортсменов клуба: поиск, фильтры и карточки."
       />
 
-      {!canViewContacts ? (
-        <div className="mb-4">
-          <Notice>Контактные данные скрыты: нет права: {describePermission('athletes.contacts.view')}.</Notice>
-        </div>
+      <section className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Kpi label="Всего спортсменов" note="в реестре" value={everyone.length} />
+        <Kpi label="Активных" note="участвуют в группах" value={active} />
+        <Kpi label="Архивных" note="в архиве" value={archived} />
+        <Kpi
+          label="Найдено"
+          note={search ? `по запросу «${search}»` : 'по фильтрам'}
+          value={result.ok ? result.data.total : 0}
+        />
+      </section>
+
+      {!result.ok ? (
+        <p
+          className="mt-4 rounded-card border border-line bg-white px-4 py-3 text-sm text-danger"
+          role="alert"
+        >
+          {describeError(result.error)}
+        </p>
       ) : null}
 
-      <form action="/athletes" className="mb-4 flex flex-wrap items-center gap-2">
-        <input
-          name="q"
-          defaultValue={params.q ?? ''}
-          placeholder="Поиск по фамилии, имени или отчеству"
-          className={`${fieldClass} max-w-sm bg-white`}
-          aria-label="Поиск спортсмена"
-        />
-        <button type="submit" className={`${secondaryButtonClass} bg-white`}>
-          Найти
-        </button>
-        {query ? (
-          <Link href="/athletes" className="text-sm text-accent hover:underline">
-            Сбросить
-          </Link>
-        ) : null}
-      </form>
-
-      <div className={canEdit ? 'grid gap-6 lg:grid-cols-[2fr_1fr]' : ''}>
-        {result.ok && result.data.length === 0 ? (
-          <div className="rounded-card border border-line bg-white">
-            <EmptyState
-              icon="athletes"
-              title="Спортсменов пока нет"
-              description="Заполните карточку справа: после этого спортсмена можно записать в группу и вести оплаты."
-            />
-          </div>
-        ) : (
-          <div className="rounded-card border border-line bg-white">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-left text-sm">
-              <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
-                <tr>
-                  <th className="px-4 py-3">ФИО</th>
-                  <th className="px-4 py-3">Дата рождения</th>
-                  <th className="px-4 py-3">Телефон</th>
-                  <th className="px-4 py-3">Статус</th>
-                </tr>
-              </thead>
-              <tbody>
-                {result.ok && rows.length > 0 ? (
-                  rows.map((athlete) => (
-                    <tr key={athlete.id} className="border-b border-line last:border-0">
-                      <td className="px-4 py-3">
-                        <Link
-                          href={`/athletes/${athlete.id}`}
-                          className="font-medium text-ink underline decoration-line hover:decoration-accent"
-                        >
-                          {athlete.lastName} {athlete.firstName}
-                          {athlete.middleName ? ` ${athlete.middleName}` : ''}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3 text-muted">{athlete.birthDate ?? '—'}</td>
-                      <td className="px-4 py-3 text-muted">{athlete.phone ?? '—'}</td>
-                      <td className="px-4 py-3">
-                        <StatusBadge value={athlete.status} />
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-6">
-                      <Notice>{result.ok ? 'Ничего не найдено по запросу.' : describeError(result.error)}</Notice>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-            </div>
-          </div>
-        )}
-
-        {canEdit ? <CreateAthleteForm /> : null}
-      </div>
+      <AthletesBoard
+        data={result.ok ? result.data : { items: [], total: 0, page: 1, limit: 20 }}
+        groups={groupList.map((group) => ({ id: group.id, name: group.name, hallId: group.hallId }))}
+        halls={hallList.map((hall) => ({ id: hall.id, name: hall.name }))}
+        groupByAthlete={groupByAthlete}
+        params={{
+          search,
+          hallId: params.hallId ?? '',
+          groupId: params.groupId ?? '',
+          status: params.status ?? '',
+        }}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+      />
     </AppShell>
+  );
+}
+
+function Kpi({ label, note, value }: { label: string; note: string; value: number }) {
+  return (
+    <div className="rounded-card border border-line bg-white px-5 py-4">
+      <p className="text-2xl font-semibold leading-none text-ink">{value}</p>
+      <p className="mt-2 text-sm text-muted">{label}</p>
+      <p className="mt-0.5 text-xs text-muted">{note}</p>
+    </div>
   );
 }

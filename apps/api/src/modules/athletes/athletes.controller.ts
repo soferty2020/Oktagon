@@ -27,7 +27,7 @@ import {
 
 import { AuthGuard, CurrentUser, type AuthenticatedUser } from '../../shared/auth-stub';
 import { PermissionsGuard, RequirePermissions } from '../../shared/permissions.guard';
-import { AthletesService } from './athletes.service';
+import { AthletesService, type AthletePage } from './athletes.service';
 import {
   CreateAthleteDto,
   LinkAccountDto,
@@ -59,8 +59,17 @@ export class AthletesController {
   list(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: ListAthletesQueryDto,
-  ): Promise<AthleteView[]> {
-    return this.athletes.list(user.id, { status: query.status, search: query.search });
+  ): Promise<AthleteView[] | AthletePage> {
+    return this.athletes.list(user.id, {
+      status: query.status,
+      search: query.search,
+      hallId: query.hallId,
+      groupId: query.groupId,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
+      page: query.page,
+      limit: query.limit,
+    });
   }
 
   @Get(':id')

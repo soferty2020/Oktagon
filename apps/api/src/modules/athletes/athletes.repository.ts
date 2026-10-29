@@ -3,6 +3,20 @@ import type { AthleteSportsEntry } from '@octagon/contracts';
 import { AthleteStatus, BeltGrade, Gender } from '../../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 
+/** Параметры реестра: фильтры, сортировка и пагинация (#81). */
+export interface AthleteListOptions {
+  status?: AthleteStatus;
+  search?: string;
+  hallId?: string;
+  groupId?: string;
+  /** Видимая зона тренера: `null` — ограничений нет. */
+  athleteIds?: string[] | null;
+  sortBy?: 'lastName' | 'birthDate' | 'status';
+  sortOrder?: 'asc' | 'desc';
+  skip?: number;
+  take?: number;
+}
+
 export interface AthleteRecord {
   id: string;
   firstName: string;
@@ -87,7 +101,9 @@ export interface LinkAccountInput {
  * без БД (docs/13-architecture.md).
  */
 export abstract class AthletesRepository {
-  abstract list(options: { status?: AthleteStatus; search?: string }): Promise<AthleteRecord[]>;
+  abstract list(options?: AthleteListOptions): Promise<AthleteRecord[]>;
+
+  abstract count(options?: AthleteListOptions): Promise<number>;
   abstract find(id: string): Promise<AthleteRecord | null>;
   abstract create(input: CreateAthleteInput): Promise<AthleteRecord>;
   abstract update(id: string, input: UpdateAthleteInput): Promise<AthleteRecord>;
@@ -172,26 +188,69 @@ export class PrismaAthletesRepository extends AthletesRepository {
     super();
   }
 
-  async list(options: { status?: AthleteStatus; search?: string }): Promise<AthleteRecord[]> {
+  private where(options: AthleteListOptions) {
     const search = options.search?.trim();
+    const membership =
+      options.hallId || options.groupId
+        ? {
+            some: {
+              state: 'ACTIVE' as const,
+              ...(options.groupId ? { groupId: options.groupId } : {}),
+              ...(options.hallId ? { group: { hallId: options.hallId } } : {}),
+            },
+          }
+        : undefined;
 
+    return {
+      archivedAt: null,
+      ...(options.status ? { status: options.status } : {}),
+      ...(options.athleteIds ? { id: { in: options.athleteIds } } : {}),
+      ...(membership ? { memberships: membership } : {}),
+      ...(search
+        ? {
+            OR: [
+              { firstName: { contains: search, mode: 'insensitive' as const } },
+              { lastName: { contains: search, mode: 'insensitive' as const } },
+              { middleName: { contains: search, mode: 'insensitive' as const } },
+            ],
+          }
+        : {}),
+    };
+  }
+
+  /** Порядок: выбранная колонка, затем ФИО и id — строки не прыгают между страницами. */
+  private orderBy(options: AthleteListOptions) {
+    const direction = options.sortOrder === 'desc' ? ('desc' as const) : ('asc' as const);
+    const stable = [
+      { lastName: direction },
+      { firstName: direction },
+      { middleName: direction },
+      { id: direction },
+    ];
+
+    if (options.sortBy === 'birthDate') {
+      // Пустые даты всегда в конце, независимо от направления.
+      return [{ birthDate: { sort: direction, nulls: 'last' as const } }, ...stable];
+    }
+    if (options.sortBy === 'status') {
+      // ACTIVE → FROZEN → ARCHIVED: порядок домена, а не случайный enum.
+      return [{ status: direction }, ...stable];
+    }
+    return stable;
+  }
+
+  async list(options: AthleteListOptions = {}): Promise<AthleteRecord[]> {
     return this.prisma.db.athlete.findMany({
-      where: {
-        archivedAt: null,
-        ...(options.status ? { status: options.status } : {}),
-        ...(search
-          ? {
-              OR: [
-                { firstName: { contains: search, mode: 'insensitive' } },
-                { lastName: { contains: search, mode: 'insensitive' } },
-                { middleName: { contains: search, mode: 'insensitive' } },
-              ],
-            }
-          : {}),
-      },
-      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+      where: this.where(options),
+      orderBy: this.orderBy(options),
+      ...(options.take ? { take: options.take } : {}),
+      ...(options.skip ? { skip: options.skip } : {}),
       select: ATHLETE_SELECT,
     });
+  }
+
+  async count(options: AthleteListOptions = {}): Promise<number> {
+    return this.prisma.db.athlete.count({ where: this.where(options) });
   }
 
   async find(id: string): Promise<AthleteRecord | null> {

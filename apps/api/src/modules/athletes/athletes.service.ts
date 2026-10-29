@@ -22,7 +22,7 @@ import { AuditService } from '../audit/audit.service';
 import { ResourceScopeService } from '../identity/resource-scope.service';
 // Обычный импорт, не `import type`: AthletesRepository — DI-токен, его значение
 // должно попасть в метаданные конструктора (emitDecoratorMetadata).
-import { AthletesRepository } from './athletes.repository';
+import { type AthleteListOptions, AthletesRepository } from './athletes.repository';
 import type {
   AthleteRecord,
   CreateAthleteInput as CreateAthleteRecordInput,
@@ -40,6 +40,14 @@ import type {
  * список только своих спортсменов (docs/21-permission-matrix.md, Enforcement).
  * Даты приходят из контракта строками и преобразуются в Date на этой границе.
  */
+/** Страница реестра спортсменов (#81). */
+export interface AthletePage {
+  items: AthleteView[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 @Injectable()
 export class AthletesService {
   private readonly logger = new Logger(AthletesService.name);
@@ -54,20 +62,49 @@ export class AthletesService {
   /** Список спортсменов в зоне видимости вызывающего. */
   async list(
     callerUserId: string,
-    options: { status?: string; search?: string } = {},
-  ): Promise<AthleteView[]> {
+    options: {
+      status?: string;
+      search?: string;
+      hallId?: string;
+      groupId?: string;
+      sortBy?: 'lastName' | 'birthDate' | 'status';
+      sortOrder?: 'asc' | 'desc';
+      page?: number;
+      limit?: number;
+    } = {},
+  ): Promise<AthleteView[] | AthletePage> {
     const visible = await this.scope.visibleAthleteIds(callerUserId);
     const canViewContacts = await this.canViewContacts(callerUserId);
-    const allowed = visible === null ? null : new Set(visible);
 
-    const athletes = await this.repository.list({
+    const query = {
       status: options.status as AthleteStatus | undefined,
       search: options.search,
-    });
+      hallId: options.hallId,
+      groupId: options.groupId,
+      athleteIds: visible,
+      sortBy: options.sortBy,
+      sortOrder: options.sortOrder,
+    };
 
-    return athletes
-      .filter((athlete) => allowed === null || allowed.has(athlete.id))
-      .map((athlete) => toAthleteView(athlete, canViewContacts));
+    // Без page отдаём прежний массив: старые клиенты не ломаются.
+    if (!options.page) {
+      const athletes = await this.repository.list(query);
+      return athletes.map((athlete) => toAthleteView(athlete, canViewContacts));
+    }
+
+    const page = Math.max(1, options.page);
+    const limit = Math.min(100, Math.max(1, options.limit ?? 20));
+    const [rows, total] = await Promise.all([
+      this.repository.list({ ...query, skip: (page - 1) * limit, take: limit }),
+      this.repository.count(query),
+    ]);
+
+    return {
+      items: rows.map((athlete) => toAthleteView(athlete, canViewContacts)),
+      total,
+      page,
+      limit,
+    };
   }
 
   async get(callerUserId: string, athleteId: string): Promise<AthleteDetails> {
@@ -366,3 +403,12 @@ function toAthleteView(athlete: AthleteRecord, canViewContacts: boolean): Athlet
 
   return applyContactsVisibility(view, canViewContacts);
 }
+
+/** Страница реестра спортсменов (#81). */
+export interface AthletePage {
+  items: AthleteView[];
+  total: number;
+  page: number;
+  limit: number;
+}
+

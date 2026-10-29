@@ -1,0 +1,6551 @@
+[
+  {
+    "command": "frame.create",
+    "params": {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 1090,
+      "name": "OCTAGON / Спортсмены — desktop 1440",
+      "props": {
+        "fill": "#F7F7F9"
+      }
+    }
+  },
+  {
+    "command": "node.create",
+    "params": {
+      "type": "frame",
+      "parent": {
+        "$step": 0
+      },
+      "x": 0,
+      "y": 0,
+      "width": 248,
+      "height": 1090,
+      "name": "Sidebar",
+      "props": {
+        "fill": "#0E0E10"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 1
+      },
+      "x": 24,
+      "y": 26,
+      "text": "OCTAGON",
+      "props": {
+        "fill": "#FFFFFF",
+        "fontSize": 19,
+        "fontFamily": "Inter",
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 1
+      },
+      "x": 24,
+      "y": 52,
+      "text": "KARATE CLUB",
+      "props": {
+        "fill": "#9A9AA2",
+        "fontSize": 8.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 1
+      },
+      "x": 44,
+      "y": 95,
+      "text": "Обзор",
+      "props": {
+        "fill": "#D9D9DE",
+        "fontSize": 13,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 1
+      },
+      "x": 12,
+      "y": 122,
+      "width": 224,
+      "height": 38,
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 10
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 1
+      },
+      "x": 44,
+      "y": 131,
+      "text": "Спортсмены",
+      "props": {
+        "fill": "#FFFFFF",
+        "fontSize": 13,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 1
+      },
+      "x": 44,
+      "y": 167,
+      "text": "Заявки",
+      "props": {
+        "fill": "#D9D9DE",
+        "fontSize": 13,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 1
+      },
+      "x": 44,
+      "y": 203,
+      "text": "Группы",
+      "props": {
+        "fill": "#D9D9DE",
+        "fontSize": 13,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 1
+      },
+      "x": 44,
+      "y": 239,
+      "text": "Тренеры",
+      "props": {
+        "fill": "#D9D9DE",
+        "fontSize": 13,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 1
+      },
+      "x": 44,
+      "y": 275,
+      "text": "Залы",
+      "props": {
+        "fill": "#D9D9DE",
+        "fontSize": 13,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 1
+      },
+      "x": 44,
+      "y": 311,
+      "text": "Расписание",
+      "props": {
+        "fill": "#D9D9DE",
+        "fontSize": 13,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 1
+      },
+      "x": 44,
+      "y": 347,
+      "text": "Посещаемость",
+      "props": {
+        "fill": "#D9D9DE",
+        "fontSize": 13,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 1
+      },
+      "x": 44,
+      "y": 383,
+      "text": "Аттестации",
+      "props": {
+        "fill": "#D9D9DE",
+        "fontSize": 13,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 1
+      },
+      "x": 44,
+      "y": 419,
+      "text": "Соревнования",
+      "props": {
+        "fill": "#D9D9DE",
+        "fontSize": 13,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 1
+      },
+      "x": 44,
+      "y": 455,
+      "text": "Финансы",
+      "props": {
+        "fill": "#D9D9DE",
+        "fontSize": 13,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 1
+      },
+      "x": 44,
+      "y": 491,
+      "text": "Отчёты",
+      "props": {
+        "fill": "#D9D9DE",
+        "fontSize": 13,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 1
+      },
+      "x": 44,
+      "y": 527,
+      "text": "Новости",
+      "props": {
+        "fill": "#D9D9DE",
+        "fontSize": 13,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 1
+      },
+      "x": 44,
+      "y": 563,
+      "text": "Чаты",
+      "props": {
+        "fill": "#D9D9DE",
+        "fontSize": 13,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 1
+      },
+      "x": 44,
+      "y": 599,
+      "text": "Пользователи",
+      "props": {
+        "fill": "#D9D9DE",
+        "fontSize": 13,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 1
+      },
+      "x": 44,
+      "y": 635,
+      "text": "Настройки",
+      "props": {
+        "fill": "#D9D9DE",
+        "fontSize": 13,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 1
+      },
+      "x": 24,
+      "y": 1050,
+      "text": "Версия 1.0.0",
+      "props": {
+        "fill": "#6F6F78",
+        "fontSize": 10.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 22,
+      "text": "OCTAGON /",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 352,
+      "y": 22,
+      "text": "Спортсмены",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 50,
+      "text": "Спортсмены",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 28,
+        "fontFamily": "Inter",
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 86,
+      "text": "Реестр спортсменов клуба: поиск, фильтры и карточки.",
+      "width": 560,
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 12.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1176,
+      "y": 52,
+      "width": 164,
+      "height": 40,
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 10
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1196,
+      "y": 63,
+      "text": "+",
+      "props": {
+        "fill": "#FFFFFF",
+        "fontSize": 16,
+        "fontFamily": "Inter",
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1212,
+      "y": 64,
+      "text": "Новый спортсмен",
+      "props": {
+        "fill": "#FFFFFF",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 136,
+      "width": 254,
+      "height": 76,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 300,
+      "y": 152,
+      "text": "32",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 22,
+        "fontFamily": "Inter",
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 300,
+      "y": 180,
+      "text": "Всего спортсменов",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 300,
+      "y": 195,
+      "text": "в реестре",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 546,
+      "y": 136,
+      "width": 254,
+      "height": 76,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 566,
+      "y": 152,
+      "text": "32",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 22,
+        "fontFamily": "Inter",
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 566,
+      "y": 180,
+      "text": "Активных",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 566,
+      "y": 195,
+      "text": "участвуют в группах",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 812,
+      "y": 136,
+      "width": 254,
+      "height": 76,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 832,
+      "y": 152,
+      "text": "0",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 22,
+        "fontFamily": "Inter",
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 832,
+      "y": 180,
+      "text": "Архивных",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 832,
+      "y": 195,
+      "text": "в архиве",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1078,
+      "y": 136,
+      "width": 254,
+      "height": 76,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1098,
+      "y": 152,
+      "text": "1",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 22,
+        "fontFamily": "Inter",
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1098,
+      "y": 180,
+      "text": "Без группы",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1098,
+      "y": 195,
+      "text": "нужно распределить",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 228,
+      "width": 1060,
+      "height": 56,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 292,
+      "y": 236,
+      "width": 380,
+      "height": 40,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 10,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 306,
+      "y": 249,
+      "text": "Поиск по фамилии, имени или отчеству",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 684,
+      "y": 236,
+      "width": 144,
+      "height": 40,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 10,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 696,
+      "y": 249,
+      "text": "Все залы",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 808,
+      "y": 248,
+      "text": "⌄",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 836,
+      "y": 236,
+      "width": 144,
+      "height": 40,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 10,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 848,
+      "y": 249,
+      "text": "Все группы",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 960,
+      "y": 248,
+      "text": "⌄",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 988,
+      "y": 236,
+      "width": 144,
+      "height": 40,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 10,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1000,
+      "y": 249,
+      "text": "Все статусы",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1112,
+      "y": 248,
+      "text": "⌄",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1160,
+      "y": 236,
+      "width": 96,
+      "height": 40,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 10,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1172,
+      "y": 249,
+      "text": "Сбросить",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 300,
+      "width": 1060,
+      "height": 700,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 300,
+      "y": 316,
+      "text": "Найдено: 32 спортсменов",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 13,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1180,
+      "y": 317,
+      "text": "20 на странице",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1270,
+      "y": 316,
+      "text": "⌄",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 344,
+      "width": 1060,
+      "height": 1,
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 356,
+      "text": "ФИО",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 346,
+      "y": 356,
+      "text": "↑",
+      "props": {
+        "fill": "#B24A00",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 640,
+      "y": 356,
+      "text": "Дата рождения",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 736,
+      "y": 356,
+      "text": "↕",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 356,
+      "text": "Группа",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 356,
+      "text": "Ступень / пояс",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1100,
+      "y": 356,
+      "text": "Статус",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1146,
+      "y": 356,
+      "text": "↕",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1204,
+      "y": 356,
+      "text": "Действия",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 378,
+      "width": 1060,
+      "height": 1,
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 390,
+      "text": "Абдрахманова Камила",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 12.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 406,
+      "text": "",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 640,
+      "y": 390,
+      "text": "Не указано",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 390,
+      "text": "Старшая",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 406,
+      "text": "Проезд энергетиков 29/1",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 390,
+      "text": "1 дан",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 406,
+      "text": "Чёрный",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1100,
+      "y": 392,
+      "width": 62,
+      "height": 22,
+      "props": {
+        "fill": "#EAF7EF",
+        "cornerRadius": 11
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1109,
+      "y": 397,
+      "text": "Активен",
+      "props": {
+        "fill": "#1F7A46",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1210,
+      "y": 393,
+      "text": "◉",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1240,
+      "y": 393,
+      "text": "✎",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1270,
+      "y": 392,
+      "text": "⋯",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 426,
+      "width": 1060,
+      "height": 1,
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 438,
+      "text": "Ахметов Тимур",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 12.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 454,
+      "text": "",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 640,
+      "y": 438,
+      "text": "Не указано",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 438,
+      "text": "Продолжающие",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 454,
+      "text": "Охотская 84",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 438,
+      "text": "6 кю",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 454,
+      "text": "Жёлтый",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1100,
+      "y": 440,
+      "width": 62,
+      "height": 22,
+      "props": {
+        "fill": "#EAF7EF",
+        "cornerRadius": 11
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1109,
+      "y": 445,
+      "text": "Активен",
+      "props": {
+        "fill": "#1F7A46",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1210,
+      "y": 441,
+      "text": "◉",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1240,
+      "y": 441,
+      "text": "✎",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1270,
+      "y": 440,
+      "text": "⋯",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 474,
+      "width": 1060,
+      "height": 1,
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 486,
+      "text": "Беков Арман",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 12.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 502,
+      "text": "",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 640,
+      "y": 486,
+      "text": "Не указано",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 486,
+      "text": "Школьники 8-12 лет",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 502,
+      "text": "Заречная 4",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 486,
+      "text": "5 кю",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 502,
+      "text": "Жёлтый с зелёной",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1100,
+      "y": 488,
+      "width": 62,
+      "height": 22,
+      "props": {
+        "fill": "#EAF7EF",
+        "cornerRadius": 11
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1109,
+      "y": 493,
+      "text": "Активен",
+      "props": {
+        "fill": "#1F7A46",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1210,
+      "y": 489,
+      "text": "◉",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1240,
+      "y": 489,
+      "text": "✎",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1270,
+      "y": 488,
+      "text": "⋯",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 522,
+      "width": 1060,
+      "height": 1,
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 534,
+      "text": "Белова Ксения",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 12.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 550,
+      "text": "",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 640,
+      "y": 534,
+      "text": "Не указано",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 534,
+      "text": "Дети 5-7 лет",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 550,
+      "text": "Заречная 4",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 534,
+      "text": "8 кю",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 550,
+      "text": "Синий",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1100,
+      "y": 536,
+      "width": 62,
+      "height": 22,
+      "props": {
+        "fill": "#EAF7EF",
+        "cornerRadius": 11
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1109,
+      "y": 541,
+      "text": "Активен",
+      "props": {
+        "fill": "#1F7A46",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1210,
+      "y": 537,
+      "text": "◉",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1240,
+      "y": 537,
+      "text": "✎",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1270,
+      "y": 536,
+      "text": "⋯",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 570,
+      "width": 1060,
+      "height": 1,
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 582,
+      "text": "Волков Сергей",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 12.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 598,
+      "text": "",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 640,
+      "y": 582,
+      "text": "Не указано",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 582,
+      "text": "Младшая",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 598,
+      "text": "Проезд энергетиков 29/1",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 582,
+      "text": "2 кю",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 598,
+      "text": "Коричневый",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1100,
+      "y": 584,
+      "width": 62,
+      "height": 22,
+      "props": {
+        "fill": "#EAF7EF",
+        "cornerRadius": 11
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1109,
+      "y": 589,
+      "text": "Активен",
+      "props": {
+        "fill": "#1F7A46",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1210,
+      "y": 585,
+      "text": "◉",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1240,
+      "y": 585,
+      "text": "✎",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1270,
+      "y": 584,
+      "text": "⋯",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 618,
+      "width": 1060,
+      "height": 1,
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 630,
+      "text": "Егоров Алексей",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 12.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 646,
+      "text": "",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 640,
+      "y": 630,
+      "text": "Не указано",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 630,
+      "text": "Продолжающие",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 646,
+      "text": "Охотская 84",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 630,
+      "text": "5 кю",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 646,
+      "text": "Жёлтый с зелёной",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1100,
+      "y": 632,
+      "width": 62,
+      "height": 22,
+      "props": {
+        "fill": "#EAF7EF",
+        "cornerRadius": 11
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1109,
+      "y": 637,
+      "text": "Активен",
+      "props": {
+        "fill": "#1F7A46",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1210,
+      "y": 633,
+      "text": "◉",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1240,
+      "y": 633,
+      "text": "✎",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1270,
+      "y": 632,
+      "text": "⋯",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 666,
+      "width": 1060,
+      "height": 1,
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 678,
+      "text": "Жумабаев Данияр",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 12.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 694,
+      "text": "",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 640,
+      "y": 678,
+      "text": "Не указано",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 678,
+      "text": "Младшая",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 694,
+      "text": "Проезд энергетиков 29/1",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 678,
+      "text": "8 кю",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 694,
+      "text": "Синий",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1100,
+      "y": 680,
+      "width": 62,
+      "height": 22,
+      "props": {
+        "fill": "#EAF7EF",
+        "cornerRadius": 11
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1109,
+      "y": 685,
+      "text": "Активен",
+      "props": {
+        "fill": "#1F7A46",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1210,
+      "y": 681,
+      "text": "◉",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1240,
+      "y": 681,
+      "text": "✎",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1270,
+      "y": 680,
+      "text": "⋯",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 714,
+      "width": 1060,
+      "height": 1,
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 726,
+      "text": "Захаров Максим",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 12.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 742,
+      "text": "",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 640,
+      "y": 726,
+      "text": "Не указано",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 726,
+      "text": "Младшая",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 742,
+      "text": "Проезд энергетиков 29/1",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 726,
+      "text": "7 кю",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 742,
+      "text": "Синий с жёлтой",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1100,
+      "y": 728,
+      "width": 62,
+      "height": 22,
+      "props": {
+        "fill": "#EAF7EF",
+        "cornerRadius": 11
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1109,
+      "y": 733,
+      "text": "Активен",
+      "props": {
+        "fill": "#1F7A46",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1210,
+      "y": 729,
+      "text": "◉",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1240,
+      "y": 729,
+      "text": "✎",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1270,
+      "y": 728,
+      "text": "⋯",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 762,
+      "width": 1060,
+      "height": 1,
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 774,
+      "text": "Ибраева Жанна",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 12.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 790,
+      "text": "",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 640,
+      "y": 774,
+      "text": "Не указано",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 774,
+      "text": "Начальная группа",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 790,
+      "text": "Охотская 84",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 774,
+      "text": "2 кю",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 790,
+      "text": "Коричневый",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1100,
+      "y": 776,
+      "width": 62,
+      "height": 22,
+      "props": {
+        "fill": "#EAF7EF",
+        "cornerRadius": 11
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1109,
+      "y": 781,
+      "text": "Активен",
+      "props": {
+        "fill": "#1F7A46",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1210,
+      "y": 777,
+      "text": "◉",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1240,
+      "y": 777,
+      "text": "✎",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1270,
+      "y": 776,
+      "text": "⋯",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 810,
+      "width": 1060,
+      "height": 1,
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 822,
+      "text": "Исаев Руслан",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 12.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 838,
+      "text": "",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 640,
+      "y": 822,
+      "text": "Не указано",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 822,
+      "text": "Младшая",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 838,
+      "text": "Проезд энергетиков 29/1",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 822,
+      "text": "8 кю",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 838,
+      "text": "Синий",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1100,
+      "y": 824,
+      "width": 62,
+      "height": 22,
+      "props": {
+        "fill": "#EAF7EF",
+        "cornerRadius": 11
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1109,
+      "y": 829,
+      "text": "Активен",
+      "props": {
+        "fill": "#1F7A46",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1210,
+      "y": 825,
+      "text": "◉",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1240,
+      "y": 825,
+      "text": "✎",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1270,
+      "y": 824,
+      "text": "⋯",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 858,
+      "width": 1060,
+      "height": 1,
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 870,
+      "text": "Калиев Нурсултан",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 12.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 886,
+      "text": "",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 640,
+      "y": 870,
+      "text": "Не указано",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 870,
+      "text": "Школьники 8-12 лет",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 886,
+      "text": "Заречная 4",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 870,
+      "text": "10 кю",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 886,
+      "text": "Оранжевый",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1100,
+      "y": 872,
+      "width": 62,
+      "height": 22,
+      "props": {
+        "fill": "#EAF7EF",
+        "cornerRadius": 11
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1109,
+      "y": 877,
+      "text": "Активен",
+      "props": {
+        "fill": "#1F7A46",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1210,
+      "y": 873,
+      "text": "◉",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1240,
+      "y": 873,
+      "text": "✎",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1270,
+      "y": 872,
+      "text": "⋯",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 280,
+      "y": 906,
+      "width": 1060,
+      "height": 1,
+      "props": {
+        "fill": "#EDEDF0"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 918,
+      "text": "Касымова Сабина",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 12.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 316,
+      "y": 934,
+      "text": "",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 640,
+      "y": 918,
+      "text": "Не указано",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 918,
+      "text": "Старшая",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 780,
+      "y": 934,
+      "text": "Проезд энергетиков 29/1",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 918,
+      "text": "5 кю",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 940,
+      "y": 934,
+      "text": "Жёлтый с зелёной",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1100,
+      "y": 920,
+      "width": 62,
+      "height": 22,
+      "props": {
+        "fill": "#EAF7EF",
+        "cornerRadius": 11
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1109,
+      "y": 925,
+      "text": "Активен",
+      "props": {
+        "fill": "#1F7A46",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1210,
+      "y": 921,
+      "text": "◉",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1240,
+      "y": 921,
+      "text": "✎",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1270,
+      "y": 920,
+      "text": "⋯",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 300,
+      "y": 976,
+      "text": "Показано 12 из 32",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1140,
+      "y": 968,
+      "width": 24,
+      "height": 24,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 6,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1148,
+      "y": 973,
+      "text": "‹",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1168,
+      "y": 968,
+      "width": 24,
+      "height": 24,
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 6,
+        "stroke": "#FF6B00",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1176,
+      "y": 973,
+      "text": "1",
+      "props": {
+        "fill": "#FFFFFF",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1196,
+      "y": 968,
+      "width": 24,
+      "height": 24,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 6,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1204,
+      "y": 973,
+      "text": "2",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1224,
+      "y": 968,
+      "width": 24,
+      "height": 24,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 6,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 0
+      },
+      "x": 1232,
+      "y": 973,
+      "text": "3",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "frame.create",
+    "params": {
+      "x": 1500,
+      "y": 0,
+      "width": 390,
+      "height": 1420,
+      "name": "OCTAGON / Спортсмены — mobile 390",
+      "props": {
+        "fill": "#F7F7F9"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 64,
+      "props": {
+        "fill": "#0E0E10",
+        "cornerRadius": 0
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 16,
+      "y": 18,
+      "text": "OCTAGON",
+      "props": {
+        "fill": "#FFFFFF",
+        "fontSize": 15,
+        "fontFamily": "Inter",
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 16,
+      "y": 38,
+      "text": "KARATE CLUB",
+      "props": {
+        "fill": "#9A9AA2",
+        "fontSize": 7,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 16,
+      "y": 84,
+      "text": "OCTAGON / Спортсмены",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 16,
+      "y": 100,
+      "text": "Спортсмены",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 24,
+        "fontFamily": "Inter",
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 16,
+      "y": 134,
+      "text": "Реестр спортсменов клуба: поиск, фильтры и карточки.",
+      "width": 320,
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 16,
+      "y": 168,
+      "width": 358,
+      "height": 40,
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 10
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 130,
+      "y": 179,
+      "text": "+ Новый спортсмен",
+      "props": {
+        "fill": "#FFFFFF",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 16,
+      "y": 224,
+      "width": 176,
+      "height": 62,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 236,
+      "text": "32",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 19,
+        "fontFamily": "Inter",
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 262,
+      "text": "Всего",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 198,
+      "y": 224,
+      "width": 176,
+      "height": 62,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 212,
+      "y": 236,
+      "text": "32",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 19,
+        "fontFamily": "Inter",
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 212,
+      "y": 262,
+      "text": "Активных",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 16,
+      "y": 294,
+      "width": 176,
+      "height": 62,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 306,
+      "text": "0",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 19,
+        "fontFamily": "Inter",
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 332,
+      "text": "Архивных",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 198,
+      "y": 294,
+      "width": 176,
+      "height": 62,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 212,
+      "y": 306,
+      "text": "1",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 19,
+        "fontFamily": "Inter",
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 212,
+      "y": 332,
+      "text": "Без группы",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 16,
+      "y": 376,
+      "width": 358,
+      "height": 140,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 28,
+      "y": 388,
+      "width": 334,
+      "height": 36,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 9,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 40,
+      "y": 399,
+      "text": "Поиск по ФИО",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 28,
+      "y": 432,
+      "width": 334,
+      "height": 36,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 9,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 40,
+      "y": 443,
+      "text": "Все залы",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 336,
+      "y": 442,
+      "text": "⌄",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 28,
+      "y": 474,
+      "width": 334,
+      "height": 36,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 9,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 40,
+      "y": 485,
+      "text": "Все группы",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 336,
+      "y": 484,
+      "text": "⌄",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 16,
+      "y": 528,
+      "width": 358,
+      "height": 44,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 543,
+      "text": "Сортировка:",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 108,
+      "y": 542,
+      "text": "Фамилия А → Я",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 336,
+      "y": 542,
+      "text": "⌄",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 16,
+      "y": 588,
+      "width": 358,
+      "height": 78,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 600,
+      "text": "Абдрахманова Камила",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 12.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 617,
+      "text": "Старшая",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 633,
+      "text": "1 дан, чёрный",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 300,
+      "y": 600,
+      "width": 62,
+      "height": 20,
+      "props": {
+        "fill": "#EAF7EF",
+        "cornerRadius": 10
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 308,
+      "y": 604,
+      "text": "Активен",
+      "props": {
+        "fill": "#1F7A46",
+        "fontSize": 9,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 650,
+      "text": "Не указано",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 9.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 16,
+      "y": 676,
+      "width": 358,
+      "height": 78,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 688,
+      "text": "Ахметов Тимур",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 12.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 705,
+      "text": "Продолжающие",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 721,
+      "text": "6 кю, жёлтый",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 300,
+      "y": 688,
+      "width": 62,
+      "height": 20,
+      "props": {
+        "fill": "#EAF7EF",
+        "cornerRadius": 10
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 308,
+      "y": 692,
+      "text": "Активен",
+      "props": {
+        "fill": "#1F7A46",
+        "fontSize": 9,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 738,
+      "text": "Не указано",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 9.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 16,
+      "y": 764,
+      "width": 358,
+      "height": 78,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 776,
+      "text": "Беков Арман",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 12.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 793,
+      "text": "Школьники 8-12 лет",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 809,
+      "text": "5 кю, жёлтый с зелёной",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 300,
+      "y": 776,
+      "width": 62,
+      "height": 20,
+      "props": {
+        "fill": "#EAF7EF",
+        "cornerRadius": 10
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 308,
+      "y": 780,
+      "text": "Активен",
+      "props": {
+        "fill": "#1F7A46",
+        "fontSize": 9,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 826,
+      "text": "Не указано",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 9.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 16,
+      "y": 852,
+      "width": 358,
+      "height": 78,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 864,
+      "text": "Белова Ксения",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 12.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 881,
+      "text": "Дети 5-7 лет",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 897,
+      "text": "8 кю, синий",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 300,
+      "y": 864,
+      "width": 62,
+      "height": 20,
+      "props": {
+        "fill": "#EAF7EF",
+        "cornerRadius": 10
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 308,
+      "y": 868,
+      "text": "Активен",
+      "props": {
+        "fill": "#1F7A46",
+        "fontSize": 9,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 914,
+      "text": "Не указано",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 9.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 16,
+      "y": 940,
+      "width": 358,
+      "height": 78,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 952,
+      "text": "Волков Сергей",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 12.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 969,
+      "text": "Младшая",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 985,
+      "text": "2 кю, коричневый",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 300,
+      "y": 952,
+      "width": 62,
+      "height": 20,
+      "props": {
+        "fill": "#EAF7EF",
+        "cornerRadius": 10
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 308,
+      "y": 956,
+      "text": "Активен",
+      "props": {
+        "fill": "#1F7A46",
+        "fontSize": 9,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 1002,
+      "text": "Не указано",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 9.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 16,
+      "y": 1028,
+      "width": 358,
+      "height": 78,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 1040,
+      "text": "Егоров Алексей",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 12.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 1057,
+      "text": "Продолжающие",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 1073,
+      "text": "5 кю, жёлтый с зелёной",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 10,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 300,
+      "y": 1040,
+      "width": 62,
+      "height": 20,
+      "props": {
+        "fill": "#EAF7EF",
+        "cornerRadius": 10
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 308,
+      "y": 1044,
+      "text": "Активен",
+      "props": {
+        "fill": "#1F7A46",
+        "fontSize": 9,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 238
+      },
+      "x": 30,
+      "y": 1090,
+      "text": "Не указано",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 9.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "frame.create",
+    "params": {
+      "x": 0,
+      "y": 1150,
+      "width": 1440,
+      "height": 1010,
+      "name": "OCTAGON / Спортсмены — создание",
+      "props": {
+        "fill": "#F7F7F9"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 1010,
+      "props": {
+        "fill": "#F7F7F9"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 0,
+      "y": 0,
+      "width": 248,
+      "height": 1010,
+      "props": {
+        "fill": "#0E0E10"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 24,
+      "y": 26,
+      "text": "OCTAGON",
+      "props": {
+        "fill": "#FFFFFF",
+        "fontSize": 19,
+        "fontFamily": "Inter",
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 280,
+      "y": 50,
+      "text": "Спортсмены",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 28,
+        "fontFamily": "Inter",
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 280,
+      "y": 86,
+      "text": "Реестр спортсменов клуба: поиск, фильтры и карточки.",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 12.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 280,
+      "y": 136,
+      "width": 254,
+      "height": 76,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 546,
+      "y": 136,
+      "width": 254,
+      "height": 76,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 812,
+      "y": 136,
+      "width": 254,
+      "height": 76,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1078,
+      "y": 136,
+      "width": 254,
+      "height": 76,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 280,
+      "y": 228,
+      "width": 1060,
+      "height": 56,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 280,
+      "y": 300,
+      "width": 1060,
+      "height": 500,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 12,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 306,
+      "y": 360,
+      "width": 320,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 660,
+      "y": 360,
+      "width": 120,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 800,
+      "y": 360,
+      "width": 160,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 306,
+      "y": 408,
+      "width": 320,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 660,
+      "y": 408,
+      "width": 120,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 800,
+      "y": 408,
+      "width": 160,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 306,
+      "y": 456,
+      "width": 320,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 660,
+      "y": 456,
+      "width": 120,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 800,
+      "y": 456,
+      "width": 160,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 306,
+      "y": 504,
+      "width": 320,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 660,
+      "y": 504,
+      "width": 120,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 800,
+      "y": 504,
+      "width": 160,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 306,
+      "y": 552,
+      "width": 320,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 660,
+      "y": 552,
+      "width": 120,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 800,
+      "y": 552,
+      "width": 160,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 306,
+      "y": 600,
+      "width": 320,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 660,
+      "y": 600,
+      "width": 120,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 800,
+      "y": 600,
+      "width": 160,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 306,
+      "y": 648,
+      "width": 320,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 660,
+      "y": 648,
+      "width": 120,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 800,
+      "y": 648,
+      "width": 160,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 306,
+      "y": 696,
+      "width": 320,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 660,
+      "y": 696,
+      "width": 120,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 800,
+      "y": 696,
+      "width": 160,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 306,
+      "y": 744,
+      "width": 320,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 660,
+      "y": 744,
+      "width": 120,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 800,
+      "y": 744,
+      "width": 160,
+      "height": 12,
+      "props": {
+        "fill": "#F0F0F3",
+        "cornerRadius": 4
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 1010,
+      "props": {
+        "fill": "#0E0E10",
+        "opacity": 0.32
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1020,
+      "y": 0,
+      "width": 420,
+      "height": 1010,
+      "props": {
+        "fill": "#FFFFFF"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1044,
+      "y": 26,
+      "text": "Новый спортсмен",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 18,
+        "fontFamily": "Inter",
+        "fontStyle": "Bold"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1044,
+      "y": 52,
+      "text": "Заполните поля и сохраните карточку.",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11.5,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1400,
+      "y": 25,
+      "text": "×",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 18,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1044,
+      "y": 96,
+      "text": "Фамилия",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1044,
+      "y": 114,
+      "width": 372,
+      "height": 38,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 9,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1056,
+      "y": 126,
+      "text": "",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1044,
+      "y": 158,
+      "text": "Имя",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1044,
+      "y": 176,
+      "width": 372,
+      "height": 38,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 9,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1056,
+      "y": 188,
+      "text": "",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1044,
+      "y": 220,
+      "text": "Отчество",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1044,
+      "y": 238,
+      "width": 372,
+      "height": 38,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 9,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1056,
+      "y": 250,
+      "text": "",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1044,
+      "y": 282,
+      "text": "Дата рождения",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1044,
+      "y": 300,
+      "width": 372,
+      "height": 38,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 9,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1056,
+      "y": 312,
+      "text": "",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1044,
+      "y": 344,
+      "text": "Телефон",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1044,
+      "y": 362,
+      "width": 372,
+      "height": 38,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 9,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1056,
+      "y": 374,
+      "text": "",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1044,
+      "y": 406,
+      "text": "Электронная почта",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1044,
+      "y": 424,
+      "width": 372,
+      "height": 38,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 9,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1056,
+      "y": 436,
+      "text": "",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1044,
+      "y": 468,
+      "text": "Зал",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1044,
+      "y": 486,
+      "width": 372,
+      "height": 38,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 9,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1056,
+      "y": 498,
+      "text": "Выберите зал",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1044,
+      "y": 530,
+      "text": "Группа",
+      "props": {
+        "fill": "#2A2A30",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1044,
+      "y": 548,
+      "width": 372,
+      "height": 38,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 9,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1056,
+      "y": 560,
+      "text": "Сначала выберите зал",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1044,
+      "y": 610,
+      "width": 372,
+      "height": 84,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 9,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1056,
+      "y": 622,
+      "text": "Заметки",
+      "props": {
+        "fill": "#6B6B72",
+        "fontSize": 11,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1044,
+      "y": 928,
+      "width": 120,
+      "height": 40,
+      "props": {
+        "fill": "#FFFFFF",
+        "cornerRadius": 9,
+        "stroke": "#EDEDF0",
+        "strokeWeight": 1
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1072,
+      "y": 940,
+      "text": "Отмена",
+      "props": {
+        "fill": "#0E0E10",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Regular"
+      }
+    }
+  },
+  {
+    "command": "shape.rectangle",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1176,
+      "y": 928,
+      "width": 240,
+      "height": 40,
+      "props": {
+        "fill": "#FF6B00",
+        "cornerRadius": 9
+      }
+    }
+  },
+  {
+    "command": "text.create",
+    "params": {
+      "parent": {
+        "$step": 314
+      },
+      "x": 1252,
+      "y": 940,
+      "text": "Создать спортсмена",
+      "props": {
+        "fill": "#FFFFFF",
+        "fontSize": 12,
+        "fontFamily": "Inter",
+        "fontStyle": "Medium"
+      }
+    }
+  }
+]

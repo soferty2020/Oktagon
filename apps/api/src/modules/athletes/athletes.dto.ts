@@ -1,14 +1,19 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AthleteStatus, BeltGrade, Gender } from '@octagon/contracts';
+import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
   IsEmail,
   IsEnum,
+  IsIn,
+  IsInt,
   IsOptional,
   IsString,
   IsUUID,
+  Max,
   MaxLength,
+  Min,
   MinLength,
   ValidateIf,
 } from 'class-validator';
@@ -166,6 +171,41 @@ export class ListAthletesQueryDto {
   @IsString()
   @MaxLength(100)
   search?: string;
+
+  @ApiPropertyOptional({ format: 'uuid', description: 'Фильтр по залу' })
+  @IsOptional()
+  @IsUUID()
+  hallId?: string;
+
+  @ApiPropertyOptional({ format: 'uuid', description: 'Фильтр по группе' })
+  @IsOptional()
+  @IsUUID()
+  groupId?: string;
+
+  @ApiPropertyOptional({ enum: ['lastName', 'birthDate', 'status'] })
+  @IsOptional()
+  @IsIn(['lastName', 'birthDate', 'status'])
+  sortBy?: 'lastName' | 'birthDate' | 'status';
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'] })
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  sortOrder?: 'asc' | 'desc';
+
+  @ApiPropertyOptional({ description: 'Страница, начиная с 1' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @ApiPropertyOptional({ description: 'Размер страницы, до 100' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
 }
 
 /** Связь аккаунта со спортсменом (C5). */
