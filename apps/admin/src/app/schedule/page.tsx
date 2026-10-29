@@ -44,6 +44,7 @@ interface ScheduleTemplateView {
 
 interface SessionView {
   id: string;
+  groupId: string;
   groupName: string;
   hallName: string | null;
   trainerName: string | null;
@@ -105,13 +106,17 @@ export default async function SchedulePage({
   ]);
 
   const { year, quarter } = currentQuarter();
-  const groupOptions = (groups.ok ? groups.data : [])
-    .filter((group) => group.isActive)
-    .map((group) => ({
-      id: group.id,
-      name: group.name,
-      hallName: group.hallName,
-    }));
+  const activeGroups = groups.ok ? groups.data.filter((group) => group.isActive) : [];
+  const activeGroupIds = new Set(activeGroups.map((group) => group.id));
+  const groupOptions = activeGroups.map((group) => ({
+    id: group.id,
+    name: group.name,
+    hallName: group.hallName,
+  }));
+  // Зал шаблона берем у его группы: в самом шаблоне зала нет.
+  const hallByGroup = new Map(
+    activeGroups.map((group) => [group.id, group.hallName ?? 'Без зала']),
+  );
 
   const events: CalendarEvent[] = [];
 
@@ -121,6 +126,12 @@ export default async function SchedulePage({
       // занятия не будет, и оно не должно выглядеть как действующее. История
       // отмены остаётся в списке занятий и в журнале.
       if (session.status === 'CANCELLED') {
+        continue;
+      }
+
+      // Занятия архивных групп тоже скрываем: после пересоздания группы с тем
+      // же именем календарь показывал два «Младшая» — старое и новое.
+      if (!activeGroupIds.has(session.groupId)) {
         continue;
       }
 
@@ -162,45 +173,63 @@ export default async function SchedulePage({
       </div>
 
       <div className={canEdit ? 'grid gap-6 lg:grid-cols-[2fr_1fr]' : ''}>
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-6">
           {templates.ok && templates.data.length > 0 ? (
-            templates.data.map((template) => (
-              <article
-                key={template.id}
-                className="rounded-card border border-line bg-white p-5"
+            // Шаблоны по залам: группы разных залов не должны идти одной
+            // простынёй — в зале «Проезд энергетиков» и «Заречная» свои группы.
+            groupTemplatesByHall(templates.data, hallByGroup).map((section) => (
+              <section
+                className="rounded-card border border-line bg-white"
+                key={section.key}
               >
-                <div className="flex items-start justify-between gap-4">
+                <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
                   <div>
-                    <Link
-                      href={`/schedule/${template.id}`}
-                      className="font-medium text-ink underline decoration-line hover:decoration-accent"
-                    >
-                      {template.groupName}
-                    </Link>
-                    <p className="mt-1 text-xs text-muted">
-                      {template.quarter} квартал {template.year} · {template.validFrom} —{' '}
-                      {template.validTo} · слотов: {template.slots.length}
+                    <h2 className="text-sm font-semibold text-ink">{section.name}</h2>
+                    <p className="mt-0.5 text-xs text-muted">
+                      {section.templates.length}{' '}
+                      {section.templates.length === 1 ? 'расписание' : 'расписания'}
                     </p>
                   </div>
-                  <span
-                    className={
-                      template.publishedAt
-                        ? 'rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700'
-                        : 'rounded-full bg-amber-50 px-2 py-1 text-xs text-amber-700'
-                    }
-                  >
-                    {template.publishedAt ? 'опубликовано' : 'черновик'}
-                  </span>
+                </header>
+
+                <div className="flex flex-col divide-y divide-line">
+                  {section.templates.map((template) => (
+                    <article className="p-5" key={template.id}>
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                          <Link
+                            href={`/schedule/${template.id}`}
+                            className="font-medium text-ink underline decoration-line hover:decoration-accent"
+                          >
+                            {template.groupName}
+                          </Link>
+                          <p className="mt-1 text-xs text-muted">
+                            {template.quarter} квартал {template.year} · {template.validFrom} —{' '}
+                            {template.validTo} · слотов: {template.slots.length}
+                          </p>
+                        </div>
+                        <span
+                          className={
+                            template.publishedAt
+                              ? 'rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700'
+                              : 'rounded-full bg-amber-50 px-2 py-1 text-xs text-amber-700'
+                          }
+                        >
+                          {template.publishedAt ? 'опубликовано' : 'черновик'}
+                        </span>
+                      </div>
+                      <div className="mt-3">
+                        <Link
+                          href={`/schedule/sessions?groupId=${template.groupId}`}
+                          className="text-xs text-muted underline hover:text-ink"
+                        >
+                          Занятия группы
+                        </Link>
+                      </div>
+                    </article>
+                  ))}
                 </div>
-                <div className="mt-3">
-                  <Link
-                    href={`/schedule/sessions?groupId=${template.groupId}`}
-                    className="text-xs text-muted underline hover:text-ink"
-                  >
-                    Занятия группы
-                  </Link>
-                </div>
-              </article>
+              </section>
             ))
           ) : (
             <Notice>
@@ -240,4 +269,31 @@ export default async function SchedulePage({
 function anchorMonth(anchor: string): [number, number] {
   const [year, month] = anchor.split('-').map(Number);
   return [year ?? 2026, month ?? 1];
+}
+
+/**
+ * Шаблоны, разложенные по залам (#74).
+ *
+ * Сплошной список из двух залов не читается: непонятно, где чьи группы.
+ * Шаблон без группы в зоне видимости попадает в «Без зала».
+ */
+function groupTemplatesByHall(
+  templates: ScheduleTemplateView[],
+  hallByGroup: Map<string, string>,
+): { key: string; name: string; templates: ScheduleTemplateView[] }[] {
+  const sections = new Map<string, { key: string; name: string; templates: ScheduleTemplateView[] }>();
+
+  for (const template of templates) {
+    const name = hallByGroup.get(template.groupId) ?? 'Без зала';
+    const key = name;
+    const existing = sections.get(key) ?? { key, name, templates: [] };
+    existing.templates.push(template);
+    sections.set(key, existing);
+  }
+
+  return [...sections.values()].sort((left, right) => {
+    if (left.name === 'Без зала') return 1;
+    if (right.name === 'Без зала') return -1;
+    return left.name.localeCompare(right.name);
+  });
 }

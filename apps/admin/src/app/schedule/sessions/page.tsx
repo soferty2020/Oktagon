@@ -67,12 +67,10 @@ export default async function SessionsPage({
   if (groupId) {
     query.set('groupId', groupId);
   }
-  if (from) {
-    query.set('from', from);
-  }
-  if (to) {
-    query.set('to', to);
-  }
+  // По умолчанию показываем месяц назад и месяц вперёд: занятие, созданное
+  // вчера и уже прошедшее, иначе пропадало из списка своей же группы (#74).
+  query.set('from', from ?? daysFromToday(-30));
+  query.set('to', to ?? daysFromToday(30));
 
   const sessions = await apiFetch<TrainingSessionView[]>(
     `/training-sessions${query.size > 0 ? `?${query.toString()}` : ''}`,
@@ -125,7 +123,7 @@ export default async function SessionsPage({
     <AppShell user={user}>
       <PageHeader
         title="Занятия"
-        description="По умолчанию: неделя назад и месяц вперед. Время указано по часовому поясу клуба."
+        description="По умолчанию: месяц назад и месяц вперед. Время указано по часовому поясу клуба."
         actions={
           <Link href="/schedule" className="text-sm text-muted hover:text-ink">
             ← Расписания
@@ -143,19 +141,24 @@ export default async function SessionsPage({
       {!sessions.ok ? <Notice tone="error">{describeError(sessions.error)}</Notice> : null}
 
       {canEdit ? (
-        <section className="mb-6 rounded-card border border-line bg-white p-5">
-          <h2 className="text-sm font-semibold text-ink">Добавить занятие вручную</h2>
-          <p className="mt-1 mb-3 text-xs text-muted">
-            Для занятий задним числом (клуб работал до внедрения системы) и разовых занятий вне
-            расписания. Шаблон расписания не меняется (BR-009).
-          </p>
-          <CreateSessionForm
-            groups={manualGroups}
-            halls={manualHalls}
-            trainers={manualTrainers}
-            today={today}
-          />
-        </section>
+        // Форма свернута: она нужна редко (задним числом или разовое занятие), а
+        // сверху отнимала место у самих занятий (#74).
+        <details className="mb-6 rounded-card border border-line bg-white">
+          <summary className="cursor-pointer list-none px-5 py-4">
+            <span className="text-sm font-medium text-ink">Добавить занятие вручную</span>
+            <span className="ml-2 text-xs text-muted">
+              задним числом или разовое — шаблон не меняется
+            </span>
+          </summary>
+          <div className="border-t border-line px-5 py-4">
+            <CreateSessionForm
+              groups={manualGroups}
+              halls={manualHalls}
+              trainers={manualTrainers}
+              today={today}
+            />
+          </div>
+        </details>
       ) : null}
 
       <div className="flex flex-col gap-3">
@@ -220,8 +223,7 @@ export default async function SessionsPage({
   );
 }
 
-function statusLabel(status: string): string {
-  switch (status) {
+function statusLabel(status: string): string {  switch (status) {
     case 'CANCELLED':
       return 'отменено';
     case 'MOVED':
@@ -240,6 +242,13 @@ function statusClass(status: string): string {
     default:
       return 'rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700';
   }
+}
+
+/** Дата со сдвигом от сегодняшней, `YYYY-MM-DD`. */
+function daysFromToday(days: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
 }
 
 /**
