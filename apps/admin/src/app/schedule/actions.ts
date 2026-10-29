@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 
 import { apiFetch, type ApiFailure } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
@@ -127,8 +128,7 @@ export async function createTemplateAction(
 export async function addSlotAction(
   _prev: ScheduleFormState,
   formData: FormData,
-): Promise<ScheduleFormState> {
-  const templateId = String(formData.get('templateId') ?? '');
+): Promise<ScheduleFormState> {  const templateId = String(formData.get('templateId') ?? '');
   const weekday = String(formData.get('weekday') ?? '').trim();
   const startTime = String(formData.get('startTime') ?? '').trim();
   const endTime = String(formData.get('endTime') ?? '').trim();
@@ -161,6 +161,55 @@ export async function addSlotAction(
   return state;
 }
 
+/**
+ * Правка слота (#76).
+ *
+ * Разрешена и после публикации: клуб меняет время тренировки среди квартала.
+ * Уже созданные занятия не переписываются — это делает явное пересоздание.
+ */
+export async function updateSlotAction(
+  _prev: ScheduleFormState,
+  formData: FormData,
+): Promise<ScheduleFormState> {
+  const templateId = String(formData.get('templateId') ?? '');
+  const slotId = String(formData.get('slotId') ?? '');
+  const weekday = String(formData.get('weekday') ?? '').trim();
+  const startTime = String(formData.get('startTime') ?? '').trim();
+  const endTime = String(formData.get('endTime') ?? '').trim();
+  const hallId = optionalText(formData, 'hallId');
+  const trainerId = optionalText(formData, 'trainerId');
+
+  if (!templateId || !slotId) {
+    return { error: 'Не указан слот' };
+  }
+  if (!weekday || !startTime || !endTime) {
+    return { error: 'Укажите день недели и время' };
+  }
+
+  const state = await withSession(
+    (accessToken) =>
+      apiFetch(`/schedule-templates/${templateId}/slots/${slotId}`, {
+        accessToken,
+        method: 'PATCH',
+        body: {
+          weekday,
+          startTime,
+          endTime,
+          // Пустые значения очищают зал и тренера.
+          hallId: hallId ?? null,
+          trainerId: trainerId ?? null,
+        },
+      }),
+    'Слот обновлен',
+  );
+
+  if (!state.error) {
+    revalidatePath(`/schedule/${templateId}`);
+    revalidatePath('/schedule');
+  }
+  return state;
+}
+
 export async function deleteSlotAction(formData: FormData): Promise<void> {
   const templateId = String(formData.get('templateId') ?? '');
   const slotId = String(formData.get('slotId') ?? '');
@@ -175,6 +224,27 @@ export async function deleteSlotAction(formData: FormData): Promise<void> {
     }),
   );
   revalidatePath(`/schedule/${templateId}`);
+}
+
+/**
+ * Удаление расписания (#76).
+ *
+ * Прошедшие занятия остаются историей, будущие из этого шаблона снимаются —
+ * это делает API. После удаления возвращаемся к списку расписаний.
+ */
+export async function deleteTemplateAction(formData: FormData): Promise<void> {
+  const templateId = String(formData.get('templateId') ?? '');
+  if (!templateId) {
+    return;
+  }
+
+  await withSession((accessToken) =>
+    apiFetch(`/schedule-templates/${templateId}`, { accessToken, method: 'DELETE' }),
+  );
+
+  revalidatePath('/schedule');
+  revalidatePath('/schedule/sessions');
+  redirect('/schedule');
 }
 
 export async function publishTemplateAction(formData: FormData): Promise<void> {

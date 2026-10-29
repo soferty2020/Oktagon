@@ -181,19 +181,24 @@ export class SchedulingService {
     const template = await this.requireTemplate(templateId);
     await this.scope.assertGroupAccess(callerUserId, template.groupId);
 
-    if (template.publishedAt) {
-      throw new ApiException(
-        'SCHEDULE_TEMPLATE_PUBLISHED' satisfies ApiErrorCode,
-        'Опубликованное расписание нельзя удалить: измените отдельные занятия',
-      );
-    }
-
+    // Опубликованное расписание тоже можно удалить (#76): клуб меняет решение,
+    // и запрет заставлял бы редактировать каждый слот вручную. История не
+    // теряется: прошедшие занятия остаются, будущие из этого шаблона снимаются,
+    // у занятий обнуляется ссылка на шаблон (BR-009).
+    const removed = await this.schedule.deleteFutureSessions(templateId, new Date());
     await this.schedule.deleteTemplate(templateId);
+
     await this.audit.recordSafely({
       action: AuditAction.SCHEDULE_TEMPLATE_ARCHIVED,
       entityType: AuditEntityType.SCHEDULE_TEMPLATE,
       entityId: templateId,
-      before: { groupId: template.groupId, year: template.year, quarter: template.quarter },
+      before: {
+        groupId: template.groupId,
+        year: template.year,
+        quarter: template.quarter,
+        published: template.publishedAt !== null,
+        removedSessions: removed,
+      },
     });
   }
 
@@ -710,13 +715,16 @@ export class SchedulingService {
 
   // --- Проверки ------------------------------------------------------------
 
-  private assertTemplateEditable(template: ScheduleTemplateRecord): void {
-    if (template.publishedAt) {
-      throw new ApiException(
-        'SCHEDULE_TEMPLATE_PUBLISHED' satisfies ApiErrorCode,
-        'Расписание опубликовано: измените отдельные занятия либо создайте шаблон на новый квартал',
-      );
-    }
+  /**
+   * Слоты опубликованного расписания тоже редактируются (#76).
+   *
+   * BR-009 не нарушается: уже созданные занятия не переписываются — правка
+   * шаблона меняет только будущую регулярность. Клуб меняет время тренировки
+   * среди квартала, и заставлять его ждать следующего квартала бессмысленно.
+   */
+  private assertTemplateEditable(_template: ScheduleTemplateRecord): void {
+    // Ограничений нет намеренно: причина, по которой раньше запрещали правку
+    // после публикации, снята — занятия живут отдельно и не переписываются.
   }
 
   private assertTimeRange(startTime: string, endTime: string): void {

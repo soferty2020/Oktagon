@@ -12,6 +12,7 @@ import {
   generateSessionsAction,
   moveSessionAction,
   type ScheduleFormState,
+  updateSlotAction,
 } from '@/app/schedule/actions';
 
 const initialState: ScheduleFormState = {};
@@ -223,6 +224,89 @@ export function AddSlotForm({
 
       <button type="submit" disabled={pending} className={`${buttonClass} self-start`}>
         {pending ? '…' : 'Добавить слот'}
+      </button>
+    </form>
+  );
+}
+
+/**
+ * Правка слота (#76): день, время, зал и тренер.
+ *
+ * Доступна и после публикации: расписание меняется в течение квартала. Уже
+ * созданные занятия при этом не переписываются (BR-009).
+ */
+export function EditSlotForm({
+  templateId,
+  slot,
+  halls,
+  trainers,
+}: {
+  templateId: string;
+  slot: {
+    id: string;
+    weekday: string;
+    startTime: string;
+    endTime: string;
+    hallId: string | null;
+    trainerId: string | null;
+  };
+  halls: { id: string; name: string }[];
+  trainers: { id: string; displayName: string }[];
+}) {
+  const [state, formAction, pending] = useActionState(updateSlotAction, initialState);
+
+  return (
+    <form action={formAction} className="flex w-64 flex-col gap-2">
+      <input type="hidden" name="templateId" value={templateId} />
+      <input type="hidden" name="slotId" value={slot.id} />
+
+      <select name="weekday" className={inputClass} defaultValue={slot.weekday}>
+        {WEEKDAYS.map((day) => (
+          <option key={day.value} value={day.value}>
+            {day.label}
+          </option>
+        ))}
+      </select>
+
+      <div className="flex gap-2">
+        <input
+          type="time"
+          name="startTime"
+          required
+          defaultValue={slot.startTime}
+          className={inputClass}
+        />
+        <input
+          type="time"
+          name="endTime"
+          required
+          defaultValue={slot.endTime}
+          className={inputClass}
+        />
+      </div>
+
+      <select name="hallId" className={inputClass} defaultValue={slot.hallId ?? ''}>
+        <option value="">зал не назначен</option>
+        {halls.map((hall) => (
+          <option key={hall.id} value={hall.id}>
+            {hall.name}
+          </option>
+        ))}
+      </select>
+
+      <select name="trainerId" className={inputClass} defaultValue={slot.trainerId ?? ''}>
+        <option value="">тренер не назначен</option>
+        {trainers.map((trainer) => (
+          <option key={trainer.id} value={trainer.id}>
+            {trainer.displayName}
+          </option>
+        ))}
+      </select>
+
+      <StateMessages state={state} />
+
+      <button type="submit" disabled={pending} className={buttonClass}>
+        {pending ? '…' : 'Сохранить слот'}
       </button>
     </form>
   );

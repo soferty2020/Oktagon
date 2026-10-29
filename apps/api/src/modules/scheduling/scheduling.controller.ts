@@ -118,7 +118,7 @@ export class ScheduleTemplatesController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermissions(PermissionCode.ScheduleEdit)
-  @ApiOperation({ summary: 'Удалить неопубликованный шаблон' })
+  @ApiOperation({ summary: 'Удалить расписание (прошедшие занятия сохраняются)' })
   @ApiNoContentResponse({ description: 'Шаблон удален' })
   async remove(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string): Promise<void> {
     await this.schedule.deleteTemplate(user.id, id);
@@ -147,7 +147,7 @@ export class ScheduleTemplatesController {
 
   @Patch(':id/slots/:slotId')
   @RequirePermissions(PermissionCode.ScheduleEdit)
-  @ApiOperation({ summary: 'Изменить слот (только до публикации)' })
+  @ApiOperation({ summary: 'Изменить слот (занятия не переписываются)' })
   @ApiOkResponse({ description: 'Шаблон с обновленными слотами' })
   updateSlot(
     @CurrentUser() user: AuthenticatedUser,
@@ -159,7 +159,7 @@ export class ScheduleTemplatesController {
 
   @Delete(':id/slots/:slotId')
   @RequirePermissions(PermissionCode.ScheduleEdit)
-  @ApiOperation({ summary: 'Удалить слот (только до публикации)' })
+  @ApiOperation({ summary: 'Удалить слот (занятия не переписываются)' })
   @ApiOkResponse({ description: 'Шаблон с обновленными слотами' })
   deleteSlot(
     @CurrentUser() user: AuthenticatedUser,

@@ -4,8 +4,8 @@ import { notFound, redirect } from 'next/navigation';
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
-import { deleteSlotAction, publishTemplateAction } from '../actions';
-import { AddSlotForm, GenerateForm } from '../schedule-forms';
+import { deleteSlotAction, deleteTemplateAction, publishTemplateAction } from '../actions';
+import { AddSlotForm, EditSlotForm, GenerateForm } from '../schedule-forms';
 
 export const metadata = {
   title: 'Расписание группы — OCTAGON',
@@ -25,7 +25,9 @@ interface ScheduleTemplateView {
     weekday: string;
     startTime: string;
     endTime: string;
+    hallId: string | null;
     hallName: string | null;
+    trainerId: string | null;
     trainerName: string | null;
   }[];
 }
@@ -164,17 +166,32 @@ export default async function ScheduleTemplatePage({
                   <td className="py-2 text-muted">{slot.hallName ?? '—'}</td>
                   <td className="py-2 text-muted">{slot.trainerName ?? '—'}</td>
                   <td className="py-2 text-right">
-                    {canEdit && !isPublished ? (
-                      <form action={deleteSlotAction}>
-                        <input type="hidden" name="templateId" value={data.id} />
-                        <input type="hidden" name="slotId" value={slot.id} />
-                        <button
-                          type="submit"
-                          className="text-xs text-muted underline hover:text-red-700"
-                        >
-                          Удалить
-                        </button>
-                      </form>
+                    {canEdit ? (
+                      <div className="flex flex-col items-end gap-2">
+                        <details>
+                          <summary className="cursor-pointer text-xs text-muted underline hover:text-ink">
+                            Изменить
+                          </summary>
+                          <div className="mt-2 flex justify-end">
+                            <EditSlotForm
+                              halls={halls}
+                              slot={slot}
+                              templateId={data.id}
+                              trainers={trainerOptions}
+                            />
+                          </div>
+                        </details>
+                        <form action={deleteSlotAction}>
+                          <input type="hidden" name="templateId" value={data.id} />
+                          <input type="hidden" name="slotId" value={slot.id} />
+                          <button
+                            type="submit"
+                            className="text-xs text-muted underline hover:text-red-700"
+                          >
+                            Удалить
+                          </button>
+                        </form>
+                      </div>
                     ) : null}
                   </td>
                 </tr>
@@ -183,7 +200,7 @@ export default async function ScheduleTemplatePage({
           </tbody>
         </table>
 
-        {canEdit && !isPublished ? (
+        {canEdit ? (
           <div className="mt-5 border-t border-line pt-4">
             <AddSlotForm templateId={data.id} halls={halls} trainers={trainerOptions} />
           </div>
@@ -192,8 +209,9 @@ export default async function ScheduleTemplatePage({
         {isPublished ? (
           <div className="mt-5 border-t border-line pt-4">
             <Notice>
-              Расписание опубликовано: слоты зафиксированы. Изменения вносятся в отдельные
-              занятия, чтобы не переписать уже созданное расписание.
+              Расписание опубликовано. Слоты можно менять — уже созданные занятия при этом не
+              перепишутся (BR-009). Чтобы применить новое время к занятиям, запустите
+              «Создать занятия из расписания» с пересозданием.
             </Notice>
           </div>
         ) : null}
@@ -222,6 +240,25 @@ export default async function ScheduleTemplatePage({
 
             <GenerateForm templateId={data.id} />
           </div>
+        </section>
+      ) : null}
+
+      {canEdit ? (
+        <section className="mt-6 rounded-card border border-red-100 bg-red-50/50 p-5">
+          <h2 className="text-sm font-semibold text-ink">Удалить расписание</h2>
+          <p className="mt-1 text-xs text-muted">
+            Будущие занятия из этого расписания снимутся, прошедшие останутся в истории.
+            Группа и её спортсмены не удаляются.
+          </p>
+          <form action={deleteTemplateAction} className="mt-3">
+            <input type="hidden" name="templateId" value={data.id} />
+            <button
+              type="submit"
+              className="rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+            >
+              Удалить расписание
+            </button>
+          </form>
         </section>
       ) : null}
     </AppShell>

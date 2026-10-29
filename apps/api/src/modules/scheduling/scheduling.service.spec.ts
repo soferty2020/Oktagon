@@ -181,13 +181,15 @@ describe('SchedulingService', () => {
       });
     });
 
-    it('не удаляет опубликованный шаблон', async () => {
+    it('удаляет опубликованный шаблон, снимая будущие занятия', async () => {
       repository.findTemplate.mockResolvedValue(publishedTemplate);
+      repository.deleteFutureSessions.mockResolvedValue(3);
 
-      await expect(service.deleteTemplate('admin-1', 'template-1')).rejects.toMatchObject({
-        code: 'SCHEDULE_TEMPLATE_PUBLISHED',
-      });
-      expect(repository.deleteTemplate).not.toHaveBeenCalled();
+      await service.deleteTemplate('admin-1', 'template-1');
+
+      // Прошедшие занятия остаются историей, будущие из шаблона снимаются (#76).
+      expect(repository.deleteFutureSessions).toHaveBeenCalledWith('template-1', expect.any(Date));
+      expect(repository.deleteTemplate).toHaveBeenCalledWith('template-1');
     });
   });
 
@@ -207,17 +209,45 @@ describe('SchedulingService', () => {
       );
     });
 
-    it('не меняет слоты опубликованного шаблона', async () => {
+    it('меняет слоты опубликованного шаблона: занятия при этом не переписываются', async () => {
       repository.findTemplate.mockResolvedValue(publishedTemplate);
+      repository.addSlot.mockResolvedValue({
+        id: 'slot-new',
+        weekday: 'FRIDAY',
+        startTime: '10:00',
+        endTime: '11:30',
+        hallId: null,
+        hallName: null,
+        trainerId: null,
+        trainerName: null,
+      });
+      repository.findTemplate.mockResolvedValueOnce(publishedTemplate);
+      repository.findTemplate.mockResolvedValue({
+        ...publishedTemplate,
+        slots: [
+          ...publishedTemplate.slots,
+          {
+            id: 'slot-new',
+            weekday: 'FRIDAY',
+            startTime: '10:00',
+            endTime: '11:30',
+            hallId: null,
+            hallName: null,
+            trainerId: null,
+            trainerName: null,
+          },
+        ],
+      });
 
-      await expect(
-        service.addSlot('admin-1', 'template-1', {
-          weekday: 'FRIDAY',
-          startTime: '10:00',
-          endTime: '11:30',
-        }),
-      ).rejects.toMatchObject({ code: 'SCHEDULE_TEMPLATE_PUBLISHED' });
-      expect(repository.addSlot).not.toHaveBeenCalled();
+      const result = await service.addSlot('admin-1', 'template-1', {
+        weekday: 'FRIDAY',
+        startTime: '10:00',
+        endTime: '11:30',
+      });
+
+      // Правка шаблона не трогает уже созданные занятия (BR-009, #76).
+      expect(repository.addSlot).toHaveBeenCalled();
+      expect(result.slots).toHaveLength(publishedTemplate.slots.length + 1);
     });
 
     it('отклоняет совпадающее начало и окончание', async () => {
