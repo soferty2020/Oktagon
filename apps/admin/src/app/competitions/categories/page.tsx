@@ -98,9 +98,9 @@ export default async function CategoriesPage({
 
   const [categoriesResult, competitionsResult] = await Promise.all([
     accessToken
-      ? apiFetch<CategoryView[]>('/api/v1/competitions/categories', { accessToken })
+      ? apiFetch<CategoryView[]>('/competitions/categories', { accessToken })
       : Promise.resolve(null),
-    accessToken ? apiFetch<CompetitionView[]>('/api/v1/competitions', { accessToken }) : Promise.resolve(null),
+    accessToken ? apiFetch<CompetitionView[]>('/competitions', { accessToken }) : Promise.resolve(null),
   ]);
 
   const categories = categoriesResult?.ok ? categoriesResult.data : [];

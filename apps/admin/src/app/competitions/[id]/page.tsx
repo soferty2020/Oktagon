@@ -112,7 +112,7 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
     redirect('/login');
   }
 
-  const competitionResult = await apiFetch<CompetitionDetails>(`/api/v1/competitions/${id}`, {
+  const competitionResult = await apiFetch<CompetitionDetails>(`/competitions/${id}`, {
     accessToken,
   });
 
@@ -130,9 +130,9 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
 
   const competition = competitionResult.data;
   const [participantsResult, categoriesResult, athletesResult] = await Promise.all([
-    apiFetch<Participant[]>(`/api/v1/competitions/${id}/participants`, { accessToken }),
-    apiFetch<Category[]>(`/api/v1/competitions/categories?competitionId=${id}`, { accessToken }),
-    apiFetch<AthleteView[]>('/api/v1/athletes', { accessToken }),
+    apiFetch<Participant[]>(`/competitions/${id}/participants`, { accessToken }),
+    apiFetch<Category[]>(`/competitions/categories?competitionId=${id}`, { accessToken }),
+    apiFetch<AthleteView[]>('/athletes', { accessToken }),
   ]);
 
   const participants = participantsResult.ok ? participantsResult.data : [];

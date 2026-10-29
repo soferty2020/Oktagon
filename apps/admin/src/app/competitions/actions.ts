@@ -62,7 +62,7 @@ export async function createCompetitionAction(
 
   const result = await withSession(
     (accessToken) =>
-      apiFetch('/api/v1/competitions', {
+      apiFetch('/competitions', {
         accessToken,
         method: 'POST',
         body: {
@@ -91,7 +91,7 @@ export async function createCompetitionAction(
 async function transition(id: string, action: string, success: string) {
   const result = await withSession(
     (accessToken) =>
-      apiFetch(`/api/v1/competitions/${id}/${action}`, { accessToken, method: 'POST' }),
+      apiFetch(`/competitions/${id}/${action}`, { accessToken, method: 'POST' }),
     success,
   );
 
@@ -123,7 +123,7 @@ export async function cancelCompetitionAction(id: string): Promise<CompetitionFo
 export async function publishCompetitionAction(id: string): Promise<CompetitionFormState> {
   const result = await withSession(
     (accessToken) =>
-      apiFetch(`/api/v1/competitions/${id}/publish`, { accessToken, method: 'POST' }),
+      apiFetch(`/competitions/${id}/publish`, { accessToken, method: 'POST' }),
     'Результаты опубликованы',
   );
 
@@ -149,7 +149,7 @@ export async function addCompetitionParticipantAction(
 
   const result = await withSession(
     (accessToken) =>
-      apiFetch(`/api/v1/competitions/${competitionId}/participants`, {
+      apiFetch(`/competitions/${competitionId}/participants`, {
         accessToken,
         method: 'POST',
         body: { athleteId },
@@ -173,7 +173,7 @@ export async function setCompetitionPaymentAction(
 ): Promise<CompetitionFormState> {
   const result = await withSession(
     (accessToken) =>
-      apiFetch(`/api/v1/competitions/${competitionId}/participants/${athleteId}/payment`, {
+      apiFetch(`/competitions/${competitionId}/participants/${athleteId}/payment`, {
         accessToken,
         method: 'PATCH',
         body: { paymentStatus },
@@ -213,7 +213,7 @@ export async function addEntryAction(
 
   const result = await withSession(
     (accessToken) =>
-      apiFetch(`/api/v1/competitions/${competitionId}/participants/${athleteId}/entries`, {
+      apiFetch(`/competitions/${competitionId}/participants/${athleteId}/entries`, {
         accessToken,
         method: 'POST',
         body: { discipline, categoryId },
@@ -250,7 +250,7 @@ export async function recordEntryResultAction(
   const outcome = await withSession(
     (accessToken) =>
       apiFetch(
-        `/api/v1/competitions/${competitionId}/participants/${athleteId}/entries/${entryId}/result`,
+        `/competitions/${competitionId}/participants/${athleteId}/entries/${entryId}/result`,
         {
           accessToken,
           method: 'POST',
@@ -304,7 +304,7 @@ export async function addMatchAction(
   const outcome = await withSession(
     (accessToken) =>
       apiFetch(
-        `/api/v1/competitions/${competitionId}/participants/${athleteId}/entries/${entryId}/matches`,
+        `/competitions/${competitionId}/participants/${athleteId}/entries/${entryId}/matches`,
         {
           accessToken,
           method: 'POST',

@@ -93,7 +93,7 @@ export default async function TrialRequestsPage({
 
   const { accessToken } = await readTokens();
   const requestsResult = accessToken
-    ? await apiFetch<TrialRequestView[]>('/api/v1/trial-requests', { accessToken })
+    ? await apiFetch<TrialRequestView[]>('/trial-requests', { accessToken })
     : null;
 
   const requests = requestsResult?.ok ? requestsResult.data : [];

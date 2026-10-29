@@ -112,19 +112,19 @@ export default async function ReportsPage({
 
   const [summary, dynamics, events, competitions] = await Promise.all([
     canSeeFinance
-      ? apiFetch<FinanceSummary>(`/api/v1/finance/summary?year=${year}&month=${month}`, { accessToken })
+      ? apiFetch<FinanceSummary>(`/finance/summary?year=${year}&month=${month}`, { accessToken })
       : Promise.resolve(null),
     canSeeFinance
       ? apiFetch<{ points: DynamicsPoint[] }>(
-          `/api/v1/finance/dynamics?year=${year}&month=${month}`,
+          `/finance/dynamics?year=${year}&month=${month}`,
           { accessToken },
         )
       : Promise.resolve(null),
     canSeeSports
-      ? apiFetch<EventView[]>('/api/v1/certification-events', { accessToken })
+      ? apiFetch<EventView[]>('/certification-events', { accessToken })
       : Promise.resolve(null),
     canSeeSports
-      ? apiFetch<CompetitionView[]>('/api/v1/competitions', { accessToken })
+      ? apiFetch<CompetitionView[]>('/competitions', { accessToken })
       : Promise.resolve(null),
   ]);
 

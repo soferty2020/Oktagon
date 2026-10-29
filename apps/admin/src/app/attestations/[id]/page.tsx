@@ -96,7 +96,7 @@ export default async function AttestationPage({ params }: { params: Promise<{ id
     redirect('/login');
   }
 
-  const eventResult = await apiFetch<EventDetails>(`/api/v1/certification-events/${id}`, {
+  const eventResult = await apiFetch<EventDetails>(`/certification-events/${id}`, {
     accessToken,
   });
 
@@ -114,8 +114,8 @@ export default async function AttestationPage({ params }: { params: Promise<{ id
 
   const event = eventResult.data;
   const [participantsResult, athletesResult] = await Promise.all([
-    apiFetch<ParticipantView[]>(`/api/v1/certification-events/${id}/participants`, { accessToken }),
-    apiFetch<AthleteView[]>('/api/v1/athletes', { accessToken }),
+    apiFetch<ParticipantView[]>(`/certification-events/${id}/participants`, { accessToken }),
+    apiFetch<AthleteView[]>('/athletes', { accessToken }),
   ]);
 
   const participants = participantsResult.ok ? participantsResult.data : [];

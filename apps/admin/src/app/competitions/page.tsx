@@ -76,7 +76,7 @@ export default async function CompetitionsPage() {
   const canManage = user.permissions.includes('competitions.manage');
   const { accessToken } = await readTokens();
   const competitions = accessToken
-    ? await apiFetch<CompetitionView[]>('/api/v1/competitions', { accessToken })
+    ? await apiFetch<CompetitionView[]>('/competitions', { accessToken })
     : null;
 
   const rows = competitions?.ok ? competitions.data : [];

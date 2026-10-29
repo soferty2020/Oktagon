@@ -41,7 +41,7 @@ export async function updateRequestStatusAction(
 ): Promise<RequestFormState> {
   const result = await withSession(
     (accessToken) =>
-      apiFetch(`/api/v1/trial-requests/${id}`, {
+      apiFetch(`/trial-requests/${id}`, {
         accessToken,
         method: 'PATCH',
         body: { status },

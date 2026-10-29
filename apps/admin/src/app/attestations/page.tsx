@@ -81,7 +81,7 @@ export default async function AttestationsPage() {
 
   const { accessToken } = await readTokens();
   const events = accessToken
-    ? await apiFetch<EventView[]>('/api/v1/certification-events', { accessToken })
+    ? await apiFetch<EventView[]>('/certification-events', { accessToken })
     : null;
 
   const rows = events?.ok ? events.data : [];

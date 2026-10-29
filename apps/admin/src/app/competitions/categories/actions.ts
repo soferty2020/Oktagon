@@ -78,7 +78,7 @@ export async function createCategoryAction(
 
   const result = await withSession(
     (accessToken) =>
-      apiFetch('/api/v1/competitions/categories', {
+      apiFetch('/competitions/categories', {
         accessToken,
         method: 'POST',
         body: {
@@ -122,7 +122,7 @@ export async function updateCategoryAction(
 
   const result = await withSession(
     (accessToken) =>
-      apiFetch(`/api/v1/competitions/categories/${id}`, {
+      apiFetch(`/competitions/categories/${id}`, {
         accessToken,
         method: 'PATCH',
         body: { name },
@@ -145,7 +145,7 @@ export async function toggleCategoryAction(
 ): Promise<CategoryFormState> {
   const result = await withSession(
     (accessToken) =>
-      apiFetch(`/api/v1/competitions/categories/${id}`, {
+      apiFetch(`/competitions/categories/${id}`, {
         accessToken,
         method: 'PATCH',
         body: { isActive },
