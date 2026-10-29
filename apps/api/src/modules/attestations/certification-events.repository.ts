@@ -26,6 +26,8 @@ export interface CertificationEventRecord {
   createdBy: { id: string; email: string } | null;
   publishedBy: { id: string; email: string } | null;
   _count: { participants: number };
+  /** Итоги участников: нужны для счётчиков в списке. */
+  participants: { result: string }[];
 }
 
 export interface CreateEventRecordInput extends CreateCertificationEventInput {
@@ -56,6 +58,9 @@ const EVENT_SELECT = {
   createdBy: { select: { id: true, email: true } },
   publishedBy: { select: { id: true, email: true } },
   _count: { select: { participants: true } },
+  // Итоги нужны в списке: без них видно только «сколько участников», а где
+  // результаты — непонятно (#77). Участников немного, отдельный запрос дороже.
+  participants: { select: { result: true } },
 } as const;
 
 /**
@@ -165,6 +170,9 @@ export class CertificationEventsRepository {
 
 /** Запись → ответ API. */
 export function toEventView(record: CertificationEventRecord): CertificationEventView {
+  const passed = record.participants.filter((participant) => participant.result === 'PASSED').length;
+  const failed = record.participants.filter((participant) => participant.result === 'FAILED').length;
+
   return {
     id: record.id,
     title: record.title,
@@ -174,6 +182,8 @@ export function toEventView(record: CertificationEventRecord): CertificationEven
     description: record.description,
     status: record.status,
     participantsCount: record._count.participants,
+    passedCount: passed,
+    failedCount: failed,
     createdBy: record.createdBy,
     publishedAt: record.publishedAt?.toISOString() ?? null,
     publishedBy: record.publishedBy,

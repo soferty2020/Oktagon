@@ -35,6 +35,7 @@ describe('CertificationEventsService', () => {
     createdBy: { id: 'trainer-1', email: 'trainer@club.ru' },
     publishedBy: null,
     _count: { participants: 0 },
+    participants: [],
     ...overrides,
   });
 

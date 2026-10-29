@@ -63,6 +63,14 @@ export interface CertificationEventView {
   status: CertificationEventStatus;
   /** Сколько участников добавлено. */
   participantsCount: number;
+  /**
+   * Итоги: сколько сдало и сколько нет.
+   *
+   * Нужны в списке мероприятий: без них видно только число участников, и
+   * результаты приходится искать, открывая каждое мероприятие (#77).
+   */
+  passedCount: number;
+  failedCount: number;
   createdBy: { id: string; email: string } | null;
   publishedAt: string | null;
   publishedBy: { id: string; email: string } | null;

@@ -20,6 +20,9 @@ interface EventView {
   location: string | null;
   status: string;
   participantsCount: number;
+  /** Итоги: без них результаты не видны, пока не откроешь мероприятие. */
+  passedCount: number;
+  failedCount: number;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -147,6 +150,7 @@ function EventTable({ events }: { events: EventView[] }) {
             <th className="px-4 py-3 font-medium">Дата</th>
             <th className="px-4 py-3 font-medium">Место</th>
             <th className="px-4 py-3 font-medium">Участники</th>
+            <th className="px-4 py-3 font-medium">Результаты</th>
             <th className="px-4 py-3 font-medium">Статус</th>
             <th className="px-4 py-3" />
           </tr>
@@ -158,6 +162,22 @@ function EventTable({ events }: { events: EventView[] }) {
               <td className="px-4 py-3 text-neutral-600">{formatMoment(event.scheduledAt)}</td>
               <td className="px-4 py-3 text-neutral-600">{event.location ?? '—'}</td>
               <td className="px-4 py-3 text-neutral-600">{event.participantsCount}</td>
+              <td className="px-4 py-3">
+                {event.participantsCount === 0 ? (
+                  <span className="text-neutral-400">—</span>
+                ) : (
+                  <span className="flex items-center gap-2 text-xs">
+                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-700">
+                      сдали {event.passedCount}
+                    </span>
+                    {event.failedCount > 0 ? (
+                      <span className="rounded-full bg-red-50 px-2 py-0.5 text-red-700">
+                        не сдали {event.failedCount}
+                      </span>
+                    ) : null}
+                  </span>
+                )}
+              </td>
               <td className="px-4 py-3">
                 <span
                   className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
