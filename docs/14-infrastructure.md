@@ -42,6 +42,45 @@ Components:
 Токен Диска лежит в `/root/.octagon-backup.env` (600). Логи — в
 `/var/log/octagon-backup.log`: `offsite: ok` или `offsite: FAILED`.
 
+### Проверка восстановления: результат 2026-10-30
+
+Автоматический drill выполняется каждую ночь; в журнале видно:
+
+```
+2026-10-30T02:30:08+03:00 backup ok: octagon-20261030-0230.dump.gpg, restore check: 43 таблиц, offsite: ok
+```
+
+Разовой ручной проверки не было, поэтому 2026-10-30 дамп восстановили в
+отдельную БД `octagon_restore_manual` (не `octagon_restore_check`, чтобы не
+пересечься с ночным drill) и сверили число строк с рабочей базой:
+
+| Таблица | staging | восстановлено |
+|---|---|---|
+| `athletes` | 66 | 66 |
+| `groups` | 16 | 16 |
+| `users` | 6 | 6 |
+| `training_sessions` | 142 | 142 |
+| `membership_periods` | 1 | 1 |
+| `competitions` | 0 | 0 |
+
+Таблиц в восстановленной БД — 43. Временная база удалена; `pg_restore`
+завершился без ошибок, дамп расшифровался ключом из `/root/.octagon-backup.key`.
+
+**Вывод:** бэкап пригоден к восстановлению, процедура повторяема. Повторять
+сверку — не реже одного раза на релизный цикл (как и записано выше).
+
+Команды для повтора:
+
+```bash
+PG=octagon-staging-postgres-1
+LAST=$(ls -1t /srv/octagon/backups/*.gpg | head -1)
+docker exec $PG psql -U octagon -d postgres -c "CREATE DATABASE octagon_restore_manual"
+gpg --batch --decrypt --passphrase-file /root/.octagon-backup.key "$LAST" \
+  | docker exec -i $PG pg_restore -U octagon -d octagon_restore_manual --no-owner --no-privileges
+docker exec $PG psql -U octagon -d octagon_restore_manual -tAc "select count(*) from athletes"
+docker exec $PG psql -U octagon -d postgres -c "DROP DATABASE octagon_restore_manual"
+```
+
 Проверить загрузку вручную:
 
 ```bash
