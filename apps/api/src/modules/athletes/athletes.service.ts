@@ -89,7 +89,10 @@ export class AthletesService {
     // Без page отдаём прежний массив: старые клиенты не ломаются.
     if (!options.page) {
       const athletes = await this.repository.list(query);
-      return athletes.map((athlete) => toAthleteView(athlete, canViewContacts));
+      const names = await this.repository.groupNamesByAthlete(athletes.map((row) => row.id));
+      return athletes.map((athlete) =>
+        toAthleteView(athlete, canViewContacts, names.get(athlete.id) ?? null),
+      );
     }
 
     const page = Math.max(1, options.page);
@@ -99,8 +102,11 @@ export class AthletesService {
       this.repository.count(query),
     ]);
 
+    const names = await this.repository.groupNamesByAthlete(rows.map((row) => row.id));
     return {
-      items: rows.map((athlete) => toAthleteView(athlete, canViewContacts)),
+      items: rows.map((athlete) =>
+        toAthleteView(athlete, canViewContacts, names.get(athlete.id) ?? null),
+      ),
       total,
       page,
       limit,
@@ -376,7 +382,7 @@ function toUpdateRecord(input: UpdateAthleteInput): UpdateAthleteRecordInput {
   return record;
 }
 
-function toAthleteView(athlete: AthleteRecord, canViewContacts: boolean): AthleteView {
+function toAthleteView(athlete: AthleteRecord, canViewContacts: boolean, groupName: string | null = null): AthleteView {
   const view: AthleteView = {
     id: athlete.id,
     firstName: athlete.firstName,
@@ -384,6 +390,7 @@ function toAthleteView(athlete: AthleteRecord, canViewContacts: boolean): Athlet
     middleName: athlete.middleName,
     birthDate: athlete.birthDate ? athlete.birthDate.toISOString().slice(0, 10) : null,
     gender: athlete.gender,
+    groupName,
     status: athlete.status,
     // Ступень — источник истины (ADR-0012); пояс выводится из неё, если известен.
     // `null` означает, что миграция не смогла вывести ступень однозначно, и это

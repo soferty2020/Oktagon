@@ -13,6 +13,7 @@ export interface AthleteRow {
   middleName: string | null;
   birthDate: string | null;
   status: string;
+  groupName: string | null;
   rankLabel: string | null;
   beltGrade: string;
   phone: string | null;
@@ -21,7 +22,6 @@ export interface AthleteRow {
 interface BoardProps {
   data: { items: AthleteRow[]; total: number; page: number; limit: number };
   groups: { id: string; name: string; hallId: string | null }[];
-  groupByAthlete: Record<string, string>;
   halls: { id: string; name: string }[];
   params: { search: string; hallId: string; groupId: string; status: string };
   sortBy: 'lastName' | 'birthDate' | 'status';
@@ -81,7 +81,7 @@ function buildHref(
  */
 export function AthletesBoard(props: BoardProps) {
   const router = useRouter();
-  const { data, groups, halls, params, sortBy, sortOrder, groupByAthlete } = props;
+  const { data, groups, halls, params, sortBy, sortOrder } = props;
   const [search, setSearch] = useState(params.search);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -270,7 +270,7 @@ export function AthletesBoard(props: BoardProps) {
                         {athlete.birthDate ? formatDate(athlete.birthDate) : 'Не указано'}
                       </td>
                       <td className="px-4 py-3 text-sm text-muted">
-                        {groupByAthlete[athlete.id] ?? 'Не указано'}
+                        {athlete.groupName ?? 'Не указано'}
                       </td>
                       <td className="px-4 py-3 text-sm">
                         {athlete.rankLabel ?? '—'}
@@ -288,12 +288,24 @@ export function AthletesBoard(props: BoardProps) {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <Link
-                          className="rounded-lg border border-line px-3 py-1.5 text-xs text-ink hover:bg-canvas"
-                          href={`/athletes/${athlete.id}`}
-                        >
-                          Открыть
-                        </Link>
+                        <div className="flex items-center justify-end gap-2">
+                          <Link
+                            className="rounded-lg border border-line px-3 py-1.5 text-xs text-ink hover:bg-canvas"
+                            href={`/athletes/${athlete.id}`}
+                          >
+                            Открыть
+                          </Link>
+                          <Link
+                            aria-label={`Изменить: ${athlete.lastName}`}
+                            className="grid h-8 w-8 place-items-center rounded-lg border border-line text-muted hover:bg-canvas hover:text-ink"
+                            href={`/athletes/${athlete.id}`}
+                          >
+                            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+                              <path d="M4 20h4l10-10-4-4L4 16v4Z" strokeLinejoin="round" />
+                              <path d="M13 5l4 4" strokeLinecap="round" />
+                            </svg>
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   );
