@@ -18,6 +18,29 @@ Components:
 - 40–60 GB SSD
 при небольшом количестве пользователей.
 
+## SSH: вход только по ключу
+
+Панель хостинга (ISPmanager) держит свой `sshd_config.d/40-hosting.conf` и при
+сохранении настроек возвращает `PasswordAuthentication yes` и
+`PermitRootLogin yes`. Эти значения читаются после нашего
+`00-octagon-hardening.conf`, поэтому «yes» побеждал.
+
+Что сделано (#52, S-2):
+
+- `40-hosting.conf` переписан на безопасные значения;
+- добавлен `99-octagon-final.conf` — читается последним и держит итог, даже если
+  панель вернёт свои строки;
+- бэкапы исходных файлов: `/root/*.bak-<дата>`.
+
+Проверка после любого изменения конфигурации:
+
+```bash
+sshd -t && systemctl reload sshd
+sshd -T | grep -E '^(permitrootlogin|passwordauthentication)'
+# permitrootlogin without-password
+# passwordauthentication no
+```
+
 ## Backups
 - ежедневный backup PostgreSQL;
 - versioned object storage;
