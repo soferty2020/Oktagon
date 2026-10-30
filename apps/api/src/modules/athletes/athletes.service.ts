@@ -22,7 +22,7 @@ import { AuditService } from '../audit/audit.service';
 import { ResourceScopeService } from '../identity/resource-scope.service';
 // Обычный импорт, не `import type`: AthletesRepository — DI-токен, его значение
 // должно попасть в метаданные конструктора (emitDecoratorMetadata).
-import { type AthleteListOptions, AthletesRepository } from './athletes.repository';
+import { AthletesRepository } from './athletes.repository';
 import type {
   AthleteRecord,
   CreateAthleteInput as CreateAthleteRecordInput,
