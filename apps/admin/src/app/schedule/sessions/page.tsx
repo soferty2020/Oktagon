@@ -53,14 +53,16 @@ interface TrainerView {
 export default async function SessionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ groupId?: string; from?: string; to?: string }>;
+  searchParams: Promise<{ groupId?: string; from?: string; to?: string; limit?: string }>;
 }) {
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login');
   }
 
-  const { groupId, from, to } = await searchParams;
+  const { groupId, from, to, limit: limitParam } = await searchParams;
+  // Список длинный: по умолчанию 40 занятий, дальше — по кнопке (#100).
+  const limit = Math.min(200, Math.max(20, Number(limitParam) || 40));
   const { accessToken } = await readTokens();
 
   const query = new URLSearchParams();
@@ -163,7 +165,7 @@ export default async function SessionsPage({
 
       <div className="flex flex-col gap-3">
         {sessions.ok
-          ? sessions.data.map((session) => (
+          ? sessions.data.slice(0, limit).map((session) => (
               <article key={session.id} className="rounded-card border border-line bg-white p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
@@ -218,6 +220,20 @@ export default async function SessionsPage({
               </article>
             ))
           : null}
+
+        {sessions.ok && sessions.data.length > limit ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-line bg-white px-4 py-3">
+            <span className="text-xs text-muted">
+              Показано {limit} из {sessions.data.length}
+            </span>
+            <Link
+              className="rounded-lg border border-line px-3 py-1.5 text-xs text-ink hover:bg-canvas"
+              href={nextPageHref({ groupId, from, to, limit })}
+            >
+              Показать ещё 40
+            </Link>
+          </div>
+        ) : null}
       </div>
     </AppShell>
   );
@@ -266,4 +282,24 @@ function formatLocal(iso: string, timeOnly = false): string {
     return time;
   }
   return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()} ${time}`;
+}
+
+/** Ссылка «Показать ещё»: сохраняет фильтры и увеличивает лимит на 40. */
+function nextPageHref({
+  groupId,
+  from,
+  to,
+  limit,
+}: {
+  groupId?: string;
+  from?: string;
+  to?: string;
+  limit: number;
+}): string {
+  const query = new URLSearchParams();
+  if (groupId) query.set('groupId', groupId);
+  if (from) query.set('from', from);
+  if (to) query.set('to', to);
+  query.set('limit', String(limit + 40));
+  return `/schedule/sessions?${query.toString()}`;
 }
