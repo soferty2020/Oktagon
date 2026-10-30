@@ -45,19 +45,21 @@ export function GroupsBoard({
   trainers,
   canManage,
   search,
+  openNew = false,
 }: {
   groups: GroupItem[];
   halls: HallItem[];
   trainers: Option[];
   canManage: boolean;
   search: string;
+  openNew?: boolean;
 }) {
   const router = useRouter();
   const [hallId, setHallId] = useState('');
   const [trainerId, setTrainerId] = useState('');
   const [status, setStatus] = useState('');
   const [searchValue, setSearchValue] = useState(search);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(openNew);
   const [state, formAction, pending] = useActionState(createGroupAction, initialState);
 
   useEffect(() => {
@@ -190,18 +192,6 @@ export function GroupsBoard({
             </button>
           ) : null}
 
-          {canManage ? (
-            <button
-              className="ml-auto inline-flex h-10 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-medium text-white hover:bg-accent/90"
-              onClick={() => setDrawerOpen(true)}
-              type="button"
-            >
-              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-              </svg>
-              Новая группа
-            </button>
-          ) : null}
         </div>
       </section>
 

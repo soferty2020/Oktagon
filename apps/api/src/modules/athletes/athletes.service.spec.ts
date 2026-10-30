@@ -41,6 +41,7 @@ describe('AthletesService', () => {
     repository = {
       list: jest.fn().mockResolvedValue([athlete]),
       count: jest.fn().mockResolvedValue(0),
+      groupNamesByAthlete: jest.fn().mockResolvedValue(new Map()),
       find: jest.fn().mockResolvedValue(athlete),
       create: jest.fn().mockResolvedValue(athlete),
       update: jest.fn().mockResolvedValue(athlete),

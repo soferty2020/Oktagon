@@ -101,6 +101,9 @@ export interface LinkAccountInput {
  * без БД (docs/13-architecture.md).
  */
 export abstract class AthletesRepository {
+  /** Названия активных групп: один запрос на набор спортсменов. */
+  abstract groupNamesByAthlete(athleteIds: string[]): Promise<Map<string, string>>;
+
   abstract list(options?: AthleteListOptions): Promise<AthleteRecord[]>;
 
   abstract count(options?: AthleteListOptions): Promise<number>;
@@ -253,6 +256,26 @@ export class PrismaAthletesRepository extends AthletesRepository {
     return this.prisma.db.athlete.count({ where: this.where(options) });
   }
 
+  /** Названия активных групп для набора спортсменов: один запрос вместо N. */
+  async groupNamesByAthlete(athleteIds: string[]): Promise<Map<string, string>> {
+    if (athleteIds.length === 0) {
+      return new Map();
+    }
+
+    const rows = await this.prisma.db.groupMembership.findMany({
+      where: { athleteId: { in: athleteIds }, state: 'ACTIVE' },
+      orderBy: { joinedAt: 'desc' },
+      select: { athleteId: true, group: { select: { name: true } } },
+    });
+
+    const names = new Map<string, string>();
+    for (const row of rows) {
+      if (!names.has(row.athleteId)) {
+        names.set(row.athleteId, row.group.name);
+      }
+    }
+    return names;
+  }
   async find(id: string): Promise<AthleteRecord | null> {
     return this.prisma.db.athlete.findFirst({
       where: { id, archivedAt: null },

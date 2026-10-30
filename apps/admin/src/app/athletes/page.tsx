@@ -74,23 +74,11 @@ export default async function AthletesPage({
 
   const everyone = all.ok ? all.data : [];
   const groupList = (groups.ok ? groups.data : []).filter((group) => group.isActive);
-
-  // Группа спортсмена: имя нужно в таблице, отдельного поля в списке нет (#81).
-  const memberships = await Promise.all(
-    groupList.map((group) =>
-      apiFetch<{ members: { athleteId: string }[] }>(`/groups/${group.id}`, { accessToken }),
-    ),
-  );
-  const groupByAthlete: Record<string, string> = {};
-  for (const [index, details] of memberships.entries()) {
-    for (const member of details.ok ? details.data.members : []) {
-      groupByAthlete[member.athleteId] = groupList[index]?.name ?? '';
-    }
-  }
   const hallList = (halls.ok ? halls.data : []).filter((hall) => hall.isActive);
 
   const active = everyone.filter((athlete) => athlete.status === 'ACTIVE').length;
   const archived = everyone.length - active;
+  const withoutGroup = everyone.filter((athlete) => !athlete.groupName).length;
 
   return (
     <AppShell user={user}>
@@ -103,11 +91,7 @@ export default async function AthletesPage({
         <Kpi label="Всего спортсменов" note="в реестре" value={everyone.length} />
         <Kpi label="Активных" note="участвуют в группах" value={active} />
         <Kpi label="Архивных" note="в архиве" value={archived} />
-        <Kpi
-          label="Найдено"
-          note={search ? `по запросу «${search}»` : 'по фильтрам'}
-          value={result.ok ? result.data.total : 0}
-        />
+        <Kpi label="Без группы" note="нужно распределить" value={withoutGroup} />
       </section>
 
       {!result.ok ? (
@@ -123,7 +107,6 @@ export default async function AthletesPage({
         data={result.ok ? result.data : { items: [], total: 0, page: 1, limit: 20 }}
         groups={groupList.map((group) => ({ id: group.id, name: group.name, hallId: group.hallId }))}
         halls={hallList.map((hall) => ({ id: hall.id, name: hall.name }))}
-        groupByAthlete={groupByAthlete}
         params={{
           search,
           hallId: params.hallId ?? '',

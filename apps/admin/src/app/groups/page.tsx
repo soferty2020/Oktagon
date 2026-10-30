@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { AppShell, PageHeader } from '@/components/app-shell';
@@ -63,7 +64,7 @@ interface TemplateView {
 export default async function GroupsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ assign?: string; search?: string }>;
+  searchParams: Promise<{ assign?: string; search?: string; new?: string }>;
 }) {
   const user = await getCurrentUser();
   if (!user) {
@@ -71,6 +72,7 @@ export default async function GroupsPage({
   }
 
   const { assign, search } = await searchParams;
+  const openNew = (await searchParams).new === '1';
   const query = (search ?? '').trim();
   const { accessToken } = await readTokens();
   const canManage = user.permissions.includes('groups.edit');
@@ -118,6 +120,16 @@ export default async function GroupsPage({
   return (
     <AppShell user={user}>
       <PageHeader
+        actions={
+          canManage ? (
+            <Link
+              className="inline-flex h-10 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-medium text-white hover:bg-accent/90"
+              href="/groups?new=1"
+            >
+              + Новая группа
+            </Link>
+          ) : null
+        }
         title="Группы"
         description="Учебные группы клуба: тренеры, состав и расписание по залам."
       />
@@ -150,6 +162,7 @@ export default async function GroupsPage({
       <GroupsBoard
         canManage={canManage}
         groups={items}
+        openNew={openNew}
         halls={hallList.map((hall) => ({ id: hall.id, name: hall.name, address: hall.address }))}
         search={query}
         trainers={trainerList.map((trainer) => ({ id: trainer.id, name: trainer.displayName }))}
