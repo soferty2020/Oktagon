@@ -20,6 +20,11 @@ WORKDIR /repo
 # workspace-зависимостей. Без этого `pnpm build:packages` падал бы на отсутствии
 # tsc.
 FROM base AS deps
+# Зеркало движков Prisma: с этого хоста binaries.prisma.sh недоступен из
+# сборочной сети (SSL reset), поэтому движок берём с зеркала. Значение
+# переопределяется build-arg, если зеркало не нужно.
+ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
+
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/api/package.json apps/api/
 COPY packages/contracts/package.json packages/contracts/
