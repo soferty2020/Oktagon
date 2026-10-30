@@ -23,7 +23,6 @@ FROM base AS deps
 # Зеркало движков Prisma: с этого хоста binaries.prisma.sh недоступен из
 # сборочной сети (SSL reset), поэтому движок берём с зеркала. Значение
 # переопределяется build-arg, если зеркало не нужно.
-ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/api/package.json apps/api/
@@ -69,6 +68,7 @@ COPY apps/api/package.json ./apps/api/package.json
 RUN pnpm build:packages
 # Prisma Client тоже нужен: отчёт читает БД через сгенерированный клиент, а в
 # стадии migrate его нет (генерируется в стадии build).
+ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
 RUN pnpm --filter @octagon/api exec prisma generate
 WORKDIR /repo/apps/api
 CMD ["pnpm", "db:deploy"]
