@@ -12,11 +12,45 @@ import { apiBaseUrl, clearTokens, readTokens, refreshAccessToken } from '@/lib/s
  * Если access-токен истек, запрос повторяется один раз после обновления: иначе
  * пользователь видел бы ошибку каждые 15 минут.
  */
+/**
+ * Прокси принимает cookie-токен, поэтому небезопасные методы должны приходить
+ * со своего же источника. `SameSite=Lax` защищает только от чужого сайта, но не
+ * от соседнего поддомена (#51, находка S-1).
+ */
+function isSameOrigin(request: NextRequest): boolean {
+  const origin = request.headers.get('origin');
+  if (!origin) {
+    // Запросы без Origin (curl, серверные вызовы) cookie не несут смысла для CSRF,
+    // но браузер их и не шлёт: пропускаем, проверка ниже всё равно сверит Host.
+    return true;
+  }
+
+  const host = request.headers.get('host');
+  const allowed = (process.env.NEXT_PUBLIC_SITE_URL ?? '').trim().replace(/\/$/, '');
+  try {
+    const originUrl = new URL(origin);
+    if (host && originUrl.host === host) {
+      return true;
+    }
+    return allowed.length > 0 && origin.replace(/\/$/, '') === allowed;
+  } catch {
+    return false;
+  }
+}
+
 async function forward(request: NextRequest, path: string[]): Promise<NextResponse> {
+  const method = request.method;
+  const unsafe = method !== 'GET' && method !== 'HEAD';
+  if (unsafe && !isSameOrigin(request)) {
+    return NextResponse.json(
+      { code: 'FORBIDDEN_ORIGIN', message: 'Запрос с другого источника отклонён.' },
+      { status: 403 },
+    );
+  }
+
   const url = new URL(request.url);
   const target = `${apiBaseUrl()}/${path.join('/')}${url.search}`;
 
-  const method = request.method;
   const body = method === 'GET' || method === 'HEAD' ? undefined : await request.arrayBuffer();
 
   const callBackend = async (accessToken?: string): Promise<Response> =>
