@@ -332,14 +332,18 @@ jobs:
         # Ошибку выводим в аннотацию (`::error::`): полный лог job доступен
         # только владельцу репозитория, а причина нужна и в API проверки.
         working-directory: apps/mobile
+        shell: bash
         run: |
-          set -o pipefail
+          # GitHub Actions запускает bash с -e: пайп с ошибкой завершил бы шаг до
+          # вывода причины, поэтому ошибку ловим вручную.
+          set +e
           flutter build apk --release \
             --dart-define=API_BASE_URL=https://api.octagon-karate.online/api/v1 2>&1 | tee /tmp/apk-build.log
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
-            reason=$(grep -m1 -A6 -E 'What went wrong|FAILURE:|Keystore' /tmp/apk-build.log | tr '\n' ' ' | cut -c1-600)
-            echo "::error::APK build failed: ${reason:-см. лог}"
+            reason=$(grep -m1 -A8 -iE 'what went wrong|FAILURE:|keystore|Exception' /tmp/apk-build.log | tr '\n' ' ' | cut -c1-700)
+            echo "::error::APK build failed: ${reason:-причина не найдена}"
+            tail -25 /tmp/apk-build.log
             exit 1
           fi
 
