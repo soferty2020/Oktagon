@@ -313,13 +313,30 @@ jobs:
           KEY_ALIAS: ${{ env.ANDROID_KEY_ALIAS }}
         run: |
           echo "$KEYSTORE_BASE64" | base64 -d > octagon-release.jks
+          ls -l octagon-release.jks
           {
             echo "storePassword=$KEYSTORE_PASSWORD"
             echo "keyPassword=$KEY_PASSWORD"
             echo "keyAlias=$KEY_ALIAS"
             echo "storeFile=octagon-release.jks"
           } > key.properties
-          echo "release keystore restored"
+
+          # Проверяем секреты до сборки: иначе ошибка подписи приходит из Gradle
+          # без внятного текста. Аннотация ::error:: видна и без доступа к логам.
+          if ! keytool -list -keystore octagon-release.jks -storepass "$KEYSTORE_PASSWORD" >/dev/null 2>&1; then
+            echo "::error::Неверный ANDROID_KEYSTORE_PASSWORD: keystore не открывается этим паролем"
+            exit 1
+          fi
+          if ! keytool -list -keystore octagon-release.jks -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" >/dev/null 2>&1; then
+            echo "::error::Неверный ANDROID_KEY_ALIAS: в keystore нет alias '$KEY_ALIAS'"
+            exit 1
+          fi
+          if ! keytool -keypasswd -keystore octagon-release.jks -storepass "$KEYSTORE_PASSWORD" \
+              -alias "$KEY_ALIAS" -keypass "$KEY_PASSWORD" -new "$KEY_PASSWORD" >/dev/null 2>&1; then
+            echo "::error::Неверный ANDROID_KEY_PASSWORD: пароль не подходит к ключу"
+            exit 1
+          fi
+          echo "release keystore restored and verified"
 
       - name: Build APK
         # Release без настроенной подписи подписывается debug-ключом: для
