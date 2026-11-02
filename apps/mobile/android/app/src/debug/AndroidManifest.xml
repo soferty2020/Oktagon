@@ -4,4 +4,9 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- Открытый HTTP разрешён только отладочной сборке: локальный API работает
+         по http, а Android 9+ блокирует такие запросы. В release-манифесте этого
+         флага нет (#55, M-2). -->
+    <application android:usesCleartextTraffic="true" />
 </manifest>
