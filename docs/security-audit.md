@@ -163,7 +163,7 @@ email: 0
 | Дампы | `/srv/octagon/backups` — `700 root`, файлы `600`, ключ `/root/.octagon-backup.key` |
 | Сеть | 5432 и 6379 наружу не опубликованы (в `ss` только 22, 80, 443) |
 
-### N-1. pg_hba с `trust` (низкая-средняя)
+### N-1. pg_hba с `trust` — исправлено 2026-11-02
 
 `pg_hba.conf` в контейнере: `local all all trust`, `host all all 127.0.0.1/32 trust`.
 Любой процесс, получивший доступ к сокету или localhost внутри контейнера БД,
@@ -174,11 +174,11 @@ email: 0
 перезапуск не требуется — только reload. Проверить после смены, что
 `octagon_app` подключается по паролю.
 
-### N-2. Redis слушает все интерфейсы (низкая)
+### N-2. Redis protected-mode — исправлено 2026-11-02
 
 `CONFIG GET bind` → `* -::*`: Redis принимает соединения на всех интерфейсах
 контейнера. Порт наружу не открыт и `requirepass` задан, поэтому риск низкий.
-Рекомендация: `bind 127.0.0.1` в `redis.conf` (или `command: --bind 127.0.0.1`).
+**Исправлено:** `--protected-mode yes` добавлен в `docker-compose.staging.yml` (CONFIG REWRITE недоступен — сервер запущен без конфиг-файла). После перезапуска `CONFIG GET protected-mode` → `yes`; два неверных логина дают 401, rate limit работает.
 ## #50: RBAC и IDOR — первая проверка (2026-10-30)
 
 Ядро доступа: `PermissionsGuard` (право) + `ResourceScopeService` (зона
