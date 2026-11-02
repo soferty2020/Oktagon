@@ -7,11 +7,9 @@
     <application
         android:label="OCTAGON"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
-        android:usesCleartextTraffic="true">
-        <!-- usesCleartextTraffic: локальный API работает по http, а Android 9+
-             блокирует такие запросы. Для production это нужно убрать и перейти на
-             https, иначе трафик клуба пойдёт открытым текстом. -->
+        android:icon="@mipmap/ic_launcher">
+        <!-- Открытый HTTP намеренно не разрешён: release-сборка ходит только по
+             https. Разрешение для локального API живёт в debug-манифесте (#55, M-2). -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
