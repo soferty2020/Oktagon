@@ -60,6 +60,10 @@ services:
         'allkeys-lru',
         '--requirepass',
         '${REDIS_PASSWORD:?задайте REDIS_PASSWORD в .env.staging}',
+        # protected-mode (#53, N-2): без него Redis отвечает на любые адреса сети
+        # без ограничений. Пароль задан, поэтому API продолжает работать.
+        '--protected-mode',
+        'yes',
       ]
     volumes:
       - redis-data:/data
