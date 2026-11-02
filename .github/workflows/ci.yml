@@ -328,10 +328,20 @@ jobs:
         #
         # Адрес API задаётся здесь: по умолчанию в коде `10.0.2.2` — это хост
         # эмулятора, и на реальном телефоне запрос ушёл бы в никуда.
+        #
+        # Ошибку выводим в аннотацию (`::error::`): полный лог job доступен
+        # только владельцу репозитория, а причина нужна и в API проверки.
         working-directory: apps/mobile
-        run: >-
-          flutter build apk --release
-          --dart-define=API_BASE_URL=https://api.octagon-karate.online/api/v1
+        run: |
+          set -o pipefail
+          flutter build apk --release \
+            --dart-define=API_BASE_URL=https://api.octagon-karate.online/api/v1 2>&1 | tee /tmp/apk-build.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            reason=$(grep -m1 -A6 -E 'What went wrong|FAILURE:|Keystore' /tmp/apk-build.log | tr '\n' ' ' | cut -c1-600)
+            echo "::error::APK build failed: ${reason:-см. лог}"
+            exit 1
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
