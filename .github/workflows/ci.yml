@@ -266,6 +266,13 @@ jobs:
     name: mobile (apk)
     runs-on: ubuntu-22.04
     timeout-minutes: 30
+    # Секреты подписи (#55, M-1). Пустые значения — норма: тогда APK собирается
+    # debug-ключом, а шаг восстановления ключа пропускается.
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
 
     steps:
       - name: Checkout
@@ -293,10 +300,31 @@ jobs:
         # единственную причину, по которой сборка могла бы упасть не по делу.
         run: yes | flutter doctor --android-licenses || true
 
+      - name: Restore release keystore
+        # Подпись release-сборки (#55, M-1). Если секреты не заданы, шаг
+        # пропускается и APK собирается debug-ключом — так CI не падает до того,
+        # как владелец клуба заведёт ключ. Инструкция: docs/mobile-release-signing.md.
+        if: env.ANDROID_KEYSTORE_BASE64 != ''
+        working-directory: apps/mobile/android
+        env:
+          KEYSTORE_BASE64: ${{ env.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ env.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ env.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ env.ANDROID_KEY_ALIAS }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > octagon-release.jks
+          {
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyPassword=$KEY_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "storeFile=octagon-release.jks"
+          } > key.properties
+          echo "release keystore restored"
+
       - name: Build APK
         # Release без настроенной подписи подписывается debug-ключом: для
-        # проверки на телефоне этого достаточно, а signingConfig появится при
-        # публикации (задача #27).
+        # проверки на телефоне этого достаточно. Публикация — после появления
+        # release-ключа (docs/mobile-release-signing.md, #27).
         #
         # Адрес API задаётся здесь: по умолчанию в коде `10.0.2.2` — это хост
         # эмулятора, и на реальном телефоне запрос ушёл бы в никуда.
