@@ -82,6 +82,51 @@ PostgreSQL или порядок применения миграций могу�
 | Сервер | UFW active (22/80/443), fail2ban active, TLS Let's Encrypt до 22.01.2027 |
 | Порты | наружу слушают только 22, 80, 443; PostgreSQL и Redis не опубликованы |
 
+## #55: Flutter — токены, сеть, релизные ключи (2026-11-02)
+
+| Что | Факт |
+|---|---|
+| Хранение токенов | `flutter_secure_storage` с `AndroidOptions(encryptedSharedPreferences: true)` — Keystore/Keychain, а не обычные prefs |
+| Логирование токенов | в `api_client.dart` нет `print`/`debugPrint`; токен передаётся только в заголовке |
+| Deep links | `intent-filter` только у launcher-активности, `exported` оправдан |
+| iOS | `Info.plist` без `NSAllowsArbitraryLoads` — ATS по умолчанию включён |
+| CI-сборка | `flutter build apk --release --dart-define=API_BASE_URL=https://api.octagon-karate.online/api/v1` |
+
+### M-1. Release подписан debug-ключом (высокая для публикации)
+
+`android/app/build.gradle.kts`: `signingConfig = signingConfigs.getByName("debug")` с
+пометкой TODO. С debug-подписью APK нельзя публиковать в RuStore/Google Play, и
+пользователь, установивший такую сборку, не сможет обновиться на релизную — подписи
+не совпадут. Это же связывает #27 (приложение не опубликовано).
+
+Рекомендация: создать release keystore (вне git), подключить через
+`key.properties` (в `.gitignore`), включить `signingConfig = release`.
+
+### M-2. `usesCleartextTraffic="true"` в основном манифесте (средняя)
+
+`AndroidManifest.xml` разрешает HTTP для всего приложения. Комментарий объясняет
+это локальным API, но в релизе это лишнее: при ошибке конфигурации трафик пойдёт
+открытым текстом.
+
+Рекомендация: убрать из `main`, оставить только в `debug`-манифесте (или
+`network_security_config` с исключением для `10.0.2.2`).
+
+### M-3. Дефолтный адрес API — `http://10.0.2.2:3000` (средняя)
+
+`ApiConfig._defaultBaseUrl` рассчитан на эмулятор. Если релиз собрать без
+`--dart-define=API_BASE_URL`, приложение молча пойдёт по HTTP на несуществующий
+адрес. В CI флаг есть, в ручной сборке — нет.
+
+Рекомендация: в release-режиме не подставлять дефолт, а падать с понятной
+ошибкой конфигурации (`assert` или экран «сборка без адреса API»).
+
+### M-4. Нет minify/shrink (низкая)
+
+`build.gradle.kts` не задаёт `isMinifyEnabled`/`isShrinkResources`: R8 не
+обфусцирует код, строки и отладочная информация остаются в APK.
+
+Рекомендация: включить `isMinifyEnabled = true`, `isShrinkResources = true`,
+`proguard-rules.pro` для моделей.
 ## #56: персональные данные в логах и аудит-логи (2026-11-02)
 
 **Логи API.** Последние 300 строк логов staging проверены на PII и секреты:
