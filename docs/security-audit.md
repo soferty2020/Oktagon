@@ -92,7 +92,7 @@ PostgreSQL или порядок применения миграций могу�
 | iOS | `Info.plist` без `NSAllowsArbitraryLoads` — ATS по умолчанию включён |
 | CI-сборка | `flutter build apk --release --dart-define=API_BASE_URL=https://api.octagon-karate.online/api/v1` |
 
-### M-1. Release подписан debug-ключом (высокая для публикации)
+### M-1. Release подписан debug-ключом — механизм готов, ключ за владельцем
 
 `android/app/build.gradle.kts`: `signingConfig = signingConfigs.getByName("debug")` с
 пометкой TODO. С debug-подписью APK нельзя публиковать в RuStore/Google Play, и
