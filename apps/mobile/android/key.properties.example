@@ -1,0 +1,11 @@
+# Пример файла подписи release-сборки (#55, M-1).
+#
+# Скопируйте в android/key.properties и заполните своими значениями.
+# Сам файл и .jks лежат в .gitignore: в репозиторий они не попадают.
+#
+# Как создать ключ и что делать с паролями — docs/mobile-release-signing.md.
+
+storePassword=ПАРОЛЬ_ХРАНИЛИЩА
+keyPassword=ПАРОЛЬ_КЛЮЧА
+keyAlias=octagon-release
+storeFile=octagon-release.jks
