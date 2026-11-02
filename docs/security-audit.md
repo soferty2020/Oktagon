@@ -82,6 +82,30 @@ PostgreSQL или порядок применения миграций могу�
 | Сервер | UFW active (22/80/443), fail2ban active, TLS Let's Encrypt до 22.01.2027 |
 | Порты | наружу слушают только 22, 80, 443; PostgreSQL и Redis не опубликованы |
 
+## #56: персональные данные в логах и аудит-логи (2026-11-02)
+
+**Логи API.** Последние 300 строк логов staging проверены на PII и секреты:
+
+```
+строк: 300
+email: 0
+телефон: 0
+"password" / "bearer <token>": 0
+```
+
+Тела запросов в логи не попадают; фильтр исключений не выводит DTO. Отдельная
+проверка: `password` и токены в тексте ошибок не встречаются.
+
+**Аудит-логи.** Пишутся действия по спортсмену и посещаемости:
+`ATHLETE_CREATED`, `ATHLETE_UPDATED`, `ATHLETE_ARCHIVED`, `ATHLETE_ERASED`,
+`ATHLETE_CERTIFIED`, `ATHLETE_CERTIFICATION_CANCELLED`, `ATHLETE_ACCOUNT_LINKED`,
+`ATHLETE_ACCOUNT_UNLINKED`, `ATHLETE_LINK_CODE_ISSUED`, `ATHLETE_LINKED_BY_CODE`,
+`ATHLETE_LINKS_VIEWED`, `ATTENDANCE_MARKED`, `ATTENDANCE_UPDATED` и другие.
+Для #63 (история изменений карточки) основа уже есть — нужен только запрос
+«покажи записи по этому спортсмену».
+
+Не проверено: публичные endpoint'ы (`/news`, `/health`, `/auth/*`) на перебор и
+раскрытие существования аккаунтов; полнота аудита по правам и финансам.
 ## #53: PostgreSQL и Redis (2026-11-02)
 
 Проверено на staging.
