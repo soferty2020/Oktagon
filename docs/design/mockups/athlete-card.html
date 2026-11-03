@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OCTAGON Control 2.0 — Карточка спортсмена</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="mockup.css" />
+<style>
+  .card-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card);
+  }
+  .card-head h1 { margin: 0; font-size: 22px; font-weight: 700; }
+  .card-head .meta { margin-top: 4px; color: var(--muted); font-size: 12.5px; }
+  .card-head .badges { display: flex; gap: 8px; margin-top: 8px; }
+  .card-head .actions { display: flex; gap: 8px; margin-left: auto; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 16px;
+    margin-top: 16px;
+    align-items: start;
+  }
+  .main-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .side-col { display: flex; flex-direction: column; gap: 16px; }
+
+  .tabs { margin-top: 16px; }
+  .info {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 24px;
+  }
+  .info-row { display: flex; align-items: baseline; gap: 8px; font-size: 13px; }
+  .info-row span { color: var(--muted); min-width: 108px; }
+  .info-row b { font-weight: 500; }
+
+  .rank {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .rank-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: var(--accent);
+    flex: 0 0 auto;
+  }
+  .rank b { display: block; font-size: 18px; font-weight: 700; }
+  .rank span { color: var(--muted); font-size: 12px; }
+
+  .list-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-top: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .list-item:first-of-type { border-top: 0; }
+  .list-item span { color: var(--muted); font-size: 12px; }
+
+  @media (max-width: 1180px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 640px) {
+    .card-head { padding: 16px; }
+    .card-head .actions { margin-left: 0; width: 100%; }
+    .card-head .actions .btn { flex: 1; justify-content: center; }
+    .info { grid-template-columns: minmax(0, 1fr); }
+    .tabs { overflow-x: auto; }
+    .tabs a { white-space: nowrap; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="app-side">
+    <div class="logo">OCTAGON<span>KARATE CLUB</span></div>
+    <nav class="nav">
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Обзор</span></a>
+      <a class="active" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3.2"/><path d="M3 19v-1a6 6 0 0 1 12 0v1"/><circle cx="17" cy="9" r="2.4"/></svg><span>Спортсмены</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 12h8M8 8h5M8 16h6" stroke-linecap="round"/></svg><span>Группы</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="3.6"/><path d="M5 20v-1a7 7 0 0 1 14 0v1"/></svg><span>Тренеры</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 21V7l8-4 8 4v14M9 21v-6h6v6"/></svg><span>Залы</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 5h18v16H3zM3 10h18M8 3v4M16 3v4"/></svg><span>Расписание</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 17l5-5 4 3 6-7 3 3"/></svg><span>Посещаемость</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l2.5 5.5L20 9.5l-4 4 1 5.5-5-2.7-5 2.7 1-5.5-4-4 5.5-1Z"/></svg><span>Аттестации</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 4h8v4a4 4 0 0 1-8 0zM6 4h2M16 4h2M12 12v4M9 20h6"/></svg><span>Соревнования</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v18M16 7c0-1.7-1.8-3-4-3S8 5.3 8 7s1.8 3 4 3 4 1.3 4 3-1.8 3-4 3-4-1.3-4-3"/></svg><span>Финансы</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 21V9M12 21V3M19 21v-7"/></svg><span>Отчёты</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/></svg><span>Настройки</span></a>
+    </nav>
+    <div class="version">Версия 1.0.0</div>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-top">
+      <div class="crumbs">OCTAGON / Спортсмены / <b>Профиль</b></div>
+      <div class="right">
+        <button class="btn btn-icon" type="button" aria-label="Уведомления"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" stroke-linecap="round"/><path d="M10 21h4" stroke-linecap="round"/></svg></button>
+        <span class="avatar">В</span>
+        <span class="who">Владелец клуба<span>Руководитель клуба</span></span>
+        <button class="btn btn-secondary btn-sm" type="button">Выйти</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Светлая шапка карточки -->
+      <header class="card-head">
+        <div>
+          <h1>Иванова Анна</h1>
+          <p class="meta">15.03.2012 · 14 лет · Продолжающие · Охотская 84</p>
+          <div class="badges">
+            <span class="status status-active">Активен</span>
+            <span class="status status-missing" style="background:var(--accent-soft);color:var(--accent-text)">10 кю · оранжевый пояс</span>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-secondary" type="button">Редактировать</button>
+          <button class="btn btn-icon" type="button" aria-label="Ещё">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="tabs">
+        <a class="active" href="#">Обзор</a>
+        <a href="#">Аттестации</a>
+        <a href="#">Соревнования</a>
+        <a href="#">Посещаемость</a>
+        <a href="#">История</a>
+      </div>
+
+      <div class="layout">
+        <div class="main-col">
+          <section class="panel">
+            <h3>Основная информация</h3>
+            <div class="info">
+              <div class="info-row"><span>Дата рождения</span><b>15.03.2012</b></div>
+              <div class="info-row"><span>Пол</span><b>Женский</b></div>
+              <div class="info-row"><span>Группа</span><b>Продолжающие</b></div>
+              <div class="info-row"><span>Зал</span><b>Охотская 84</b></div>
+              <div class="info-row"><span>Тренер</span><b>Тренер клуба</b></div>
+              <div class="info-row"><span>Телефон</span><b>+7 700 000 00 00</b></div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <h3>Спортивная ступень</h3>
+            <div class="rank">
+              <span class="rank-badge" aria-hidden="true"></span>
+              <div>
+                <b>10 кю</b>
+                <span>Оранжевый пояс · присвоен 14.12.2025</span>
+              </div>
+            </div>
+            <div class="list-item" style="margin-top:12px"><span>Следующая ступень</span><b>9 кю</b></div>
+            <div class="list-item"><span>Аттестаций всего</span><b>3</b></div>
+          </section>
+
+          <section class="panel">
+            <h3>Соревнования</h3>
+            <div class="list-item"><b>Первенство клуба</b><span>2 место · серебро · 12.10.2026</span></div>
+            <div class="list-item"><b>Открытый турнир города</b><span>участие · 03.05.2026</span></div>
+          </section>
+
+          <section class="panel">
+            <h3>Связанные аккаунты</h3>
+            <div class="list-item"><b>parent@example.com</b><span>родитель · основной</span></div>
+          </section>
+        </div>
+
+        <div class="side-col">
+          <section class="panel">
+            <h3>Быстрые действия</h3>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <button class="btn btn-secondary" type="button" style="justify-content:flex-start">Аттестовать</button>
+              <button class="btn btn-secondary" type="button" style="justify-content:flex-start">Назначить на турнир</button>
+              <button class="btn btn-secondary" type="button" style="justify-content:flex-start">Перевести в группу</button>
+            </div>
+          </section>
+
+          <section class="panel">
+            <h3>Опасные действия</h3>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <button class="btn btn-danger" type="button" style="justify-content:flex-start">Архивировать</button>
+            </div>
+            <p class="hint" style="margin:8px 0 0">Архивирование скрывает карточку из активного реестра, данные сохраняются.</p>
+          </section>
+
+          <section class="panel">
+            <h3>Заметки клуба</h3>
+            <p style="margin:0;font-size:12.5px;color:var(--muted)">Заметок пока нет.</p>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>
