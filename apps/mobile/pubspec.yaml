@@ -30,6 +30,20 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
+
+# Иконки приложения (#29). Источник — docs/design/brand/octagon-app-icon*.svg,
+# PNG отрендерены из него; сами SVG и превью хранятся в docs/design/brand.
+#
+# Рамку и скругление не рисуем: их применяет платформа. Foreground для Android 8+
+# содержит знак в safe zone, фон задаётся здесь же.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/brand/app-icon-1024.png
+  adaptive_icon_background: '#060607'
+  adaptive_icon_foreground: assets/brand/app-icon-foreground-1024.png
+  remove_alpha_ios: true
