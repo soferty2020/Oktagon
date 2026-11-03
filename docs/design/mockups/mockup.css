@@ -147,13 +147,35 @@ body {
   .app-side {
     position: static;
     height: auto;
+    flex-wrap: wrap;
     flex-direction: row;
     align-items: center;
-    overflow-x: auto;
     padding: 12px;
   }
+  /* Перенос вместо горизонтальной прокрутки: последний пункт больше не
+     обрезается на 390 px (#127–#130). */
   .app-side .nav {
     flex-direction: row;
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+  .app-side {
+    padding: 10px 12px 12px;
+  }
+  .app-side .logo {
+    padding: 0 4px 2px;
+    font-size: 16px;
+  }
+  .app-side .logo span {
+    font-size: 7.5px;
+  }
+  .app-side .nav a {
+    height: 34px;
+    padding: 0 8px;
+  }
+  .app-side .nav a svg {
+    width: 16px;
+    height: 16px;
   }
   .app-side .nav a span {
     display: none;
@@ -188,11 +210,18 @@ body {
     flex-direction: column;
     align-items: stretch;
   }
+  /* В колонке flex-basis работал по высоте и растягивал поле поиска (#127, #128):
+     фиксируем 44 px и убираем рост. */
   .filters .search,
   .filters .select,
   .filters .btn {
     width: 100%;
     min-width: 0;
+    flex: 0 0 auto;
+    height: 44px;
+  }
+  .filters .search input {
+    height: 42px;
   }
 }
 
@@ -245,10 +274,11 @@ body {
     font-size: 11.5px;
     font-weight: 400;
   }
-  tbody td:nth-child(2)::before { content: 'Дата рождения: '; color: var(--muted); }
-  tbody td:nth-child(3)::before { content: 'Группа: '; color: var(--muted); }
-  tbody td:nth-child(4)::before { content: 'Ступень: '; color: var(--muted); }
-  tbody td:nth-child(5)::before { content: 'Статус: '; color: var(--muted); }
+  .table-wrap tbody td:nth-child(2)::before { content: 'Дата рождения: '; color: var(--muted); }
+  .table-wrap tbody td:nth-child(3)::before { content: 'Группа: '; color: var(--muted); }
+  .table-wrap tbody td:nth-child(4)::before { content: 'Ступень: '; color: var(--muted); }
+  .table-wrap tbody td:nth-child(5)::before { content: 'Аккаунт: '; color: var(--muted); }
+  .table-wrap tbody td:nth-child(6)::before { content: 'Статус: '; color: var(--muted); }
   tbody td.actions {
     margin-top: 8px;
     text-align: left;

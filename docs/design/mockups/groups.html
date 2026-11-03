@@ -56,11 +56,17 @@
     .hall table, .hall tbody { display: block; }
     .hall table thead { display: none; }
     .hall tbody tr {
-      margin: 0 14px 8px;
+      margin: 0 12px 6px;
+      padding: 8px 10px;
+      gap: 1px;
       border: 1px solid var(--line);
       border-radius: var(--radius-card);
     }
-    .hall tbody tr:first-child { margin-top: 12px; }
+    .hall tbody tr:first-child { margin-top: 10px; }
+    .hall tbody tr:last-child { margin-bottom: 10px; }
+    .hall table tbody td { font-size: 12px; height: auto; padding: 2px 0; }
+    .hall tbody td.cell-main { font-size: 13.5px; }
+    .hall tbody td.actions { margin-top: 6px; }
     .hall tbody td:nth-child(2)::before { content: 'Тренер: '; color: var(--muted); }
     .hall tbody td:nth-child(3)::before { content: 'Участники: '; color: var(--muted); }
     .hall tbody td:nth-child(4)::before { content: 'Расписание: '; color: var(--muted); }
@@ -114,7 +120,7 @@
 
       <div class="kpis" style="grid-template-columns:repeat(3,minmax(0,1fr))">
         <div class="kpi"><b>6</b><span>Всего групп</span></div>
-        <div class="kpi"><b>31</b><span>Всего спортсменов</span></div>
+        <div class="kpi"><b>31</b><span>Спортсменов в группах</span></div>
         <div class="kpi"><b>3</b><span>Без тренера</span></div>
       </div>
 

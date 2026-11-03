@@ -9,180 +9,51 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="mockup.css" />
 <style>
-  /* --- недельная сетка (десктоп) --- */
-  .week {
-    margin-top: 16px;
-    background: var(--white);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-card);
-    overflow: hidden;
-  }
-  .week-bar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--line);
-  }
+  .week { margin-top: 16px; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-card); overflow: hidden; }
+  .week-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
   .week-bar .range { font-size: 13px; font-weight: 500; }
   .week-bar .spacer { flex: 1 1 auto; }
-  .seg {
-    display: inline-flex;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-control);
-    overflow: hidden;
-  }
-  .seg button {
-    height: 34px;
-    padding: 0 14px;
-    border: 0;
-    background: var(--white);
-    color: var(--muted);
-    font-size: 12.5px;
-    cursor: pointer;
-  }
-  .seg button.on {
-    background: var(--accent);
-    color: #fff;
-  }
-  .week-grid {
-    display: grid;
-    grid-template-columns: 150px repeat(6, minmax(0, 1fr));
-  }
-  .week-grid .head {
-    padding: 10px 12px;
-    background: #fbfbfc;
-    border-bottom: 1px solid var(--line);
-    border-right: 1px solid var(--line);
-    font-size: 11.5px;
-    color: var(--muted);
-  }
-  .week-grid .head b {
-    display: block;
-    margin-top: 2px;
-    color: var(--ink);
-    font-size: 13px;
-    font-weight: 600;
-  }
-  .week-grid .hall-cell {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px;
-    border-bottom: 1px solid var(--line);
-    border-right: 1px solid var(--line);
-    font-size: 13px;
-    font-weight: 500;
-  }
-  .week-grid .hall-cell svg { width: 16px; height: 16px; color: var(--muted); }
-  .week-grid .day-cell {
-    min-height: 116px;
-    padding: 8px;
-    border-bottom: 1px solid var(--line);
-    border-right: 1px solid var(--line);
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius-control); overflow: hidden; }
+  .seg button { height: 34px; padding: 0 14px; border: 0; background: var(--white); color: var(--muted); font-size: 12.5px; cursor: pointer; }
+  .seg button.on { background: var(--accent); color: #fff; }
+  /* Семь дней: Пн–Вс. Воскресенье остаётся в сетке, даже если занятий нет. */
+  .week-grid { display: grid; grid-template-columns: 140px repeat(7, minmax(0, 1fr)); }
+  .week-grid .head { padding: 10px; background: #fbfbfc; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); font-size: 11px; color: var(--muted); }
+  .week-grid .head b { display: block; margin-top: 2px; color: var(--ink); font-size: 13px; font-weight: 600; }
+  .week-grid .head.weekend, .week-grid .head.weekend b { color: #9a5a00; }
+  .week-grid .hall-cell { display: flex; align-items: center; gap: 8px; padding: 12px 10px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); font-size: 12.5px; font-weight: 500; }
+  .week-grid .hall-cell svg { width: 15px; height: 15px; color: var(--muted); flex: 0 0 auto; }
+  .week-grid .day-cell { min-height: 110px; padding: 6px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 5px; }
   .week-grid .day-cell:last-child { border-right: 0; }
   .week-grid .row-last { border-bottom: 0; }
-  .lesson {
-    padding: 6px 8px;
-    border-radius: 8px;
-    background: var(--accent-soft);
-    border-left: 3px solid var(--accent);
-    font-size: 11.5px;
-    line-height: 1.3;
-  }
+  .lesson { padding: 5px 7px; border-radius: 8px; background: var(--accent-soft); border-left: 3px solid var(--accent); font-size: 11px; line-height: 1.3; }
   .lesson b { display: block; font-weight: 600; }
   .lesson span { color: var(--accent-text); }
-  .lesson.cancelled {
-    background: var(--danger-soft);
-    border-left-color: var(--danger);
-  }
+  .lesson.cancelled { background: var(--danger-soft); border-left-color: var(--danger); }
   .lesson.cancelled b { text-decoration: line-through; }
-  .lesson.moved {
-    background: var(--warning-soft);
-    border-left-color: var(--warning);
-  }
+  .lesson.cancelled span { color: #9b1c1c; }
+  .lesson.moved { background: var(--warning-soft); border-left-color: var(--warning); }
+  .lesson.moved span { color: #8a5a00; }
 
-  /* --- дневной режим (мобильный) --- */
   .day-mode { display: none; }
-
   @media (max-width: 860px) {
     .week { display: none; }
     .day-mode { display: block; }
   }
-  .day-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 12px;
-  }
+  .day-bar { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
   .day-bar .date { flex: 1; font-size: 14px; font-weight: 600; }
   .day-bar .btn-icon { width: 34px; height: 34px; }
-  .days {
-    display: flex;
-    gap: 6px;
-    margin-top: 10px;
-    overflow-x: auto;
-    padding-bottom: 2px;
-  }
-  .days button {
-    flex: 0 0 auto;
-    min-width: 48px;
-    padding: 6px 8px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-control);
-    background: var(--white);
-    color: var(--muted);
-    font-size: 11px;
-    line-height: 1.3;
-    cursor: pointer;
-    text-align: center;
-  }
-  .days button b {
-    display: block;
-    color: var(--ink);
-    font-size: 14px;
-    font-weight: 600;
-  }
-  .days button.on {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-  }
+  .days { display: flex; gap: 6px; margin-top: 10px; overflow-x: auto; padding-bottom: 2px; }
+  .days button { flex: 0 0 auto; min-width: 46px; padding: 5px 7px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--white); color: var(--muted); font-size: 10.5px; line-height: 1.3; cursor: pointer; text-align: center; }
+  .days button b { display: block; color: var(--ink); font-size: 14px; font-weight: 600; }
+  .days button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
   .days button.on b { color: #fff; }
-  .day-hall {
-    margin-top: 14px;
-    padding: 10px 12px;
-    background: var(--white);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-card);
-  }
-  .day-hall > h3 {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0 0 8px;
-    font-size: 13px;
-    font-weight: 600;
-  }
+  .day-hall { margin-top: 12px; padding: 10px 12px; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-card); }
+  .day-hall > h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 13px; font-weight: 600; }
   .day-hall > h3 span { margin-left: auto; color: var(--muted); font-size: 11.5px; font-weight: 400; }
-  .lesson-row {
-    display: flex;
-    gap: 10px;
-    padding: 10px 0;
-    border-top: 1px solid var(--line);
-  }
-  .lesson-row:first-of-type { border-top: 0; }
-  .lesson-row .time {
-    flex: 0 0 44px;
-    font-size: 12.5px;
-    font-weight: 600;
-    color: var(--ink);
-  }
+  .lesson-row { display: flex; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
+  .lesson-row:first-of-type { border-top: 0; padding-top: 4px; }
+  .lesson-row .time { flex: 0 0 40px; font-size: 12.5px; font-weight: 600; color: var(--ink); }
   .lesson-row .body { flex: 1; min-width: 0; }
   .lesson-row .body b { display: block; font-size: 13px; font-weight: 500; }
   .lesson-row .body span { color: var(--muted); font-size: 11.5px; }
@@ -230,11 +101,10 @@
         </div>
       </div>
 
-      <!-- ===================== десктоп: недельная сетка ===================== -->
       <section class="week">
         <div class="week-bar">
           <button class="btn btn-secondary btn-sm" type="button" aria-label="Предыдущая неделя">‹</button>
-          <span class="range">10 — 15 ноября 2026</span>
+          <span class="range">09 — 15 ноября 2026</span>
           <button class="btn btn-secondary btn-sm" type="button" aria-label="Следующая неделя">›</button>
           <div class="seg">
             <button class="on" type="button">Неделя</button>
@@ -242,25 +112,27 @@
           </div>
           <span class="spacer"></span>
           <select class="select" style="height:34px"><option>Все залы</option><option>Заречная 4</option><option>Охотская 84</option><option>Проезд энергетиков 29/1</option></select>
-          <select class="select" style="height:34px"><option>Все группы</option><option>Дети 5–7 лет</option><option>Школьники 8–12 лет</option><option>Продолжающие</option></select>
+          <select class="select" style="height:34px"><option>Все группы</option><option>Дети 5–7 лет</option><option>Школьники 8–12 лет</option><option>Начальная группа</option><option>Продолжающие</option><option>Младшая</option><option>Старшая</option></select>
         </div>
 
         <div class="week-grid">
           <div class="head">Зал</div>
-          <div class="head">Пн<b>10 ноя</b></div>
-          <div class="head">Вт<b>11 ноя</b></div>
-          <div class="head">Ср<b>12 ноя</b></div>
-          <div class="head">Чт<b>13 ноя</b></div>
-          <div class="head">Пт<b>14 ноя</b></div>
-          <div class="head" style="border-right:0">Сб<b>15 ноя</b></div>
+          <div class="head">Пн<b>09</b></div>
+          <div class="head">Вт<b>10</b></div>
+          <div class="head">Ср<b>11</b></div>
+          <div class="head">Чт<b>12</b></div>
+          <div class="head">Пт<b>13</b></div>
+          <div class="head">Сб<b>14</b></div>
+          <div class="head weekend" style="border-right:0">Вс<b>15</b></div>
 
           <div class="hall-cell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 21V7l8-4 8 4v14M9 21v-6h6v6" stroke-linecap="round" stroke-linejoin="round"/></svg>Заречная 4</div>
           <div class="day-cell"><div class="lesson"><b>18:00</b><span>Дети 5–7 лет</span></div></div>
           <div class="day-cell"><div class="lesson"><b>18:00</b><span>Школьники 8–12 лет</span></div></div>
-          <div class="day-cell"><div class="lesson"><b>18:00</b><span>Дети 5–7 лет</span></div><div class="lesson cancelled"><b>19:00</b><span>Школьники 8–12 лет</span></div></div>
+          <div class="day-cell"><div class="lesson"><b>18:00</b><span>Дети 5–7 лет</span></div></div>
           <div class="day-cell"><div class="lesson"><b>18:00</b><span>Школьники 8–12 лет</span></div></div>
           <div class="day-cell"><div class="lesson"><b>18:00</b><span>Дети 5–7 лет</span></div></div>
-          <div class="day-cell" style="border-right:0"><div class="lesson moved"><b>10:00</b><span>Школьники 8–12 лет</span></div></div>
+          <div class="day-cell"><div class="lesson cancelled"><b>10:00</b><span>Школьники 8–12 лет</span></div></div>
+          <div class="day-cell" style="border-right:0"></div>
 
           <div class="hall-cell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 21V7l8-4 8 4v14M9 21v-6h6v6" stroke-linecap="round" stroke-linejoin="round"/></svg>Охотская 84</div>
           <div class="day-cell"><div class="lesson"><b>16:00</b><span>Начальная группа</span></div></div>
@@ -268,23 +140,24 @@
           <div class="day-cell"><div class="lesson"><b>16:00</b><span>Начальная группа</span></div></div>
           <div class="day-cell"><div class="lesson"><b>17:00</b><span>Продолжающие</span></div></div>
           <div class="day-cell"><div class="lesson"><b>16:00</b><span>Начальная группа</span></div></div>
-          <div class="day-cell" style="border-right:0"><div class="lesson"><b>10:00</b><span>Продолжающие</span></div></div>
+          <div class="day-cell"><div class="lesson"><b>10:00</b><span>Продолжающие</span></div></div>
+          <div class="day-cell" style="border-right:0"></div>
 
           <div class="hall-cell row-last"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 21V7l8-4 8 4v14M9 21v-6h6v6" stroke-linecap="round" stroke-linejoin="round"/></svg>Проезд энергетиков 29/1</div>
           <div class="day-cell row-last"><div class="lesson"><b>17:00</b><span>Младшая</span></div></div>
           <div class="day-cell row-last"><div class="lesson"><b>18:00</b><span>Старшая</span></div></div>
+          <div class="day-cell row-last"><div class="lesson"><b>17:00</b><span>Младшая</span></div></div>
           <div class="day-cell row-last"></div>
           <div class="day-cell row-last"><div class="lesson"><b>17:00</b><span>Младшая</span></div></div>
-          <div class="day-cell row-last"><div class="lesson"><b>18:00</b><span>Старшая</span></div></div>
+          <div class="day-cell row-last"><div class="lesson moved"><b>11:00</b><span>Старшая</span></div></div>
           <div class="day-cell row-last" style="border-right:0"></div>
         </div>
       </section>
 
-      <!-- ===================== мобильный: дневной режим ===================== -->
       <section class="day-mode">
         <div class="day-bar">
           <button class="btn btn-icon" type="button" aria-label="Предыдущий день">‹</button>
-          <span class="date">Пятница, 14 ноября</span>
+          <span class="date">Суббота, 14 ноября</span>
           <button class="btn btn-icon" type="button" aria-label="Календарь">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:16px;height:16px"><path d="M3 5h18v16H3zM3 10h18M8 3v4M16 3v4"/></svg>
           </button>
@@ -292,29 +165,24 @@
         </div>
 
         <div class="days">
-          <button type="button">Пн<b>10</b></button>
-          <button type="button">Вт<b>11</b></button>
-          <button type="button">Ср<b>12</b></button>
-          <button type="button">Чт<b>13</b></button>
-          <button class="on" type="button">Пт<b>14</b></button>
-          <button type="button">Сб<b>15</b></button>
-          <button type="button">Вс<b>16</b></button>
+          <button type="button">Пн<b>09</b></button>
+          <button type="button">Вт<b>10</b></button>
+          <button type="button">Ср<b>11</b></button>
+          <button type="button">Чт<b>12</b></button>
+          <button type="button">Пт<b>13</b></button>
+          <button class="on" type="button">Сб<b>14</b></button>
+          <button type="button">Вс<b>15</b></button>
         </div>
 
         <div class="filters" style="margin-top:10px">
-          <select class="select"><option>Все залы</option><option>Заречная 4</option><option>Охотская 84</option></select>
-          <select class="select"><option>Все группы</option><option>Дети 5–7 лет</option><option>Начальная группа</option></select>
+          <select class="select"><option>Все залы</option><option>Заречная 4</option><option>Охотская 84</option><option>Проезд энергетиков 29/1</option></select>
+          <select class="select"><option>Все группы</option><option>Школьники 8–12 лет</option><option>Продолжающие</option><option>Старшая</option></select>
         </div>
 
         <div class="day-hall">
-          <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:16px;height:16px;color:var(--muted)"><path d="M4 21V7l8-4 8 4v14M9 21v-6h6v6" stroke-linecap="round" stroke-linejoin="round"/></svg>Заречная 4<span>2 занятия</span></h3>
-          <div class="lesson-row">
-            <span class="time">18:00</span>
-            <span class="body"><b>Дети 5–7 лет</b><span>Тренер клуба</span></span>
-            <span class="status status-active">активна</span>
-          </div>
+          <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:16px;height:16px;color:var(--muted)"><path d="M4 21V7l8-4 8 4v14M9 21v-6h6v6" stroke-linecap="round" stroke-linejoin="round"/></svg>Заречная 4<span>1 занятие</span></h3>
           <div class="lesson-row cancelled">
-            <span class="time">19:00</span>
+            <span class="time">10:00</span>
             <span class="body"><b>Школьники 8–12 лет</b><span>Отменено: тренер на соревнованиях</span></span>
             <span class="status status-archived">отменено</span>
           </div>
@@ -323,8 +191,8 @@
         <div class="day-hall">
           <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:16px;height:16px;color:var(--muted)"><path d="M4 21V7l8-4 8 4v14M9 21v-6h6v6" stroke-linecap="round" stroke-linejoin="round"/></svg>Охотская 84<span>1 занятие</span></h3>
           <div class="lesson-row">
-            <span class="time">16:00</span>
-            <span class="body"><b>Начальная группа</b><span>тренер не назначен</span></span>
+            <span class="time">10:00</span>
+            <span class="body"><b>Продолжающие</b><span>Тренер клуба</span></span>
             <span class="status status-active">активна</span>
           </div>
         </div>
@@ -332,7 +200,7 @@
         <div class="day-hall">
           <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:16px;height:16px;color:var(--muted)"><path d="M4 21V7l8-4 8 4v14M9 21v-6h6v6" stroke-linecap="round" stroke-linejoin="round"/></svg>Проезд энергетиков 29/1<span>1 занятие</span></h3>
           <div class="lesson-row">
-            <span class="time">18:00</span>
+            <span class="time">11:00</span>
             <span class="body"><b>Старшая</b><span>Тренер клуба</span></span>
             <span class="status status-draft">перенесено</span>
           </div>
