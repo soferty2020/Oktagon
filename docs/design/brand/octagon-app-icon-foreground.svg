@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1254 1254" role="img" aria-labelledby="title">
+<title id="title">OCTAGON Karate Club — simplified vector mark</title>
+
+<defs>
+  <linearGradient id="metal" x1="0" y1="0" x2="0.17" y2="1" objectBoundingBox="true">
+    <stop offset="0" stop-color="#ffffff"/>
+    <stop offset="0.28" stop-color="#f2f2f4"/>
+    <stop offset="0.48" stop-color="#d4d6da"/>
+    <stop offset="0.69" stop-color="#999da5"/>
+    <stop offset="0.84" stop-color="#565963"/>
+    <stop offset="1" stop-color="#f2f3f5"/>
+  </linearGradient>
+  <linearGradient id="metalText" x1="0" y1="0" x2="0" y2="1" objectBoundingBox="true">
+    <stop offset="0" stop-color="#ffffff"/>
+    <stop offset="0.36" stop-color="#fafafa"/>
+    <stop offset="0.66" stop-color="#999da5"/>
+    <stop offset="1" stop-color="#555965"/>
+  </linearGradient>
+  <linearGradient id="orange" x1="0" y1="0" x2="1" y2="1" objectBoundingBox="true">
+    <stop offset="0" stop-color="#ffb423"/>
+    <stop offset="0.28" stop-color="#ff8a00"/>
+    <stop offset="0.62" stop-color="#ff6b00"/>
+    <stop offset="1" stop-color="#ef3900"/>
+  </linearGradient>
+  <linearGradient id="orangeText" x1="0" y1="0" x2="0.2" y2="1" objectBoundingBox="true">
+    <stop offset="0" stop-color="#ffad1d"/>
+    <stop offset="0.6" stop-color="#ff8300"/>
+    <stop offset="1" stop-color="#e74900"/>
+  </linearGradient>
+  <radialGradient id="bg" cx="51%" cy="38%" r="69%">
+    <stop offset="0" stop-color="#141011"/>
+    <stop offset="0.62" stop-color="#080809"/>
+    <stop offset="1" stop-color="#030303"/>
+  </radialGradient>
+  <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+    <stop offset="0" stop-color="#ff7700" stop-opacity="0.57"/>
+    <stop offset="0.6" stop-color="#ff5f00" stop-opacity="0.15"/>
+    <stop offset="1" stop-color="#ff5f00" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="frame" x1="0" y1="0" x2="1" y2="1" objectBoundingBox="true">
+    <stop offset="0" stop-color="#ffb629"/>
+    <stop offset="0.42" stop-color="#ff7300"/>
+    <stop offset="0.75" stop-color="#e54c00"/>
+    <stop offset="1" stop-color="#ffab16"/>
+  </linearGradient>
+  <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%">
+    <feGaussianBlur stdDeviation="12"/>
+  </filter>
+</defs>
+
+
+<g transform="translate(627 627) scale(0.68) translate(-627 -627)">
+<g transform="translate(-80 -60) scale(1.14)">
+<!-- Orange speed-trail behind the metallic O. Vector shape traced from approved render. -->
+<g fill="url(#orange)" stroke="#d94f00" stroke-width="2" stroke-linejoin="round">
+  <path d="M292 830 L456 772 L746 772 C812 772 846 745 872 696 L1098 300 C1094 375 1059 447 1026 517 L936 701 C893 794 850 827 786 830 Z"/>
+</g>
+<!-- Dark chrome relief and highlights -->
+<path d="M174 692 C186 639 233 540 263 482 L344 330 C386 250 465 204 563 203 L1021 204 C1092 205 1123 229 1092 294 L853 695 C827 737 803 752 758 753 L472 753 C419 753 389 767 341 788 C247 828 162 782 174 692 Z M485 661 C491 634 512 594 526 564 L652 335 C669 304 693 268 734 266 C778 264 795 285 781 317 L618 649 C596 688 586 704 546 707 C499 711 474 694 485 661 Z" fill="#111216" stroke="#0b0b0b" stroke-width="28" fill-rule="evenodd" stroke-linejoin="round"/>
+<path d="M174 692 C186 639 233 540 263 482 L344 330 C386 250 465 204 563 203 L1021 204 C1092 205 1123 229 1092 294 L853 695 C827 737 803 752 758 753 L472 753 C419 753 389 767 341 788 C247 828 162 782 174 692 Z M485 661 C491 634 512 594 526 564 L652 335 C669 304 693 268 734 266 C778 264 795 285 781 317 L618 649 C596 688 586 704 546 707 C499 711 474 694 485 661 Z" fill="url(#metal)" stroke="#fcfdff" stroke-width="3" fill-rule="evenodd" stroke-linejoin="round"/>
+<!-- Highlights cut across the upper chrome edge -->
+<path d="M370 290 C428 236 488 206 563 204 L1017 204 C1081 204 1106 229 1095 273" stroke="#f7f8fc" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.82"/>
+</g>
+</g></svg>
