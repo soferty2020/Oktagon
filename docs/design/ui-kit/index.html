@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OCTAGON Control 2.0 — UI-kit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="tokens.css" />
+</head>
+<body>
+<main class="page">
+
+  <header class="page-head">
+    <div>
+      <h1>UI-kit OCTAGON Control 2.0</h1>
+      <p>Оболочка, таблицы, формы, фильтры, состояния и адаптив. Основа — DESIGN.md и утверждённый референс.</p>
+    </div>
+    <span class="badge-example">примерные данные</span>
+  </header>
+
+  <!-- 1. Оболочка ------------------------------------------------------- -->
+  <section class="kit">
+    <h2>1. Оболочка</h2>
+    <p class="hint">Сайдбар 248 px, верхняя панель с крошками и профилем, светлая рабочая область. Активный пункт — единственное оранжевое пятно в навигации.</p>
+
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="logo">OCTAGON<span>KARATE CLUB</span></div>
+        <nav class="nav">
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Обзор</span></a>
+          <a class="active" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3.2"/><path d="M3 19v-1a6 6 0 0 1 12 0v1"/><circle cx="17" cy="9" r="2.4"/></svg><span>Спортсмены</span></a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 12h8M8 8h5M8 16h6" stroke-linecap="round"/></svg><span>Группы</span></a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="3.6"/><path d="M5 20v-1a7 7 0 0 1 14 0v1"/></svg><span>Тренеры</span></a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 21V7l8-4 8 4v14M9 21v-6h6v6"/></svg><span>Залы</span></a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 5h18v16H3zM3 10h18M8 3v4M16 3v4"/></svg><span>Расписание</span></a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 17l5-5 4 3 6-7 3 3"/></svg><span>Посещаемость</span></a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l2.5 5.5L20 9.5l-4 4 1 5.5-5-2.7-5 2.7 1-5.5-4-4 5.5-1Z"/></svg><span>Аттестации</span></a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 4h8v4a4 4 0 0 1-8 0zM6 4h2M16 4h2M12 12v4M9 20h6"/></svg><span>Соревнования</span></a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v18M16 7c0-1.7-1.8-3-4-3S8 5.3 8 7s1.8 3 4 3 4 1.3 4 3-1.8 3-4 3-4-1.3-4-3"/></svg><span>Финансы</span></a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 21V9M12 21V3M19 21v-7"/></svg><span>Отчёты</span></a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/></svg><span>Настройки</span></a>
+        </nav>
+      </aside>
+
+      <div class="shell-main">
+        <div class="topbar">
+          <div class="crumbs">OCTAGON / <b>Спортсмены</b></div>
+          <div class="topbar-right">
+            <button class="btn-icon btn" type="button" aria-label="Уведомления">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" stroke-linecap="round"/><path d="M10 21h4" stroke-linecap="round"/></svg>
+            </button>
+            <span class="avatar">В</span>
+            <span class="who">Владелец клуба<span>Руководитель клуба</span></span>
+            <button class="btn btn-secondary btn-sm" type="button">Выйти</button>
+          </div>
+        </div>
+
+        <div class="shell-body">
+          <div class="page-header">
+            <div>
+              <h1>Спортсмены</h1>
+              <p>Реестр спортсменов клуба: поиск, фильтры и карточки.</p>
+            </div>
+            <button class="btn btn-primary" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+              Новый спортсмен
+            </button>
+          </div>
+
+          <div class="kpis">
+            <div class="kpi"><b>32</b><span>Всего спортсменов</span></div>
+            <div class="kpi"><b>32</b><span>Активных</span></div>
+            <div class="kpi"><b>0</b><span>Архивных</span></div>
+            <div class="kpi"><b>1</b><span>Без группы</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Кнопки ---------------------------------------------------------- -->
+  <section class="kit">
+    <h2>2. Кнопки</h2>
+    <p class="hint">Состояния ниже настоящие: наведите курсор, пройдите Tab. Основное действие одно на экран.</p>
+    <div class="grid cols-2">
+      <div class="panel">
+        <h3>Варианты</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:10px">
+          <button class="btn btn-primary" type="button">Создать</button>
+          <button class="btn btn-secondary" type="button">Отмена</button>
+          <button class="btn btn-ghost" type="button">Сбросить</button>
+          <button class="btn btn-danger" type="button">Архивировать</button>
+          <button class="btn btn-icon" type="button" aria-label="Изменить">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20h4l10-10-4-4L4 16v4Z" stroke-linejoin="round"/><path d="M13 5l4 4" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Размеры и состояния</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+          <button class="btn btn-primary btn-sm" type="button">Малая</button>
+          <button class="btn btn-primary" type="button">Обычная</button>
+          <button class="btn btn-primary" type="button" disabled>Недоступна</button>
+          <button class="btn btn-secondary" type="button" disabled>Недоступна</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Фильтры --------------------------------------------------------- -->
+  <section class="kit">
+    <h2>3. Фильтры</h2>
+    <p class="hint">Одна строка. Поиск уходит в API, «Сбросить» появляется только при активных условиях. Группа зависит от зала.</p>
+    <div class="filters">
+      <label class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:16px;height:16px"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
+        <input placeholder="Поиск по фамилии, имени или отчеству" />
+      </label>
+      <select class="select"><option>Все залы</option><option>Заречная 4</option><option>Охотская 84</option></select>
+      <select class="select"><option>Все группы</option><option>Дети 5–7 лет</option><option>Продолжающие</option></select>
+      <select class="select"><option>Все статусы</option><option>Активные</option><option>Архивные</option></select>
+      <button class="btn btn-secondary" type="button">Сбросить</button>
+    </div>
+  </section>
+
+  <!-- 4. Таблица --------------------------------------------------------- -->
+  <section class="kit">
+    <h2>4. Таблица</h2>
+    <p class="hint">Строка 48 px, первая колонка — главное поле и ссылка, сортировка на сервере, действия справа. Вторичная строка только там, где помогает выбрать.</p>
+
+    <div class="table-wrap">
+      <div class="table-toolbar">
+        <b style="font-weight:500">Найдено: 32 спортсмена</b>
+        <span>48 px · 20 на странице</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th class="sortable sorted"><a href="#">ФИО <span class="arrow">↑</span></a></th>
+            <th class="sortable"><a href="#">Дата рождения <span class="arrow">↕</span></a></th>
+            <th>Группа</th>
+            <th>Ступень / пояс</th>
+            <th class="sortable"><a href="#">Статус <span class="arrow">↕</span></a></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a class="cell-main" href="#">Иванова Анна</a><span class="cell-sub">Отчество</span></td>
+            <td>15.03.2012</td>
+            <td>Продолжающие<span class="cell-sub">Охотская 84</span></td>
+            <td>10 кю<span class="cell-sub">оранжевый</span></td>
+            <td><span class="status status-active">Активен</span></td>
+            <td class="actions"><span class="row">
+              <button class="btn btn-secondary btn-sm" type="button">Открыть</button>
+              <button class="btn btn-icon" type="button" aria-label="Изменить: Иванова Анна">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z" stroke-linejoin="round"/><path d="M13 5l4 4" stroke-linecap="round"/></svg>
+              </button>
+            </span></td>
+          </tr>
+          <tr>
+            <td><a class="cell-main" href="#">Петров Марк</a></td>
+            <td>22.07.2015</td>
+            <td>Дети 5–7 лет<span class="cell-sub">Заречная 4</span></td>
+            <td>6 кю<span class="cell-sub">жёлтый</span></td>
+            <td><span class="status status-active">Активен</span></td>
+            <td class="actions"><span class="row">
+              <button class="btn btn-secondary btn-sm" type="button">Открыть</button>
+              <button class="btn btn-icon" type="button" aria-label="Изменить: Петров Марк">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z" stroke-linejoin="round"/><path d="M13 5l4 4" stroke-linecap="round"/></svg>
+              </button>
+            </span></td>
+          </tr>
+          <tr>
+            <td><a class="cell-main" href="#">Соколова Ева</a></td>
+            <td>Не указано</td>
+            <td>Не указано<span class="cell-sub">без зала</span></td>
+            <td>2 кю<span class="cell-sub">коричневый</span></td>
+            <td><span class="status status-archived">Архив</span></td>
+            <td class="actions"><span class="row">
+              <button class="btn btn-secondary btn-sm" type="button">Открыть</button>
+              <button class="btn btn-icon" type="button" aria-label="Изменить: Соколова Ева">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z" stroke-linejoin="round"/><path d="M13 5l4 4" stroke-linecap="round"/></svg>
+              </button>
+            </span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)">
+        <span>Показано 1–3 из 32</span>
+        <span style="display:flex;gap:6px">
+          <button class="btn btn-secondary btn-sm" type="button" aria-label="Предыдущая">‹</button>
+          <button class="btn btn-primary btn-sm" type="button">1</button>
+          <button class="btn btn-secondary btn-sm" type="button">2</button>
+          <button class="btn btn-secondary btn-sm" type="button">3</button>
+          <button class="btn btn-secondary btn-sm" type="button" aria-label="Следующая">›</button>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Состояния таблицы ----------------------------------------------- -->
+  <section class="kit">
+    <h2>5. Состояния</h2>
+    <p class="hint">Пусто ≠ ошибка. Загрузка — скелетон строк, а не пустой экран; ошибка объясняет причину и предлагает повторить.</p>
+    <div class="grid cols-2">
+      <div class="panel" style="padding:0">
+        <div class="skeleton-row"><div class="skeleton" style="width:30%"></div><div class="skeleton" style="width:18%"></div><div class="skeleton" style="width:22%"></div></div>
+        <div class="skeleton-row"><div class="skeleton" style="width:26%"></div><div class="skeleton" style="width:18%"></div><div class="skeleton" style="width:30%"></div></div>
+        <div class="skeleton-row" style="border-bottom:0"><div class="skeleton" style="width:34%"></div><div class="skeleton" style="width:18%"></div><div class="skeleton" style="width:20%"></div></div>
+      </div>
+      <div class="panel" style="padding:0">
+        <div class="state"><b>Спортсменов пока нет</b>Добавьте первого — он появится в реестре.</div>
+      </div>
+      <div class="panel" style="padding:0">
+        <div class="state"><b>По выбранным условиям никого нет</b>Измените запрос или сбросьте фильтры.
+          <div><button class="btn btn-secondary btn-sm" type="button">Сбросить фильтры</button></div>
+        </div>
+      </div>
+      <div class="panel" style="padding:0">
+        <div class="state"><b>Не удалось загрузить</b>Сервис не ответил. Повторите запрос — фильтры сохранятся.
+          <div><button class="btn btn-secondary btn-sm" type="button">Повторить</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Формы ----------------------------------------------------------- -->
+  <section class="kit">
+    <h2>6. Поля формы</h2>
+    <p class="hint">Единая высота 40 px, подпись сверху, ошибка под полем. Обязательное поле помечается, но не звёздочкой на каждом.</p>
+    <div class="grid cols-3">
+      <div class="panel">
+        <h3>Обычное</h3>
+        <div class="field">
+          <label for="f1">Название</label>
+          <input class="input" id="f1" value="Дети 6–8 лет" />
+        </div>
+        <div class="field">
+          <label for="f2">Зал</label>
+          <select class="select" id="f2"><option>Заречная 4</option><option>Охотская 84</option></select>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Ошибка и подсказка</h3>
+        <div class="field error">
+          <label for="f3">Название</label>
+          <input class="input" id="f3" value="" aria-invalid="true" />
+          <span class="error-text">Укажите название — оно видно в списке и расписании.</span>
+        </div>
+        <div class="field">
+          <label for="f4">Описание</label>
+          <textarea class="textarea" id="f4"></textarea>
+          <span class="hint">0 / 200</span>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Отключено и выбор</h3>
+        <div class="field">
+          <label for="f5">Группа</label>
+          <select class="select" id="f5" disabled><option>Сначала выберите зал</option></select>
+        </div>
+        <label class="check"><input type="checkbox" checked /> Показывать только активных</label>
+        <label class="check" style="margin-top:8px"><input type="checkbox" disabled /> Архивные (нет прав)</label>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. Drawer ---------------------------------------------------------- -->
+  <section class="kit">
+    <h2>7. Панель создания</h2>
+    <p class="hint">420 px, затемнение 32%. Используется на десктопе; на мобильном — полноэкранная форма из блока 8.</p>
+    <div class="drawer-demo">
+      <div class="content">
+        <div class="page-header">
+          <div><h1>Группы</h1><p>Учебные группы клуба по залам.</p></div>
+          <button class="btn btn-primary" type="button">Новая группа</button>
+        </div>
+      </div>
+      <div class="scrim"></div>
+      <aside class="drawer">
+        <div class="drawer-head">
+          <div>
+            <h3>Новая группа</h3>
+            <p>Группа появится в блоке выбранного зала.</p>
+          </div>
+          <button class="btn btn-icon" type="button" aria-label="Закрыть">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:15px;height:15px"><path d="M6 6l12 12M18 6 6 18" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="drawer-body">
+          <div class="field">
+            <label for="d1">Название</label>
+            <input class="input" id="d1" value="" placeholder="Например, Дети 6–8 лет" />
+          </div>
+          <div class="field">
+            <label for="d2">Зал</label>
+            <select class="select" id="d2"><option>Выберите зал</option><option>Заречная 4</option><option>Охотская 84</option></select>
+          </div>
+          <div class="field">
+            <label for="d3">Основной тренер</label>
+            <select class="select" id="d3"><option>не назначен</option></select>
+          </div>
+          <div class="notice notice-error">Не удалось сохранить: проверьте название и зал.</div>
+        </div>
+        <div class="drawer-foot">
+          <button class="btn btn-secondary" type="button">Отмена</button>
+          <button class="btn btn-primary" type="button">Создать группу</button>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 8. Мобильные формы и списки ---------------------------------------- -->
+  <section class="kit">
+    <h2>8. Мобильный вид</h2>
+    <p class="hint">390 px: таблица превращается в карточки, форма — полноэкранная, закрытие с несохранёнными изменениями просит подтверждения.</p>
+    <div class="grid cols-2">
+      <div class="mobile">
+        <div class="mobile-bar"><span>OCTAGON</span><span style="font-size:12px;font-weight:400">Спортсмены</span></div>
+        <div class="mobile-body">
+          <div class="filters" style="flex-direction:column;align-items:stretch">
+            <label class="search" style="flex:1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:16px;height:16px"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
+              <input placeholder="Поиск по ФИО" />
+            </label>
+            <select class="select"><option>Все залы</option></select>
+          </div>
+          <div class="cards" style="margin-top:12px">
+            <div class="card-row">
+              <div class="top"><b>Иванова Анна</b><span class="status status-active">Активен</span></div>
+              <div class="meta">Продолжающие, Охотская 84</div>
+              <div class="meta">10 кю, оранжевый</div>
+              <div class="bottom"><span class="meta">15.03.2012</span><button class="btn btn-secondary btn-sm" type="button">Открыть</button></div>
+            </div>
+            <div class="card-row">
+              <div class="top"><b>Петров Марк</b><span class="status status-active">Активен</span></div>
+              <div class="meta">Дети 5–7 лет, Заречная 4</div>
+              <div class="meta">6 кю, жёлтый</div>
+              <div class="bottom"><span class="meta">22.07.2015</span><button class="btn btn-secondary btn-sm" type="button">Открыть</button></div>
+            </div>
+            <div class="card-row">
+              <div class="top"><b>Соколова Ева</b><span class="status status-archived">Архив</span></div>
+              <div class="meta">Не указано</div>
+              <div class="bottom"><span class="meta">Дата не указана</span><button class="btn btn-secondary btn-sm" type="button">Открыть</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fullscreen-form">
+        <div class="drawer-head">
+          <div>
+            <h3>Новая группа</h3>
+            <p>Заполните поля и сохраните.</p>
+          </div>
+          <button class="btn btn-icon" type="button" aria-label="Закрыть">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:15px;height:15px"><path d="M6 6l12 12M18 6 6 18" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="drawer-body">
+          <div class="field">
+            <label for="m1">Название</label>
+            <input class="input" id="m1" value="Дети 6–8 лет" />
+          </div>
+          <div class="field">
+            <label for="m2">Зал</label>
+            <select class="select" id="m2"><option>Заречная 4</option></select>
+          </div>
+          <div class="notice notice-info">Есть несохранённые изменения. Закрытие попросит подтверждение.</div>
+        </div>
+        <div class="drawer-foot">
+          <button class="btn btn-secondary" type="button">Отмена</button>
+          <button class="btn btn-primary" type="button">Создать группу</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. Диалоги, уведомления, вкладки, статусы --------------------------- -->
+  <section class="kit">
+    <h2>9. Диалог, уведомления, вкладки, статусы</h2>
+    <div class="grid cols-2">
+      <div class="panel">
+        <h3>Подтверждение закрытия</h3>
+        <div class="dialog">
+          <h3>Закрыть без сохранения?</h3>
+          <p>В форме есть несохранённые изменения. Они будут потеряны.</p>
+          <div class="dialog-actions">
+            <button class="btn btn-secondary" type="button">Продолжить редактирование</button>
+            <button class="btn btn-danger" type="button">Закрыть</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Уведомления</h3>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="notice notice-success">Группа создана — она появилась в блоке зала «Заречная 4».</div>
+          <div class="notice notice-error">Не удалось сохранить: проверьте название и зал.</div>
+          <div class="notice notice-info">Оплата отмечена. Пересчёт долга выполнится в течение минуты.</div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Вкладки карточки</h3>
+        <div class="tabs">
+          <a class="active" href="#">Обзор</a>
+          <a href="#">Аттестации</a>
+          <a href="#">Посещаемость</a>
+          <a href="#">История</a>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Статусы</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <span class="status status-active">Активен</span>
+          <span class="status status-draft">Черновик</span>
+          <span class="status status-archived">Архив</span>
+          <span class="status status-missing">Не установлена сумма</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10. Типографика и иконки ------------------------------------------- -->
+  <section class="kit">
+    <h2>10. Типографика и иконки</h2>
+    <div class="grid cols-2">
+      <div class="panel">
+        <h3>Шкала</h3>
+        <div class="type-row"><span>28 / 700</span><b style="font-size:28px;line-height:1.1">Заголовок страницы</b></div>
+        <div class="type-row"><span>17 / 600</span><b style="font-size:17px">Заголовок блока</b></div>
+        <div class="type-row"><span>14 / 400</span><span style="font-size:14px;color:var(--ink)">Основной текст интерфейса</span></div>
+        <div class="type-row"><span>13 / 500</span><span style="font-size:13px;font-weight:500;color:var(--ink)">Значение в таблице</span></div>
+        <div class="type-row"><span>12 / 400</span><span style="font-size:12px;color:var(--muted)">Подпись, вторичная строка</span></div>
+      </div>
+      <div class="panel">
+        <h3>Иконки — один контурный набор</h3>
+        <div class="icon-set">
+          <figure><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3.2"/><path d="M3 19v-1a6 6 0 0 1 12 0v1"/></svg><figcaption>спортсмен</figcaption></figure>
+          <figure><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 12h8M8 8h5M8 16h6"/></svg><figcaption>группа</figcaption></figure>
+          <figure><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 21V7l8-4 8 4v14M9 21v-6h6v6"/></svg><figcaption>зал</figcaption></figure>
+          <figure><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 5h18v16H3zM3 10h18M8 3v4M16 3v4"/></svg><figcaption>дата</figcaption></figure>
+          <figure><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v18M16 7c0-1.7-1.8-3-4-3S8 5.3 8 7s1.8 3 4 3 4 1.3 4 3-1.8 3-4 3-4-1.3-4-3"/></svg><figcaption>оплата</figcaption></figure>
+          <figure><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg><figcaption>изменить</figcaption></figure>
+          <figure><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg><figcaption>добавить</figcaption></figure>
+          <figure><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6l12 12M18 6 6 18"/></svg><figcaption>закрыть</figcaption></figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>
