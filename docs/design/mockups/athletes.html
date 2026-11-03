@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OCTAGON Control 2.0 — Спортсмены</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="mockup.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="app-side">
+    <div class="logo">OCTAGON<span>KARATE CLUB</span></div>
+    <nav class="nav">
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Обзор</span></a>
+      <a class="active" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3.2"/><path d="M3 19v-1a6 6 0 0 1 12 0v1"/><circle cx="17" cy="9" r="2.4"/></svg><span>Спортсмены</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 12h8M8 8h5M8 16h6" stroke-linecap="round"/></svg><span>Группы</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="3.6"/><path d="M5 20v-1a7 7 0 0 1 14 0v1"/></svg><span>Тренеры</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 21V7l8-4 8 4v14M9 21v-6h6v6"/></svg><span>Залы</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 5h18v16H3zM3 10h18M8 3v4M16 3v4"/></svg><span>Расписание</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 17l5-5 4 3 6-7 3 3"/></svg><span>Посещаемость</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l2.5 5.5L20 9.5l-4 4 1 5.5-5-2.7-5 2.7 1-5.5-4-4 5.5-1Z"/></svg><span>Аттестации</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 4h8v4a4 4 0 0 1-8 0zM6 4h2M16 4h2M12 12v4M9 20h6"/></svg><span>Соревнования</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v18M16 7c0-1.7-1.8-3-4-3S8 5.3 8 7s1.8 3 4 3 4 1.3 4 3-1.8 3-4 3-4-1.3-4-3"/></svg><span>Финансы</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 21V9M12 21V3M19 21v-7"/></svg><span>Отчёты</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/></svg><span>Настройки</span></a>
+    </nav>
+    <div class="version">Версия 1.0.0</div>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-top">
+      <div class="crumbs">OCTAGON / <b>Спортсмены</b></div>
+      <div class="right">
+        <button class="btn btn-icon" type="button" aria-label="Уведомления"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" stroke-linecap="round"/><path d="M10 21h4" stroke-linecap="round"/></svg></button>
+        <span class="avatar">В</span>
+        <span class="who">Владелец клуба<span>Руководитель клуба</span></span>
+        <button class="btn btn-secondary btn-sm" type="button">Выйти</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="page-header">
+        <div>
+          <h1>Спортсмены</h1>
+          <p>Реестр спортсменов клуба: поиск, фильтры и карточки.</p>
+        </div>
+        <button class="btn btn-primary" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+          Новый спортсмен
+        </button>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi"><b>32</b><span>Всего спортсменов</span></div>
+        <div class="kpi"><b>32</b><span>Активных</span></div>
+        <div class="kpi"><b>0</b><span>Архивных</span></div>
+        <div class="kpi"><b>1</b><span>Без группы</span></div>
+      </div>
+
+      <div class="filters" style="margin-top:16px">
+        <label class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:16px;height:16px"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
+          <input placeholder="Поиск по фамилии, имени или отчеству" />
+        </label>
+        <select class="select"><option>Все залы</option><option>Заречная 4</option><option>Охотская 84</option><option>Проезд энергетиков 29/1</option></select>
+        <select class="select"><option>Все группы</option><option>Дети 5–7 лет</option><option>Школьники 8–12 лет</option><option>Начальная группа</option><option>Продолжающие</option><option>Младшая</option><option>Старшая</option></select>
+        <select class="select"><option>Все статусы</option><option>Активные</option><option>Архивные</option></select>
+      </div>
+
+      <div class="table-wrap" style="margin-top:12px">
+        <div class="table-toolbar">
+          <b style="font-weight:500">Найдено: 32 спортсмена</b>
+          <span>20 на странице</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th class="sortable sorted"><a href="#">ФИО <span class="arrow">↑</span></a></th>
+              <th class="sortable"><a href="#">Дата рождения <span class="arrow">↕</span></a></th>
+              <th>Группа</th>
+              <th>Ступень / пояс</th>
+              <th class="sortable"><a href="#">Статус <span class="arrow">↕</span></a></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><a class="cell-main" href="#">Абрамов Кирилл</a></td><td>20.11.2013</td><td>Продолжающие<span class="cell-sub">Охотская 84</span></td><td>6 кю<span class="cell-sub">жёлтый</span></td><td><span class="status status-active">Активен</span></td><td class="actions"><span class="row"><button class="btn btn-secondary btn-sm" type="button">Открыть</button><button class="btn btn-icon" type="button" aria-label="Изменить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg></button></span></td></tr>
+            <tr><td><a class="cell-main" href="#">Белова Алиса</a></td><td>01.04.2017</td><td><span style="color:var(--muted)">Не указано</span></td><td>0 кю<span class="cell-sub">белый</span></td><td><span class="status status-active">Активен</span></td><td class="actions"><span class="row"><button class="btn btn-secondary btn-sm" type="button">Открыть</button><button class="btn btn-icon" type="button" aria-label="Изменить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg></button></span></td></tr>
+            <tr><td><a class="cell-main" href="#">Иванова Анна</a></td><td>15.03.2012</td><td>Продолжающие<span class="cell-sub">Охотская 84</span></td><td>10 кю<span class="cell-sub">оранжевый</span></td><td><span class="status status-active">Активен</span></td><td class="actions"><span class="row"><button class="btn btn-secondary btn-sm" type="button">Открыть</button><button class="btn btn-icon" type="button" aria-label="Изменить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg></button></span></td></tr>
+            <tr><td><a class="cell-main" href="#">Ким Тимур</a></td><td>30.01.2018</td><td>Младшая<span class="cell-sub">Проезд энергетиков 29/1</span></td><td>8 кю<span class="cell-sub">синий</span></td><td><span class="status status-active">Активен</span></td><td class="actions"><span class="row"><button class="btn btn-secondary btn-sm" type="button">Открыть</button><button class="btn btn-icon" type="button" aria-label="Изменить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg></button></span></td></tr>
+            <tr><td><a class="cell-main" href="#">Лебедев Ян</a></td><td>11.05.2014</td><td>Школьники 8–12 лет<span class="cell-sub">Заречная 4</span></td><td>7 кю<span class="cell-sub">синий с жёлтой</span></td><td><span class="status status-active">Активен</span></td><td class="actions"><span class="row"><button class="btn btn-secondary btn-sm" type="button">Открыть</button><button class="btn btn-icon" type="button" aria-label="Изменить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg></button></span></td></tr>
+            <tr><td><a class="cell-main" href="#">Морозова Дарья</a></td><td>02.12.2016</td><td>Продолжающие<span class="cell-sub">Охотская 84</span></td><td>9 кю<span class="cell-sub">оранжевый с синей</span></td><td><span class="status status-active">Активен</span></td><td class="actions"><span class="row"><button class="btn btn-secondary btn-sm" type="button">Открыть</button><button class="btn btn-icon" type="button" aria-label="Изменить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg></button></span></td></tr>
+            <tr><td><a class="cell-main" href="#">Новиков Артём</a></td><td>17.11.2011</td><td>Старшая<span class="cell-sub">Проезд энергетиков 29/1</span></td><td>4 кю<span class="cell-sub">зелёный</span></td><td><span class="status status-active">Активен</span></td><td class="actions"><span class="row"><button class="btn btn-secondary btn-sm" type="button">Открыть</button><button class="btn btn-icon" type="button" aria-label="Изменить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg></button></span></td></tr>
+            <tr><td><a class="cell-main" href="#">Орлова Мария</a></td><td>08.09.2013</td><td>Дети 5–7 лет<span class="cell-sub">Заречная 4</span></td><td>5 кю<span class="cell-sub">жёлтый с зелёной</span></td><td><span class="status status-active">Активен</span></td><td class="actions"><span class="row"><button class="btn btn-secondary btn-sm" type="button">Открыть</button><button class="btn btn-icon" type="button" aria-label="Изменить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg></button></span></td></tr>
+            <tr><td><a class="cell-main" href="#">Павлов Илья</a></td><td>21.02.2010</td><td>Старшая<span class="cell-sub">Проезд энергетиков 29/1</span></td><td>1 дан<span class="cell-sub">чёрный</span></td><td><span class="status status-active">Активен</span></td><td class="actions"><span class="row"><button class="btn btn-secondary btn-sm" type="button">Открыть</button><button class="btn btn-icon" type="button" aria-label="Изменить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg></button></span></td></tr>
+            <tr><td><a class="cell-main" href="#">Петров Марк</a></td><td>22.07.2015</td><td>Дети 5–7 лет<span class="cell-sub">Заречная 4</span></td><td>6 кю<span class="cell-sub">жёлтый</span></td><td><span class="status status-active">Активен</span></td><td class="actions"><span class="row"><button class="btn btn-secondary btn-sm" type="button">Открыть</button><button class="btn btn-icon" type="button" aria-label="Изменить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg></button></span></td></tr>
+            <tr><td><a class="cell-main" href="#">Романова Полина</a></td><td>03.06.2017</td><td>Младшая<span class="cell-sub">Проезд энергетиков 29/1</span></td><td>0 кю<span class="cell-sub">белый</span></td><td><span class="status status-active">Активен</span></td><td class="actions"><span class="row"><button class="btn btn-secondary btn-sm" type="button">Открыть</button><button class="btn btn-icon" type="button" aria-label="Изменить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg></button></span></td></tr>
+            <tr><td><a class="cell-main" href="#">Смирнов Лев</a></td><td>14.08.2012</td><td>Школьники 8–12 лет<span class="cell-sub">Заречная 4</span></td><td>3 кю<span class="cell-sub">коричневый</span></td><td><span class="status status-active">Активен</span></td><td class="actions"><span class="row"><button class="btn btn-secondary btn-sm" type="button">Открыть</button><button class="btn btn-icon" type="button" aria-label="Изменить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg></button></span></td></tr>
+            <tr><td><a class="cell-main" href="#">Соколова Ева</a></td><td>04.11.2009</td><td>Начальная группа<span class="cell-sub">Охотская 84</span></td><td>2 кю<span class="cell-sub">коричневый</span></td><td><span class="status status-archived">Архив</span></td><td class="actions"><span class="row"><button class="btn btn-secondary btn-sm" type="button">Открыть</button><button class="btn btn-icon" type="button" aria-label="Изменить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg></button></span></td></tr>
+            <tr><td><a class="cell-main" href="#">Титова Вера</a></td><td>27.04.2015</td><td>Начальная группа<span class="cell-sub">Охотская 84</span></td><td>6 кю<span class="cell-sub">жёлтый</span></td><td><span class="status status-active">Активен</span></td><td class="actions"><span class="row"><button class="btn btn-secondary btn-sm" type="button">Открыть</button><button class="btn btn-icon" type="button" aria-label="Изменить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg></button></span></td></tr>
+            <tr><td><a class="cell-main" href="#">Ушаков Максим</a></td><td>09.10.2011</td><td>Продолжающие<span class="cell-sub">Охотская 84</span></td><td>8 кю<span class="cell-sub">синий</span></td><td><span class="status status-active">Активен</span></td><td class="actions"><span class="row"><button class="btn btn-secondary btn-sm" type="button">Открыть</button><button class="btn btn-icon" type="button" aria-label="Изменить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg></button></span></td></tr>
+            <tr><td><a class="cell-main" href="#">Фролова Алиса</a></td><td>19.12.2016</td><td>Дети 5–7 лет<span class="cell-sub">Заречная 4</span></td><td>0 кю<span class="cell-sub">белый</span></td><td><span class="status status-active">Активен</span></td><td class="actions"><span class="row"><button class="btn btn-secondary btn-sm" type="button">Открыть</button><button class="btn btn-icon" type="button" aria-label="Изменить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg></button></span></td></tr>
+            <tr><td><a class="cell-main" href="#">Царёв Денис</a></td><td>05.03.2013</td><td>Младшая<span class="cell-sub">Проезд энергетиков 29/1</span></td><td>7 кю<span class="cell-sub">синий с жёлтой</span></td><td><span class="status status-active">Активен</span></td><td class="actions"><span class="row"><button class="btn btn-secondary btn-sm" type="button">Открыть</button><button class="btn btn-icon" type="button" aria-label="Изменить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg></button></span></td></tr>
+            <tr><td><a class="cell-main" href="#">Чернова Юлия</a></td><td>23.07.2014</td><td>Школьники 8–12 лет<span class="cell-sub">Заречная 4</span></td><td>4 кю<span class="cell-sub">зелёный</span></td><td><span class="status status-active">Активен</span></td><td class="actions"><span class="row"><button class="btn btn-secondary btn-sm" type="button">Открыть</button><button class="btn btn-icon" type="button" aria-label="Изменить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg></button></span></td></tr>
+            <tr><td><a class="cell-main" href="#">Шилов Егор</a></td><td>12.01.2010</td><td>Старшая<span class="cell-sub">Проезд энергетиков 29/1</span></td><td>2 кю<span class="cell-sub">коричневый</span></td><td><span class="status status-archived">Архив</span></td><td class="actions"><span class="row"><button class="btn btn-secondary btn-sm" type="button">Открыть</button><button class="btn btn-icon" type="button" aria-label="Изменить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg></button></span></td></tr>
+            <tr><td><a class="cell-main" href="#">Щукина Нина</a></td><td>28.05.2018</td><td>Младшая<span class="cell-sub">Проезд энергетиков 29/1</span></td><td>0 кю<span class="cell-sub">белый</span></td><td><span class="status status-active">Активен</span></td><td class="actions"><span class="row"><button class="btn btn-secondary btn-sm" type="button">Открыть</button><button class="btn btn-icon" type="button" aria-label="Изменить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg></button></span></td></tr>
+            <tr><td><a class="cell-main" href="#">Юдин Савелий</a></td><td>16.09.2012</td><td>Начальная группа<span class="cell-sub">Охотская 84</span></td><td>5 кю<span class="cell-sub">жёлтый с зелёной</span></td><td><span class="status status-active">Активен</span></td><td class="actions"><span class="row"><button class="btn btn-secondary btn-sm" type="button">Открыть</button><button class="btn btn-icon" type="button" aria-label="Изменить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg></button></span></td></tr>
+            <tr><td><a class="cell-main" href="#">Яковлева Софья</a></td><td>07.02.2016</td><td>Дети 5–7 лет<span class="cell-sub">Заречная 4</span></td><td>1 кю<span class="cell-sub">коричневый</span></td><td><span class="status status-active">Активен</span></td><td class="actions"><span class="row"><button class="btn btn-secondary btn-sm" type="button">Открыть</button><button class="btn btn-icon" type="button" aria-label="Изменить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="M13 5l4 4"/></svg></button></span></td></tr>
+          </tbody>
+        </table>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)">
+          <span>Показано 1–20 из 32</span>
+          <span style="display:flex;gap:6px">
+            <button class="btn btn-secondary btn-sm" type="button" aria-label="Предыдущая" disabled>‹</button>
+            <button class="btn btn-primary btn-sm" type="button">1</button>
+            <button class="btn btn-secondary btn-sm" type="button">2</button>
+            <button class="btn btn-secondary btn-sm" type="button" aria-label="Следующая">›</button>
+          </span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>
