@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
+import { CreatePanel } from '@/components/ui/create-panel';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
 import { CreateHallForm, HallCard } from './hall-forms';
@@ -59,7 +60,7 @@ export default async function HallsPage() {
         description="Площадки клуба: адрес, телефон и группы каждого зала"
       />
 
-      <div className="grid items-start gap-6 lg:grid-cols-[2fr_1fr]">
+      <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-4">
           {!result.ok ? <Notice tone="error">{describeError(result.error)}</Notice> : null}
 

@@ -24,7 +24,7 @@ async function archiveAction(_prev: HallFormState, formData: FormData) {
 }
 
 /** Создание зала: название, адрес, телефон, вместимость. */
-export function CreateHallForm() {
+export function CreateHallForm({ inPanel = false }: { inPanel?: boolean } = {}) {
   const [state, formAction, pending] = useActionState(createAction, initialState);
 
   return (
