@@ -58,7 +58,7 @@ describe('Athletes linked accounts (db e2e, требуется PostgreSQL)', () 
   }
 
   beforeAll(async () => {
-    await prisma.$connect();
+    await prisma.db.$connect();
 
     activeId = await createAthlete(`${suffix}-Активный`);
     archivedAthleteId = await createAthlete(`${suffix}-Архивный`);
@@ -85,7 +85,7 @@ describe('Athletes linked accounts (db e2e, требуется PostgreSQL)', () 
     await prisma.db.userAthlete.deleteMany({ where: { athleteId: { in: athleteIds } } });
     await prisma.db.athlete.deleteMany({ where: { id: { in: athleteIds } } });
     await prisma.db.user.deleteMany({ where: { id: { in: userIds } } });
-    await prisma.$disconnect();
+    await prisma.db.$disconnect();
   });
 
   /** Реестр без фильтров: архивный и заблокированный аккаунты не считаются. */
