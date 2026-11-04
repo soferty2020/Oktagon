@@ -3,18 +3,28 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import { Icon, type IconName } from '@/components/icons';
+
 /**
  * Пункт боковой навигации.
  *
- * По макету пункты идут без иконок: подписи читаются быстрее, а иконки в
- * двадцати пунктах превращались в шум. Активный раздел — светлая плашка на
- * тёмном сайдбаре с оранжевой полосой слева; заливка акцентом осталась в
- * мобильном приложении, где пунктов мало и нужен сильный акцент.
+ * По утверждённому макету OCTAGON Control 2.0 пункт идёт с контурной иконкой и
+ * подписью: набор иконок один на всю админку, поэтому они помогают найти раздел,
+ * а не превращаются в шум. Активный раздел — оранжевая заливка с белым текстом;
+ * остальные приглушены и подсвечиваются при наведении.
  *
  * Клиентский компонент: активный раздел знает только браузер, в серверном
  * `usePathname` недоступен.
  */
-export function NavLink({ href, label }: { href: string; label: string }) {
+export function NavLink({
+  href,
+  label,
+  icon,
+}: {
+  href: string;
+  label: string;
+  icon: IconName;
+}) {
   const pathname = usePathname();
   const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href);
 
@@ -24,11 +34,12 @@ export function NavLink({ href, label }: { href: string; label: string }) {
       aria-current={isActive ? 'page' : undefined}
       className={
         isActive
-          ? 'flex items-center rounded-md border-l-2 border-accent bg-white/10 px-3 py-2.5 text-sm font-medium text-white'
-          : 'flex items-center rounded-md border-l-2 border-transparent px-3 py-2.5 text-sm text-white/70 transition hover:bg-white/5 hover:text-white'
+          ? 'flex h-[38px] items-center gap-3 rounded-control bg-accent px-3 text-[13px] font-medium text-white'
+          : 'flex h-[38px] items-center gap-3 rounded-control px-3 text-[13px] text-white/70 transition-colors hover:bg-white/5 hover:text-white'
       }
     >
-      {label}
+      <Icon name={icon} size={17} />
+      <span>{label}</span>
     </Link>
   );
 }

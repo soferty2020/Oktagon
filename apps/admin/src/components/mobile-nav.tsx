@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { Icon } from '@/components/icons';
+import { Icon, type IconName } from '@/components/icons';
 
 /**
  * Мобильное меню админки.
@@ -22,7 +22,7 @@ import { Icon } from '@/components/icons';
 export function MobileNav({
   items,
 }: {
-  items: readonly { href: string; label: string }[];
+  items: readonly { href: string; label: string; icon: IconName }[];
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -45,7 +45,7 @@ export function MobileNav({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex h-9 w-9 items-center justify-center rounded-control text-ink transition hover:bg-canvas md:hidden"
+        className="flex h-11 w-11 items-center justify-center rounded-control border border-line bg-white text-ink transition-colors hover:bg-canvas md:hidden"
         aria-label="Открыть меню"
         aria-expanded={open}
       >
@@ -96,11 +96,12 @@ export function MobileNav({
                     onClick={() => setOpen(false)}
                     className={
                       active
-                        ? 'mb-1 block rounded-control border-l-2 border-accent bg-white/10 px-4 py-2.5 text-sm font-medium text-white'
-                        : 'mb-1 block rounded-control border-l-2 border-transparent px-4 py-2.5 text-sm text-white/70 transition hover:bg-white/5'
+                        ? 'mb-1 flex h-11 items-center gap-3 rounded-control bg-accent px-3 text-[13px] font-medium text-white'
+                        : 'mb-1 flex h-11 items-center gap-3 rounded-control px-3 text-[13px] text-white/70 transition-colors hover:bg-white/5 hover:text-white'
                     }
                   >
-                    {item.label}
+                    <Icon name={item.icon} size={17} />
+                    <span>{item.label}</span>
                   </Link>
                 );
               })}
