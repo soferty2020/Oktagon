@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { logoutAction } from '@/app/actions';
 import { Breadcrumbs } from '@/components/breadcrumbs';
-import { Icon } from '@/components/icons';
+import { Icon, type IconName } from '@/components/icons';
 import { MobileNav } from '@/components/mobile-nav';
 import { NavLink } from '@/components/nav-link';
 import type { CurrentUser } from '@/lib/server/session';
@@ -20,27 +20,30 @@ import type { CurrentUser } from '@/lib/server/session';
 const NAVIGATION: readonly {
   href: string;
   label: string;
+  icon: IconName;
   requiredPermissions?: readonly string[];
 }[] = [
-  { href: '/', label: 'Обзор' },
-  { href: '/athletes', label: 'Спортсмены' },
+  { href: '/', label: 'Обзор', icon: 'home' },
+  { href: '/athletes', label: 'Спортсмены', icon: 'athletes' },
   // Заявки — работа администратора: тренер их не видит (ADR-0013).
   {
     href: '/trial-requests',
     label: 'Заявки',
+    icon: 'gift',
     requiredPermissions: ['trial-requests.view'],
   },
-  { href: '/groups', label: 'Группы' },
+  { href: '/groups', label: 'Группы', icon: 'groups' },
   // Тренеры: карточка правится `branches.manage`, привязка аккаунта — `users.manage`.
   // Ссылка показывается тем, кто видит группы: без этого список тренеров не нужен.
-  { href: '/trainers', label: 'Тренеры', requiredPermissions: ['groups.view'] },
-  { href: '/halls', label: 'Залы' },
-  { href: '/schedule', label: 'Расписание' },
+  { href: '/trainers', label: 'Тренеры', icon: 'trainers', requiredPermissions: ['groups.view'] },
+  { href: '/halls', label: 'Залы', icon: 'halls' },
+  { href: '/schedule', label: 'Расписание', icon: 'schedule' },
   // Посещаемость: сводка по группе за период. Отдельный раздел, потому что это
   // отчет для тренера и администратора, а не разметка конкретного занятия.
   {
     href: '/attendance',
     label: 'Посещаемость',
+    icon: 'attendance',
     requiredPermissions: ['attendance.view'],
   },
   // Аттестации и соревнования: экзамены и турниры. Отдельные разделы, потому что
@@ -48,16 +51,19 @@ const NAVIGATION: readonly {
   {
     href: '/attestations',
     label: 'Аттестации',
+    icon: 'belt',
     requiredPermissions: ['attestations.view'],
   },
   {
     href: '/competitions',
     label: 'Соревнования',
+    icon: 'shield',
     requiredPermissions: ['competitions.view'],
   },
   {
     href: '/finance',
     label: 'Финансы',
+    icon: 'finance',
     requiredPermissions: ['payments.view', 'freezes.view'],
   },
   // Новости без `requiredPermissions`: BR-011 — новости и комментарии видны всем
@@ -66,13 +72,14 @@ const NAVIGATION: readonly {
   {
     href: '/reports',
     label: 'Отчёты',
+    icon: 'sliders',
     requiredPermissions: ['payments.view', 'attestations.view'],
   },
-  { href: '/news', label: 'Новости' },
+  { href: '/news', label: 'Новости', icon: 'news' },
   // Чаты требуют `chat.use`: это разрешение на функцию. Конкретная переписка
   // доступна только участникам, и решает это backend (ADR-0011).
-  { href: '/chats', label: 'Чаты', requiredPermissions: ['chat.use'] },
-  { href: '/users', label: 'Пользователи' },
+  { href: '/chats', label: 'Чаты', icon: 'chats', requiredPermissions: ['chat.use'] },
+  { href: '/users', label: 'Пользователи', icon: 'users' },
   // Настройки: хаб со ссылками на существующие разделы и, позже, собственные
   // экраны (docs/26-admin-settings.md). Показывается тем, кому есть что там
   // делать: управление филиалами, сотрудниками или правами. Аудит и финансовые
@@ -80,6 +87,7 @@ const NAVIGATION: readonly {
   {
     href: '/settings',
     label: 'Настройки',
+    icon: 'settings',
     requiredPermissions: ['branches.manage', 'users.manage', 'permissions.manage'],
   },
 ];
@@ -110,7 +118,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
 
   return (
     <div className="min-h-screen bg-canvas">
-      <aside className="fixed inset-y-0 left-0 hidden w-[248px] flex-col bg-ink md:flex">
+      <aside className="fixed inset-y-0 left-0 hidden w-[206px] flex-col bg-ink md:flex xl:w-[248px]">
         <div className="px-5 py-5">
           {/* Оригинальный логотип клуба: PNG с прозрачным фоном, вписывается по высоте.
               Раньше здесь была текстовая надпись, потому что оригинального ассета не было. */}
@@ -125,19 +133,21 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
 
         <nav className="flex-1 space-y-1 px-3 pb-6">
           {navigation.map((item) => (
-            <NavLink key={item.href} href={item.href} label={item.label} />
+            <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} />
           ))}
         </nav>
 
         <div className="px-6 py-4 text-[11px] text-white/35">Версия 1.0.0</div>
       </aside>
 
-      <div className="md:pl-[248px]">
+      <div className="md:pl-[206px] xl:pl-[248px]">
         <header className="sticky top-0 z-10 border-b border-line bg-white">
           <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
-            <div className="flex min-w-0 items-center gap-2">
+            <div className="flex min-w-0 items-center gap-3">
               <MobileNav items={navigation} />
-              <Breadcrumbs />
+              <div className="hidden sm:block">
+                <Breadcrumbs />
+              </div>
             </div>
 
             <div className="flex items-center gap-4">
