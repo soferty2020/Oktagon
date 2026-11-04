@@ -214,6 +214,11 @@ jobs:
       - name: Typecheck
         run: pnpm --filter @octagon/admin exec tsc --noEmit -p tsconfig.json
 
+      - name: Unit tests (часовой пояс и календарь)
+        # Node 23 умеет запускать TypeScript напрямую (`--experimental-strip-types`),
+        # поэтому отдельный раннер для чистых функций админки не нужен.
+        run: node --test apps/admin/src/lib/schedule/calendar.test.ts
+
       - name: Build
         env:
           NEXT_TELEMETRY_DISABLED: '1'

@@ -59,17 +59,20 @@ export function CreateTemplateForm({
   groups,
   defaultYear,
   defaultQuarter,
+  inPanel = false,
 }: {
   groups: { id: string; name: string; hallName: string | null }[];
   defaultYear: number;
   defaultQuarter: number;
+  /** Внутри панели рамку даёт Drawer, форме она не нужна. */
+  inPanel?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(createTemplateAction, initialState);
 
   return (
     <form
       action={formAction}
-      className="rounded-card border border-line bg-white p-4"
+      className={inPanel ? '' : 'rounded-card border border-line bg-white p-4'}
     >
       <div className="flex items-start gap-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">

@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
+import { clubTime } from '@/lib/schedule/calendar';
+
 export interface WeekEvent {
   id: string;
   groupName: string;
@@ -33,15 +35,7 @@ function dayKey(iso: string): string {
   return iso.slice(0, 10);
 }
 
-function time(iso: string): string {
-  // Время клуба, а не UTC: иначе вечерние занятия уезжают на утро.
-  return new Intl.DateTimeFormat('ru-RU', {
-    timeZone: 'Asia/Novosibirsk',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(new Date(iso));
-}
+
 
 function addDays(date: Date, days: number): Date {
   const next = new Date(date);
@@ -177,7 +171,7 @@ export function ScheduleWeek({
                         href={`/schedule/sessions/${event.id}/attendance`}
                         className={`block rounded-lg border-l-[3px] px-1.5 py-1 text-[11px] leading-tight ${lessonClass(event.status)}`}
                       >
-                        <span className="block font-semibold">{time(event.startsAt)}</span>
+                        <span className="block font-semibold">{clubTime(event.startsAt)}</span>
                         <span className="block truncate">{event.groupName}</span>
                         {event.status !== 'SCHEDULED' ? (
                           <span className="block text-[10px]">{STATUS_LABEL[event.status] ?? event.status}</span>
@@ -262,7 +256,7 @@ export function ScheduleWeek({
                     className="flex gap-2.5 border-t border-line py-2 first:border-t-0"
                   >
                     <span className="w-10 flex-none text-[12.5px] font-semibold text-ink">
-                      {time(event.startsAt)}
+                      {clubTime(event.startsAt)}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-[13px] font-medium text-ink">{event.groupName}</span>

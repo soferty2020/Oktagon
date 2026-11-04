@@ -21,7 +21,7 @@ import {
   type WeekdayName,
 } from '@/lib/schedule/calendar';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
-import { CreateTemplateForm } from './schedule-forms';
+import { ScheduleCreatePanel } from './schedule-create-panel';
 
 export const metadata = {
   title: 'Расписание — OCTAGON',
@@ -133,7 +133,9 @@ export default async function SchedulePage({
     apiFetch<HallView[]>('/halls', { accessToken }),
     apiFetch<TrainerView[]>('/trainers?isActive=true', { accessToken }),
     apiFetch<SessionView[]>(
-      `/training-sessions?from=${from}T00:00:00.000Z&to=${addDays(to, 1)}T00:00:00.000Z`,
+      // Фильтры зала, группы и тренера считает API, а не клиент: иначе в сетке
+      // оставались бы занятия других залов и тренеров (#UAT п.2).
+      `/training-sessions?from=${from}T00:00:00.000Z&to=${addDays(to, 1)}T00:00:00.000Z${hallFilter ? `&hallId=${hallFilter}` : ''}${groupFilter ? `&groupId=${groupFilter}` : ''}${trainerFilter ? `&trainerId=${trainerFilter}` : ''}`,
       { accessToken },
     ),
   ]);
@@ -203,9 +205,19 @@ export default async function SchedulePage({
       <PageHeader
         title="Расписание"
         description="Календарь занятий и управление квартальными шаблонами"
+        actions={
+          canEdit ? (
+            <ScheduleCreatePanel
+              groups={groupOptions}
+              defaultQuarter={quarter}
+              defaultYear={year}
+            />
+          ) : null
+        }
       />
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1fr_2.2fr]">
+      {/* KPI только на десктопе: на телефоне первым идёт календарь (#UAT п.3). */}
+      <div className="hidden gap-4 md:grid md:grid-cols-3">
         <KpiCard icon="halls" label="Залы" value={hallList.length} />
         <KpiCard
           icon="groups"
@@ -213,19 +225,13 @@ export default async function SchedulePage({
           value={new Set(visibleTemplates.map((template) => template.groupId)).size}
         />
         <KpiCard icon="calendar" label="Занятий на этой неделе" value={weekEvents.length} />
-
-        {canEdit ? (
-          <CreateTemplateForm
-            groups={groupOptions}
-            defaultQuarter={quarter}
-            defaultYear={year}
-          />
-        ) : (
-          <Notice>
-            Раздел доступен только для просмотра: нет права {describePermission('schedule.edit')}.
-          </Notice>
-        )}
       </div>
+
+      {!canEdit ? (
+        <Notice>
+          Раздел доступен только для просмотра: нет права {describePermission('schedule.edit')}.
+        </Notice>
+      ) : null}
 
       <div className="mt-6 flex flex-wrap items-end justify-between gap-3">
         <ScheduleFilters
@@ -244,9 +250,7 @@ export default async function SchedulePage({
           anchor={anchor}
           today={todayInClub()}
           halls={hallList.map((hall) => ({ id: hall.id, name: hall.name }))}
-          events={(sessions.ok ? sessions.data : [])
-            .filter((session) => !hallFilter || session.hallId === hallFilter)
-            .filter((session) => !groupFilter || session.groupId === groupFilter)}
+          events={sessions.ok ? sessions.data : []}
         />
       </div>
 
