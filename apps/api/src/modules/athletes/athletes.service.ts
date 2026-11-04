@@ -394,7 +394,7 @@ function toAthleteView(athlete: AthleteRecord, canViewContacts: boolean, groupNa
     gender: athlete.gender,
     groupName,
     // Только число связей: email и профили родителей в реестр не попадают.
-    linkedAccountsCount: athlete._count?.userLinks ?? null,
+    linkedAccountsCount: athlete._count?.userLinks ?? 0,
     status: athlete.status,
     // Ступень — источник истины (ADR-0012); пояс выводится из неё, если известен.
     // `null` означает, что миграция не смогла вывести ступень однозначно, и это

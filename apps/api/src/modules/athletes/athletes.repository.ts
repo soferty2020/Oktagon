@@ -9,7 +9,7 @@ import { PrismaService } from '../../prisma/prisma.service';
  * в колонке и фильтр «с привязкой» показывали бы разное.
  */
 export const ACTIVE_ACCOUNT_LINK = {
-  user: { archivedAt: null, status: { not: 'INVITED' as const } },
+  user: { archivedAt: null, status: 'ACTIVE' as const },
 };
 
 /** Параметры реестра: фильтры, сортировка и пагинация (#81). */
