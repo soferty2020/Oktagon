@@ -40,13 +40,13 @@ function StateMessages({ state }: { state: TrainerFormState }) {
 }
 
 /** Создание профиля тренера: аккаунт привязывается отдельно. */
-export function CreateTrainerForm() {
+export function CreateTrainerForm({ inPanel = false }: { inPanel?: boolean } = {}) {
   const [state, formAction, pending] = useActionState(createTrainerAction, initialState);
 
   return (
     <form
       action={formAction}
-      className="flex flex-col gap-3 rounded-card border border-line bg-white p-5"
+      className={inPanel ? "flex flex-col gap-3" : "flex flex-col gap-3 rounded-card border border-line bg-white p-5"}
     >
       <div>
         <h2 className="text-sm font-semibold text-ink">Новый тренер</h2>

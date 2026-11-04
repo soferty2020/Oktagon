@@ -2,13 +2,13 @@ import { describePermission } from '@/lib/permissions';
 import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
+import { TrainerCreatePanel } from './trainer-create-panel';
 import { EmptyState } from '@/components/empty-state';
 import { statusLabel } from '@/components/status-badge';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
 import {
   ArchiveTrainerForm,
-  CreateTrainerForm,
   EditTrainerForm,
   LinkAccountForm,
   UnlinkAccountForm,
@@ -220,7 +220,7 @@ export default async function TrainersPage() {
           ) : null}
         </div>
 
-        {canEditCard ? <CreateTrainerForm /> : null}
+        {canEditCard ? <TrainerCreatePanel /> : null}
       </div>
     </AppShell>
   );
