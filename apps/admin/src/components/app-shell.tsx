@@ -191,10 +191,10 @@ export function PageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+    <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 className="text-xl font-semibold text-ink">{title}</h1>
-        {description ? <p className="mt-1 text-sm text-muted">{description}</p> : null}
+        <h1 className="text-[26px] font-bold tracking-[-0.01em] text-ink">{title}</h1>
+        {description ? <p className="mt-1 text-[13px] text-muted">{description}</p> : null}
       </div>
       {actions}
     </div>

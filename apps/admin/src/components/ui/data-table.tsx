@@ -40,6 +40,7 @@ export function DataTable<T>({
   onSortChange,
   footer,
   caption,
+  sortMode = 'server',
 }: {
   columns: readonly Column<T>[];
   rows: readonly T[];
@@ -49,6 +50,12 @@ export function DataTable<T>({
   loading?: boolean;
   sort?: { key: string; direction: SortDirection } | null;
   onSortChange?: (key: string, direction: SortDirection) => void;
+  /**
+   * `server` (по умолчанию) — данные приходят страницей, порядок считает API:
+   * локальная перестановка затронула бы только загруженные строки и сломала бы
+   * пагинацию. `client` допустим только для полного набора в памяти.
+   */
+  sortMode?: 'server' | 'client';
   footer?: React.ReactNode;
   caption?: string;
 }) {
@@ -58,7 +65,9 @@ export function DataTable<T>({
   const activeSort = sort !== undefined ? sort : localSort;
 
   const sortedRows = useMemo(() => {
-    if (!activeSort || onSortChange) {
+    // В серверном режиме перестановка строк запрещена: страница уже пришла
+    // отсортированной с API, а локальная сортировка дала бы неверный порядок.
+    if (!activeSort || onSortChange || sortMode === 'server') {
       return rows;
     }
     const column = columns.find((item) => item.key === activeSort.key);
@@ -78,7 +87,7 @@ export function DataTable<T>({
       }
       return left > right ? factor : -factor;
     });
-  }, [activeSort, columns, onSortChange, rows]);
+  }, [activeSort, columns, onSortChange, rows, sortMode]);
 
   function toggleSort(column: Column<T>) {
     if (!column.sortValue) {
@@ -88,7 +97,9 @@ export function DataTable<T>({
       activeSort?.key === column.key && activeSort.direction === 'asc' ? 'desc' : 'asc';
     if (onSortChange) {
       onSortChange(column.key, direction);
-    } else {
+      return;
+    }
+    if (sortMode === 'client') {
       setLocalSort({ key: column.key, direction });
     }
   }
@@ -111,7 +122,42 @@ export function DataTable<T>({
         <div className="px-4 py-10 text-center text-sm text-muted">{empty}</div>
       ) : (
         <>
-          <table className="w-full text-left">
+          {/* Мобильный вид: строка превращается в карточку, чтобы не прокручивать
+              таблицу по горизонтали (DESIGN.md § 5). */}
+          <div className="sm:hidden">
+            {sortedRows.map((row) => (
+              <div
+                key={getRowKey(row)}
+                className="border-b border-line px-4 py-3 last:border-b-0"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 text-[13.5px] font-semibold text-ink">
+                    {columns[0]?.render(row)}
+                  </div>
+                  {columns.find((column) => column.key === 'actions') ? (
+                    <div className="flex-none">
+                      {columns.find((column) => column.key === 'actions')?.render(row)}
+                    </div>
+                  ) : null}
+                </div>
+                <dl className="mt-1.5 space-y-0.5">
+                  {columns.slice(1).map((column) => {
+                    if (column.key === 'actions') {
+                      return null;
+                    }
+                    return (
+                      <div key={column.key} className="flex gap-2 text-[12px]">
+                        <dt className="flex-none text-muted">{column.header}:</dt>
+                        <dd className="min-w-0 text-ink-soft">{column.render(row)}</dd>
+                      </div>
+                    );
+                  })}
+                </dl>
+              </div>
+            ))}
+          </div>
+
+          <table className="hidden w-full text-left sm:table">
             {caption ? <caption className="sr-only">{caption}</caption> : null}
             <thead>
               <tr>

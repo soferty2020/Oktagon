@@ -2,8 +2,11 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
+import { DataTable, type Column } from '@/components/ui/data-table';
+import { FiltersBar, FiltersSearch } from '@/components/ui/filters-bar';
+import { Drawer } from '@/components/ui/drawer';
 import { CreateAthleteForm } from './athlete-forms';
 
 export interface AthleteRow {
@@ -43,23 +46,32 @@ const BELT: Record<string, string> = {
   BLACK: 'чёрный',
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  ACTIVE: 'Активен',
-  FROZEN: 'Заморожен',
-  ARCHIVED: 'Архив',
+const STATUS_LABEL: Record<string, { label: string; className: string }> = {
+  ACTIVE: { label: 'Активен', className: 'bg-success/10 text-success' },
+  FROZEN: { label: 'Заморожен', className: 'bg-accent-soft text-accent-text' },
+  ARCHIVED: { label: 'Архив', className: 'bg-canvas text-muted' },
 };
 
+/** Собирает ссылку с сохранением фильтров; смена условий возвращает на 1-ю страницу. */
 function buildHref(
-  current: BoardProps,
-  patch: Partial<{ search: string; hallId: string; groupId: string; status: string; sortBy: string; sortOrder: string; page: number }>,
+  props: BoardProps,
+  patch: Partial<{
+    search: string;
+    hallId: string;
+    groupId: string;
+    status: string;
+    sortBy: string;
+    sortOrder: string;
+    page: number;
+  }>,
 ) {
   const next = {
-    search: current.params.search,
-    hallId: current.params.hallId,
-    groupId: current.params.groupId,
-    status: current.params.status,
-    sortBy: current.sortBy,
-    sortOrder: current.sortOrder,
+    search: props.params.search,
+    hallId: props.params.hallId,
+    groupId: props.params.groupId,
+    status: props.params.status,
+    sortBy: props.sortBy,
+    sortOrder: props.sortOrder,
     page: 1,
     ...patch,
   };
@@ -74,10 +86,17 @@ function buildHref(
   return `/athletes?${query.toString()}`;
 }
 
+function formatDate(value: string): string {
+  const [year, month, day] = value.slice(0, 10).split('-');
+  return [day, month, year].join('.');
+}
+
 /**
- * Таблица реестра: сортировка и пагинация — ссылками, поэтому состояние живёт
- * в URL, а не в памяти вкладки. Смена сортировки и фильтров возвращает на
- * первую страницу.
+ * Реестр спортсменов: серверные поиск, фильтры, сортировка и пагинация.
+ *
+ * Состояние живёт в URL, а не в памяти вкладки: ссылка на карточку возвращает в
+ * список с теми же условиями, и страницу можно переслать. Порядок строк считает
+ * API — `DataTable` в серверном режиме строки не переставляет.
  */
 export function AthletesBoard(props: BoardProps) {
   const router = useRouter();
@@ -89,45 +108,113 @@ export function AthletesBoard(props: BoardProps) {
   const visibleGroups = params.hallId
     ? groups.filter((group) => group.hallId === params.hallId)
     : groups;
+  const hasFilters = Boolean(params.search || params.hallId || params.groupId || params.status);
 
-  const sortState = (column: string) => {
-    if (sortBy !== column) return 'none' as const;
-    return sortOrder === 'asc' ? ('ascending' as const) : ('descending' as const);
-  };
+  const columns: Column<AthleteRow>[] = [
+    {
+      key: 'lastName',
+      header: 'ФИО',
+      sortValue: (row) => row.lastName,
+      render: (row) => (
+        <Link href={`/athletes/${row.id}`} className="font-medium text-ink hover:text-accent-text">
+          {row.lastName} {row.firstName}
+          {row.middleName ? (
+            <span className="block text-[11.5px] font-normal text-muted">{row.middleName}</span>
+          ) : null}
+        </Link>
+      ),
+    },
+    {
+      key: 'birthDate',
+      header: 'Дата рождения',
+      sortValue: (row) => row.birthDate ?? '',
+      render: (row) =>
+        row.birthDate ? (
+          <span className="text-ink-soft">{formatDate(row.birthDate)}</span>
+        ) : (
+          <span className="text-muted">Не указано</span>
+        ),
+    },
+    {
+      key: 'group',
+      header: 'Группа',
+      render: (row) =>
+        row.groupName ? (
+          <span className="text-ink-soft">{row.groupName}</span>
+        ) : (
+          <span className="text-muted">Не указано</span>
+        ),
+    },
+    {
+      key: 'rank',
+      header: 'Ступень / пояс',
+      render: (row) => (
+        <>
+          <span className="text-ink-soft">{row.rankLabel ?? '—'}</span>
+          <span className="block text-[11.5px] text-muted">{BELT[row.beltGrade] ?? row.beltGrade}</span>
+        </>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Статус',
+      sortValue: (row) => row.status,
+      render: (row) => {
+        const status = STATUS_LABEL[row.status] ?? {
+          label: row.status,
+          className: 'bg-canvas text-muted',
+        };
+        return (
+          <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${status.className}`}>
+            {status.label}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'actions',
+      header: '',
+      align: 'right',
+      render: (row) => (
+        <Link
+          href={`/athletes/${row.id}`}
+          className="inline-flex h-8 items-center rounded-control border border-line bg-white px-3 text-xs text-ink-soft hover:bg-canvas"
+        >
+          Открыть
+        </Link>
+      ),
+    },
+  ];
 
-  const arrow = (column: string) => {
-    if (sortBy !== column) return '↕';
-    return sortOrder === 'asc' ? '↑' : '↓';
-  };
-
-  const submitSearch = (event: React.FormEvent) => {
-    event.preventDefault();
-    router.push(buildHref(props, { search: search.trim(), page: 1 }));
-  };
-
-  const rows = useMemo(() => data.items, [data.items]);
+  function onSortChange(key: string, direction: 'asc' | 'desc') {
+    router.push(buildHref(props, { sortBy: key, sortOrder: direction, page: 1 }));
+  }
 
   return (
     <>
-      <section className="mt-6 rounded-card border border-line bg-white p-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <form className="flex min-w-[220px] flex-1 items-center gap-2" onSubmit={submitSearch}>
-            <input
-              aria-label="Поиск по фамилии, имени или отчеству"
-              className="h-10 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus-visible:border-accent"
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Поиск по фамилии, имени или отчеству"
+      <div className="mt-4">
+        <FiltersBar>
+          <form
+            className="contents"
+            onSubmit={(event) => {
+              event.preventDefault();
+              router.push(buildHref(props, { search: search.trim(), page: 1 }));
+            }}
+          >
+            <FiltersSearch
               value={search}
+              onChange={setSearch}
+              placeholder="Поиск по фамилии, имени или отчеству"
             />
           </form>
 
           <select
             aria-label="Фильтр по залу"
-            className="h-10 min-w-[140px] rounded-lg border border-line bg-white px-2 text-sm"
+            className="h-11 rounded-control border border-line bg-white px-3 text-[13px] sm:h-10 sm:min-w-[140px]"
+            value={params.hallId}
             onChange={(event) =>
               router.push(buildHref(props, { hallId: event.target.value, groupId: '', page: 1 }))
             }
-            value={params.hallId}
           >
             <option value="">Все залы</option>
             {halls.map((hall) => (
@@ -139,9 +226,11 @@ export function AthletesBoard(props: BoardProps) {
 
           <select
             aria-label="Фильтр по группе"
-            className="h-10 min-w-[150px] rounded-lg border border-line bg-white px-2 text-sm"
-            onChange={(event) => router.push(buildHref(props, { groupId: event.target.value, page: 1 }))}
+            className="h-11 rounded-control border border-line bg-white px-3 text-[13px] sm:h-10 sm:min-w-[150px]"
             value={params.groupId}
+            onChange={(event) =>
+              router.push(buildHref(props, { groupId: event.target.value, page: 1 }))
+            }
           >
             <option value="">Все группы</option>
             {visibleGroups.map((group) => (
@@ -153,9 +242,11 @@ export function AthletesBoard(props: BoardProps) {
 
           <select
             aria-label="Фильтр по статусу"
-            className="h-10 min-w-[132px] rounded-lg border border-line bg-white px-2 text-sm"
-            onChange={(event) => router.push(buildHref(props, { status: event.target.value, page: 1 }))}
+            className="h-11 rounded-control border border-line bg-white px-3 text-[13px] sm:h-10 sm:min-w-[132px]"
             value={params.status}
+            onChange={(event) =>
+              router.push(buildHref(props, { status: event.target.value, page: 1 }))
+            }
           >
             <option value="">Все статусы</option>
             <option value="ACTIVE">Активные</option>
@@ -163,258 +254,112 @@ export function AthletesBoard(props: BoardProps) {
             <option value="ARCHIVED">Архивные</option>
           </select>
 
-          {params.search || params.hallId || params.groupId || params.status ? (
+          {hasFilters ? (
             <Link
-              className="grid h-10 place-items-center rounded-lg border border-line bg-white px-3 text-sm"
               href="/athletes"
+              className="inline-flex h-11 items-center justify-center rounded-control border border-line bg-white px-3 text-[13px] text-ink-soft hover:bg-canvas sm:h-10"
             >
               Сбросить
             </Link>
           ) : null}
 
           <button
-            className="ml-auto inline-flex h-10 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-medium text-white hover:bg-accent/90"
-            onClick={() => setDrawerOpen(true)}
             type="button"
+            onClick={() => setDrawerOpen(true)}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-control bg-accent px-4 text-[13.5px] font-medium text-white hover:opacity-90 sm:ml-auto sm:h-10"
           >
-            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <svg
+              aria-hidden="true"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
               <path d="M12 5v14M5 12h14" strokeLinecap="round" />
             </svg>
             Новый спортсмен
           </button>
-        </div>
-      </section>
+        </FiltersBar>
+      </div>
 
-      <section className="mt-4 rounded-card border border-line bg-white">
-        <div className="flex items-center justify-between border-b border-line px-4 py-3">
-          <p className="text-sm text-ink">Найдено: {data.total} спортсменов</p>
-          <p className="text-xs text-muted">{data.limit} на странице</p>
-        </div>
-
-        {rows.length === 0 ? (
-          <div className="px-4 py-10 text-center">
-            <p className="text-sm text-ink">
-              {params.search || params.hallId || params.groupId || params.status
-                ? 'По выбранным условиям спортсменов нет'
-                : 'В реестре пока нет спортсменов'}
-            </p>
-            <p className="mt-1 text-xs text-muted">
-              {params.search
-                ? 'Измените запрос или сбросьте фильтры.'
-                : 'Добавьте первого спортсмена кнопкой «Новый спортсмен».'}
-            </p>
-          </div>
-        ) : (
-          <>
-            <table className="hidden w-full border-collapse text-left md:table">
-              <thead>
-                <tr className="border-b border-line bg-[#fbfbfc] text-xs text-muted">
-                  <th aria-sort={sortState('lastName')} className="px-4 py-2 font-medium">
-                    <Link
-                      className={`inline-flex items-center gap-1.5 ${sortBy === 'lastName' ? 'text-ink' : ''}`}
-                      href={buildHref(props, {
-                        sortBy: 'lastName',
-                        sortOrder: sortBy === 'lastName' && sortOrder === 'asc' ? 'desc' : 'asc',
-                        page: 1,
-                      })}
-                    >
-                      ФИО
-                      <span className={sortBy === 'lastName' ? 'text-accent-text' : 'text-muted'}>{arrow('lastName')}</span>
-                    </Link>
-                  </th>
-                  <th aria-sort={sortState('birthDate')} className="px-4 py-2 font-medium">
-                    <Link
-                      className={`inline-flex items-center gap-1.5 ${sortBy === 'birthDate' ? 'text-ink' : ''}`}
-                      href={buildHref(props, {
-                        sortBy: 'birthDate',
-                        sortOrder: sortBy === 'birthDate' && sortOrder === 'asc' ? 'desc' : 'asc',
-                        page: 1,
-                      })}
-                    >
-                      Дата рождения
-                      <span className={sortBy === 'birthDate' ? 'text-accent-text' : 'text-muted'}>{arrow('birthDate')}</span>
-                    </Link>
-                  </th>
-                  <th className="px-4 py-2 font-medium">Группа</th>
-                  <th className="px-4 py-2 font-medium">Ступень / пояс</th>
-                  <th aria-sort={sortState('status')} className="px-4 py-2 font-medium">
-                    <Link
-                      className={`inline-flex items-center gap-1.5 ${sortBy === 'status' ? 'text-ink' : ''}`}
-                      href={buildHref(props, {
-                        sortBy: 'status',
-                        sortOrder: sortBy === 'status' && sortOrder === 'asc' ? 'desc' : 'asc',
-                        page: 1,
-                      })}
-                    >
-                      Статус
-                      <span className={sortBy === 'status' ? 'text-accent-text' : 'text-muted'}>{arrow('status')}</span>
-                    </Link>
-                  </th>
-                  <th className="px-4 py-2" />
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((athlete) => {
-                  const status = athlete.status;
-                  return (
-                    <tr className="border-b border-line last:border-0" key={athlete.id}>
-                      <td className="px-4 py-3">
-                        <Link className="text-sm font-medium text-ink hover:text-accent-text" href={`/athletes/${athlete.id}`}>
-                          {athlete.lastName} {athlete.firstName}
-                        </Link>
-                        {athlete.middleName ? (
-                          <p className="text-xs text-muted">{athlete.middleName}</p>
-                        ) : null}
-                      </td>
-                      <td className={`px-4 py-3 text-sm ${athlete.birthDate ? 'text-ink-soft' : 'text-muted'}`}>
-                        {athlete.birthDate ? formatDate(athlete.birthDate) : 'Не указано'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-muted">
-                        {athlete.groupName ?? 'Не указано'}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        {athlete.rankLabel ?? '—'}
-                        <p className="text-xs text-muted">{BELT[athlete.beltGrade] ?? athlete.beltGrade}</p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={
-                            status === 'ACTIVE'
-                              ? 'rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700'
-                              : 'rounded-full bg-canvas px-2.5 py-1 text-xs font-medium text-muted'
-                          }
-                        >
-                          {STATUS_LABEL[status] ?? status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link
-                            className="rounded-lg border border-line px-3 py-1.5 text-xs text-ink hover:bg-canvas"
-                            href={`/athletes/${athlete.id}`}
-                          >
-                            Открыть
-                          </Link>
-                          <Link
-                            aria-label={`Изменить: ${athlete.lastName}`}
-                            className="grid h-8 w-8 place-items-center rounded-lg border border-line text-muted hover:bg-canvas hover:text-ink"
-                            href={`/athletes/${athlete.id}`}
-                          >
-                            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
-                              <path d="M4 20h4l10-10-4-4L4 16v4Z" strokeLinejoin="round" />
-                              <path d="M13 5l4 4" strokeLinecap="round" />
-                            </svg>
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-
-            {/* Мобильный вид: карточки. */}
-            <div className="divide-y divide-line md:hidden">
-              {rows.map((athlete) => (
-                <Link className="block px-4 py-3" href={`/athletes/${athlete.id}`} key={athlete.id}>
-                  <div className="flex items-baseline justify-between gap-3">
-                    <span className="text-sm font-medium text-ink">
-                      {athlete.lastName} {athlete.firstName}
-                    </span>
-                    <span className="shrink-0 text-xs text-muted">
-                      {STATUS_LABEL[athlete.status] ?? athlete.status}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs text-muted">
-                    {athlete.rankLabel ?? '—'}, {BELT[athlete.beltGrade] ?? athlete.beltGrade}
-                  </p>
-                  <p className="mt-1 text-xs text-muted">
-                    {athlete.birthDate ? formatDate(athlete.birthDate) : 'Дата рождения не указана'}
-                  </p>
+      <div className="mt-3">
+        <DataTable
+          columns={columns}
+          rows={data.items}
+          getRowKey={(row) => row.id}
+          sort={{ key: sortBy, direction: sortOrder }}
+          sortMode="server"
+          onSortChange={onSortChange}
+          caption="Реестр спортсменов"
+          empty={
+            hasFilters ? (
+              <span>
+                По выбранным условиям никого нет.{' '}
+                <Link className="text-accent-text underline" href="/athletes">
+                  Сбросить фильтры
                 </Link>
-              ))}
-            </div>
-          </>
-        )}
-
-        {data.total > data.limit ? (
-          <nav className="flex items-center justify-between border-t border-line px-4 py-3" aria-label="Страницы">
-            <span className="text-xs text-muted">
-              Показано {(data.page - 1) * data.limit + 1}–{Math.min(data.page * data.limit, data.total)} из {data.total}
-            </span>
-            <div className="flex items-center gap-1">
-              {data.page > 1 ? (
-                <Link
-                  className="grid h-8 w-8 place-items-center rounded-lg border border-line text-xs"
-                  href={buildHref(props, { page: data.page - 1 })}
-                >
-                  ‹
-                </Link>
-              ) : null}
-              {Array.from({ length: pages }, (_, index) => index + 1)
-                .filter((number) => Math.abs(number - data.page) < 3 || number === 1 || number === pages)
-                .map((number) => (
+              </span>
+            ) : (
+              'В реестре пока нет спортсменов — добавьте первого.'
+            )
+          }
+          footer={
+            <>
+              <span>
+                Показано {data.items.length ? (data.page - 1) * data.limit + 1 : 0}–
+                {(data.page - 1) * data.limit + data.items.length} из {data.total}
+              </span>
+              {pages > 1 ? (
+                <span className="flex items-center gap-1.5">
                   <Link
-                    className={`grid h-8 w-8 place-items-center rounded-lg border text-xs ${
-                      number === data.page
-                        ? 'border-accent bg-accent font-medium text-white'
-                        : 'border-line text-muted'
+                    aria-label="Предыдущая страница"
+                    href={buildHref(props, { page: Math.max(1, data.page - 1) })}
+                    aria-disabled={data.page === 1}
+                    className={`inline-flex h-8 items-center rounded-control border border-line px-2.5 ${
+                      data.page === 1 ? 'pointer-events-none opacity-50' : 'bg-white hover:bg-canvas'
                     }`}
-                    href={buildHref(props, { page: number })}
-                    key={number}
                   >
-                    {number}
+                    ‹
                   </Link>
-                ))}
-              {data.page < pages ? (
-                <Link
-                  className="grid h-8 w-8 place-items-center rounded-lg border border-line text-xs"
-                  href={buildHref(props, { page: data.page + 1 })}
-                >
-                  ›
-                </Link>
+                  <span className="px-1 text-ink-soft">
+                    {data.page} / {pages}
+                  </span>
+                  <Link
+                    aria-label="Следующая страница"
+                    href={buildHref(props, { page: Math.min(pages, data.page + 1) })}
+                    aria-disabled={data.page === pages}
+                    className={`inline-flex h-8 items-center rounded-control border border-line px-2.5 ${
+                      data.page === pages ? 'pointer-events-none opacity-50' : 'bg-white hover:bg-canvas'
+                    }`}
+                  >
+                    ›
+                  </Link>
+                </span>
               ) : null}
-            </div>
-          </nav>
-        ) : null}
-      </section>
+            </>
+          }
+        />
+      </div>
 
-      {drawerOpen ? (
-        <div className="fixed inset-0 z-40 flex justify-end">
+      <Drawer
+        open={drawerOpen}
+        title="Новый спортсмен"
+        description="Заполните поля и сохраните карточку."
+        onClose={() => setDrawerOpen(false)}
+        footer={
           <button
-            aria-label="Закрыть панель"
-            className="absolute inset-0 bg-[#0e0e10]/32"
-            onClick={() => setDrawerOpen(false)}
             type="button"
-          />
-          <aside className="relative flex h-full w-full max-w-[460px] flex-col bg-white shadow-2xl">
-            <header className="flex items-start gap-3 border-b border-line px-5 py-4">
-              <div>
-                <h2 className="text-lg font-semibold text-ink">Новый спортсмен</h2>
-                <p className="mt-1 text-xs text-muted">Заполните поля и сохраните карточку.</p>
-              </div>
-              <button
-                aria-label="Закрыть"
-                className="ml-auto grid h-8 w-8 place-items-center rounded-lg border border-line text-muted hover:bg-canvas"
-                onClick={() => setDrawerOpen(false)}
-                type="button"
-              >
-                <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-                  <path d="M6 6l12 12M18 6 6 18" strokeLinecap="round" />
-                </svg>
-              </button>
-            </header>
-            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-              <CreateAthleteForm />
-            </div>
-          </aside>
-        </div>
-      ) : null}
+            onClick={() => setDrawerOpen(false)}
+            className="inline-flex h-11 flex-1 items-center justify-center rounded-control border border-line bg-white text-[13.5px] text-ink-soft hover:bg-canvas"
+          >
+            Отмена
+          </button>
+        }
+      >
+        <CreateAthleteForm />
+      </Drawer>
     </>
   );
-}
-
-function formatDate(value: string): string {
-  const [year, month, day] = value.slice(0, 10).split('-');
-  return [day, month, year].join('.');
 }

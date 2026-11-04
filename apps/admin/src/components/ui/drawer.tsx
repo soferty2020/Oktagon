@@ -1,14 +1,17 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 /**
  * Панель создания и правки.
  *
  * Десктоп: выезжает справа на 420 px с затемнением 32 % (#0E0E10). Мобильный:
- * форма на весь экран — уменьшать панель до ширины телефона не нужно. Закрытие
- * по Esc и по фону; если есть несохранённые изменения, закрытие спрашивает
- * подтверждение, чтобы введённые данные не пропадали молча.
+ * форма на весь экран — уменьшать панель до ширины телефона не нужно.
+ *
+ * Поведение диалога: фокус уходит в первое поле панели, Tab не выпускает его в
+ * фон, Esc и клик по затемнению закрывают, при закрытии фокус возвращается на
+ * элемент, который открыл панель. Если есть несохранённые изменения, закрытие
+ * спрашивает подтверждение — иначе введённые данные пропадут молча.
  *
  * Полей не содержит: форма приходит снаружи, компонент отвечает только за
  * поведение панели.
@@ -30,36 +33,84 @@ export function Drawer({
   dirty?: boolean;
   children: React.ReactNode;
 }) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
+  // Свежие значения без перезапуска эффекта: иначе фокус сбрасывался бы при
+  // каждом изменении dirty, то есть при каждом вводе в форме.
+  const dirtyRef = useRef(dirty);
+  const onCloseRef = useRef(onClose);
+  dirtyRef.current = dirty;
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (!open) {
       return;
     }
 
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') {
+    restoreFocusRef.current = document.activeElement as HTMLElement | null;
+    const panel = panelRef.current;
+
+    const focusable = panel
+      ? Array.from(
+          panel.querySelectorAll<HTMLElement>(
+            'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], button:not([disabled])',
+          ),
+        ).filter((element) => element.offsetParent !== null)
+      : [];
+
+    // Начальный фокус — первое поле: кнопка закрытия первой в DOM, но ввод
+    // с неё начинать бессмысленно.
+    const firstField = panel?.querySelector<HTMLElement>(
+      'input:not([disabled]), select:not([disabled]), textarea:not([disabled])',
+    );
+    (firstField ?? focusable[0])?.focus();
+
+    const askAndClose = () => {
+      if (dirtyRef.current && !window.confirm('Закрыть без сохранения? Изменения будут потеряны.')) {
         return;
       }
-      if (dirty && !window.confirm('Закрыть без сохранения? Изменения будут потеряны.')) {
-        return;
-      }
-      onClose();
+      onCloseRef.current();
     };
 
-    const previous = document.body.style.overflow;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        askAndClose();
+        return;
+      }
+
+      if (event.key !== 'Tab' || focusable.length === 0) {
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     document.addEventListener('keydown', onKeyDown);
 
     return () => {
-      document.body.style.overflow = previous;
+      document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', onKeyDown);
+      restoreFocusRef.current?.focus();
     };
-  }, [open, dirty, onClose]);
+  }, [open]);
 
   function requestClose() {
-    if (dirty && !window.confirm('Закрыть без сохранения? Изменения будут потеряны.')) {
+    if (dirtyRef.current && !window.confirm('Закрыть без сохранения? Изменения будут потеряны.')) {
       return;
     }
-    onClose();
+    onCloseRef.current();
   }
 
   if (!open) {
@@ -76,6 +127,7 @@ export function Drawer({
       />
 
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -90,9 +142,10 @@ export function Drawer({
             type="button"
             onClick={requestClose}
             aria-label="Закрыть"
-            className="ml-auto flex h-8 w-8 flex-none items-center justify-center rounded-control border border-line text-muted transition-colors hover:bg-canvas hover:text-ink"
+            className="ml-auto flex h-11 w-11 flex-none items-center justify-center rounded-control border border-line text-muted transition-colors hover:bg-canvas hover:text-ink"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" role="img">`n              <title>Закрыть</title>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <title>Закрыть</title>
               <path d="M6 6l12 12M18 6 6 18" strokeLinecap="round" />
             </svg>
           </button>

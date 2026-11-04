@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -15,9 +15,9 @@ import { Icon, type IconName } from '@/components/icons';
  * было навигации вообще: оставалась только шапка с крошками. Здесь та же
  * навигация выезжает поверх страницы; ссылки ведут те же, что и в сайдбаре.
  *
- * Панель закрывается по клику на ссылку и по затемнению: на телефоне ожидание
- * отдельного «крестика» раздражает. `aria-expanded` и роль диалога нужны
- * скринридеру, `overflow-hidden` на body — чтобы фон не прокручивался под меню.
+ * Поведение диалога: Esc закрывает, Tab ходит по пунктам панели и не выпускает
+ * фокус в фон, при закрытии фокус возвращается на кнопку «Меню» — иначе после
+ * закрытия он остаётся на исчезнувшем элементе, и клавиатурная навигация ломается.
  */
 export function MobileNav({
   items,
@@ -26,23 +26,61 @@ export function MobileNav({
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) {
       return;
     }
 
-    const previous = document.body.style.overflow;
+    const panel = panelRef.current;
+    const focusable = panel
+      ? Array.from(
+          panel.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'),
+        ).filter((element) => element.offsetParent !== null)
+      : [];
+
+    focusable[0]?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setOpen(false);
+        return;
+      }
+
+      if (event.key !== 'Tab' || focusable.length === 0) {
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', onKeyDown);
 
     return () => {
-      document.body.style.overflow = previous;
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', onKeyDown);
+      triggerRef.current?.focus();
     };
   }, [open]);
 
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
         className="flex h-11 w-11 items-center justify-center rounded-control border border-line bg-white text-ink transition-colors hover:bg-canvas md:hidden"
@@ -62,6 +100,7 @@ export function MobileNav({
           />
 
           <div
+            ref={panelRef}
             className="absolute inset-y-0 left-0 flex w-[264px] flex-col bg-ink"
             role="dialog"
             aria-modal="true"
@@ -71,14 +110,14 @@ export function MobileNav({
               <Image
                 src="/brand/octagon-logo.png"
                 alt="OCTAGON — каратэ-клуб"
-            width={1100}
-            height={307}
+                width={1100}
+                height={307}
                 className="h-8 w-auto"
               />
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="text-sm text-white/70 transition hover:text-white"
+                className="flex h-11 items-center px-2 text-sm text-white/70 transition-colors hover:text-white"
               >
                 Закрыть
               </button>
@@ -94,6 +133,7 @@ export function MobileNav({
                     key={item.href}
                     href={item.href}
                     onClick={() => setOpen(false)}
+                    aria-current={active ? 'page' : undefined}
                     className={
                       active
                         ? 'mb-1 flex h-11 items-center gap-3 rounded-control bg-accent px-3 text-[13px] font-medium text-white'
