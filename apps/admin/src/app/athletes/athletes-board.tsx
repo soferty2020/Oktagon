@@ -20,13 +20,15 @@ export interface AthleteRow {
   rankLabel: string | null;
   beltGrade: string;
   phone: string | null;
+  /** Действующие привязки аккаунтов; 0 — привязки нет. */
+  linkedAccountsCount: number;
 }
 
 interface BoardProps {
   data: { items: AthleteRow[]; total: number; page: number; limit: number };
   groups: { id: string; name: string; hallId: string | null }[];
   halls: { id: string; name: string }[];
-  params: { search: string; hallId: string; groupId: string; status: string };
+  params: { search: string; hallId: string; groupId: string; status: string; hasAccounts: string };
   sortBy: 'lastName' | 'birthDate' | 'status';
   sortOrder: 'asc' | 'desc';
 }
@@ -60,6 +62,7 @@ function buildHref(
     hallId: string;
     groupId: string;
     status: string;
+    hasAccounts: string;
     sortBy: string;
     sortOrder: string;
     page: number;
@@ -70,6 +73,7 @@ function buildHref(
     hallId: props.params.hallId,
     groupId: props.params.groupId,
     status: props.params.status,
+    hasAccounts: props.params.hasAccounts,
     sortBy: props.sortBy,
     sortOrder: props.sortOrder,
     page: 1,
@@ -80,6 +84,7 @@ function buildHref(
   if (next.hallId) query.set('hallId', next.hallId);
   if (next.groupId) query.set('groupId', next.groupId);
   if (next.status) query.set('status', next.status);
+  if (next.hasAccounts && next.hasAccounts !== 'all') query.set('hasAccounts', next.hasAccounts);
   query.set('sortBy', next.sortBy);
   query.set('sortOrder', next.sortOrder);
   if (next.page > 1) query.set('page', String(next.page));
@@ -108,7 +113,9 @@ export function AthletesBoard(props: BoardProps) {
   const visibleGroups = params.hallId
     ? groups.filter((group) => group.hallId === params.hallId)
     : groups;
-  const hasFilters = Boolean(params.search || params.hallId || params.groupId || params.status);
+  const hasFilters = Boolean(
+    params.search || params.hallId || params.groupId || params.status || params.hasAccounts,
+  );
 
   const columns: Column<AthleteRow>[] = [
     {
@@ -154,6 +161,20 @@ export function AthletesBoard(props: BoardProps) {
           <span className="block text-[11.5px] text-muted">{BELT[row.beltGrade] ?? row.beltGrade}</span>
         </>
       ),
+    },
+    {
+      key: 'accounts',
+      header: 'Аккаунты',
+      render: (row) => {
+        const count = row.linkedAccountsCount;
+        if (count === 0) {
+          return <span className="text-muted">Нет привязки</span>;
+        }
+        if (count === 1) {
+          return <span className="text-ink-soft">Привязан</span>;
+        }
+        return <span className="text-ink-soft">{count} аккаунта</span>;
+      },
     },
     {
       key: 'status',
@@ -252,6 +273,19 @@ export function AthletesBoard(props: BoardProps) {
             <option value="ACTIVE">Активные</option>
             <option value="FROZEN">Замороженные</option>
             <option value="ARCHIVED">Архивные</option>
+          </select>
+
+          <select
+            aria-label="Фильтр по привязке аккаунтов"
+            className="h-11 rounded-control border border-line bg-white px-3 text-[13px] sm:h-10 sm:min-w-[150px]"
+            value={params.hasAccounts}
+            onChange={(event) =>
+              router.push(buildHref(props, { hasAccounts: event.target.value, page: 1 }))
+            }
+          >
+            <option value="all">Все аккаунты</option>
+            <option value="linked">С привязкой</option>
+            <option value="unlinked">Без привязки</option>
           </select>
 
           {hasFilters ? (

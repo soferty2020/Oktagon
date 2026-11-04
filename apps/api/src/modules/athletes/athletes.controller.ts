@@ -65,6 +65,7 @@ export class AthletesController {
       search: query.search,
       hallId: query.hallId,
       groupId: query.groupId,
+      hasAccounts: query.hasAccounts === 'all' ? undefined : query.hasAccounts,
       sortBy: query.sortBy,
       sortOrder: query.sortOrder,
       page: query.page,

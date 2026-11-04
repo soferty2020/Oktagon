@@ -11,6 +11,8 @@ export interface AthleteListOptions {
   groupId?: string;
   /** Видимая зона тренера: `null` — ограничений нет. */
   athleteIds?: string[] | null;
+  /** Фильтр по действующим привязкам аккаунтов: `linked` — есть, `unlinked` — нет. */
+  hasAccounts?: 'linked' | 'unlinked';
   sortBy?: 'lastName' | 'birthDate' | 'status';
   sortOrder?: 'asc' | 'desc';
   skip?: number;
@@ -19,6 +21,8 @@ export interface AthleteListOptions {
 
 export interface AthleteRecord {
   id: string;
+  /** Действующие привязки аккаунтов; считает база подзапросом. */
+  _count: { userLinks: number };
   firstName: string;
   lastName: string;
   middleName: string | null;
@@ -165,6 +169,9 @@ const ATHLETE_SELECT = {
   hallId: true,
   createdAt: true,
   updatedAt: true,
+  // Привязки аккаунтов считает база подзапросом: список из 20 строк не делает
+  // 20 отдельных запросов (требование #133).
+  _count: { select: { userLinks: true } },
 } as const;
 
 /** Текущая группа, тренер и зал: только для карточки, не для списка. */
@@ -208,6 +215,13 @@ export class PrismaAthletesRepository extends AthletesRepository {
       archivedAt: null,
       ...(options.status ? { status: options.status } : {}),
       ...(options.athleteIds ? { id: { in: options.athleteIds } } : {}),
+      // Действующая привязка — запись UserAthlete. Непринятые приглашения
+      // (UserInvite) не считаются: это ещё не аккаунт спортсмена.
+      ...(options.hasAccounts === 'linked'
+        ? { userLinks: { some: {} } }
+        : options.hasAccounts === 'unlinked'
+          ? { userLinks: { none: {} } }
+          : {}),
       ...(membership ? { memberships: membership } : {}),
       ...(search
         ? {

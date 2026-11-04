@@ -24,6 +24,7 @@ const athlete: AthleteRecord = {
   hallId: null,
   createdAt: new Date('2026-03-01T10:00:00.000Z'),
   updatedAt: new Date('2026-03-01T10:00:00.000Z'),
+  _count: { userLinks: 1 },
 };
 
 describe('AthletesService', () => {
@@ -143,6 +144,29 @@ describe('AthletesService', () => {
           sortOrder: 'desc',
         }),
       );
+    });
+
+    it('передаёт фильтр привязки аккаунтов и отдаёт их количество', async () => {
+      repository.list.mockResolvedValue([{ ...athlete, _count: { userLinks: 2 } }]);
+
+      const rows = await service.list('admin-1', { hasAccounts: 'linked' });
+
+      expect(repository.list).toHaveBeenCalledWith(
+        expect.objectContaining({ hasAccounts: 'linked' }),
+      );
+      expect(rows).toEqual([
+        expect.objectContaining({ id: athlete.id, linkedAccountsCount: 2 }),
+      ]);
+    });
+
+    it('без привязок отдаёт 0, а не пустое значение', async () => {
+      repository.list.mockResolvedValue([{ ...athlete, _count: { userLinks: 0 } }]);
+
+      const rows = await service.list('admin-1', { hasAccounts: 'unlinked' });
+
+      expect(rows).toEqual([
+        expect.objectContaining({ linkedAccountsCount: 0 }),
+      ]);
     });
 
     it('с page отдаёт страницу и общее число', async () => {
