@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
+import { CreatePanel } from '@/components/ui/create-panel';
 import { EmptyState } from '@/components/empty-state';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
@@ -113,7 +114,19 @@ export default async function NewsPage({
         }
       />
 
-      <div className={canCreate ? 'grid gap-6 lg:grid-cols-[1.4fr_1fr]' : ''}>
+      {canCreate ? (
+        <div className="mb-4 flex justify-end">
+          <CreatePanel
+            title="Новая новость"
+            description="Черновик можно сохранить и опубликовать позже."
+            buttonLabel="Новая новость"
+          >
+            <CreateNewsForm inPanel />
+          </CreatePanel>
+        </div>
+      ) : null}
+
+      <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-4">
           {!posts.ok ? <Notice tone="error">{describeError(posts.error)}</Notice> : null}
 
@@ -179,7 +192,7 @@ export default async function NewsPage({
             : null}
         </div>
 
-        {canCreate ? <CreateNewsForm /> : null}
+        
       </div>
     </AppShell>
   );

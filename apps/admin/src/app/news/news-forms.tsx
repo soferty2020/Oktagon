@@ -41,7 +41,7 @@ function StateMessages({ state }: { state: NewsFormState }) {
 }
 
 /** Создание новости. По умолчанию — черновик: публикация это отдельное решение. */
-export function CreateNewsForm() {
+export function CreateNewsForm({ inPanel = false }: { inPanel?: boolean } = {}) {
   const [state, formAction, pending] = useActionState(createNewsAction, initialState);
   const [publishNow, setPublishNow] = useState(false);
 
