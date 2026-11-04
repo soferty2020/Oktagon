@@ -7,6 +7,7 @@ import { AppShell, Notice } from '@/components/app-shell';
 import { BeltBadge } from '@/components/belt-badge';
 import { secondaryButtonClass } from '@/components/ui';
 import { apiFetch, describeError } from '@/lib/api/client';
+import { resolveAthleteTab, visibleAthleteTabs } from '@/lib/athlete-tabs';
 import { describePermission } from '@/lib/permissions';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
 import { archiveAthleteAction, unlinkAccountAction } from '../actions';
@@ -133,8 +134,7 @@ export default async function AthletePage({
   // Прямой ?tab=payments без права не должен показывать вкладку даже частично:
   // открываем профиль, как будто вкладки не существует.
   const requestedTab: TabKey = TABS.some((item) => item.key === tab) ? (tab as TabKey) : 'profile';
-  const activeTab: TabKey =
-    requestedTab === 'payments' && !canViewFinanceEarly ? 'profile' : requestedTab;
+  const activeTab: TabKey = resolveAthleteTab(tab, canViewFinanceEarly);
 
   const { accessToken } = await readTokens();
   const canEdit = user.permissions.includes('athletes.edit');
@@ -142,7 +142,7 @@ export default async function AthletePage({
   const canViewFinance = user.permissions.includes('payments.view');
   // Вкладка «Оплаты» существует только с правом payments.view: без него она
   // скрыта, и прямой переход по ?tab=payments показывает профиль.
-  const visibleTabs = TABS.filter((tab) => tab.key !== 'payments' || canViewFinance);
+  const visibleTabs = visibleAthleteTabs(canViewFinance);
 
   const [athlete, users, certifications] = await Promise.all([
     apiFetch<AthleteDetails>(`/athletes/${id}`, { accessToken }),
