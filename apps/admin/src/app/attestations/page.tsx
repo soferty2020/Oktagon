@@ -105,16 +105,20 @@ export default async function AttestationsPage() {
       <PageHeader
         title="Аттестации"
         description="Экзамены, допуск и присвоение ступеней"
+        actions={
+          canManage ? (
+            <CreatePanel
+              title="Новая аттестация"
+              description="Экзамен с участниками и результатами."
+              buttonLabel="Новая аттестация"
+            >
+              <CreateEventForm inPanel />
+            </CreatePanel>
+          ) : null
+        }
       />
 
       {!events?.ok && events ? <Notice tone="info">{describeError(events.error)}</Notice> : null}
-
-      {canManage ? (
-        <section className="mb-8 rounded-xl border border-neutral-200 bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold">Новое мероприятие</h2>
-          <CreatePanel title="Новая аттестация" description="Экзамен с участниками и результатами." buttonLabel="Новая аттестация"><CreateEventForm inPanel /></CreatePanel>
-        </section>
-      ) : null}
 
       {rows.length === 0 ? (
         <EmptyState

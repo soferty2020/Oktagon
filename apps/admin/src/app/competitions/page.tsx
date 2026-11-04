@@ -110,13 +110,6 @@ export default async function CompetitionsPage() {
         <Notice tone="info">{describeError(competitions.error)}</Notice>
       ) : null}
 
-      {canManage ? (
-        <section className="mb-8 rounded-xl border border-neutral-200 bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold">Новый турнир</h2>
-          <CreatePanel title="Новый турнир" description="Турнир, заявки участников и результаты." buttonLabel="Новый турнир"><CreateCompetitionForm inPanel /></CreatePanel>
-        </section>
-      ) : null}
-
       {rows.length === 0 ? (
         <EmptyState
           title="Турниров пока нет"
