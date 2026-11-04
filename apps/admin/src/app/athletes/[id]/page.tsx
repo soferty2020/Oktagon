@@ -129,7 +129,12 @@ export default async function AthletePage({
 
   const { id } = await params;
   const { tab } = await searchParams;
-  const activeTab: TabKey = TABS.some((item) => item.key === tab) ? (tab as TabKey) : 'profile';
+  const canViewFinanceEarly = user.permissions.includes('payments.view');
+  // Прямой ?tab=payments без права не должен показывать вкладку даже частично:
+  // открываем профиль, как будто вкладки не существует.
+  const requestedTab: TabKey = TABS.some((item) => item.key === tab) ? (tab as TabKey) : 'profile';
+  const activeTab: TabKey =
+    requestedTab === 'payments' && !canViewFinanceEarly ? 'profile' : requestedTab;
 
   const { accessToken } = await readTokens();
   const canEdit = user.permissions.includes('athletes.edit');
