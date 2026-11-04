@@ -122,10 +122,9 @@ export function ScheduleWeek({
   const selectedGroups = new Map<string, WeekEvent[]>();
   for (const event of selectedEvents) {
     const key = event.hallId ?? 'none';
-    if (!selectedGroups.has(key)) {
-      selectedGroups.set(key, []);
-    }
-    selectedGroups.get(key)!.push(event);
+    const list = selectedGroups.get(key) ?? [];
+    list.push(event);
+    selectedGroups.set(key, list);
   }
 
   return (

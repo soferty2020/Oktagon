@@ -133,7 +133,6 @@ export default async function AthletePage({
   const canViewFinanceEarly = user.permissions.includes('payments.view');
   // Прямой ?tab=payments без права не должен показывать вкладку даже частично:
   // открываем профиль, как будто вкладки не существует.
-  const requestedTab: TabKey = TABS.some((item) => item.key === tab) ? (tab as TabKey) : 'profile';
   const activeTab: TabKey = resolveAthleteTab(tab, canViewFinanceEarly);
 
   const { accessToken } = await readTokens();
