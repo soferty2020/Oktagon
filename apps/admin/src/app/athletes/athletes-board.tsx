@@ -21,7 +21,8 @@ export interface AthleteRow {
   beltGrade: string;
   phone: string | null;
   /** Действующие привязки аккаунтов; 0 — привязки нет. */
-  linkedAccountsCount: number;
+  /** null — старый API без поля: «нет данных», а не «нет привязки». */
+  linkedAccountsCount: number | null;
 }
 
 interface BoardProps {
@@ -114,7 +115,12 @@ export function AthletesBoard(props: BoardProps) {
     ? groups.filter((group) => group.hallId === params.hallId)
     : groups;
   const hasFilters = Boolean(
-    params.search || params.hallId || params.groupId || params.status || params.hasAccounts,
+    params.search ||
+      params.hallId ||
+      params.groupId ||
+      params.status ||
+      // `all` — не фильтр: иначе «Сбросить» появляется на пустых условиях.
+      (params.hasAccounts && params.hasAccounts !== 'all'),
   );
 
   const columns: Column<AthleteRow>[] = [
@@ -167,6 +173,9 @@ export function AthletesBoard(props: BoardProps) {
       header: 'Аккаунты',
       render: (row) => {
         const count = row.linkedAccountsCount;
+        if (count === null || count === undefined) {
+          return <span className="text-muted">Нет данных</span>;
+        }
         if (count === 0) {
           return <span className="text-muted">Нет привязки</span>;
         }
