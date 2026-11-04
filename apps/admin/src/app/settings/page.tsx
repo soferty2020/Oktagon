@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
-import { AppShell, Notice } from '@/components/app-shell';
+import { AppShell, Notice, PageHeader } from '@/components/app-shell';
 import { Icon, type IconName } from '@/components/icons';
 import { getCurrentUser } from '@/lib/server/session';
 
@@ -123,10 +123,10 @@ export default async function SettingsPage() {
 
   return (
     <AppShell user={user}>
-      <p className="mb-5 text-sm text-muted">
-        Общие параметры клуба и входы в существующие разделы. Данные и права сотрудников
-        редактируются там, где и раньше — здесь только навигация.
-      </p>
+      <PageHeader
+        title="Настройки"
+        description="Общие параметры клуба и входы в существующие разделы. Данные и права сотрудников редактируются там, где и раньше — здесь только навигация."
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {visible.map((category) => (

@@ -217,7 +217,7 @@ jobs:
       - name: Unit tests (часовой пояс и календарь)
         # Node 23 умеет запускать TypeScript напрямую (`--experimental-strip-types`),
         # поэтому отдельный раннер для чистых функций админки не нужен.
-        run: node --test apps/admin/src/lib/schedule/calendar.test.ts apps/admin/src/lib/athlete-tabs.test.ts
+        run: node --test apps/admin/src/lib/schedule/calendar.test.ts apps/admin/src/lib/athlete-tabs.test.ts apps/admin/src/lib/api/errors.test.ts
 
       - name: Build
         env:
