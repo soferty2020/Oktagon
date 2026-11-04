@@ -22,7 +22,7 @@ function localDate(offsetDays = 14): string {
 }
 
 /** Создание турнира. */
-export function CreateCompetitionForm() {
+export function CreateCompetitionForm({ inPanel = false }: { inPanel?: boolean } = {}) {
   const [state, formAction, pending] = useActionState(createCompetitionAction, initial);
 
   return (

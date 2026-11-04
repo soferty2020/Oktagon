@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
+import { CreatePanel } from '@/components/ui/create-panel';
 import { EmptyState } from '@/components/empty-state';
 import { secondaryButtonClass } from '@/components/ui';
 import { apiFetch, describeError } from '@/lib/api/client';
@@ -85,7 +86,19 @@ export default async function CompetitionsPage() {
 
   return (
     <AppShell user={user}>
-      <PageHeader title="Соревнования" description="Турниры, заявки и результаты" />
+      <PageHeader
+        title="Соревнования"
+        description="Турниры, заявки и результаты"
+        actions={
+          <CreatePanel
+            title="Новый турнир"
+            description="Турнир, заявки участников и результаты."
+            buttonLabel="Новый турнир"
+          >
+            <CreateCompetitionForm inPanel />
+          </CreatePanel>
+        }
+      />
 
       <div className="mb-6">
         <Link className={secondaryButtonClass} href="/competitions/categories">
@@ -100,7 +113,7 @@ export default async function CompetitionsPage() {
       {canManage ? (
         <section className="mb-8 rounded-xl border border-neutral-200 bg-white p-6">
           <h2 className="mb-4 text-lg font-semibold">Новый турнир</h2>
-          <CreateCompetitionForm />
+          <CreatePanel title="Новый турнир" description="Турнир, заявки участников и результаты." buttonLabel="Новый турнир"><CreateCompetitionForm inPanel /></CreatePanel>
         </section>
       ) : null}
 

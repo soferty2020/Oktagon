@@ -22,7 +22,7 @@ function localDateTime(offsetDays = 7): string {
 }
 
 /** Создание мероприятия: дата по умолчанию — через неделю. */
-export function CreateEventForm() {
+export function CreateEventForm({ inPanel = false }: { inPanel?: boolean } = {}) {
   const [state, formAction, pending] = useActionState(createEventAction, initial);
 
   return (

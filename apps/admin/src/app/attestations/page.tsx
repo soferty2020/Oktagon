@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
+import { CreatePanel } from '@/components/ui/create-panel';
 import { EmptyState } from '@/components/empty-state';
 import { secondaryButtonClass } from '@/components/ui';
 import { apiFetch, describeError } from '@/lib/api/client';
@@ -73,7 +74,18 @@ export default async function AttestationsPage() {
   if (!canView) {
     return (
       <AppShell user={user}>
-        <PageHeader title="Аттестации" />
+        <PageHeader
+        title="Аттестации"
+        actions={
+          <CreatePanel
+            title="Новая аттестация"
+            description="Экзамен с участниками и результатами."
+            buttonLabel="Новая аттестация"
+          >
+            <CreateEventForm inPanel />
+          </CreatePanel>
+        }
+      />
         <Notice tone="info">{describePermission('attestations.view')}</Notice>
       </AppShell>
     );
@@ -100,7 +112,7 @@ export default async function AttestationsPage() {
       {canManage ? (
         <section className="mb-8 rounded-xl border border-neutral-200 bg-white p-6">
           <h2 className="mb-4 text-lg font-semibold">Новое мероприятие</h2>
-          <CreateEventForm />
+          <CreatePanel title="Новая аттестация" description="Экзамен с участниками и результатами." buttonLabel="Новая аттестация"><CreateEventForm inPanel /></CreatePanel>
         </section>
       ) : null}
 
