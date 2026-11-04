@@ -312,3 +312,79 @@ tbody a:hover {
   text-decoration-color: var(--accent-warm);
   text-underline-offset: 2px;
 }
+
+/* Мобильное меню (#131, уточнение 1): вместо двух строк иконок — кнопка «Меню»
+   44×44 и выдвижная панель с подписями. */
+.menu-toggle {
+  display: none;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--white);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+@media (max-width: 860px) {
+  .app-side { display: none; }
+  .menu-toggle { display: inline-flex; }
+}
+
+body.menu-open .app-side {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  height: 100vh;
+  width: 100%;
+  max-width: 320px;
+  flex-direction: column;
+  padding: 18px 14px;
+  overflow-y: auto;
+}
+
+body.menu-open .app-side .nav {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 2px;
+}
+
+body.menu-open .app-side .nav a {
+  height: 44px;
+  padding: 0 12px;
+}
+
+body.menu-open .app-side .nav a span {
+  display: inline;
+}
+
+body.menu-open::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: var(--overlay);
+}
+
+/* Мобильный топбар: остаются «Меню», уведомления и профиль; крошки и «Выйти»
+   уходят, чтобы ничего не сжималось (#131). */
+@media (max-width: 860px) {
+  .app-top {
+    gap: 10px;
+  }
+  .app-top .crumbs {
+    display: none;
+  }
+  .app-top .right {
+    gap: 8px;
+    margin-left: 0;
+    flex: 1;
+    justify-content: flex-end;
+  }
+  .app-top .right .btn-secondary {
+    display: none;
+  }
+}

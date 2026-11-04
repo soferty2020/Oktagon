@@ -34,7 +34,21 @@
   .main-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
   .side-col { display: flex; flex-direction: column; gap: 16px; }
 
-  .tabs { margin-top: 16px; }
+  .tabs {
+    margin-top: 16px;
+    display: flex;
+    gap: 20px;
+    border-bottom: 1px solid var(--line);
+    overflow-x: auto;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+    /* Индикация продолжения: тень у правого края видна, пока есть скрытые вкладки. */
+    background:
+      linear-gradient(to right, var(--white) 30%, rgba(255, 255, 255, 0)) left center / 24px 100% no-repeat,
+      linear-gradient(to left, var(--white) 30%, rgba(255, 255, 255, 0)) right center / 24px 100% no-repeat,
+      radial-gradient(farthest-side at 100% 50%, rgba(14, 14, 16, 0.12), transparent) right center / 12px 100% no-repeat;
+  }
+  .tabs a { flex: 0 0 auto; }
   .info {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -107,6 +121,10 @@
 
   <main class="app-main">
     <div class="app-top">
+    <button class="menu-toggle" type="button" aria-label="Открыть меню" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:20px;height:20px"><path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round"/></svg>
+    </button>
+
       <div class="crumbs">OCTAGON / Спортсмены / <b>Профиль</b></div>
       <div class="right">
         <button class="btn btn-icon" type="button" aria-label="Уведомления"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" stroke-linecap="round"/><path d="M10 21h4" stroke-linecap="round"/></svg></button>
