@@ -110,8 +110,6 @@ export default async function SchedulePage({
   }
 
   const params = await searchParams;
-  // Неделя — основной режим (#129); месячный вид убран из страницы.
-  const weekView = params.view !== 'month';
   const anchor = /^\d{4}-\d{2}-\d{2}$/.test(params.anchor ?? '')
     ? (params.anchor as string)
     : todayInClub();
@@ -119,10 +117,10 @@ export default async function SchedulePage({
   const trainerFilter = params.trainerId;
   const groupFilter = params.groupId;
 
-  const from = weekView
-    ? startOfWeek(anchor)
-    : startOfWeek(monthRange(...anchorMonth(anchor)).from);
-  const to = weekView ? addDays(from, 6) : addDays(from, 41);
+  // Диапазон покрывает месяц целиком (для обзора) и содержит неделю якоря:
+  // недельный режим фильтрует этот же набор на клиенте, второй запрос не нужен.
+  const from = startOfWeek(monthRange(...anchorMonth(anchor)).from);
+  const to = addDays(from, 41);
 
   const { accessToken } = await readTokens();
   const canEdit = user.permissions.includes('schedule.edit');
