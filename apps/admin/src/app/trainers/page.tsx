@@ -117,7 +117,13 @@ export default async function TrainersPage() {
     <AppShell user={user}>
       <PageHeader title="Тренеры" description="Профили тренеров и их доступ в систему." />
 
-      <div className={`grid gap-6 ${canEditCard ? 'lg:grid-cols-[1.6fr_1fr]' : ''}`}>
+      {canEditCard ? (
+        <div className="mb-4 flex justify-end">
+          <TrainerCreatePanel />
+        </div>
+      ) : null}
+
+      <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-4">
           {!trainers.ok ? <Notice tone="error">{describeError(trainers.error)}</Notice> : null}
 
