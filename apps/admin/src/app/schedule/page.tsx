@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { AppShell, Notice, PageHeader } from '@/components/app-shell';
-import { ScheduleCalendar, type CalendarView } from '@/components/schedule-calendar';
+import { ScheduleWeek } from '@/components/schedule-week';
 import { ScheduleFilters } from '@/components/schedule-filters';
 import { apiFetch, describeError } from '@/lib/api/client';
 import {
@@ -110,7 +110,8 @@ export default async function SchedulePage({
   }
 
   const params = await searchParams;
-  const view: CalendarView = params.view === 'week' ? 'week' : 'month';
+  // Неделя — основной режим (#129); месячный вид убран из страницы.
+  const weekView = params.view !== 'month';
   const anchor = /^\d{4}-\d{2}-\d{2}$/.test(params.anchor ?? '')
     ? (params.anchor as string)
     : todayInClub();
@@ -118,9 +119,10 @@ export default async function SchedulePage({
   const trainerFilter = params.trainerId;
   const groupFilter = params.groupId;
 
-  const from =
-    view === 'week' ? startOfWeek(anchor) : startOfWeek(monthRange(...anchorMonth(anchor)).from);
-  const to = view === 'week' ? addDays(from, 6) : addDays(from, 41);
+  const from = weekView
+    ? startOfWeek(anchor)
+    : startOfWeek(monthRange(...anchorMonth(anchor)).from);
+  const to = weekView ? addDays(from, 6) : addDays(from, 41);
 
   const { accessToken } = await readTokens();
   const canEdit = user.permissions.includes('schedule.edit');
@@ -238,12 +240,13 @@ export default async function SchedulePage({
       </div>
 
       <div className="mt-4">
-        <ScheduleCalendar
+        <ScheduleWeek
           anchor={anchor}
-          baseHref="/schedule"
-          events={events}
-          keepParams={{ hallId: hallFilter, trainerId: trainerFilter, groupId: groupFilter }}
-          view={view}
+          today={todayInClub()}
+          halls={hallList.map((hall) => ({ id: hall.id, name: hall.name }))}
+          events={(sessions.ok ? sessions.data : [])
+            .filter((session) => !hallFilter || session.hallId === hallFilter)
+            .filter((session) => !groupFilter || session.groupId === groupFilter)}
         />
       </div>
 
