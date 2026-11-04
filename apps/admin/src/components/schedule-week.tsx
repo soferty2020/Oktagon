@@ -34,7 +34,13 @@ function dayKey(iso: string): string {
 }
 
 function time(iso: string): string {
-  return iso.slice(11, 16);
+  // Время клуба, а не UTC: иначе вечерние занятия уезжают на утро.
+  return new Intl.DateTimeFormat('ru-RU', {
+    timeZone: 'Asia/Novosibirsk',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date(iso));
 }
 
 function addDays(date: Date, days: number): Date {
