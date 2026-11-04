@@ -225,8 +225,6 @@ export default async function TrainersPage() {
             </section>
           ) : null}
         </div>
-
-        {canEditCard ? <TrainerCreatePanel /> : null}
       </div>
     </AppShell>
   );
