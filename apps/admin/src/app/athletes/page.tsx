@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 
 import { AppShell, PageHeader } from '@/components/app-shell';
+import { KpiCard, KpiGrid } from '@/components/ui/kpi-card';
 import { apiFetch, describeError } from '@/lib/api/client';
 import { getCurrentUser, readTokens } from '@/lib/server/session';
 import { AthletesBoard, type AthleteRow } from './athletes-board';
@@ -87,12 +88,12 @@ export default async function AthletesPage({
         description="Реестр спортсменов клуба: поиск, фильтры и карточки."
       />
 
-      <section className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Всего спортсменов" note="в реестре" value={everyone.length} />
-        <Kpi label="Активных" note="участвуют в группах" value={active} />
-        <Kpi label="Архивных" note="в архиве" value={archived} />
-        <Kpi label="Без группы" note="нужно распределить" value={withoutGroup} />
-      </section>
+      <KpiGrid>
+        <KpiCard label="Всего спортсменов" value={everyone.length} />
+        <KpiCard label="Активных" value={active} />
+        <KpiCard label="Архивных" value={archived} />
+        <KpiCard label="Без группы" value={withoutGroup} />
+      </KpiGrid>
 
       {!result.ok ? (
         <p
@@ -117,15 +118,5 @@ export default async function AthletesPage({
         sortOrder={sortOrder}
       />
     </AppShell>
-  );
-}
-
-function Kpi({ label, note, value }: { label: string; note: string; value: number }) {
-  return (
-    <div className="rounded-card border border-line bg-white px-5 py-4">
-      <p className="text-2xl font-semibold leading-none text-ink">{value}</p>
-      <p className="mt-2 text-sm text-muted">{label}</p>
-      <p className="mt-0.5 text-xs text-muted">{note}</p>
-    </div>
   );
 }

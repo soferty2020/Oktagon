@@ -60,9 +60,9 @@ export function CreateAthleteForm() {
   return (
     <form
       action={formAction}
-      className="flex flex-col gap-3 rounded-card border border-line bg-white p-5"
+      className="flex flex-col gap-3 bg-white"
     >
-      <h2 className="text-sm font-semibold text-ink">Новый спортсмен</h2>
+      {/* Заголовок даёт панель (Drawer): дублировать его внутри формы незачем. */}
 
       <label className={labelClass}>
         Фамилия
