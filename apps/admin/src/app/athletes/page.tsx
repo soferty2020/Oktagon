@@ -64,6 +64,9 @@ export default async function AthletesPage({
     ...(params.hallId ? { hallId: params.hallId } : {}),
     ...(params.groupId ? { groupId: params.groupId } : {}),
     ...(params.status ? { status: params.status } : {}),
+    ...(params.hasAccounts && params.hasAccounts !== 'all'
+      ? { hasAccounts: params.hasAccounts }
+      : {}),
   });
 
   const [result, all, groups, halls] = await Promise.all([
@@ -113,6 +116,7 @@ export default async function AthletesPage({
           hallId: params.hallId ?? '',
           groupId: params.groupId ?? '',
           status: params.status ?? '',
+          hasAccounts: params.hasAccounts ?? 'all',
         }}
         sortBy={sortBy}
         sortOrder={sortOrder}

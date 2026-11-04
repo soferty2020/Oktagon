@@ -3,6 +3,15 @@ import type { AthleteSportsEntry } from '@octagon/contracts';
 import { AthleteStatus, BeltGrade, Gender } from '../../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 
+/**
+ * Действующая привязка аккаунта: пользователь не в архиве и не в статусе INVITED.
+ * Одно и то же условие используется и для подсчёта, и для фильтра — иначе число
+ * в колонке и фильтр «с привязкой» показывали бы разное.
+ */
+export const ACTIVE_ACCOUNT_LINK = {
+  user: { archivedAt: null, status: 'ACTIVE' as const },
+};
+
 /** Параметры реестра: фильтры, сортировка и пагинация (#81). */
 export interface AthleteListOptions {
   status?: AthleteStatus;
@@ -11,6 +20,8 @@ export interface AthleteListOptions {
   groupId?: string;
   /** Видимая зона тренера: `null` — ограничений нет. */
   athleteIds?: string[] | null;
+  /** Фильтр по действующим привязкам аккаунтов: `linked` — есть, `unlinked` — нет. */
+  hasAccounts?: 'linked' | 'unlinked';
   sortBy?: 'lastName' | 'birthDate' | 'status';
   sortOrder?: 'asc' | 'desc';
   skip?: number;
@@ -19,6 +30,8 @@ export interface AthleteListOptions {
 
 export interface AthleteRecord {
   id: string;
+  /** Действующие привязки аккаунтов; считает база подзапросом. */
+  _count: { userLinks: number };
   firstName: string;
   lastName: string;
   middleName: string | null;
@@ -165,6 +178,9 @@ const ATHLETE_SELECT = {
   hallId: true,
   createdAt: true,
   updatedAt: true,
+  // Привязки аккаунтов считает база подзапросом: список из 20 строк не делает
+  // 20 отдельных запросов (требование #133).
+  _count: { select: { userLinks: { where: ACTIVE_ACCOUNT_LINK } } },
 } as const;
 
 /** Текущая группа, тренер и зал: только для карточки, не для списка. */
@@ -208,6 +224,13 @@ export class PrismaAthletesRepository extends AthletesRepository {
       archivedAt: null,
       ...(options.status ? { status: options.status } : {}),
       ...(options.athleteIds ? { id: { in: options.athleteIds } } : {}),
+      // Действующая привязка — UserAthlete с неархивным пользователем; то же
+      // условие, что и в подсчёте, иначе число и фильтр расходились бы.
+      ...(options.hasAccounts === 'linked'
+        ? { userLinks: { some: ACTIVE_ACCOUNT_LINK } }
+        : options.hasAccounts === 'unlinked'
+          ? { userLinks: { none: ACTIVE_ACCOUNT_LINK } }
+          : {}),
       ...(membership ? { memberships: membership } : {}),
       ...(search
         ? {

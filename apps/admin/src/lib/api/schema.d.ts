@@ -2432,6 +2432,12 @@ export interface components {
             beltGrade: components["schemas"]["BeltGrade"];
             /** Format: date */
             beltAwardedAt?: string | null;
+            /**
+             * @description Количество действующих привязок аккаунтов. `0` — привязки нет;
+             *     непринятые приглашения не считаются. Email и персональные данные
+             *     родителей в реестр не попадают.
+             */
+            linkedAccountsCount: number;
             phone?: string | null;
             /** Format: email */
             email?: string | null;
@@ -4781,6 +4787,11 @@ export interface operations {
                 status?: components["schemas"]["AthleteStatus"];
                 /** @description Поиск по фамилии, имени или отчеству */
                 search?: string;
+                /**
+                 * @description Фильтр по привязке аккаунтов: `all` — все, `linked` — есть действующая
+                 *     привязка, `unlinked` — привязки нет. Непринятые приглашения не считаются.
+                 */
+                hasAccounts?: "all" | "linked" | "unlinked";
             };
             header?: never;
             path?: never;

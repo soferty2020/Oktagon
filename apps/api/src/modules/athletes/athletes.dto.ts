@@ -182,6 +182,14 @@ export class ListAthletesQueryDto {
   @IsUUID()
   groupId?: string;
 
+  @ApiPropertyOptional({
+    enum: ['all', 'linked', 'unlinked'],
+    description: 'Фильтр по привязке аккаунтов: все, с привязкой, без привязки',
+  })
+  @IsOptional()
+  @IsIn(['all', 'linked', 'unlinked'])
+  hasAccounts?: 'all' | 'linked' | 'unlinked';
+
   @ApiPropertyOptional({ enum: ['lastName', 'birthDate', 'status'] })
   @IsOptional()
   @IsIn(['lastName', 'birthDate', 'status'])

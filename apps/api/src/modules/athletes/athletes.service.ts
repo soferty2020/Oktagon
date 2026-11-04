@@ -67,6 +67,7 @@ export class AthletesService {
       search?: string;
       hallId?: string;
       groupId?: string;
+      hasAccounts?: 'linked' | 'unlinked';
       sortBy?: 'lastName' | 'birthDate' | 'status';
       sortOrder?: 'asc' | 'desc';
       page?: number;
@@ -81,6 +82,7 @@ export class AthletesService {
       search: options.search,
       hallId: options.hallId,
       groupId: options.groupId,
+      hasAccounts: options.hasAccounts,
       athleteIds: visible,
       sortBy: options.sortBy,
       sortOrder: options.sortOrder,
@@ -391,6 +393,8 @@ function toAthleteView(athlete: AthleteRecord, canViewContacts: boolean, groupNa
     birthDate: athlete.birthDate ? athlete.birthDate.toISOString().slice(0, 10) : null,
     gender: athlete.gender,
     groupName,
+    // Только число связей: email и профили родителей в реестр не попадают.
+    linkedAccountsCount: athlete._count?.userLinks ?? 0,
     status: athlete.status,
     // Ступень — источник истины (ADR-0012); пояс выводится из неё, если известен.
     // `null` означает, что миграция не смогла вывести ступень однозначно, и это

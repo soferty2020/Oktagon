@@ -1150,6 +1150,16 @@ paths:
           schema:
             type: string
             maxLength: 100
+        - name: hasAccounts
+          in: query
+          required: false
+          description: |
+            Фильтр по привязке аккаунтов: `all` — все, `linked` — есть действующая
+            привязка, `unlinked` — привязки нет. Непринятые приглашения не считаются.
+          schema:
+            type: string
+            enum: [all, linked, unlinked]
+            default: all
       responses:
         '200':
           description: Список спортсменов
@@ -5444,7 +5454,7 @@ components:
       description: |
         Карточка спортсмена. `phone` и `email` равны null, если у вызывающего
         нет права `athletes.contacts.view`.
-      required: [id, firstName, lastName, gender, status, beltGrade, createdAt, updatedAt]
+      required: [id, firstName, lastName, gender, status, beltGrade, linkedAccountsCount, createdAt, updatedAt]
       properties:
         id:
           type: string
@@ -5470,6 +5480,13 @@ components:
           type: string
           format: date
           nullable: true
+        linkedAccountsCount:
+          type: integer
+          minimum: 0
+          description: |
+            Количество действующих привязок аккаунтов. `0` — привязки нет;
+            непринятые приглашения не считаются. Email и персональные данные
+            родителей в реестр не попадают.
         phone:
           type: string
           nullable: true
