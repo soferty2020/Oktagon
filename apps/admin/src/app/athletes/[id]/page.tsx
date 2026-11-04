@@ -63,6 +63,7 @@ interface UserView {
 const TABS = [
   { key: 'profile', label: 'Профиль' },
   { key: 'attestations', label: 'Аттестации' },
+  { key: 'competitions', label: 'Соревнования' },
   { key: 'payments', label: 'Оплаты' },
   { key: 'attendance', label: 'Посещаемость' },
   { key: 'history', label: 'История' },
@@ -134,6 +135,9 @@ export default async function AthletePage({
   const canEdit = user.permissions.includes('athletes.edit');
   const canViewUsers = user.permissions.includes('users.manage');
   const canViewFinance = user.permissions.includes('payments.view');
+  // Вкладка «Оплаты» существует только с правом payments.view: без него она
+  // скрыта, и прямой переход по ?tab=payments показывает профиль.
+  const visibleTabs = TABS.filter((tab) => tab.key !== 'payments' || canViewFinance);
 
   const [athlete, users, certifications] = await Promise.all([
     apiFetch<AthleteDetails>(`/athletes/${id}`, { accessToken }),
@@ -184,7 +188,7 @@ export default async function AthletePage({
       <ProfileHero athlete={person} canEdit={canEdit} fullName={fullName} rank={rank} />
 
       <nav className="mt-6 flex flex-wrap gap-1 rounded-xl bg-[#F1EFEC] p-1">
-        {TABS.map((item) => (
+        {visibleTabs.map((item) => (
           <Link
             className={
               item.key === activeTab
@@ -207,6 +211,13 @@ export default async function AthletePage({
               <SportsHistoryCard entries={person.sportsHistory} />
               <HistoryCard history={history} />
             </>
+          ) : null}
+
+          {activeTab === 'competitions' ? (
+            <section className="rounded-card border border-line bg-white p-6">
+              <h2 className="text-base font-semibold text-ink">Соревнования</h2>
+              <SportsHistoryCard entries={person.sportsHistory} />
+            </section>
           ) : null}
 
           {activeTab === 'attestations' ? (
