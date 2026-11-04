@@ -58,41 +58,34 @@ export default async function HallsPage() {
       <PageHeader
         title="Залы"
         description="Площадки клуба: адрес, телефон и группы каждого зала"
+        actions={
+          canManage ? (
+            <CreatePanel
+              title="Новый зал"
+              description="Адрес — главное: по нему родители понимают, куда ехать."
+              buttonLabel="Новый зал"
+            >
+              <CreateHallForm inPanel />
+            </CreatePanel>
+          ) : null
+        }
       />
 
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-4">
-          {!result.ok ? <Notice tone="error">{describeError(result.error)}</Notice> : null}
+        {!result.ok ? <Notice tone="error">{describeError(result.error)}</Notice> : null}
 
-          {result.ok && details.length === 0 ? (
-            <Notice>Залов пока нет: создайте первый в форме справа.</Notice>
-          ) : null}
+        {result.ok && details.length === 0 ? (
+          <Notice>Залов пока нет: создайте первый кнопкой «Новый зал».</Notice>
+        ) : null}
 
-          {details.map((hall) => (
-            <HallCard
-              canManage={canManage}
-              groups={hall.groups}
-              hall={hall}
-              key={hall.id}
-            />
-          ))}
-        </div>
-
-        <aside className="rounded-card border border-line bg-white p-6">
-          <h2 className="text-base font-semibold text-ink">Новый зал</h2>
-          <p className="mt-1 text-xs text-muted">
-            Адрес — главное: по нему родители понимают, куда ехать.
-          </p>
-          {canManage ? (
-            <div className="mt-4">
-              <CreateHallForm />
-            </div>
-          ) : (
-            <p className="mt-4 text-xs text-muted">
-              Создавать залы может администратор с правом управления структурой клуба.
-            </p>
-          )}
-        </aside>
+        {details.map((hall) => (
+          <HallCard
+            canManage={canManage}
+            groups={hall.groups}
+            hall={hall}
+            key={hall.id}
+          />
+        ))}
       </div>
     </AppShell>
   );
