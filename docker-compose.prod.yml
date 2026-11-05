@@ -138,9 +138,11 @@ services:
     image: nginx:1.27-alpine
     restart: unless-stopped
     ports:
-      # Параметризовано: на одном сервере со staging 80/443 могут быть заняты.
-      - '${NGINX_HTTP_PORT:-80}:80'
-      - '${NGINX_HTTPS_PORT:-443}:443'
+      # По умолчанию только loopback: до переключения доменов production
+      # доступен исключительно через SSH-туннель. После переключения на edge
+      # порты наружу не нужны вовсе.
+      - '${PROD_HTTP_PORT:-127.0.0.1:8081}:80'
+      - '${PROD_HTTPS_PORT:-127.0.0.1:8444}:443'
     environment:
       # Имена хостов подставляются в шаблон конфига при старте.
       ADMIN_HOST: ${ADMIN_HOST:?задайте ADMIN_HOST в .env.production}
