@@ -48,7 +48,7 @@ const CATEGORIES: readonly SettingsCategory[] = [
     superadminOnly: true,
   },
   {
-    title: 'Филиалы и залы',
+    title: 'Залы',
     description: 'Адреса, контакты и залы: управление в операционном разделе.',
     icon: 'halls',
     href: '/halls',
@@ -62,12 +62,6 @@ const CATEGORIES: readonly SettingsCategory[] = [
     requiredPermissions: ['users.manage', 'permissions.manage'],
   },
   {
-    title: 'Спортивные справочники',
-    description: 'Каталог поясов: фиксированный, только просмотр.',
-    icon: 'belt',
-    pending: 'K3',
-  },
-  {
     title: 'Финансовые правила',
     description: 'Правила расчёта задолженности. Действует BR-004 до утверждения новых.',
     icon: 'sliders',
@@ -79,13 +73,6 @@ const CATEGORIES: readonly SettingsCategory[] = [
     description: 'Кто и что изменил: фильтры и значения до/после.',
     icon: 'shield',
     href: '/settings/audit',
-    superadminOnly: true,
-  },
-  {
-    title: 'Система',
-    description: 'Безопасные общие параметры. Секреты и инфраструктура — вне админки.',
-    icon: 'lock',
-    pending: 'K1',
     superadminOnly: true,
   },
 ];

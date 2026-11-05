@@ -97,8 +97,17 @@ export default async function AttestationsPage() {
     : null;
 
   const rows = events?.ok ? events.data : [];
-  const active = rows.filter((event) => !['CANCELLED', 'PUBLISHED'].includes(event.status));
-  const archive = rows.filter((event) => ['CANCELLED', 'PUBLISHED'].includes(event.status));
+  // Активное — то, что ещё не прошло и не отменено. Публикация результата сама
+  // по себе не отправляет мероприятие в архив: экзамен 15 ноября, опубликованный
+  // заранее, остаётся предстоящим (#135).
+  const today = new Date().toISOString().slice(0, 10);
+  const isPast = (event: EventView) => event.scheduledAt.slice(0, 10) < today;
+  const active = rows.filter(
+    (event) => event.status !== 'CANCELLED' && !isPast(event),
+  );
+  const archive = rows.filter(
+    (event) => event.status === 'CANCELLED' || isPast(event),
+  );
 
   return (
     <AppShell user={user}>
