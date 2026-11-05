@@ -9,6 +9,7 @@ import { GroupsService } from '../src/modules/groups/groups.service';
 import { IdentityRepository, PrismaIdentityRepository } from '../src/modules/identity/identity.repository';
 import { IdentityService } from '../src/modules/identity/identity.service';
 import { ResourceScopeService } from '../src/modules/identity/resource-scope.service';
+import { PermissionResolver } from '../src/shared/permissions.guard';
 
 /**
  * Release readiness: операции записи на реальной БД (CI).
@@ -39,6 +40,14 @@ describe('Release readiness: запись (db e2e, требуется PostgreSQL
         PrismaGroupsRepository,
         { provide: GroupsRepository, useExisting: PrismaGroupsRepository },
         { provide: AuditService, useValue: { recordSafely: async () => null } },
+        // Права суперадмина: контакты видны, доступ ко всем группам есть.
+        {
+          provide: PermissionResolver,
+          useValue: {
+            getPermissions: async () => ({ codes: ['athletes.contacts.view'], grants: [] }),
+            getRole: async () => 'SUPERADMIN',
+          },
+        },
         AthletesService,
         GroupsService,
       ],
