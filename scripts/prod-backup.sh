@@ -3,16 +3,19 @@
 # Production-бэкап OCTAGON: дамп базы, GPG, restore-drill, offsite, ротация.
 #
 #   ./scripts/prod-backup.sh              # ночной запуск (cron 30 2 * * *)
-#   ./scripts/prod-backup.sh --no-offsite # только локально (отладка)
-#   ./scripts/prod-backup.sh --check      # восстановить последний дамп в отдельную БД и сверить
+#   ./scripts/prod-backup.sh --check      # восстановить последний дамп в отдельную БД
+#   ./scripts/prod-backup.sh --no-offsite # локально, без offsite (отладка)
+#
+# Дамп создаётся в custom-формате (`pg_dump --format=custom`), поэтому
+# восстанавливается `pg_restore`, а не `psql`. Формат совпадает с staging-бэкапом.
 #
 # Гарантии:
 # - берётся только production-контейнер `octagon-postgres-1`; staging не читается;
 # - дамп шифруется AES256 ключом /root/.octagon-prod-backup.key (600);
-# - сразу после шифрования выполняется restore-drill в отдельную БД
-#   `octagon_prod_restore_check`: битый бэкап виден в ту же ночь;
-# - offsite-копия на Яндекс.Диск через octagon-disk-upload.sh (если настроен);
-# - ротация: 30 дней локально, 90 дней offsite.
+# - сразу после шифрования — restore-drill в `octagon_prod_restore_check`;
+# - offsite обязателен: если загрузчик или его конфиг недоступны, скрипт падает
+#   с ошибкой, а не пишет «пропущено»;
+# - ротация: 30 дней локально, offsite — на стороне загрузчика.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -21,6 +24,8 @@ COMPOSE="docker compose --project-name octagon --env-file .env.production -f doc
 PG_CONTAINER="octagon-postgres-1"
 BACKUP_DIR="backups/production"
 KEY_FILE="/root/.octagon-prod-backup.key"
+UPLOADER="/usr/local/bin/octagon-disk-upload.sh"
+UPLOADER_ENV="/root/.octagon-backup.env"
 RETENTION_DAYS=30
 CHECK_DB="octagon_prod_restore_check"
 
@@ -50,17 +55,38 @@ if [ ! -s "$KEY_FILE" ]; then
   exit 1
 fi
 
+# Offsite проверяется до дампа: иначе выяснится после часа работы, что копия
+# никуда не уехала.
+if [ "$NO_OFFSITE" -eq 0 ] && [ "$CHECK_ONLY" -eq 0 ]; then
+  if [ ! -f "$UPLOADER" ]; then
+    echo "offsite: не найден загрузчик $UPLOADER" >&2
+    exit 1
+  fi
+  if [ ! -f "$UPLOADER_ENV" ]; then
+    echo "offsite: не найден конфиг $UPLOADER_ENV (нужен для доступа к Диску)" >&2
+    exit 1
+  fi
+fi
+
 mkdir -p "$BACKUP_DIR"
 
-# Восстановление дампа в отдельную БД: проверяет и процедуру, и содержимое.
+# Дамп в custom-формате (совместим с pg_restore).
+dump_database() {
+  local target="$1"
+  docker exec -e PGPASSWORD="$POSTGRES_PASSWORD" "$PG_CONTAINER" \
+    pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom --no-owner --no-privileges \
+    > "$target"
+}
+
+# Восстановление в отдельную БД: проверяет и процедуру, и содержимое.
 restore_check() {
   local dump="$1"
   echo "restore-drill: $dump"
-  gpg --batch --quiet --decrypt --passphrase-file "$KEY_FILE" "$dump" \
-    | docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" "$PG_CONTAINER" \
-        psql -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 \
-        -c "DROP DATABASE IF EXISTS $CHECK_DB" \
-        -c "CREATE DATABASE $CHECK_DB" >/dev/null
+
+  docker exec -e PGPASSWORD="$POSTGRES_PASSWORD" "$PG_CONTAINER" \
+    psql -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 \
+    -c "DROP DATABASE IF EXISTS $CHECK_DB" \
+    -c "CREATE DATABASE $CHECK_DB" >/dev/null
 
   gpg --batch --quiet --decrypt --passphrase-file "$KEY_FILE" "$dump" \
     | docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" "$PG_CONTAINER" \
@@ -82,34 +108,42 @@ restore_check() {
 }
 
 if [ "$CHECK_ONLY" -eq 1 ]; then
-  latest=$(ls -1t "$BACKUP_DIR"/*.dump.gpg 2>/dev/null | head -1)
+  latest=$(ls -1t "$BACKUP_DIR"/octagon-prod-*.dump.gpg 2>/dev/null | head -1)
   [ -n "$latest" ] || { echo "Нет дампов в $BACKUP_DIR" >&2; exit 1; }
   restore_check "$latest"
   exit 0
 fi
 
 STAMP=$(date +%Y%m%d-%H%M)
-DUMP="$BACKUP_DIR/octagon-$STAMP.dump.gpg"
+RAW="$BACKUP_DIR/octagon-prod-$STAMP.dump"
+DUMP="$RAW.gpg"
 
-# Дамп только production-контейнера. --no-owner/--no-privileges: восстановление
-# на другой площадке не падает на несуществующих ролях.
-docker exec -e PGPASSWORD="$POSTGRES_PASSWORD" "$PG_CONTAINER" \
-  pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --no-owner --no-privileges \
-  | gpg --batch --quiet --symmetric --cipher-algo AES256 \
-      --passphrase-file "$KEY_FILE" -o "$DUMP"
+dump_database "$RAW"
+
+# Проверка, что дамп читается как custom-архив, до шифрования.
+docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" "$PG_CONTAINER" \
+  pg_restore --list < "$RAW" >/dev/null
+
+gpg --batch --quiet --symmetric --cipher-algo AES256 \
+  --passphrase-file "$KEY_FILE" -o "$DUMP" "$RAW"
+rm -f "$RAW"
 
 echo "дамп: $DUMP ($(stat -c%s "$DUMP") байт)"
 
 restore_check "$DUMP"
 
-if [ "$NO_OFFSITE" -eq 0 ] && [ -x ./scripts/octagon-disk-upload.sh ]; then
-  ./scripts/octagon-disk-upload.sh "$DUMP" && echo "offsite: загружен"
+if [ "$NO_OFFSITE" -eq 0 ]; then
+  if bash "$UPLOADER" "$DUMP"; then
+    echo "offsite: загружен"
+  else
+    echo "offsite: ОШИБКА загрузки $DUMP" >&2
+    exit 1
+  fi
 else
-  echo "offsite: пропущен"
+  echo "offsite: отключён флагом --no-offsite"
 fi
 
-# Ротация локальных копий.
-find "$BACKUP_DIR" -name 'octagon-*.dump.gpg' -mtime "+$RETENTION_DAYS" -delete
+find "$BACKUP_DIR" -name 'octagon-prod-*.dump.gpg' -mtime "+$RETENTION_DAYS" -delete
 echo "ротация: старше $RETENTION_DAYS дней удалены"
 
 echo "backup ok: $(basename "$DUMP")"

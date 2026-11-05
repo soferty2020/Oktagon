@@ -35,18 +35,46 @@ Internet ──► edge nginx (:80/:443)
 Конфиг: `infra/nginx/edge.conf`. Порты внутренних nginx публикуются только на
 loopback (`127.0.0.1:8080:80`), наружу — только edge.
 
-**Порядок перехода (отдельное разрешение, сейчас не выполняется):**
+**Почему нет цикла HTTPS → HTTP → HTTPS.** Внутренний nginx перенаправляет
+HTTP → HTTPS (301). Если edge пойдёт на его `:80`, клиент получит 301 на свой же
+адрес. Поэтому edge проксирует на **HTTPS внутреннего** (`https://127.0.0.1:8443`
+и `:8444`) с `proxy_ssl_verify off` — трафик не покидает хост. Заголовки:
+`Host` сохраняется, `X-Forwarded-Proto: https`, `X-Real-IP` — адрес клиента.
 
-1. Подготовить `edge.conf`, выполнить `nginx -t`.
-2. Переключить staging-nginx на `127.0.0.1:8080`, production-nginx — на `127.0.0.1:8081`.
-3. Поднять edge на 80/443, проверить оба домена по HTTPS.
-4. Сертификаты на edge: `certbot certonly --webroot` для каждого набора имён;
-   внутренние nginx остаются с самоподписанными и наружу по HTTPS не выходят.
-5. Продление — cron edge-хоста; `scripts/prod-tls.sh renew` остаётся для случая,
-   когда production публикуется напрямую.
+**Проверено без переключения staging:**
 
-До перехода production можно поднять на свободных портах и проверить локально,
-не трогая staging.
+```
+nginx -t (подстановка доменов + временные сертификаты) .... успешно
+маршрутизация по Host: staging → upstream-a, prod → upstream-b
+неизвестный Host → 404
+proxy_pass → https://127.0.0.1:8443 / :8444, X-Forwarded-Proto: https
+```
+
+**Порядок переключения (отдельное разрешение, сейчас не выполняется):**
+
+1. `envsubst '${PROD_ADMIN_HOST} ${PROD_API_HOST}' < infra/nginx/edge.conf > /etc/nginx/sites-available/octagon-edge.conf`
+2. `nginx -t` на хосте.
+3. Переключить порты контейнеров: staging-nginx `127.0.0.1:8443:443`,
+   production-nginx `127.0.0.1:8444:443`; HTTP-порты внутренних nginx закрыть.
+4. Перезагрузить edge: `systemctl reload nginx`.
+5. Проверить оба домена по HTTPS и ACME: `curl -I https://<ADMIN_HOST>`,
+   `curl http://<ADMIN_HOST>/.well-known/acme-challenge/test`.
+
+**Быстрый возврат к прежнему состоянию:**
+
+```bash
+# 1. вернуть staging на 80/443
+NGINX_HTTP_PORT=80 NGINX_HTTPS_PORT=443 \
+  docker compose --project-name octagon-staging --env-file .env.staging \
+  -f docker-compose.staging.yml up -d --force-recreate nginx
+# 2. остановить edge
+systemctl stop nginx
+# 3. убедиться, что прежние адреса отвечают
+curl -I https://admin.octagon-karate.online
+```
+
+Пока edge включён, staging и production публикуются только через него; при
+возврате staging снова занимает 80/443 напрямую.
 
 ## 3. Подготовка окружения
 
@@ -157,12 +185,13 @@ curl -fsS https://<API_HOST>/api/v1/health/ready
 
 `scripts/prod-backup.sh`, cron `30 2 * * *`:
 
-- дамп только `octagon-postgres-1`, `--no-owner --no-privileges`;
+- дамп только `octagon-postgres-1` в custom-формате (`--format=custom`), `--no-owner --no-privileges` — восстанавливается `pg_restore`;
 - GPG AES256, ключ `/root/.octagon-prod-backup.key` (600);
 - restore-drill в БД `octagon_prod_restore_check` сразу после дампа;
-- offsite через `scripts/octagon-disk-upload.sh` (если настроен);
+- offsite обязателен: `/usr/local/bin/octagon-disk-upload.sh` + `/root/.octagon-backup.env`; если загрузчик или конфиг недоступны либо загрузка не удалась — скрипт завершается ошибкой, а не пишет «пропущено»;
 - ротация 30 дней локально, 90 дней offsite.
 
+Проверено живьём (на staging-контейнере, без изменения данных): `pg_dump --format=custom` → `pg_restore --list` ok → восстановление в отдельную БД → **43 таблицы** → удаление тестовой БД.
 Проверка вручную: `./scripts/prod-backup.sh --check` — берёт последний дамп,
 восстанавливает в отдельную БД и печатает число таблиц.
 
