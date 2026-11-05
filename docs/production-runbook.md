@@ -13,7 +13,7 @@ Staging живёт рядом на том же сервере и не перес
 | Секреты | `/srv/octagon/.env.production` (600) | `.env.staging` |
 | Сертификаты | `infra/nginx/prod-certs` | `infra/nginx/certs` |
 | ACME | `infra/certbot/prod-www` | `infra/certbot/www` |
-| Домены | `admin.octagon-karate.ru`, `api.octagon-karate.ru` | `*.octagon-karate.online` |
+| Домены | `<ADMIN_HOST>`, `<API_HOST>` | `*.octagon-karate.online` |
 | HTTP/HTTPS | 80/443 | 8080/8443 (после первого запуска production) |
 
 Порты nginx параметризованы: `NGINX_HTTP_PORT` и `NGINX_HTTPS_PORT`. Пока
@@ -58,7 +58,7 @@ $COMPOSE run --rm migrate
 # 4. приложение
 $COMPOSE up -d api admin nginx
 $COMPOSE ps
-curl -fsS https://api.octagon-karate.ru/api/v1/health/ready
+curl -fsS https://<API_HOST>/api/v1/health/ready
 
 # 5. настоящий сертификат
 ./scripts/prod-tls.sh issue
@@ -88,7 +88,7 @@ $COMPOSE run --rm migrate
 $COMPOSE up -d --no-deps api admin
 
 # 5. проверка
-curl -fsS https://api.octagon-karate.ru/api/v1/health/ready
+curl -fsS https://<API_HOST>/api/v1/health/ready
 echo $RELEASE > .release-current
 ```
 
@@ -103,7 +103,7 @@ RELEASE=$(cat /srv/octagon/.release-prev)
 docker tag octagon-api:$RELEASE octagon-api:latest
 docker tag octagon-admin:$RELEASE octagon-admin:latest
 $COMPOSE up -d --no-deps api admin
-curl -fsS https://api.octagon-karate.ru/api/v1/health/ready
+curl -fsS https://<API_HOST>/api/v1/health/ready
 ```
 
 Восстановление дампа — **только** при разрушении данных, отдельным решением:
@@ -137,8 +137,8 @@ docker run --rm -v octagon_uploads:/data -v /tmp:/backup alpine \
 
 ## 8. Проверка после деплоя
 
-1. `https://api.octagon-karate.ru/api/v1/health` и `/health/ready` → 200.
-2. `https://admin.octagon-karate.ru/login` открывается, сертификат валиден.
+1. `https://<API_HOST>/api/v1/health` и `/health/ready` → 200.
+2. `https://<ADMIN_HOST>/login` открывается, сертификат валиден.
 3. Вход владельцем, реестр спортсменов загружается.
 4. `docker compose ps` — все сервисы `healthy`.
 5. Логи 15 минут: `docker compose logs -f api admin nginx`.
