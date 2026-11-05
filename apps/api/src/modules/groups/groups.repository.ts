@@ -191,7 +191,9 @@ export class PrismaGroupsRepository extends GroupsRepository {
 
   async countActiveMembers(groupId: string): Promise<number> {
     return this.prisma.db.groupMembership.count({
-      where: { groupId, state: MembershipState.ACTIVE },
+      // Архивированный спортсмен остаётся в истории членства, но в счётчике
+      // активного состава его быть не должно (#135).
+      where: { groupId, state: MembershipState.ACTIVE, athlete: { archivedAt: null } },
     });
   }
 

@@ -141,6 +141,27 @@ describe('Release readiness: запись (db e2e, требуется PostgreSQL
     expect(membership?.state).toBe('ACTIVE');
   });
 
+  it('счётчик группы не учитывает архивного спортсмена, хотя членство остаётся', async () => {
+    const hall = await prisma.db.hall.create({ data: { name: `Зал-3 ${Date.now()}` }, select: { id: true } });
+    hallIds.push(hall.id);
+    const group = await groups.create({ name: `Группа-3 ${Date.now()}`, hallId: hall.id });
+    groupIds.push(group.id);
+    const athlete = await athletes.create({ firstName: 'Счётчик', lastName: `Группы ${Date.now()}` });
+    athleteIds.push(athlete.id);
+
+    await groups.addMember(adminId, group.id, { athleteId: athlete.id });
+    expect((await groups.get(adminId, group.id)).activeMembersCount).toBe(1);
+
+    await athletes.archive(adminId, athlete.id);
+
+    // Историческая запись членства сохраняется, но в счётчике активного состава
+    // архивного быть не должно (#135).
+    const membership = await prisma.db.groupMembership.findFirst({
+      where: { groupId: group.id, athleteId: athlete.id },
+    });
+    expect(membership).not.toBeNull();
+    expect((await groups.get(adminId, group.id)).activeMembersCount).toBe(0);
+  });
   it('архивный спортсмен исчезает из активного состава группы', async () => {
     const hall = await prisma.db.hall.create({ data: { name: `Зал-2 ${Date.now()}` }, select: { id: true } });
     hallIds.push(hall.id);

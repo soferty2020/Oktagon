@@ -1,0 +1,235 @@
+# OCTAGON Club System — production (docs/14-infrastructure.md)
+#
+# Отличия от staging:
+# - собственный Compose-проект «octagon»: контейнеры и тома не пересекаются со
+#   staging (octagon_* против octagon-staging_*);
+# - секреты только из .env.production (в git не попадает);
+# - сертификаты и ACME-каталог отдельные: prod-certs и prod-www;
+# - порты nginx параметризованы (NGINX_HTTP_PORT / NGINX_HTTPS_PORT): на одном
+#   сервере со staging 80/443 уже заняты, production получает свои;
+# - PostgreSQL и Redis наружу не публикуются — доступ только внутри сети compose.
+#
+# Отличия от локального docker-compose.yml:
+# - наружу опубликован только nginx: PostgreSQL и Redis доступны лишь внутри
+#   сети compose. Открытый порт базы — самая частая причина утечки данных;
+# - админка и API собираются из Dockerfile, а не запускаются с монтированием
+#   исходников;
+# - все секреты берутся из `.env.production` (в git не попадает);
+# - миграции вынесены в отдельный одноразовый сервис `migrate`.
+#
+# Запуск (`--env-file` обязателен: compose берет переменные интерполяции из `.env`
+# или из `--env-file`, а `env_file` внутри сервиса на `${POSTGRES_USER}` не влияет —
+# без флага сборка падает на «required variable POSTGRES_USER is missing»):
+#   cp infra/staging.env.example .env.production   # заполнить секреты
+#   docker compose --env-file .env.production -f docker-compose.staging.yml build
+#   docker compose --env-file .env.production -f docker-compose.staging.yml run --rm migrate
+#   docker compose --env-file .env.production -f docker-compose.staging.yml up -d
+
+name: octagon
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?задайте POSTGRES_USER в .env.production}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD в .env.production}
+      POSTGRES_DB: ${POSTGRES_DB:-octagon}
+      TZ: UTC
+      # Collation совпадает с CI и локальным compose: иначе регистронезависимый
+      # поиск по кириллице ведет себя по-разному на разных стендах.
+      POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale-provider=icu --icu-locale=en-US'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB:-octagon}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # Порт наружу намеренно не публикуется.
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # Пароль нужен и серверу, и healthcheck: передаём переменной, чтобы он не
+    # оказался в командной строке контейнера (`docker ps`).
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?задайте REDIS_PASSWORD в .env.production}
+    # Redis держит только лимиты и сессионные счетчики: данные не критичны, но
+    # RDB раз в минуту дешев и переживает перезапуск контейнера.
+    # requirepass (#53): без пароля Redis доступен любому контейнеру сети.
+    command:
+      [
+        'redis-server',
+        '--save',
+        '60',
+        '1',
+        '--maxmemory-policy',
+        'allkeys-lru',
+        '--requirepass',
+        '${REDIS_PASSWORD:?задайте REDIS_PASSWORD в .env.production}',
+        # protected-mode (#53, N-2): без него Redis отвечает на любые адреса сети
+        # без ограничений. Пароль задан, поэтому API продолжает работать.
+        '--protected-mode',
+        'yes',
+      ]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli -a "$$REDIS_PASSWORD" ping | grep -q PONG']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      NODE_ENV: production
+      # Приложение работает ролью без суперпользователя (#53, SEC-13):
+      # миграции и seed остаются под владельцем схемы.
+      DATABASE_URL: postgresql://octagon_app:${APP_DB_PASSWORD:?задайте APP_DB_PASSWORD в .env.production}@postgres:5432/${POSTGRES_DB:-octagon}?schema=public
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      # Фотографии новостей (#70): каталог на томе, переживает пересборку.
+      UPLOAD_DIR: /data/uploads
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # Проверяется готовность, а не просто открытый порт: `/health/ready`
+      # опрашивает базу и Redis. Иначе nginx начал бы проксировать запросы в
+      # приложение, которое еще не подключилось к базе.
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3000/api/v1/health/ready || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      # Админка обращается к API только серверно, через route handler прокси:
+      # адрес не попадает в браузер. Внутреннее имя compose, не публичный домен,
+      # чтобы запрос не выходил из сети контейнеров.
+      API_BASE_URL: http://api:3000/api/v1
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3000/login || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      # Имена хостов подставляются в шаблон конфига при старте.
+      ADMIN_HOST: ${ADMIN_HOST:?задайте ADMIN_HOST в .env.production}
+      API_HOST: ${API_HOST:?задайте API_HOST в .env.production}
+      # Без фильтра envsubst подставил бы все переменные окружения и заодно
+      # затёр бы переменные самого nginx ($host, $request_uri): конфиг стал бы
+      # синтаксически валидным, но нерабочим. Фильтр ограничивает подстановку
+      # двумя нашими переменными.
+      NGINX_ENVSUBST_FILTER: '^(ADMIN_HOST|API_HOST)$$'
+    volumes:
+      - ./infra/nginx/production.conf.template:/etc/nginx/templates/staging.conf.template:ro
+      # Гасит default.conf из образа: иначе он перехватывает 80 (отдает заглушку
+      # вместо редиректа на HTTPS) и ломает ACME-челлендж.
+      - ./infra/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./infra/nginx/prod-certs:/etc/nginx/certs:ro
+      # ACME-челлендж: certbot кладет файл, nginx его отдает. Без этого
+      # Let's Encrypt не сможет подтвердить владение доменом.
+      - ./infra/certbot/prod-www:/var/www/certbot:ro
+    depends_on:
+      # Только после здоровых admin и api: nginx резолвит имена upstream на старте,
+      # и при простом списке поднимался раньше, падал на «host not found in
+      # upstream "admin"» и крутился в перезапуске.
+      admin:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+
+  # Let's Encrypt: выпуск и продление сертификатов.
+  #
+  # Профиль `tls` — сервис не поднимается при обычном `up -d`: он нужен только
+  # по команде. Порядок в docs/14-infrastructure.md: сначала nginx поднимается с
+  # самоподписанными сертификатами, затем certbot выпускает настоящий, скрипт
+  # tls-renew копирует его в infra/nginx/certs и перезагружает nginx.
+  #
+  # Сертификат один на оба имени (SAN): и админка, и API живут на одном домене,
+  # и два отдельных сертификата только добавляли бы точек отказа при продлении.
+  certbot:
+    image: certbot/certbot:latest
+    profiles: ['tls']
+    restart: 'no'
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      # Сюда certbot копирует выпущенное (через --deploy-hook), отсюда читает nginx.
+      - ./infra/nginx/prod-certs:/certs
+      - ./infra/certbot/prod-www:/var/www/certbot
+
+  # Одноразовый сервис: применяет миграции и завершается. Запускается вручную
+  # перед `up -d`, а не при каждом старте, чтобы падение миграции не крутило
+  # контейнер в цикле перезапуска.
+  migrate:
+    # Профиль `tools`: обычный `up -d` не запускает миграции и seed. Иначе каждый
+    # `up` пытался бы применить уже примененные миграции и заново создать админа.
+    profiles: ['tools']
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: migrate
+    env_file: .env.production
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-octagon}?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+
+  # Одноразовый сервис: справочники и первый суперадминистратор. Запускается
+  # вручную один раз после миграций; повторный запуск безопасен (upsert).
+  # Пароль приходит из SUPERADMIN_PASSWORD, а не из кода: демо-учетка не должна
+  # попасть на сервер.
+  seed:
+    profiles: ['tools']
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: seed
+    env_file: .env.production
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-octagon}?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+
+volumes:
+  # Загруженные файлы: фотографии новостей (#70). Без тома они исчезали бы
+  # при каждом пересоздании контейнера api.
+  uploads:
+
+  postgres-data:
+  redis-data:
+  # Сертификаты и служебное состояние certbot: живут между перезапусками,
+  # чтобы продление не выпускало дубликаты и не упиралось в лимиты Let's Encrypt.
+  letsencrypt:
