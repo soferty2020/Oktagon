@@ -58,7 +58,9 @@ server {
     location / {
         proxy_pass http://admin:3000;
         proxy_http_version 1.1;
-        proxy_set_header Host $host;
+        # $http_host сохраняет порт: Next.js сравнивает x-forwarded-host с origin, и при
+      # доступе через туннель на нестандартном порту $host без порта ломает Server Actions.
+      proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         # Перезапись, а не дописывание (#49): клиентский X-Forwarded-For не должен
       # проходить дальше — иначе rate limiting обходится сменой заголовка.
@@ -88,7 +90,9 @@ server {
     location / {
         proxy_pass http://api:3000;
         proxy_http_version 1.1;
-        proxy_set_header Host $host;
+        # $http_host сохраняет порт: Next.js сравнивает x-forwarded-host с origin, и при
+      # доступе через туннель на нестандартном порту $host без порта ломает Server Actions.
+      proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         # Перезапись, а не дописывание (#49): клиентский X-Forwarded-For не должен
       # проходить дальше — иначе rate limiting обходится сменой заголовка.
