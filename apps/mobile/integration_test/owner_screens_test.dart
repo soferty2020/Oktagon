@@ -29,7 +29,7 @@ void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('скриншоты владельца на устройстве', (tester) async {
-    final config = ApiConfig(baseUrl: 'https://api.octagon-karate.online/api/v1');
+    const config = ApiConfig(baseUrl: 'https://api.octagon-karate.online/api/v1');
     final client = HttpApiClient(config: config);
 
     final auth = AuthController(
