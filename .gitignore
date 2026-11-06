@@ -44,3 +44,6 @@ Thumbs.db
 packages/*/src/*.js
 packages/*/src/*.js.map
 packages/*/src/*.d.ts
+
+# Служебное состояние Dart/Flutter в песочнице
+.dart-home/
