@@ -29,6 +29,11 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
+      // Шрифт задаётся глобально: без этого экраны, которые не указывают
+      // семейство явно, брали системный Roboto, а на прошивках без него для
+      // кириллицы подставлялся Noto Serif — текст с засечками.
+      fontFamily: 'Inter',
+      fontFamilyFallback: const ['Roboto', 'Noto Sans'],
 
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.background,
