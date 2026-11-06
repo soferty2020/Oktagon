@@ -13,11 +13,14 @@ import '../chat/chats_screen.dart';
 import '../news/news_controller.dart';
 import '../news/news_screen.dart';
 import '../profile/profile_screen.dart';
+import 'owner_competitions_screen.dart';
+import 'owner_sections.dart';
 
-/// «Ещё»: разделы, которые не помещаются в нижнюю навигацию.
+/// «Ещё»: разделы вне нижней навигации.
 ///
-/// Экраны не переписаны заново — открываются существующие, написанные для
-/// тренера и спортсмена. Это и есть переиспользование: один код, разные роли.
+/// Состав и права — в [ownerSections]: раздел виден, только если у владельца
+/// есть соответствующее право. Экраны не переписаны — открываются те же, что
+/// у тренера и спортсмена.
 class OwnerMoreScreen extends StatelessWidget {
   const OwnerMoreScreen({
     super.key,
@@ -43,6 +46,7 @@ class OwnerMoreScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = auth.user;
+    final permissions = user?.permissions ?? const <String>[];
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -54,44 +58,34 @@ class OwnerMoreScreen extends StatelessWidget {
           style: const TextStyle(color: AppColors.textSecondary),
         ),
         const SizedBox(height: 16),
-        _MenuTile(
-          icon: Icons.inbox_outlined,
-          label: 'Заявки',
-          onTap: () => onOpen(
-            TrialRequestsScreen(auth: auth, controller: trialRequests),
-          ),
-        ),
-        _MenuTile(
-          icon: Icons.workspace_premium_outlined,
-          label: 'Аттестации',
-          onTap: () => onOpen(
-            AttestationsScreen(auth: auth, controller: attestations),
-          ),
-        ),
-        _MenuTile(
-          icon: Icons.bar_chart_outlined,
-          label: 'Отчёты',
-          onTap: () => onOpen(ReportsScreen(auth: auth, client: client)),
-        ),
-        _MenuTile(
-          icon: Icons.newspaper_outlined,
-          label: 'Новости',
-          onTap: () => onOpen(NewsScreen(auth: auth, controller: news)),
-        ),
-        _MenuTile(
-          icon: Icons.chat_bubble_outline,
-          label: 'Чаты',
-          onTap: () => onOpen(
-            ChatsScreen(auth: auth, controller: chats, chatFactory: chatFactory),
-          ),
-        ),
-        _MenuTile(
-          icon: Icons.person_outline,
-          label: 'Профиль',
-          onTap: () => onOpen(ProfileScreen(auth: auth)),
-        ),
+        for (final section in ownerSections)
+          if (section.isVisible(permissions))
+            _MenuTile(
+              icon: section.icon,
+              label: section.label,
+              onTap: () => _open(section.id),
+            ),
       ],
     );
+  }
+
+  void _open(String id) {
+    switch (id) {
+      case 'trial_requests':
+        onOpen(TrialRequestsScreen(auth: auth, controller: trialRequests));
+      case 'attestations':
+        onOpen(AttestationsScreen(auth: auth, controller: attestations));
+      case 'competitions':
+        onOpen(OwnerCompetitionsScreen(auth: auth, client: client));
+      case 'reports':
+        onOpen(ReportsScreen(auth: auth, client: client));
+      case 'news':
+        onOpen(NewsScreen(auth: auth, controller: news));
+      case 'chats':
+        onOpen(ChatsScreen(auth: auth, controller: chats, chatFactory: chatFactory));
+      case 'profile':
+        onOpen(ProfileScreen(auth: auth));
+    }
   }
 }
 
@@ -117,16 +111,16 @@ class _MenuTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.card),
         clipBehavior: Clip.antiAlias,
         child: ListTile(
-        leading: Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: AppColors.accentSoft,
-            borderRadius: BorderRadius.circular(9),
+          leading: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: AppColors.accentSoft,
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Icon(icon, size: 17, color: AppColors.accentDark),
           ),
-          child: Icon(icon, size: 17, color: AppColors.accentDark),
-        ),
-        title: Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+          title: Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
           trailing: const Icon(Icons.chevron_right, color: AppColors.textTertiary),
           onTap: onTap,
         ),

@@ -15,11 +15,16 @@ class OwnerOverviewScreen extends StatefulWidget {
     required this.auth,
     required this.client,
     required this.onOpen,
+    this.onOpenTrialRequests,
   });
 
   final AuthController auth;
   final ApiClient client;
   final void Function(Widget screen) onOpen;
+
+  /// Переход к заявкам по нажатию на KPI: заявки живут в «Ещё», но владелец
+  /// должен попадать в них с обзора.
+  final VoidCallback? onOpenTrialRequests;
 
   @override
   State<OwnerOverviewScreen> createState() => _OwnerOverviewScreenState();
@@ -128,6 +133,7 @@ class _OwnerOverviewScreenState extends State<OwnerOverviewScreen> {
               debt: _debt,
               sessions: _sessionsToday,
               trials: _trialRequests,
+              onTapRequests: widget.onOpenTrialRequests,
             ),
             const SizedBox(height: 20),
             if (_debtorsWithoutExpected > 0 || _nextAttestation != null) ...[
@@ -212,6 +218,7 @@ class _KpiGrid extends StatelessWidget {
     required this.debt,
     required this.sessions,
     required this.trials,
+    this.onTapRequests,
   });
 
   final int athletes;
@@ -220,6 +227,7 @@ class _KpiGrid extends StatelessWidget {
   final int debt;
   final int sessions;
   final int trials;
+  final VoidCallback? onTapRequests;
 
   @override
   Widget build(BuildContext context) {
@@ -238,22 +246,28 @@ class _KpiGrid extends StatelessWidget {
           hint: debt > 0 ? 'долг ${_money(debt)}' : 'за этот месяц',
         ),
         _Kpi(label: 'Занятия сегодня', value: '$sessions', hint: 'по расписанию'),
-        _Kpi(label: 'Новые заявки', value: '$trials', hint: 'ожидают ответа'),
+        _Kpi(label: 'Новые заявки', value: '$trials', hint: 'ожидают ответа', onTap: onTapRequests),
       ],
     );
   }
 }
 
 class _Kpi extends StatelessWidget {
-  const _Kpi({required this.label, required this.value, required this.hint});
+  const _Kpi({
+    required this.label,
+    required this.value,
+    required this.hint,
+    this.onTap,
+  });
 
   final String label;
   final String value;
   final String hint;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final content = Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -278,6 +292,15 @@ class _Kpi extends StatelessWidget {
           Text(hint, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
         ],
       ),
+    );
+
+    if (onTap == null) {
+      return content;
+    }
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.card),
+      child: content,
     );
   }
 }
