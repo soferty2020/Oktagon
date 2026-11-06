@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../design/tokens.dart';
 import '../auth/auth_controller.dart';
+import 'owner_athlete_card_screen.dart';
 
 /// Список спортсменов клуба для владельца.
 ///
@@ -243,7 +244,22 @@ class _OwnerAthletesScreenState extends State<OwnerAthletesScreen> {
               child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
             );
           }
-          return _AthleteTile(athlete: _items[index]);
+          final athlete = _items[index];
+          return _AthleteTile(
+            athlete: athlete,
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => OwnerAthleteCardScreen(
+                    auth: widget.auth,
+                    client: widget.client,
+                    athleteId: athlete['id'] as String,
+                    preview: athlete,
+                  ),
+                ),
+              );
+            },
+          );
         },
       ),
     );
@@ -251,9 +267,10 @@ class _OwnerAthletesScreenState extends State<OwnerAthletesScreen> {
 }
 
 class _AthleteTile extends StatelessWidget {
-  const _AthleteTile({required this.athlete});
+  const _AthleteTile({required this.athlete, required this.onTap});
 
   final Map<String, dynamic> athlete;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -267,6 +284,7 @@ class _AthleteTile extends StatelessWidget {
     final status = athlete['status'] as String?;
 
     return ListTile(
+      onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(vertical: 4),
       leading: CircleAvatar(
         backgroundColor: AppColors.accentSoft,

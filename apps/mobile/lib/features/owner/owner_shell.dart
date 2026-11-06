@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
+import '../../core/club_clock.dart';
 import '../../design/tokens.dart';
 import '../../widgets/brand_app_bar.dart';
 import '../attestations/attestation_controller.dart';
@@ -51,14 +52,34 @@ class OwnerShell extends StatefulWidget {
 class _OwnerShellState extends State<OwnerShell> {
   int _index = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    // Часовой пояс клуба: без него время занятий показывалось в поясе телефона.
+    ClubClock.load(widget.client);
+  }
+
   /// Показываем шапку с логотипом только на корневых экранах: на вложенных
   /// страницах («Аттестации», «Заявки») её заменяет AppBar с кнопкой «назад».
   bool _showBrandBar = true;
 
-  void _openNested(Widget screen) {
+  /// Открывает вложенный экран.
+  ///
+  /// [needsChrome] — у экрана нет своего Scaffold (Профиль, Чаты, Новости):
+  /// его нужно обернуть, иначе Material-тема не применяется и Android рисует
+  /// чёрный фон с жёлтыми подчёркиваниями. Экраны, которые уже содержат
+  /// Scaffold (Заявки, Аттестации, Отчёты), открываются как есть.
+  void _openNested(Widget screen, {bool needsChrome = false, String? title}) {
     setState(() => _showBrandBar = false);
+    final page = needsChrome
+        ? Scaffold(
+            appBar: AppBar(title: Text(title ?? '')),
+            body: SafeArea(child: screen),
+          )
+        : screen;
+
     Navigator.of(context)
-        .push(MaterialPageRoute<void>(builder: (_) => screen))
+        .push(MaterialPageRoute<void>(builder: (_) => page))
         .whenComplete(() => setState(() => _showBrandBar = true));
   }
 
@@ -68,7 +89,8 @@ class _OwnerShellState extends State<OwnerShell> {
       OwnerOverviewScreen(
         auth: widget.auth,
         client: widget.client,
-        onOpen: _openNested,
+        onOpen: (screen, {bool needsChrome = false, String? title}) =>
+            _openNested(screen, needsChrome: needsChrome, title: title),
         onOpenTrialRequests: () => _openNested(
           TrialRequestsScreen(auth: widget.auth, controller: widget.trialRequests),
         ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
 import '../../design/tokens.dart';
+import '../../core/club_clock.dart';
 import '../auth/auth_controller.dart';
 
 /// Обзор клуба для владельца.
@@ -368,11 +369,8 @@ class _SessionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final start = session['startsAt'] as String?;
     final time = start == null ? '—' : _time(start);
-    final group = (session['group'] as Map?)?['name'] as String? ??
-        session['groupName'] as String? ??
-        'Занятие';
-    final hall = (session['hall'] as Map?)?['name'] as String? ??
-        session['hallName'] as String?;
+    final group = session['groupName'] as String? ?? 'Группа не указана';
+    final hall = session['hallName'] as String?;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -397,14 +395,7 @@ class _SessionCard extends StatelessWidget {
     );
   }
 
-  String _time(String iso) {
-    final date = DateTime.tryParse(iso)?.toLocal();
-    if (date == null) {
-      return '—';
-    }
-    return '${date.hour.toString().padLeft(2, '0')}:'
-        '${date.minute.toString().padLeft(2, '0')}';
-  }
+  String _time(String iso) => ClubClock.formatTime(iso);
 }
 
 class _EmptyCard extends StatelessWidget {

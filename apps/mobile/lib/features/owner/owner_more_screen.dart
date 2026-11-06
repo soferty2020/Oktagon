@@ -41,7 +41,7 @@ class OwnerMoreScreen extends StatelessWidget {
   final NewsController news;
   final ChatsController chats;
   final ChatController Function() chatFactory;
-  final void Function(Widget screen) onOpen;
+  final void Function(Widget screen, {bool needsChrome, String? title}) onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -76,15 +76,18 @@ class OwnerMoreScreen extends StatelessWidget {
       case 'attestations':
         onOpen(AttestationsScreen(auth: auth, controller: attestations));
       case 'competitions':
-        onOpen(OwnerCompetitionsScreen(auth: auth, client: client));
+        onOpen(OwnerCompetitionsScreen(auth: auth, client: client),
+            needsChrome: true, title: 'Соревнования');
       case 'reports':
         onOpen(ReportsScreen(auth: auth, client: client));
       case 'news':
-        onOpen(NewsScreen(auth: auth, controller: news));
+        onOpen(NewsScreen(auth: auth, controller: news),
+            needsChrome: true, title: 'Новости');
       case 'chats':
-        onOpen(ChatsScreen(auth: auth, controller: chats, chatFactory: chatFactory));
+        onOpen(ChatsScreen(auth: auth, controller: chats, chatFactory: chatFactory),
+            needsChrome: true, title: 'Чаты');
       case 'profile':
-        onOpen(ProfileScreen(auth: auth));
+        onOpen(ProfileScreen(auth: auth), needsChrome: true, title: 'Профиль');
     }
   }
 }

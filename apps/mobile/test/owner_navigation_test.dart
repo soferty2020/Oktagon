@@ -1,0 +1,180 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:octagon_mobile/app_theme.dart';
+import 'package:octagon_mobile/core/club_clock.dart';
+import 'package:octagon_mobile/features/auth/auth_controller.dart';
+import 'package:octagon_mobile/features/auth/auth_models.dart';
+import 'package:octagon_mobile/features/auth/auth_repository.dart';
+import 'support/in_memory_token_storage.dart';
+import 'package:octagon_mobile/features/owner/owner_athlete_card_screen.dart';
+import 'package:octagon_mobile/features/owner/owner_athletes_screen.dart';
+import 'package:octagon_mobile/features/owner/owner_schedule_screen.dart';
+import 'package:octagon_mobile/features/owner/owner_sections.dart';
+import 'package:octagon_mobile/features/owner/owner_session_details_screen.dart';
+
+import 'support/fake_api_client.dart';
+
+/// Тесты переходов, а не отрисовки: нажатие на спортсмена открывает карточку,
+/// нажатие на занятие — детали, разделы «Ещё» фильтруются по правам.
+void main() {
+  final now = DateTime.now();
+  String day(DateTime date) =>
+      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+  FakeApiClient buildClient() {
+    final client = FakeApiClient();
+    client.responses['GET /athletes?page=1&limit=30'] = {
+      'items': [
+        {
+          'id': 'athlete-1',
+          'firstName': 'Камила',
+          'lastName': 'Абдрахманова',
+          'birthDate': '2012-03-15',
+          'groupName': 'Старшая',
+          'status': 'ACTIVE',
+        },
+      ],
+      'total': 1,
+    };
+    client.responses['GET /athletes/athlete-1'] = {
+      'id': 'athlete-1',
+      'firstName': 'Камила',
+      'lastName': 'Абдрахманова',
+      'birthDate': '2012-03-15',
+      'status': 'ACTIVE',
+      'rankLabel': '9 кю',
+      'group': {'name': 'Старшая'},
+      'trainer': {'name': 'Азамат Ермаков'},
+      'hall': {'name': 'Заречная 4'},
+      'sportsHistory': <Map<String, dynamic>>[],
+    };
+    final sessions = {
+      'data': [
+        {
+          'id': 'session-1',
+          'groupName': 'Дети 5-7 лет',
+          'hallName': 'Заречная 4',
+          'trainerName': 'Третьяков Алексей',
+          'startsAt': '2026-11-03T13:00:00.000Z',
+          'endsAt': '2026-11-03T14:30:00.000Z',
+          'status': 'SCHEDULED',
+        },
+      ],
+    };
+    // Экран запрашивает диапазон выбранного режима: день, неделя (с
+    // понедельника) или месяц — регистрируем все три ключа.
+    final monday = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: now.weekday - 1));
+    final monthStart = DateTime(now.year, now.month, 1);
+    final monthEnd = DateTime(now.year, now.month + 1, 0);
+    for (final range in [
+      [day(now), day(now)],
+      [day(monday), day(monday.add(const Duration(days: 6)))],
+      [day(monthStart), day(monthEnd)],
+    ]) {
+      client.responses['GET /training-sessions?from=${range[0]}&to=${range[1]}'] = sessions;
+    }
+    return client;
+  }
+
+  AuthController buildAuth(List<String> permissions) {
+    final controller = AuthController(
+      repository: AuthRepository(client: FakeApiClient(), storage: InMemoryTokenStorage()),
+    );
+    controller.setSessionForTest(
+      AuthSession(
+        accessToken: 'token',
+        refreshToken: 'refresh',
+        accessExpiresAt: DateTime.now().add(const Duration(hours: 1)),
+        user: UserProfile(
+          id: 'user-1',
+          email: 'owner@octagon.local',
+          firstName: 'Владелец',
+          lastName: 'Клуба',
+          role: 'SUPERADMIN',
+          permissions: permissions,
+        ),
+      ),
+    );
+    return controller;
+  }
+
+  Widget wrap(Widget child) => MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light(),
+        home: child,
+      );
+
+  testWidgets('нажатие на спортсмена открывает карточку', (tester) async {
+    final client = buildClient();
+    final auth = buildAuth(['athletes.view']);
+
+    await tester.pumpWidget(
+      wrap(Scaffold(body: OwnerAthletesScreen(auth: auth, client: client))),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Абдрахманова Камила'), findsOneWidget);
+    await tester.tap(find.text('Абдрахманова Камила'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(OwnerAthleteCardScreen), findsOneWidget);
+    expect(find.text('Старшая'), findsOneWidget);
+    expect(find.text('Азамат Ермаков'), findsOneWidget);
+
+    // Назад — список на месте.
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.byType(OwnerAthletesScreen), findsOneWidget);
+    expect(find.text('Абдрахманова Камила'), findsOneWidget);
+  });
+
+  testWidgets('нажатие на занятие открывает детали', (tester) async {
+    final client = buildClient();
+    final auth = buildAuth(['schedule.view']);
+
+    await tester.pumpWidget(
+      wrap(Scaffold(body: OwnerScheduleScreen(auth: auth, client: client))),
+    );
+    await tester.pumpAndSettle();
+
+    // Время показано по часам клуба (UTC+5), а не телефона.
+    expect(find.text('18:00 — 19:30'), findsOneWidget);
+    expect(find.text('Дети 5-7 лет'), findsWidgets);
+
+    await tester.tap(find.text('Дети 5-7 лет').first);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(OwnerSessionDetailsScreen), findsOneWidget);
+    expect(find.text('Третьяков Алексей'), findsOneWidget);
+    expect(find.text('Заречная 4'), findsWidgets);
+  });
+
+  testWidgets('«Ещё» показывает все разделы при полных правах', (tester) async {
+    final permissions = [
+      'trial_requests.view',
+      'attestations.view',
+      'competitions.view',
+      'finance.view',
+      'news.view',
+    ];
+    final visible = ownerSections
+        .where((section) => section.isVisible(permissions))
+        .map((section) => section.id)
+        .toList();
+
+    expect(visible, contains('trial_requests'));
+    expect(visible, contains('attestations'));
+    expect(visible, contains('competitions'));
+    expect(visible, contains('reports'));
+    expect(visible, contains('news'));
+    expect(visible, contains('chats'));
+    expect(visible, contains('profile'));
+  });
+
+  testWidgets('часовой пояс клуба: UTC приходит как время Алматы', (tester) async {
+    ClubClock.setTimeZoneForTest('Asia/Almaty');
+    expect(ClubClock.formatTime('2026-11-03T13:00:00.000Z'), '18:00');
+    expect(ClubClock.formatTime('2026-11-03T13:00:00.000Z'), isNot('20:00'));
+  });
+}

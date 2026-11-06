@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
 import '../../design/tokens.dart';
+import '../../core/club_clock.dart';
 import '../auth/auth_controller.dart';
+import 'owner_session_details_screen.dart';
 
 /// Расписание клуба для владельца: день, неделя и список занятий.
 ///
@@ -215,7 +217,19 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         itemCount: _sessions.length,
-        itemBuilder: (context, index) => _SessionTile(session: _sessions[index]),
+        itemBuilder: (context, index) {
+        final session = _sessions[index];
+        return _SessionTile(
+          session: session,
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => OwnerSessionDetailsScreen(session: session),
+              ),
+            );
+          },
+        );
+      },
       ),
     );
   }
@@ -236,21 +250,25 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
 }
 
 class _SessionTile extends StatelessWidget {
-  const _SessionTile({required this.session});
+  const _SessionTile({required this.session, required this.onTap});
 
   final Map<String, dynamic> session;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final start = session['startsAt'] as String?;
     final end = session['endsAt'] as String?;
-    final group =
-        (session['group'] as Map?)?['name'] as String? ?? 'Занятие';
-    final hall = (session['hall'] as Map?)?['name'] as String?;
+    final group = session['groupName'] as String? ?? 'Группа не указана';
+    final hall = session['hallName'] as String?;
+    final trainer = session['trainerName'] as String?;
     final status = session['status'] as String?;
     final cancelled = status == 'CANCELLED';
 
-    return Container(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.card),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
@@ -285,19 +303,18 @@ class _SessionTile extends StatelessWidget {
             Text(hall,
                 style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
           ],
+          if (trainer != null && trainer.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(trainer,
+                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+          ],
         ],
+      ),
       ),
     );
   }
 
-  String _time(String? iso) {
-    final date = iso == null ? null : DateTime.tryParse(iso)?.toLocal();
-    if (date == null) {
-      return '—';
-    }
-    return '${date.hour.toString().padLeft(2, '0')}:'
-        '${date.minute.toString().padLeft(2, '0')}';
-  }
+  String _time(String? iso) => ClubClock.formatTime(iso);
 }
 
 /// Список из ответа API: клиент оборачивает массивы в `data`, а страницы —

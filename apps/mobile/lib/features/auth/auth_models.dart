@@ -32,15 +32,28 @@ class UserProfile {
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     final rawPermissions = json['permissions'];
+    // API отдаёт объект `{codes: [...], grants: [...]}`, а не массив.
+    // Без разбора `codes` список прав всегда был пустым, и в «Ещё»
+    // оставались только разделы без требований — Чаты и Профиль.
+    final List<String> permissions;
+    if (rawPermissions is List) {
+      permissions = rawPermissions.whereType<String>().toList(growable: false);
+    } else if (rawPermissions is Map) {
+      final codes = rawPermissions['codes'];
+      permissions = codes is List
+          ? codes.whereType<String>().toList(growable: false)
+          : const [];
+    } else {
+      permissions = const [];
+    }
+
     return UserProfile(
       id: json['id'] as String,
       email: json['email'] as String,
       firstName: (json['firstName'] as String?) ?? '',
       lastName: (json['lastName'] as String?) ?? '',
       role: (json['role'] as String?) ?? 'MEMBER',
-      permissions: rawPermissions is List
-          ? rawPermissions.whereType<String>().toList(growable: false)
-          : const [],
+      permissions: permissions,
     );
   }
 }

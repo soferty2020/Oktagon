@@ -24,6 +24,13 @@ enum AuthStatus {
 class AuthController extends ChangeNotifier {
   AuthController({required AuthRepository repository}) : _repository = repository;
 
+  /// Готовая сессия для виджет-тестов переходов: вход через сеть не нужен.
+  @visibleForTesting
+  void setSessionForTest(AuthSession session) {
+    _session = session;
+    _status = AuthStatus.authenticated;
+  }
+
   final AuthRepository _repository;
 
   AuthStatus _status = AuthStatus.checking;
