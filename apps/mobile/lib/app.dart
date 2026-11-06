@@ -11,7 +11,7 @@ import 'features/chat/chats_controller.dart';
 import 'features/home/member_home_controller.dart';
 import 'features/news/news_controller.dart';
 import 'features/schedule/schedule_controller.dart';
-import 'features/admin/admin_shell.dart';
+import 'features/owner/owner_shell.dart';
 import 'features/admin/trial_requests_screen.dart';
 import 'features/attestations/attestation_controller.dart';
 import 'features/shell/member_shell.dart';
@@ -111,10 +111,13 @@ class OctagonApp extends StatelessWidget {
     // Руководитель: заявки, аттестации, отчёты. Раньше он попадал в тренерский
     // каркас просто потому, что условие было `if MEMBER else Trainer`.
     if (role == 'SUPERADMIN') {
-      return AdminShell(
+      return OwnerShell(
         auth: authController,
         attestations: attestationController,
         trialRequests: trialRequestsController,
+        news: newsController,
+        chats: chatsController,
+        chatFactory: chatFactory,
         client: apiClient,
       );
     }

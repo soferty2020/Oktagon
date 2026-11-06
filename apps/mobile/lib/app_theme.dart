@@ -40,7 +40,7 @@ class AppTheme {
           color: AppColors.textPrimary,
           fontSize: 22,
           fontWeight: FontWeight.w700,
-          fontFamily: 'Roboto',
+          fontFamily: 'Inter', fontFamilyFallback: ['Roboto', 'Noto Sans'],
         ),
       ),
 
@@ -54,7 +54,7 @@ class AppTheme {
           foregroundColor: Colors.white,
           minimumSize: const Size.fromHeight(52),
           textStyle: const TextStyle(
-            fontFamily: 'Roboto',
+            fontFamily: 'Inter', fontFamilyFallback: ['Roboto', 'Noto Sans'],
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -68,7 +68,7 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.textPrimary,
           minimumSize: const Size.fromHeight(52),
-          textStyle: const TextStyle(fontFamily: 'Roboto', fontSize: 16),
+          textStyle: const TextStyle(fontFamily: 'Inter', fontFamilyFallback: ['Roboto', 'Noto Sans'], fontSize: 16),
           side: const BorderSide(color: AppColors.divider),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.control),
