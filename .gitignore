@@ -51,3 +51,4 @@ packages/*/src/*.d.ts
 .pub-cache/
 .dart-tmp/
 .dart-home/
+.gradle/
