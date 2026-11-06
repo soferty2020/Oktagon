@@ -62,18 +62,14 @@ void main() {
         },
       ],
     };
-    // Экран запрашивает диапазон выбранного режима: день, неделя (с
-    // понедельника) или месяц — регистрируем все три ключа.
-    final monday = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: now.weekday - 1));
-    final monthStart = DateTime(now.year, now.month, 1);
-    final monthEnd = DateTime(now.year, now.month + 1, 0);
+    // Диапазоны строятся в поясе клуба и передаются ISO-8601 с полуоткрытым
+    // концом: день, неделя, месяц — как их формирует ClubClock.
     for (final range in [
-      [day(now), day(now)],
-      [day(monday), day(monday.add(const Duration(days: 6)))],
-      [day(monthStart), day(monthEnd)],
+      ClubClock.dayRange(now),
+      ClubClock.weekRange(now),
+      ClubClock.monthRange(now),
     ]) {
-      client.responses['GET /training-sessions?from=${range[0]}&to=${range[1]}'] = sessions;
+      client.responses['GET /training-sessions?from=${range.from}&to=${range.to}'] = sessions;
     }
     return client;
   }

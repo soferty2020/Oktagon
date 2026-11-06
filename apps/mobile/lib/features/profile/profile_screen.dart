@@ -83,12 +83,15 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 16),
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
               borderRadius: BorderRadius.circular(AppRadius.card),
               border: Border.all(color: AppColors.divider),
             ),
             clipBehavior: Clip.antiAlias,
-            child: Theme(
+            // Material обязателен: ExpansionTile рисует фон на ближайшем
+            // Material, а цветной Container его скрывает.
+            child: Material(
+              color: Colors.white,
+              child: Theme(
               // Убираем разделители ExpansionTile по умолчанию: карточка уже
               // обрамлена, лишние линии выглядят как сломанная вёрстка.
               data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -136,6 +139,7 @@ class ProfileScreen extends StatelessWidget {
                       ),
                   ],
                 ],
+              ),
               ),
             ),
           ),
