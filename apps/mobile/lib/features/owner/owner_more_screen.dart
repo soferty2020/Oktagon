@@ -13,6 +13,7 @@ import '../chat/chats_screen.dart';
 import '../news/news_controller.dart';
 import '../news/news_screen.dart';
 import '../profile/profile_screen.dart';
+import 'owner_athlete_card_screen.dart';
 import 'owner_competitions_screen.dart';
 import 'owner_sections.dart';
 
@@ -74,7 +75,15 @@ class OwnerMoreScreen extends StatelessWidget {
       case 'trial_requests':
         onOpen(TrialRequestsScreen(auth: auth, controller: trialRequests));
       case 'attestations':
-        onOpen(AttestationsScreen(auth: auth, controller: attestations));
+        onOpen(AttestationsScreen(
+          auth: auth,
+          controller: attestations,
+          onOpenAthlete: (String athleteId) => onOpen(
+            OwnerAthleteCardScreen(auth: auth, client: client, athleteId: athleteId),
+            needsChrome: true,
+            title: 'Спортсмен',
+          ),
+        ));
       case 'competitions':
         onOpen(OwnerCompetitionsScreen(auth: auth, client: client),
             needsChrome: true, title: 'Соревнования');

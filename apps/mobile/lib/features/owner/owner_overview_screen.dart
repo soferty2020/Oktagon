@@ -4,6 +4,7 @@ import '../../core/api_client.dart';
 import '../../design/tokens.dart';
 import '../../core/club_clock.dart';
 import '../auth/auth_controller.dart';
+import 'owner_session_details_screen.dart';
 
 /// Обзор клуба для владельца.
 ///
@@ -17,6 +18,7 @@ class OwnerOverviewScreen extends StatefulWidget {
     required this.client,
     required this.onOpen,
     this.onOpenTrialRequests,
+    this.onOpenTab,
   });
 
   final AuthController auth;
@@ -26,6 +28,10 @@ class OwnerOverviewScreen extends StatefulWidget {
   /// Переход к заявкам по нажатию на KPI: заявки живут в «Ещё», но владелец
   /// должен попадать в них с обзора.
   final VoidCallback? onOpenTrialRequests;
+
+  /// Переключение нижней вкладки: 0 — обзор, 1 — спортсмены, 2 — расписание,
+  /// 3 — финансы, 4 — «Ещё».
+  final void Function(int index)? onOpenTab;
 
   @override
   State<OwnerOverviewScreen> createState() => _OwnerOverviewScreenState();
@@ -134,6 +140,9 @@ class _OwnerOverviewScreenState extends State<OwnerOverviewScreen> {
               debt: _debt,
               sessions: _sessionsToday,
               trials: _trialRequests,
+              onTapAthletes: () => widget.onOpenTab?.call(1),
+              onTapRevenue: () => widget.onOpenTab?.call(3),
+              onTapSessions: () => widget.onOpenTab?.call(2),
               onTapRequests: widget.onOpenTrialRequests,
             ),
             const SizedBox(height: 20),
@@ -146,6 +155,7 @@ class _OwnerOverviewScreenState extends State<OwnerOverviewScreen> {
                   tone: AppColors.danger,
                   title: '$_debtorsWithoutExpected спортсменов без суммы',
                   subtitle: 'долг не считается, пока не задан тариф',
+                  onTap: () => widget.onOpenTab?.call(3),
                 ),
               if (_nextAttestation != null)
                 _AttentionCard(
@@ -153,6 +163,7 @@ class _OwnerOverviewScreenState extends State<OwnerOverviewScreen> {
                   tone: AppColors.accent,
                   title: _nextAttestation!['title'] as String? ?? 'Аттестация',
                   subtitle: _attestationSubtitle(_nextAttestation!),
+                  onTap: () => widget.onOpenTab?.call(4),
                 ),
               const SizedBox(height: 20),
             ],
@@ -165,7 +176,12 @@ class _OwnerOverviewScreenState extends State<OwnerOverviewScreen> {
               )
             else
               ..._todaySessions.take(4).map(
-                    (session) => _SessionCard(session: session),
+                    (session) => _SessionCard(
+                      session: session,
+                      onTap: () => widget.onOpen(
+                        OwnerSessionDetailsScreen(session: session),
+                      ),
+                    ),
                   ),
           ],
         ],
@@ -219,6 +235,9 @@ class _KpiGrid extends StatelessWidget {
     required this.debt,
     required this.sessions,
     required this.trials,
+    this.onTapAthletes,
+    this.onTapRevenue,
+    this.onTapSessions,
     this.onTapRequests,
   });
 
@@ -228,6 +247,9 @@ class _KpiGrid extends StatelessWidget {
   final int debt;
   final int sessions;
   final int trials;
+  final VoidCallback? onTapAthletes;
+  final VoidCallback? onTapRevenue;
+  final VoidCallback? onTapSessions;
   final VoidCallback? onTapRequests;
 
   @override
@@ -240,13 +262,14 @@ class _KpiGrid extends StatelessWidget {
       crossAxisSpacing: 10,
       childAspectRatio: 1.65,
       children: [
-        _Kpi(label: 'Спортсмены', value: '$athletes', hint: '$groups групп'),
+        _Kpi(label: 'Спортсмены', value: '$athletes', hint: '$groups групп', onTap: onTapAthletes),
         _Kpi(
           label: 'Выручка',
           value: _money(revenue),
           hint: debt > 0 ? 'долг ${_money(debt)}' : 'за этот месяц',
+          onTap: onTapRevenue,
         ),
-        _Kpi(label: 'Занятия сегодня', value: '$sessions', hint: 'по расписанию'),
+        _Kpi(label: 'Занятия сегодня', value: '$sessions', hint: 'по расписанию', onTap: onTapSessions),
         _Kpi(label: 'Новые заявки', value: '$trials', hint: 'ожидают ответа', onTap: onTapRequests),
       ],
     );
@@ -312,16 +335,18 @@ class _AttentionCard extends StatelessWidget {
     required this.tone,
     required this.title,
     required this.subtitle,
+    this.onTap,
   });
 
   final IconData icon;
   final Color tone;
   final String title;
   final String subtitle;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final content = Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -357,13 +382,23 @@ class _AttentionCard extends StatelessWidget {
         ],
       ),
     );
+
+    if (onTap == null) {
+      return content;
+    }
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.card),
+      child: content,
+    );
   }
 }
 
 class _SessionCard extends StatelessWidget {
-  const _SessionCard({required this.session});
+  const _SessionCard({required this.session, required this.onTap});
 
   final Map<String, dynamic> session;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -372,7 +407,10 @@ class _SessionCard extends StatelessWidget {
     final group = session['groupName'] as String? ?? 'Группа не указана';
     final hall = session['hallName'] as String?;
 
-    return Container(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.card),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
@@ -391,6 +429,7 @@ class _SessionCard extends StatelessWidget {
             Text(hall, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
           ],
         ],
+      ),
       ),
     );
   }

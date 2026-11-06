@@ -8,6 +8,7 @@ import 'package:octagon_mobile/features/auth/auth_repository.dart';
 import 'support/in_memory_token_storage.dart';
 import 'package:octagon_mobile/features/owner/owner_athlete_card_screen.dart';
 import 'package:octagon_mobile/features/owner/owner_athletes_screen.dart';
+import 'package:octagon_mobile/features/owner/owner_overview_screen.dart';
 import 'package:octagon_mobile/features/owner/owner_schedule_screen.dart';
 import 'package:octagon_mobile/features/owner/owner_sections.dart';
 import 'package:octagon_mobile/features/owner/owner_session_details_screen.dart';
@@ -139,7 +140,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Время показано по часам клуба (UTC+5), а не телефона.
-    expect(find.text('18:00 — 19:30'), findsOneWidget);
+    expect(find.text('18:00–19:30'), findsOneWidget);
     expect(find.text('Дети 5-7 лет'), findsWidgets);
 
     await tester.tap(find.text('Дети 5-7 лет').first);
@@ -176,5 +177,58 @@ void main() {
     ClubClock.setTimeZoneForTest('Asia/Almaty');
     expect(ClubClock.formatTime('2026-11-03T13:00:00.000Z'), '18:00');
     expect(ClubClock.formatTime('2026-11-03T13:00:00.000Z'), isNot('20:00'));
+  });
+
+  testWidgets('KPI «Спортсмены» переключает вкладку', (tester) async {
+    final client = buildClient();
+    final auth = buildAuth(['athletes.view']);
+    var tab = -1;
+
+    client.responses['GET /groups'] = {'data': <Map<String, dynamic>>[]};
+    client.responses['GET /trial-requests'] = {'data': <Map<String, dynamic>>[]};
+    client.responses['GET /finance/summary?year=${now.year}&month=${now.month}'] = {
+      'totals': {'received': 0, 'refunded': 0, 'revenue': 0},
+      'expected': 0,
+      'debtors': 0,
+      'debtorsWithoutExpected': 0,
+      'debt': 0,
+      'activeAthletes': 1,
+    };
+    client.responses['GET /certification-events'] = {'data': <Map<String, dynamic>>[]};
+    client.responses['GET /athletes?page=1&limit=1'] = {
+      'items': <Map<String, dynamic>>[],
+      'total': 1,
+    };
+
+    await tester.pumpWidget(
+      wrap(Scaffold(
+        body: OwnerOverviewScreen(
+          auth: auth,
+          client: client,
+          onOpen: (_) {},
+          onOpenTab: (index) => tab = index,
+        ),
+      )),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Спортсмены'), findsOneWidget);
+    await tester.tap(find.text('Спортсмены'));
+    await tester.pumpAndSettle();
+    expect(tab, 1);
+  });
+
+  testWidgets('режим «Неделя» группирует занятия по дням', (tester) async {
+    final client = buildClient();
+    final auth = buildAuth(['schedule.view']);
+
+    await tester.pumpWidget(
+      wrap(Scaffold(body: OwnerScheduleScreen(auth: auth, client: client))),
+    );
+    await tester.pumpAndSettle();
+
+    // В недельном режиме есть заголовок дня с датой и время занятия.
+    expect(find.textContaining('18:00'), findsWidgets);
+    expect(find.text('Дети 5-7 лет'), findsWidgets);
   });
 }

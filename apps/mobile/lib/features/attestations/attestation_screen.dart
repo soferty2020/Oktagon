@@ -16,11 +16,16 @@ class AttestationScreen extends StatefulWidget {
     required this.auth,
     required this.controller,
     required this.event,
+    this.onOpenAthlete,
   });
 
   final AuthController auth;
   final AttestationController controller;
   final AttestationEvent event;
+
+  /// Переход в карточку спортсмена. Передаётся владельцем: у тренера карточки
+  /// нет, поэтому колбэк необязательный.
+  final void Function(String athleteId)? onOpenAthlete;
 
   @override
   State<AttestationScreen> createState() => _AttestationScreenState();
@@ -109,23 +114,36 @@ class _AttestationScreenState extends State<AttestationScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(participant.athleteName, style: Theme.of(context).textTheme.titleSmall),
+            if (widget.onOpenAthlete == null)
+              Text(participant.athleteName, style: Theme.of(context).textTheme.titleSmall)
+            else
+              InkWell(
+                onTap: () => widget.onOpenAthlete!(participant.athleteId),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(participant.athleteName,
+                            style: Theme.of(context).textTheme.titleSmall),
+                      ),
+                      const SizedBox(width: 6),
+                      const Icon(Icons.chevron_right,
+                          size: 16, color: AppColors.textTertiary),
+                    ],
+                  ),
+                ),
+              ),
             const SizedBox(height: 2),
             Text(
               'Цель: ${participant.targetRankLabel} · ${_admissionLabel(participant.admission)}'
               '${participant.paymentStatus == 'PAID' ? ' · оплачено' : ''}',
               style: const TextStyle(color: AppColors.textSecondary),
             ),
-            if (participant.result != 'PENDING')
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  participant.result == 'PASSED'
-                      ? 'Сдал: ${participant.awardedRankLabel ?? participant.targetRankLabel}'
-                      : _resultLabel(participant.result),
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ),
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: _ResultBadge(participant: participant),
+            ),
             if (_editable && token != null)
               Padding(
                 padding: const EdgeInsets.only(top: AppSpacing.sm),
@@ -243,11 +261,37 @@ String _admissionLabel(String admission) {
   };
 }
 
-String _resultLabel(String result) {
-  return switch (result) {
-    'FAILED' => 'Не сдал',
-    'NO_SHOW' => 'Не явился',
-    'PASSED' => 'Сдал',
-    _ => 'Нет итога',
-  };
+
+/// Метка результата: текст и цвет, чтобы статус читался и без цвета.
+class _ResultBadge extends StatelessWidget {
+  const _ResultBadge({required this.participant});
+
+  final AttestationParticipant participant;
+
+  @override
+  Widget build(BuildContext context) {
+    final result = participant.result;
+    final (label, color, background) = switch (result) {
+      'PASSED' => (
+          'Сдал · ${participant.awardedRankLabel ?? participant.targetRankLabel}',
+          AppColors.success,
+          const Color(0xFFE8F5EE),
+        ),
+      'FAILED' => ('Не сдал', AppColors.danger, const Color(0xFFFDECEC)),
+      'NO_SHOW' => ('Не явился', AppColors.warning, const Color(0xFFFFF3E0)),
+      _ => ('Ожидает результата', AppColors.textSecondary, AppColors.surfaceMuted),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
 }

@@ -3,10 +3,16 @@ import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../design/tokens.dart';
 import '../auth/auth_controller.dart';
+import 'owner_finance_dynamics_screen.dart';
 
-/// Финансы клуба: поступления, долг, должники и последние платежи.
+/// Финансы клуба: поступления, ожидаемые начисления, долг и динамика.
 ///
-/// Цифры совпадают с веб-админкой: оба клиента читают `/finance/summary`.
+/// Показатели нажимаемые: «Поступления», «Ожидалось» и «Долг» открывают
+/// динамику по месяцам — списка отдельных платежей API не отдаёт, поэтому
+/// экран показывает то, что действительно есть.
+///
+/// Отсутствие тарифа — отдельное состояние, а не «нулевой долг»: у части
+/// спортсменов сумма не задана, и долг по ним не считается.
 class OwnerFinanceScreen extends StatefulWidget {
   const OwnerFinanceScreen({super.key, required this.auth, required this.client});
 
@@ -21,7 +27,6 @@ class _OwnerFinanceScreenState extends State<OwnerFinanceScreen> {
   bool _loading = true;
   String? _error;
   Map<String, dynamic>? _summary;
-  List<Map<String, dynamic>> _payments = [];
 
   @override
   void initState() {
@@ -38,27 +43,16 @@ class _OwnerFinanceScreenState extends State<OwnerFinanceScreen> {
       _loading = true;
       _error = null;
     });
-
     final now = DateTime.now();
     try {
-      final results = await Future.wait([
-        widget.client.getJson(
-          '/finance/summary?year=${now.year}&month=${now.month}',
-          token: token,
-        ),
-        widget.client.getJson('/payment-transactions?page=1&limit=10', token: token)
-            .catchError((_) => <String, dynamic>{}),
-      ]);
+      final summary = await widget.client.getJson(
+        '/finance/summary?year=${now.year}&month=${now.month}',
+        token: token,
+      );
       if (!mounted) {
         return;
       }
-      setState(() {
-        _summary = results[0];
-        _payments = ((results[1]['data'] ?? results[1]['items']) as List?)
-                ?.whereType<Map<String, dynamic>>()
-                .toList() ??
-            const [];
-      });
+      setState(() => _summary = summary);
     } catch (_) {
       if (mounted) {
         setState(() => _error = 'Не удалось загрузить финансы');
@@ -68,6 +62,21 @@ class _OwnerFinanceScreenState extends State<OwnerFinanceScreen> {
         setState(() => _loading = false);
       }
     }
+  }
+
+  void _openDynamics(FinanceFocus focus) {
+    final now = DateTime.now();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => OwnerFinanceDynamicsScreen(
+          auth: widget.auth,
+          client: widget.client,
+          year: now.year,
+          month: now.month,
+          focus: focus,
+        ),
+      ),
+    );
   }
 
   @override
@@ -85,182 +94,115 @@ class _OwnerFinanceScreenState extends State<OwnerFinanceScreen> {
         children: [
           Text('Финансы', style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 4),
-          Text(
-            '${months[now.month - 1]} ${now.year}',
-            style: const TextStyle(color: AppColors.textSecondary),
-          ),
+          Text('${months[now.month - 1]} ${now.year}',
+              style: const TextStyle(color: AppColors.textSecondary)),
           const SizedBox(height: 16),
-          if (_loading) ...List.generate(
-            3,
-            (_) => Container(
-              height: 84,
-              margin: const EdgeInsets.only(bottom: 10),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceMuted,
-                borderRadius: BorderRadius.circular(AppRadius.card),
+          if (_loading)
+            ...List.generate(
+              3,
+              (_) => Container(
+                height: 84,
+                margin: const EdgeInsets.only(bottom: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceMuted,
+                  borderRadius: BorderRadius.circular(AppRadius.card),
+                ),
               ),
             ),
-          ),
           if (_error != null) _ErrorBlock(message: _error!, onRetry: _load),
           if (!_loading && _error == null && _summary != null) ...[
-            _BigMoneyCard(
+            _BigMoney(
               label: 'Поступления',
-              value: _money((_summary!['totals'] as Map?)?['received'] as num?),
-              hint: _payments.isEmpty ? 'платежей нет' : '${_payments.length} последних',
+              value: _money(_summary!['totals']?['received']),
+              hint: 'нажмите, чтобы увидеть по месяцам',
+              onTap: () => _openDynamics(FinanceFocus.received),
             ),
             const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
-                  child: _SmallCard(
+                  child: _SmallMoney(
                     label: 'Ожидалось',
-                    value: _money(_summary!['expected'] as num?),
+                    value: _money(_summary!['expected']),
+                    onTap: () => _openDynamics(FinanceFocus.expected),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: _SmallCard(
+                  child: _SmallMoney(
                     label: 'Долг',
-                    value: _money(_summary!['debt'] as num?),
+                    value: _money(_summary!['debt']),
                     danger: ((_summary!['debt'] as num?)?.toInt() ?? 0) > 0,
+                    onTap: () => _openDynamics(FinanceFocus.debt),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            const Text('Последние платежи',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            if (_payments.isEmpty)
-              const _EmptyBlock(title: 'Платежей нет', subtitle: 'За этот месяц поступлений не было')
-            else
-              ..._payments.take(6).map((payment) => _PaymentTile(payment: payment)),
+            const SizedBox(height: 16),
+            _TariffNotice(
+              withoutExpected:
+                  (_summary!['debtorsWithoutExpected'] as num?)?.toInt() ?? 0,
+              activeAthletes: (_summary!['activeAthletes'] as num?)?.toInt() ?? 0,
+            ),
           ],
         ],
       ),
     );
   }
-}
 
-class _BigMoneyCard extends StatelessWidget {
-  const _BigMoneyCard({required this.label, required this.value, required this.hint});
-
-  final String label;
-  final String value;
-  final String hint;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(color: AppColors.textSecondary)),
-          const SizedBox(height: 4),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(value,
-                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w700)),
-          ),
-          const SizedBox(height: 4),
-          Text(hint, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-        ],
-      ),
-    );
+  String _money(dynamic value) {
+    final amount = (value as num?)?.toInt() ?? 0;
+    final digits = amount.abs().toString();
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) {
+        buffer.write(' ');
+      }
+      buffer.write(digits[i]);
+    }
+    return '${amount < 0 ? '−' : ''}$buffer ₽';
   }
 }
 
-class _SmallCard extends StatelessWidget {
-  const _SmallCard({required this.label, required this.value, this.danger = false});
+/// Отсутствие тарифа — не «нулевой долг», а отдельное состояние.
+class _TariffNotice extends StatelessWidget {
+  const _TariffNotice({required this.withoutExpected, required this.activeAthletes});
 
-  final String label;
-  final String value;
-  final bool danger;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-          const SizedBox(height: 4),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: danger ? AppColors.danger : AppColors.textPrimary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PaymentTile extends StatelessWidget {
-  const _PaymentTile({required this.payment});
-
-  final Map<String, dynamic> payment;
+  final int withoutExpected;
+  final int activeAthletes;
 
   @override
   Widget build(BuildContext context) {
-    final amount = (payment['amount'] as num?)?.toInt() ?? 0;
-    final raw = payment['paidAt'] as String? ?? payment['createdAt'] as String?;
-    final date = raw == null ? null : DateTime.tryParse(raw)?.toLocal();
-    final athlete = payment['athlete'] as Map?;
-    final name = athlete == null
-        ? 'Платёж'
-        : '${athlete['lastName'] ?? ''} ${athlete['firstName'] ?? ''}'.trim();
-
+    if (withoutExpected == 0) {
+      return const SizedBox.shrink();
+    }
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.accentSoft,
         borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: AppColors.divider),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Icon(Icons.info_outline, size: 18, color: AppColors.accentDark),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                if (date != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    '${date.day}.${date.month.toString().padLeft(2, '0')}.${date.year}',
-                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                  ),
-                ],
+                Text(
+                  '$withoutExpected из $activeAthletes без установленной суммы',
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'По ним долг не рассчитывается — это не нулевая задолженность. '
+                  'Сумма задаётся в веб-админке.',
+                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                ),
               ],
-            ),
-          ),
-          Text(
-            _money(amount),
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              color: AppColors.success,
             ),
           ),
         ],
@@ -269,29 +211,123 @@ class _PaymentTile extends StatelessWidget {
   }
 }
 
-class _EmptyBlock extends StatelessWidget {
-  const _EmptyBlock({required this.title, required this.subtitle});
+class _BigMoney extends StatelessWidget {
+  const _BigMoney({
+    required this.label,
+    required this.value,
+    required this.hint,
+    required this.onTap,
+  });
 
-  final String title;
-  final String subtitle;
+  final String label;
+  final String value;
+  final String hint;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: AppColors.divider),
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(AppRadius.card),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(color: AppColors.divider),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(label,
+                        style: const TextStyle(color: AppColors.textSecondary)),
+                  ),
+                  const Icon(Icons.chevron_right,
+                      size: 18, color: AppColors.textTertiary),
+                ],
+              ),
+              const SizedBox(height: 4),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(value,
+                    style:
+                        const TextStyle(fontSize: 32, fontWeight: FontWeight.w700)),
+              ),
+              const SizedBox(height: 4),
+              Text(hint,
+                  style: const TextStyle(
+                      fontSize: 12, color: AppColors.textSecondary)),
+            ],
+          ),
+        ),
       ),
-      child: Column(
-        children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 4),
-          Text(subtitle,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-        ],
+    );
+  }
+}
+
+class _SmallMoney extends StatelessWidget {
+  const _SmallMoney({
+    required this.label,
+    required this.value,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  final String label;
+  final String value;
+  final VoidCallback onTap;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(AppRadius.card),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(color: AppColors.divider),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(label,
+                        style: const TextStyle(
+                            fontSize: 12, color: AppColors.textSecondary)),
+                  ),
+                  const Icon(Icons.chevron_right,
+                      size: 16, color: AppColors.textTertiary),
+                ],
+              ),
+              const SizedBox(height: 4),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: danger ? AppColors.danger : AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -324,17 +360,4 @@ class _ErrorBlock extends StatelessWidget {
       ),
     );
   }
-}
-
-String _money(num? value) {
-  final amount = (value ?? 0).toInt();
-  final digits = amount.abs().toString();
-  final buffer = StringBuffer();
-  for (var i = 0; i < digits.length; i++) {
-    if (i > 0 && (digits.length - i) % 3 == 0) {
-      buffer.write(' ');
-    }
-    buffer.write(digits[i]);
-  }
-  return '${amount < 0 ? '−' : ''}$buffer ₽';
 }

@@ -11,10 +11,18 @@ import 'attestation_screen.dart';
 /// Родителю сюда не нужно — он видит опубликованные результаты во вкладке
 /// «Спорт». Здесь — мероприятия, где нужно отметить допуск и итог.
 class AttestationsScreen extends StatefulWidget {
-  const AttestationsScreen({super.key, required this.auth, required this.controller});
+  const AttestationsScreen({
+    super.key,
+    required this.auth,
+    required this.controller,
+    this.onOpenAthlete,
+  });
 
   final AuthController auth;
   final AttestationController controller;
+
+  /// Переход в карточку спортсмена — для владельца, у тренера её нет.
+  final void Function(String athleteId)? onOpenAthlete;
 
   @override
   State<AttestationsScreen> createState() => _AttestationsScreenState();
@@ -100,6 +108,7 @@ class _AttestationsScreenState extends State<AttestationsScreen> {
           auth: widget.auth,
           controller: widget.controller,
           event: event,
+          onOpenAthlete: widget.onOpenAthlete,
         ),
       ),
     );

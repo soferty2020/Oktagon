@@ -94,6 +94,7 @@ class _OwnerShellState extends State<OwnerShell> {
         onOpenTrialRequests: () => _openNested(
           TrialRequestsScreen(auth: widget.auth, controller: widget.trialRequests),
         ),
+        onOpenTab: (index) => setState(() => _index = index),
       ),
       OwnerAthletesScreen(auth: widget.auth, client: widget.client),
       OwnerScheduleScreen(auth: widget.auth, client: widget.client),
