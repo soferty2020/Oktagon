@@ -107,11 +107,16 @@ class _MenuTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: AppColors.divider),
       ),
-      child: ListTile(
+      // Material обязателен: ListTile рисует фон и всплеск на ближайшем Material,
+      // а цветной Container их скрывает (Flutter предупреждает об этом).
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
         leading: Container(
           width: 32,
           height: 32,
@@ -122,8 +127,9 @@ class _MenuTile extends StatelessWidget {
           child: Icon(icon, size: 17, color: AppColors.accentDark),
         ),
         title: Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-        trailing: const Icon(Icons.chevron_right, color: AppColors.textTertiary),
-        onTap: onTap,
+          trailing: const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+          onTap: onTap,
+        ),
       ),
     );
   }

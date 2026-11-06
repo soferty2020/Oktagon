@@ -54,9 +54,10 @@ class _OwnerFinanceScreenState extends State<OwnerFinanceScreen> {
       }
       setState(() {
         _summary = results[0];
-        _payments = ((results[1]['items'] as List?) ?? const [])
-            .whereType<Map<String, dynamic>>()
-            .toList();
+        _payments = ((results[1]['data'] ?? results[1]['items']) as List?)
+                ?.whereType<Map<String, dynamic>>()
+                .toList() ??
+            const [];
       });
     } catch (_) {
       if (mounted) {

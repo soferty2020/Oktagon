@@ -72,9 +72,7 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
         return;
       }
       setState(() {
-        _sessions = ((response['items'] as List?) ?? const [])
-            .whereType<Map<String, dynamic>>()
-            .toList()
+        _sessions = _listOf(response)
           ..sort((a, b) {
             final left = a['startsAt'] as String? ?? '';
             final right = b['startsAt'] as String? ?? '';
@@ -300,4 +298,14 @@ class _SessionTile extends StatelessWidget {
     return '${date.hour.toString().padLeft(2, '0')}:'
         '${date.minute.toString().padLeft(2, '0')}';
   }
+}
+
+/// Список из ответа API: клиент оборачивает массивы в `data`, а страницы —
+/// отдают `items`. Один разбор на все экраны владельца.
+List<Map<String, dynamic>> _listOf(Map<String, dynamic> response) {
+  final raw = response['data'] ?? response['items'];
+  if (raw is List) {
+    return raw.whereType<Map<String, dynamic>>().toList();
+  }
+  return const [];
 }

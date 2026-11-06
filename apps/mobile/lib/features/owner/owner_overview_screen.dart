@@ -86,20 +86,15 @@ class _OwnerOverviewScreenState extends State<OwnerOverviewScreen> {
       }
       setState(() {
         _athletes = (athletes['total'] as num?)?.toInt() ?? 0;
-        _groups = (groups['items'] as List?)?.length ??
-            (groups is List ? groups.length : 0);
-        _todaySessions = ((sessions['items'] as List?) ?? const [])
-            .whereType<Map<String, dynamic>>()
-            .toList();
+        _groups = _listOf(groups).length;
+        _todaySessions = _listOf(sessions);
         _sessionsToday = _todaySessions.length;
-        _trialRequests = ((trials['items'] as List?) ?? const []).length;
+        _trialRequests = _listOf(trials).length;
         _debt = (finance['debt'] as num?)?.toInt() ?? 0;
         _revenue = ((finance['totals'] as Map?)?['revenue'] as num?)?.toInt() ?? 0;
         _debtorsWithoutExpected =
             (finance['debtorsWithoutExpected'] as num?)?.toInt() ?? 0;
-        _nextAttestation = ((certifications['items'] as List?) ?? const [])
-            .whereType<Map<String, dynamic>>()
-            .firstOrNull;
+        _nextAttestation = _listOf(certifications).firstOrNull;
       });
     } catch (_) {
       if (mounted) {
@@ -234,7 +229,7 @@ class _KpiGrid extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       mainAxisSpacing: 10,
       crossAxisSpacing: 10,
-      childAspectRatio: 1.9,
+      childAspectRatio: 1.65,
       children: [
         _Kpi(label: 'Спортсмены', value: '$athletes', hint: '$groups групп'),
         _Kpi(
@@ -461,7 +456,7 @@ class _OverviewSkeleton extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
-          childAspectRatio: 1.9,
+          childAspectRatio: 1.65,
           children: List.generate(4, (_) => const _SkeletonBox()),
         ),
         const SizedBox(height: 20),
@@ -498,4 +493,14 @@ String _money(int value) {
     buffer.write(digits[i]);
   }
   return '${value < 0 ? '−' : ''}$buffer ₽';
+}
+
+/// Список из ответа API: клиент оборачивает массивы в `data`, а страницы —
+/// отдают `items`. Один разбор на все экраны владельца.
+List<Map<String, dynamic>> _listOf(Map<String, dynamic> response) {
+  final raw = response['data'] ?? response['items'];
+  if (raw is List) {
+    return raw.whereType<Map<String, dynamic>>().toList();
+  }
+  return const [];
 }
