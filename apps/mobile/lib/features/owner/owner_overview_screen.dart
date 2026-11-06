@@ -68,16 +68,17 @@ class _OwnerOverviewScreenState extends State<OwnerOverviewScreen> {
       _error = null;
     });
 
-    final now = DateTime.now();
-    final day = '${now.year.toString().padLeft(4, '0')}-'
-        '${now.month.toString().padLeft(2, '0')}-'
-        '${now.day.toString().padLeft(2, '0')}';
+    final now = ClubClock.todayInClub();
+    final today = ClubClock.dayRange(now);
 
     try {
       final results = await Future.wait([
         widget.client.getJson('/athletes?page=1&limit=1', token: token),
         widget.client.getJson('/groups', token: token),
-        widget.client.getJson('/training-sessions?from=$day&to=$day', token: token),
+        widget.client.getJson(
+          '/training-sessions?from=${today.from}&to=${today.to}',
+          token: token,
+        ),
         widget.client.getJson('/trial-requests', token: token),
         widget.client.getJson(
           '/finance/summary?year=${now.year}&month=${now.month}',
@@ -190,7 +191,7 @@ class _OwnerOverviewScreenState extends State<OwnerOverviewScreen> {
   }
 
   String _todayLabel() {
-    final now = DateTime.now();
+    final now = ClubClock.todayInClub();
     const months = [
       'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
       'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',

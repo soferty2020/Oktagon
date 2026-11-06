@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'app_theme.dart';
 import 'core/api_client.dart';
@@ -89,6 +90,15 @@ class OctagonApp extends StatelessWidget {
       title: 'OCTAGON',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
+      // Русская локаль: без неё DatePicker показывал «November 2026» и
+      // неделю с воскресенья, а кнопки оставались английскими.
+      locale: const Locale('ru', 'RU'),
+      supportedLocales: const [Locale('ru', 'RU'), Locale('en', 'US')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       home: ListenableBuilder(
         listenable: authController,
         builder: (context, _) {

@@ -29,8 +29,8 @@ class OwnerScheduleScreen extends StatefulWidget {
 enum _Range { day, week, month }
 
 class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
-  _Range _range = _Range.week;
-  DateTime _anchor = DateTime.now();
+  _Range _mode = _Range.week;
+  DateTime _anchor = ClubClock.todayInClub();
   bool _loading = true;
   String? _error;
   List<Map<String, dynamic>> _sessions = [];
@@ -41,7 +41,16 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
     _load();
   }
 
-  DateTime get _rangeStart => switch (_range) {
+  /// Полуоткрытый интервал выбранного режима в поясе клуба.
+  /// Сервер сравнивает startsAt >= from AND startsAt < to, поэтому
+  /// одинаковые from/to для одного дня давали пустой список.
+  ({String from, String to}) get _interval => switch (_mode) {
+        _Range.day => ClubClock.dayRange(_anchor),
+        _Range.week => ClubClock.weekRange(_anchor),
+        _Range.month => ClubClock.monthRange(_anchor),
+      };
+
+  DateTime get _rangeStart => switch (_mode) {
         _Range.day => DateTime(_anchor.year, _anchor.month, _anchor.day),
         _Range.week =>
           DateTime(_anchor.year, _anchor.month, _anchor.day)
@@ -49,7 +58,7 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
         _Range.month => DateTime(_anchor.year, _anchor.month, 1),
       };
 
-  DateTime get _rangeEnd => switch (_range) {
+  DateTime get _rangeEnd => switch (_mode) {
         _Range.day => _rangeStart,
         _Range.week => _rangeStart.add(const Duration(days: 6)),
         _Range.month => DateTime(_anchor.year, _anchor.month + 1, 0),
@@ -67,7 +76,7 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
 
     try {
       final response = await widget.client.getJson(
-        '/training-sessions?from=${_fmt(_rangeStart)}&to=${_fmt(_rangeEnd)}',
+        '/training-sessions?from=${_interval.from}&to=${_interval.to}',
         token: token,
       );
       final list = _listOf(response)
@@ -88,14 +97,10 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
     }
   }
 
-  String _fmt(DateTime date) =>
-      '${date.year.toString().padLeft(4, '0')}-'
-      '${date.month.toString().padLeft(2, '0')}-'
-      '${date.day.toString().padLeft(2, '0')}';
 
   void _shift(int direction) {
     setState(() {
-      _anchor = switch (_range) {
+      _anchor = switch (_mode) {
         _Range.day => _anchor.add(Duration(days: direction)),
         _Range.week => _anchor.add(Duration(days: 7 * direction)),
         _Range.month => DateTime(_anchor.year, _anchor.month + direction, 1),
@@ -105,7 +110,7 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
   }
 
   void _changeRange(_Range range) {
-    setState(() => _range = range);
+    setState(() => _mode = range);
     _load();
   }
 
@@ -123,10 +128,10 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
       return;
     }
     setState(() => _anchor = picked);
-    if (_range == _Range.month) {
+    if (_mode == _Range.month) {
       // В месячном режиме выбор даты открывает её день — иначе непонятно,
       // что именно произошло.
-      setState(() => _range = _Range.day);
+      setState(() => _mode = _Range.day);
     }
     unawaited(_load());
   }
@@ -139,7 +144,7 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
   void _openDay(DateTime date) {
     setState(() {
       _anchor = date;
-      _range = _Range.day;
+      _mode = _Range.day;
     });
     _load();
   }
@@ -172,7 +177,7 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
                   ButtonSegment(value: _Range.week, label: Text('Неделя')),
                   ButtonSegment(value: _Range.month, label: Text('Месяц')),
                 ],
-                selected: {_range},
+                selected: {_mode},
                 showSelectedIcon: false,
                 onSelectionChanged: (value) => _changeRange(value.first),
               ),
@@ -247,7 +252,7 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              _range == _Range.day ? 'На этот день занятий нет' : 'Занятий нет',
+              _mode == _Range.day ? 'На этот день занятий нет' : 'Занятий нет',
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
             ),
             const SizedBox(height: 6),
@@ -258,7 +263,7 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
       );
     }
 
-    return switch (_range) {
+    return switch (_mode) {
       _Range.day => _DayView(sessions: _sessions, onOpen: _openSession),
       _Range.week => _WeekView(
           start: _rangeStart,
@@ -278,7 +283,7 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
       'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
       'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
     ];
-    return switch (_range) {
+    return switch (_mode) {
       _Range.day => '${_anchor.day} ${months[_anchor.month - 1]} ${_anchor.year}',
       _Range.week =>
         '${_rangeStart.day}–${_rangeEnd.day} ${months[_rangeEnd.month - 1]}',

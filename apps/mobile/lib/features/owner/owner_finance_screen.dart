@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
+import '../../core/club_clock.dart';
 import '../../design/tokens.dart';
 import '../auth/auth_controller.dart';
 import 'owner_finance_dynamics_screen.dart';
@@ -43,7 +44,7 @@ class _OwnerFinanceScreenState extends State<OwnerFinanceScreen> {
       _loading = true;
       _error = null;
     });
-    final now = DateTime.now();
+    final now = ClubClock.todayInClub();
     try {
       final summary = await widget.client.getJson(
         '/finance/summary?year=${now.year}&month=${now.month}',
@@ -65,7 +66,7 @@ class _OwnerFinanceScreenState extends State<OwnerFinanceScreen> {
   }
 
   void _openDynamics(FinanceFocus focus) {
-    final now = DateTime.now();
+    final now = ClubClock.todayInClub();
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => OwnerFinanceDynamicsScreen(
@@ -81,7 +82,7 @@ class _OwnerFinanceScreenState extends State<OwnerFinanceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
+    final now = ClubClock.todayInClub();
     const months = [
       'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
       'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь',

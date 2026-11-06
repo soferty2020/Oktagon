@@ -6,10 +6,8 @@ import 'package:octagon_mobile/app_theme.dart';
 import 'package:octagon_mobile/features/auth/auth_controller.dart';
 import 'package:octagon_mobile/features/auth/auth_models.dart';
 import 'package:octagon_mobile/features/auth/auth_repository.dart';
-import 'package:octagon_mobile/features/owner/owner_finance_screen.dart';
 import 'package:octagon_mobile/features/owner/owner_overview_screen.dart';
 import 'package:octagon_mobile/features/owner/owner_schedule_screen.dart';
-import 'package:octagon_mobile/features/profile/profile_screen.dart';
 
 import 'support/fake_api_client.dart';
 import 'support/golden_fonts.dart';
