@@ -86,6 +86,11 @@ class AuthRepository {
   }
 
   /// Обновляет access-токен по refresh-токену.
+  ///
+  /// Возвращает `null`, только если сервер подтвердил, что сессии больше нет
+  /// (401/400 на `/auth/refresh`). Временные сбои — сеть, таймаут, 5xx —
+  /// пробрасываются: стирать токены из-за недоступного сервера значило бы
+  /// разлогинивать человека в метро.
   Future<AuthSession?> refresh(String refreshToken) async {
     try {
       final response = await _client.postJson(
@@ -96,12 +101,26 @@ class AuthRepository {
       final session = AuthSession.fromJson(response);
       await _storage.write(_toStored(session));
       return session;
-    } on ApiException {
-      // Refresh недействителен: сессии больше нет, токены нужно убрать, иначе
+    } on ApiException catch (error) {
+      if (!_isSessionRejected(error)) {
+        rethrow;
+      }
+      // Подтверждённая недействительность: токены нужно убрать, иначе
       // приложение будет бесконечно пытаться обновиться при каждом запуске.
       await _storage.clear();
       return null;
     }
+  }
+
+  /// Сервер явно отверг refresh-токен, а не временно недоступен.
+  bool _isSessionRejected(ApiException error) {
+    final status = error.statusCode;
+    if (status == 401 || status == 403 || status == 400) {
+      return true;
+    }
+    return error.code == 'INVALID_REFRESH_TOKEN' ||
+        error.code == 'REFRESH_TOKEN_REUSED' ||
+        error.code == 'UNAUTHORIZED';
   }
 
   /// Выход: отзывает refresh-токен на сервере и очищает хранилище.

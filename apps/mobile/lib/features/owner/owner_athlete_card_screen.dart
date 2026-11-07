@@ -34,13 +34,10 @@ class _OwnerAthleteCardScreenState extends State<OwnerAthleteCardScreen> {
   bool _loading = true;
   String? _error;
   Map<String, dynamic>? _athlete;
-  Map<String, dynamic>? _finance;
-  bool _canViewFinance = false;
 
   @override
   void initState() {
     super.initState();
-    _canViewFinance = widget.auth.user?.hasPermission('payments.view') ?? false;
     _load();
   }
 
@@ -58,23 +55,13 @@ class _OwnerAthleteCardScreenState extends State<OwnerAthleteCardScreen> {
         '/athletes/${widget.athleteId}',
         token: token,
       );
-      Map<String, dynamic>? finance;
-      if (_canViewFinance) {
-        try {
-          finance = await widget.client.getJson(
-            '/finance/athletes/${widget.athleteId}',
-            token: token,
-          );
-        } catch (_) {
-          // Нет доступа или нет данных — блок просто не показываем.
-        }
-      }
+      // Отдельного финансового профиля спортсмена в API нет: блок не
+      // запрашивается, чтобы не показывать пустое место вместо данных.
       if (!mounted) {
         return;
       }
       setState(() {
         _athlete = athlete;
-        _finance = finance;
       });
     } catch (_) {
       if (mounted) {
@@ -158,15 +145,6 @@ class _OwnerAthleteCardScreenState extends State<OwnerAthleteCardScreen> {
                   if ((athlete['email'] as String?)?.isNotEmpty ?? false)
                     ('Email', athlete['email'] as String),
                 ]),
-                if (_canViewFinance && _finance != null) ...[
-                  const SizedBox(height: 20),
-                  const _SectionTitle('Финансы'),
-                  const SizedBox(height: 8),
-                  _InfoCard(rows: [
-                    ('Долг', _money(_finance!['debt'])),
-                    ('Тариф', _tariff(_finance!)),
-                  ]),
-                ],
                 const SizedBox(height: 20),
                 const _SectionTitle('Посещаемость и результаты'),
                 const SizedBox(height: 8),
@@ -207,29 +185,7 @@ class _OwnerAthleteCardScreenState extends State<OwnerAthleteCardScreen> {
     return hall?['name'] as String?;
   }
 
-  String _tariff(Map<String, dynamic> finance) {
-    final value = finance['monthlyFee'] ?? finance['expected'];
-    if (value == null) {
-      return 'не задан';
-    }
-    return _money(value);
-  }
 
-  String _money(dynamic value) {
-    final amount = (value as num?)?.toInt();
-    if (amount == null) {
-      return '—';
-    }
-    final digits = amount.abs().toString();
-    final buffer = StringBuffer();
-    for (var i = 0; i < digits.length; i++) {
-      if (i > 0 && (digits.length - i) % 3 == 0) {
-        buffer.write(' ');
-      }
-      buffer.write(digits[i]);
-    }
-    return '${amount < 0 ? '−' : ''}$buffer ₽';
-  }
 }
 
 class _SectionTitle extends StatelessWidget {

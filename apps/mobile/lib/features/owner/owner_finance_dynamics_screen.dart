@@ -18,6 +18,7 @@ class OwnerFinanceDynamicsScreen extends StatefulWidget {
     required this.year,
     required this.month,
     this.focus = FinanceFocus.received,
+    this.expectedTotal,
   });
 
   final AuthController auth;
@@ -25,6 +26,10 @@ class OwnerFinanceDynamicsScreen extends StatefulWidget {
   final int year;
   final int month;
   final FinanceFocus focus;
+
+  /// Ожидаемая сумма месяца из /finance/summary — показывается только в
+  /// режиме «Ожидаемые начисления», без разбивки по месяцам (её API не отдаёт).
+  final int? expectedTotal;
 
   @override
   State<OwnerFinanceDynamicsScreen> createState() =>
@@ -123,8 +128,11 @@ class _OwnerFinanceDynamicsScreenState extends State<OwnerFinanceDynamicsScreen>
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
-        for (final point in _points)
-          _MonthRow(
+        if (widget.focus == FinanceFocus.expected)
+          _ExpectedNotice(expected: widget.expectedTotal)
+        else
+          for (final point in _points)
+            _MonthRow(
             label: '${_months[((point['month'] as num?)?.toInt() ?? 1) - 1]} '
                 '${point['year']}',
             value: _value(point),
@@ -147,6 +155,8 @@ class _OwnerFinanceDynamicsScreenState extends State<OwnerFinanceDynamicsScreen>
 
   String _value(Map<String, dynamic> point) => switch (widget.focus) {
         FinanceFocus.received => _money(point['received']),
+        // API не отдаёт ожидаемые начисления по месяцам: показываем только
+        // фактические поступления и говорим об этом прямо.
         FinanceFocus.expected => _money(point['received']),
         FinanceFocus.debt => _money(point['debt']),
       };
@@ -222,5 +232,61 @@ class _MonthRow extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+/// Ожидаемые начисления: API отдаёт только общую сумму месяца.
+///
+/// Показывать вместо неё поступления нельзя — это разные деньги. Поэтому
+/// экран честно объясняет ограничение и не рисует список месяцев.
+class _ExpectedNotice extends StatelessWidget {
+  const _ExpectedNotice({required this.expected});
+
+  final int? expected;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasValue = (expected ?? 0) > 0;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Ожидаемые начисления',
+              style: TextStyle(color: AppColors.textSecondary)),
+          const SizedBox(height: 4),
+          if (hasValue)
+            Text(_money(expected!),
+                style:
+                    const TextStyle(fontSize: 28, fontWeight: FontWeight.w700))
+          else
+            const Text('Сумма на текущий месяц не задана',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 12),
+          const Text(
+            'API отдаёт ожидаемую сумму только целиком за месяц — разбивки по '
+            'спортсменам и дням нет. Здесь не показываются поступления: это '
+            'другие деньги, и подменять ими ожидания нельзя.',
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _money(int value) {
+    final digits = value.abs().toString();
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) {
+        buffer.write(' ');
+      }
+      buffer.write(digits[i]);
+    }
+    return '${value < 0 ? '−' : ''}$buffer ₽';
   }
 }
