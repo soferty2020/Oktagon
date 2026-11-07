@@ -83,6 +83,7 @@ export interface SessionRangeFilter {
   to: Date;
   groupId?: string;
   trainerId?: string;
+  hallId?: string;
   status?: TrainingSessionStatus;
   visibleGroupIds?: string[] | null;
 }
@@ -394,6 +395,7 @@ export class PrismaSchedulingRepository extends SchedulingRepository {
         startsAt: { gte: filter.from, lt: filter.to },
         ...(filter.groupId ? { groupId: filter.groupId } : {}),
         ...(filter.trainerId ? { trainerProfileId: filter.trainerId } : {}),
+        ...(filter.hallId ? { hallId: filter.hallId } : {}),
         ...(filter.status ? { status: filter.status } : {}),
         ...(visible ? { groupId: { in: visible } } : {}),
       },

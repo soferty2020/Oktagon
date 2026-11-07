@@ -777,16 +777,26 @@ export class FinanceService {
     const count = Math.min(Math.max(Math.floor(months), 1), 12);
     const points: FinanceDynamicsPoint[] = [];
 
+    // Область видимости считается один раз: она одинакова для всех месяцев.
+    // Без этого фильтра агрегаты показывали суммы чужих спортсменов — сводка
+    // (`summary`) фильтрует движения, а динамика брала весь журнал.
+    const visible = await this.visibleAthleteIds(callerUserId);
+
     for (let offset = count - 1; offset >= 0; offset -= 1) {
       const cursor = new Date(Date.UTC(year, month - 1 - offset, 1));
       const pointYear = cursor.getUTCFullYear();
       const pointMonth = cursor.getUTCMonth() + 1;
       const next = new Date(Date.UTC(pointYear, pointMonth, 1));
 
-      const [debtors, movements] = await Promise.all([
+      const [debtors, allMovements] = await Promise.all([
         this.listDebtors(callerUserId, pointYear, pointMonth),
         this.finance.listMovementsInRange(cursor, next),
       ]);
+
+      const movements =
+        visible === null
+          ? allMovements
+          : allMovements.filter((movement) => visible.has(movement.athleteId));
 
       let received = 0;
       let refunded = 0;

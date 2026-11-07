@@ -27,15 +27,30 @@ export async function apiFetch<T>(
   path: string,
   options: { accessToken?: string; method?: string; body?: unknown } = {},
 ): Promise<ApiResult<T>> {
-  const response = await fetch(`${apiBaseUrl()}${path}`, {
-    method: options.method ?? 'GET',
-    headers: {
-      ...(options.accessToken ? { authorization: `Bearer ${options.accessToken}` } : {}),
-      ...(options.body ? { 'content-type': 'application/json' } : {}),
-    },
-    ...(options.body ? { body: JSON.stringify(options.body) } : {}),
-    cache: 'no-store',
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${apiBaseUrl()}${path}`, {
+      method: options.method ?? 'GET',
+      headers: {
+        ...(options.accessToken ? { authorization: `Bearer ${options.accessToken}` } : {}),
+        ...(options.body ? { 'content-type': 'application/json' } : {}),
+      },
+      ...(options.body ? { body: JSON.stringify(options.body) } : {}),
+      cache: 'no-store',
+    });
+  } catch {
+    // Сетевой сбой — такой же результат, как ошибка API: страницы ждут
+    // ApiResult и умеют показать `error`, а исключение давало 500 вместо
+    // понятного «сервис недоступен».
+    return {
+      ok: false,
+      error: {
+        status: 503,
+        code: 'SERVICE_UNAVAILABLE',
+        message: 'Backend API недоступен. Проверьте подключение или повторите позже.',
+      },
+    };
+  }
 
   if (response.status === 204) {
     return { ok: true, data: undefined as T };
@@ -74,6 +89,8 @@ export function describeError(error: ApiFailure): string {
       return 'В этом филиале уже есть зал с таким названием';
     case 'HALL_HAS_SESSIONS':
       return 'В зале есть предстоящие занятия: сначала перенесите их в другой зал';
+    case 'SERVICE_UNAVAILABLE':
+      return 'Сервис недоступен. Проверьте подключение или повторите позже';
     default:
       return error.message;
   }

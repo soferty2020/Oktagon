@@ -138,6 +138,13 @@ export class ListSessionsQueryDto {
   @IsUUID()
   trainerId?: string;
 
+  // Фильтр по залу: админка отправляла его и раньше, но DTO не объявлял поле,
+  // а ValidationPipe с forbidNonWhitelisted: true отклонял весь запрос (#144).
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  hallId?: string;
+
   @ApiPropertyOptional({ enum: Object.values(TrainingSessionStatus) })
   @IsOptional()
   @IsEnum(TrainingSessionStatus)

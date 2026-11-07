@@ -195,6 +195,7 @@ export class TrainingSessionsController {
       to: query.to,
       groupId: query.groupId,
       trainerId: query.trainerId,
+      hallId: query.hallId,
       status: query.status,
     });
   }
