@@ -19,8 +19,6 @@ import 'support/fake_api_client.dart';
 /// нажатие на занятие — детали, разделы «Ещё» фильтруются по правам.
 void main() {
   final now = DateTime.now();
-  String day(DateTime date) =>
-      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
   FakeApiClient buildClient() {
     final client = FakeApiClient();
