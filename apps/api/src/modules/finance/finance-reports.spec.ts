@@ -18,6 +18,8 @@ import { FinanceService } from './finance.service';
 describe('FinanceService: отчёты', () => {
   let repository: jest.Mocked<FinanceRepository>;
   let service: FinanceService;
+  // Зона доступа настраивается в отдельных тестах: по умолчанию без ограничений.
+  let scope: { visibleAthleteIds: jest.Mock; assertAthleteAccess: jest.Mock };
 
   const period = {
     id: 'period-1',
@@ -65,7 +67,7 @@ describe('FinanceService: отчёты', () => {
     } as unknown as jest.Mocked<FinanceRepository>;
 
     const freezes = { listFrozenAthleteIds: jest.fn().mockResolvedValue([]) };
-    const scope = {
+    scope = {
     assertAthleteAccess: jest.fn().mockResolvedValue({ allowed: true }),
     // Отчёты проверяются без ограничения зоны доступа.
     visibleAthleteIds: jest.fn().mockResolvedValue(null),
@@ -96,6 +98,35 @@ describe('FinanceService: отчёты', () => {
         received: 40000,
         revenue: 40000,
       });
+    });
+
+    it('не учитывает движения спортсменов вне зоны доступа', async () => {
+      // STAFF с payments.view видит только athlete-1; платежи athlete-2
+      // не должны попадать в агрегаты (BR: финансовые данные по scope).
+      scope.visibleAthleteIds.mockResolvedValue(['athlete-1']);
+      repository.listMovementsInRange.mockResolvedValue([
+        { athleteId: 'athlete-1', kind: 'PAYMENT', amount: 40000, hallId: null },
+        { athleteId: 'athlete-2', kind: 'PAYMENT', amount: 999000, hallId: null },
+      ] as never);
+
+      const dynamics = await service.dynamics('staff-1', 2026, 10, 1);
+
+      expect(dynamics.points[0].received).toBe(40000);
+      expect(dynamics.points[0].revenue).toBe(40000);
+    });
+
+    it('с полной зоной доступа учитывает все движения', async () => {
+      scope.visibleAthleteIds.mockResolvedValue(null);
+      repository.listMovementsInRange.mockResolvedValue([
+        { athleteId: 'athlete-1', kind: 'PAYMENT', amount: 40000, hallId: null },
+        { athleteId: 'athlete-2', kind: 'REFUND', amount: 1000, hallId: null },
+      ] as never);
+
+      const dynamics = await service.dynamics('admin-1', 2026, 10, 1);
+
+      expect(dynamics.points[0].received).toBe(40000);
+      expect(dynamics.points[0].refunded).toBe(1000);
+      expect(dynamics.points[0].revenue).toBe(39000);
     });
 
     it('ограничивает период 12 месяцами', async () => {

@@ -87,6 +87,11 @@ export async function refreshAccessToken(): Promise<string | null> {
   }
 
   if (!response.ok) {
+    // Токены трогаем только при подтверждённом отказе: 5xx — это сбой сервера,
+    // и стирать сессию из-за него значило бы разлогинивать на ровном месте.
+    if (response.status >= 500) {
+      return null;
+    }
     // Refresh-токен истек или отозван: продлевать нечего, сессия завершена.
     await clearTokens();
     return null;
@@ -156,17 +161,28 @@ export async function fetchCurrentUser(accessToken: string): Promise<CurrentUser
  * каждые 15 минут недопустимо.
  */
 export async function getCurrentUser(): Promise<CurrentUser | null> {
-  const { accessToken } = await readTokens();
-  if (!accessToken) {
+  const { accessToken, refreshToken } = await readTokens();
+
+  if (!accessToken && !refreshToken) {
     return null;
   }
 
-  const user = await fetchCurrentUser(accessToken);
-  if (user) {
-    return user;
+  if (accessToken) {
+    const user = await fetchCurrentUser(accessToken);
+    if (user) {
+      return user;
+    }
   }
 
-  const renewed = await refreshAccessToken();
+  // Access истёк: продлеваем. В Server Component запись cookie запрещена, и
+  // `saveTokens` может бросить — тогда просто не подтверждаем сессию, но не
+  // роняем страницу 500. Обычно access уже продлён middleware или прокси.
+  let renewed: string | null = null;
+  try {
+    renewed = await refreshAccessToken();
+  } catch {
+    return null;
+  }
   if (!renewed) {
     return null;
   }

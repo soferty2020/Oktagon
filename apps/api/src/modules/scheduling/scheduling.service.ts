@@ -602,6 +602,7 @@ export class SchedulingService {
       to,
       groupId: query.groupId,
       trainerId: query.trainerId,
+      hallId: query.hallId,
       status: query.status as PrismaSessionStatus | undefined,
       visibleGroupIds,
     });

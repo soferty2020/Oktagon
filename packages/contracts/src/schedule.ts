@@ -178,6 +178,8 @@ export interface ListSessionsQuery {
   to?: string;
   groupId?: string;
   trainerId?: string;
+  /** Зал: фильтр расписания по конкретному залу. */
+  hallId?: string;
   status?: TrainingSessionStatus;
 }
 

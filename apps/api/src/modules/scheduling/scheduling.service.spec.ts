@@ -789,5 +789,13 @@ describe('SchedulingService', () => {
         expect.objectContaining({ visibleGroupIds: ['group-1'] }),
       );
     });
+
+    it('передаёт фильтр по залу в репозиторий', async () => {
+      await service.listSessions('coach-1', { hallId: 'hall-1' });
+
+      expect(repository.listSessions).toHaveBeenCalledWith(
+        expect.objectContaining({ hallId: 'hall-1' }),
+      );
+    });
   });
 });
