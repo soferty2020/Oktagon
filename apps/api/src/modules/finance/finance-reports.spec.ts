@@ -47,6 +47,7 @@ describe('FinanceService: отчёты', () => {
         .fn()
         .mockResolvedValue([{ athleteId: 'athlete-1', joinedAt: new Date('2026-09-01'), leftAt: null }]),
       hasGroupTrainingInMonth: jest.fn().mockResolvedValue(true),
+      athleteIdsWithGroupTrainingInMonth: jest.fn().mockResolvedValue(['athlete-1']),
       listPeriodsForMonth: jest.fn().mockResolvedValue([period]),
       listMovementsInRange: jest
         .fn()

@@ -43,6 +43,7 @@ describe('FinanceService: статус оплаты участника', () => {
         .mockResolvedValue([{ athleteId: 'athlete-1', joinedAt: new Date('2026-09-01'), leftAt: null }]),
       listFrozenAthleteIds: jest.fn().mockResolvedValue([]),
       hasGroupTrainingInMonth: jest.fn().mockResolvedValue(true),
+      athleteIdsWithGroupTrainingInMonth: jest.fn().mockResolvedValue(['athlete-1']),
     } as unknown as jest.Mocked<FinanceRepository>;
 
     const freezes = { listFrozenAthleteIds: jest.fn().mockResolvedValue([]) };

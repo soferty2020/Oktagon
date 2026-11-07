@@ -120,6 +120,7 @@ export default async function AthletesPage({
         }}
         sortBy={sortBy}
         sortOrder={sortOrder}
+        canEdit={user?.permissions.includes('athletes.edit') ?? false}
       />
     </AppShell>
   );

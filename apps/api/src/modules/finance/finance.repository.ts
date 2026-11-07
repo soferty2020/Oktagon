@@ -172,6 +172,9 @@ export abstract class FinanceRepository {
   /** Есть ли занятия группы спортсмена в месяце (BR-004, условие 3). */
   abstract hasGroupTrainingInMonth(athleteId: string, from: Date, to: Date): Promise<boolean>;
 
+  /** Спортсмены с занятиями в диапазоне: пакетная замена проверки в цикле. */
+  abstract athleteIdsWithGroupTrainingInMonth(from: Date, to: Date): Promise<string[]>;
+
   // --- Сводка (F8) ----------------------------------------------------------
 
   /**
@@ -535,6 +538,36 @@ export class PrismaFinanceRepository extends FinanceRepository {
     });
 
     return session !== null;
+  }
+
+/**
+   * Спортсмены, у групп которых были занятия в диапазоне.
+   *
+   * Пакетная замена `hasGroupTrainingInMonth` в цикле: один запрос на месяц
+   * вместо запроса на каждого спортсмена.
+   */
+  async athleteIdsWithGroupTrainingInMonth(from: Date, to: Date): Promise<string[]> {
+    const sessions = await this.prisma.db.trainingSession.findMany({
+      where: {
+        startsAt: { gte: from, lt: to },
+        status: { not: TrainingSessionStatus.CANCELLED },
+      },
+      select: {
+        group: {
+          select: {
+            memberships: { select: { athleteId: true } },
+          },
+        },
+      },
+    });
+
+    const ids = new Set<string>();
+    for (const session of sessions) {
+      for (const membership of session.group?.memberships ?? []) {
+        ids.add(membership.athleteId);
+      }
+    }
+    return [...ids];
   }
 
   async listMovementsInRange(
