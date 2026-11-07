@@ -109,6 +109,7 @@ describe('FinanceService', () => {
           { athleteId: 'athlete-1', joinedAt: new Date('2026-09-01'), leftAt: null },
         ]),
       hasGroupTrainingInMonth: jest.fn().mockResolvedValue(true),
+      athleteIdsWithGroupTrainingInMonth: jest.fn().mockResolvedValue(['athlete-1']),
       listMovementsInRange: jest.fn().mockResolvedValue([]),
       hallsForAthletes: jest.fn().mockResolvedValue(new Map()),
       listHalls: jest.fn().mockResolvedValue([]),
@@ -564,7 +565,7 @@ describe('FinanceService', () => {
     });
 
     it('без тренировок в месяце задолженности нет', async () => {
-      repository.hasGroupTrainingInMonth.mockResolvedValue(false);
+      repository.athleteIdsWithGroupTrainingInMonth.mockResolvedValue([]);
 
       const debtors = await service.listDebtors('admin-1', 2026, 10);
 

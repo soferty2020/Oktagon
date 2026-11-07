@@ -598,15 +598,18 @@ export class FinanceService {
     const from = new Date(Date.UTC(year, month - 1, 1));
     const to = new Date(Date.UTC(year, month, 1));
 
-    const [athletes, memberships, frozenIds, existingPeriods] = await Promise.all([
+    const [athletes, memberships, frozenIds, existingPeriods, withTrainings] = await Promise.all([
       this.finance.listActiveAthletes(),
       this.finance.athleteIdsWithMembershipInMonth(from, to),
       this.freezes.listFrozenAthleteIds(from),
       this.finance.listPeriodsForMonth(year, month),
+      // Один запрос на месяц вместо запроса на каждого спортсмена (#144).
+      this.finance.athleteIdsWithGroupTrainingInMonth(from, to),
     ]);
 
     const memberIds = new Set(memberships.map((membership) => membership.athleteId));
     const frozen = new Set(frozenIds);
+    const trainedIds = new Set(withTrainings);
     const periodByAthlete = new Map(existingPeriods.map((period) => [period.athleteId, period]));
 
     const facts: Array<DebtFacts & { refundedAmount: number }> = [];
@@ -631,7 +634,7 @@ export class FinanceService {
         lastName: athlete.lastName,
         fullyPaidMarked: Boolean(period?.fullyPaidMarkedAt),
         frozen: frozen.has(athlete.athleteId),
-        hasTrainings: await this.finance.hasGroupTrainingInMonth(athlete.athleteId, from, to),
+        hasTrainings: trainedIds.has(athlete.athleteId),
         // Ожидаемая сумма не задана — `null`, а не ноль: правило трактует это
         // отдельным случаем (ADR-0014).
         expectedAmount: period?.expectedAmount == null ? null : Number(period.expectedAmount),
