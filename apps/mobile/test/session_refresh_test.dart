@@ -66,17 +66,9 @@ void main() {
   });
 
   test('без токена 401 не продлевает: продлевать нечего', () async {
-    final inner = _ScriptedClient(rejectToken: '__none__');
-    // Запрос без токена: сервер отвечает 401 и на публичном маршруте.
+    // Запрос без токена: сервер отвечает 401, продлевать нечего.
     final anonymous = _AnonymousClient();
     var refreshes = 0;
-    final client = RefreshingApiClient(
-      inner: inner,
-      onRefresh: () async {
-        refreshes++;
-        return 'fresh';
-      },
-    );
 
     final publicClient = RefreshingApiClient(
       inner: anonymous,
