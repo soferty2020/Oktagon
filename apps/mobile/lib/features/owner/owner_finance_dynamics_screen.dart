@@ -123,6 +123,20 @@ class _OwnerFinanceDynamicsScreenState extends State<OwnerFinanceDynamicsScreen>
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
+        if (widget.focus == FinanceFocus.expected)
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.accentSoft,
+              borderRadius: BorderRadius.circular(AppRadius.card),
+            ),
+            child: const Text(
+              'Отдельной разбивки ожидаемых начислений API не отдаёт. '
+              'Ниже — фактические поступления по месяцам.',
+              style: TextStyle(fontSize: 12),
+            ),
+          ),
         for (final point in _points)
           _MonthRow(
             label: '${_months[((point['month'] as num?)?.toInt() ?? 1) - 1]} '
@@ -147,6 +161,8 @@ class _OwnerFinanceDynamicsScreenState extends State<OwnerFinanceDynamicsScreen>
 
   String _value(Map<String, dynamic> point) => switch (widget.focus) {
         FinanceFocus.received => _money(point['received']),
+        // API не отдаёт ожидаемые начисления по месяцам: показываем только
+        // фактические поступления и говорим об этом прямо.
         FinanceFocus.expected => _money(point['received']),
         FinanceFocus.debt => _money(point['debt']),
       };

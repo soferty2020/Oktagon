@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'app.dart';
 import 'core/api_client.dart';
+import 'core/refreshing_api_client.dart';
 import 'core/api_config.dart';
 import 'core/token_storage.dart';
 import 'features/athletes/athlete_repository.dart';
@@ -41,16 +42,23 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
   final config = ApiConfig.fromEnvironment();
-  final client = HttpApiClient(config: config);
+  final httpClient = HttpApiClient(config: config);
 
   // Обложки новостей (#70) лежат вне /api/v1: базой служит тот же хост без префикса.
   final mediaBase = config.baseUrl.replaceAll('/api/v1', '');
 
   final authController = AuthController(
     repository: AuthRepository(
-      client: client,
+      client: httpClient,
       storage: SecureTokenStorage(),
     ),
+  );
+
+  // Продление сессии: без него через 15 минут все экраны получали 401 и
+  // показывали «не удалось загрузить» до перезапуска приложения.
+  final client = RefreshingApiClient(
+    inner: httpClient,
+    onRefresh: authController.refreshSession,
   );
 
   // Посещаемость нужна и главной (сводка), и истории с предупреждением об

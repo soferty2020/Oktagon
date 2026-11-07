@@ -59,6 +59,27 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Продлевает access-токен. Возвращает новый токен или `null`, если
+  /// refresh-токен больше не действует — тогда сессия сбрасывается и
+  /// приложение показывает экран входа вместо пустых экранов.
+  Future<String?> refreshSession() async {
+    final current = _session;
+    if (current == null) {
+      return null;
+    }
+    final refreshed = await _repository.refresh(current.refreshToken);
+    if (refreshed == null) {
+      _session = null;
+      _status = AuthStatus.unauthenticated;
+      notifyListeners();
+      return null;
+    }
+    _session = refreshed;
+    _status = AuthStatus.authenticated;
+    notifyListeners();
+    return refreshed.accessToken;
+  }
+
   /// Вход по email и паролю.
   Future<bool> login({required String email, required String password}) async {
     _busy = true;
