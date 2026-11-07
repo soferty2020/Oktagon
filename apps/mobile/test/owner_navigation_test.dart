@@ -146,12 +146,14 @@ void main() {
   });
 
   testWidgets('«Ещё» показывает все разделы при полных правах', (tester) async {
+    // Права из контракта `packages/contracts/src/domain.ts`: заявки — через
+    // дефис, отчёты строятся на `payments.view`, новости без отдельного права.
     final permissions = [
-      'trial_requests.view',
+      'trial-requests.view',
       'attestations.view',
       'competitions.view',
-      'finance.view',
-      'news.view',
+      'payments.view',
+      'chat.use',
     ];
     final visible = ownerSections
         .where((section) => section.isVisible(permissions))

@@ -75,6 +75,7 @@ class _OwnerFinanceScreenState extends State<OwnerFinanceScreen> {
           year: now.year,
           month: now.month,
           focus: focus,
+          expectedTotal: (_summary?['expected'] as num?)?.toInt(),
         ),
       ),
     );

@@ -52,3 +52,5 @@ packages/*/src/*.d.ts
 .dart-tmp/
 .dart-home/
 .gradle/
+# Локальное состояние Android SDK/Gradle вне репозитория
+.android-home/

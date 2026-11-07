@@ -33,7 +33,8 @@ const List<OwnerSection> ownerSections = [
     id: 'trial_requests',
     label: 'Заявки',
     icon: Icons.inbox_outlined,
-    anyOfPermissions: ['trial_requests.view', 'trial_requests.manage'],
+    // Код в контракте — через дефис: 	rial-requests.view.
+      anyOfPermissions: ['trial-requests.view', 'trial-requests.manage'],
   ),
   OwnerSection(
     id: 'attestations',
@@ -51,18 +52,22 @@ const List<OwnerSection> ownerSections = [
     id: 'reports',
     label: 'Отчёты',
     icon: Icons.bar_chart_outlined,
-    anyOfPermissions: ['finance.view', 'reports.view'],
+    // Отчёты строятся на /finance/summary с guard payments.view.
+      anyOfPermissions: ['payments.view'],
   ),
   OwnerSection(
     id: 'news',
     label: 'Новости',
     icon: Icons.newspaper_outlined,
-    anyOfPermissions: ['news.view'],
+    // Новости читаются без отдельного права: @Get() открыт авторизованным.
+      anyOfPermissions: [],
   ),
   OwnerSection(
     id: 'chats',
     label: 'Чаты',
     icon: Icons.chat_bubble_outline,
+    // Переписка доступна по праву `chat.use` — оно есть в контракте.
+    anyOfPermissions: ['chat.use'],
   ),
   OwnerSection(
     id: 'profile',

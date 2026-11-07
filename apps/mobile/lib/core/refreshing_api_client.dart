@@ -47,8 +47,16 @@ class RefreshingApiClient implements ApiClient {
       if (error.statusCode != 401 || token == null) {
         rethrow;
       }
-      final fresh = await _refresh();
+      String? fresh;
+      try {
+        fresh = await _refresh();
+      } catch (_) {
+        // Продление сорвалось по сети или 5xx: сессия остаётся живой,
+        // наружу уходит исходная 401 — следующий запрос попробует снова.
+        throw error;
+      }
       if (fresh == null || fresh == token) {
+        // Сервер подтвердил, что сессии нет: вызывающий код покажет вход.
         rethrow;
       }
       return call(fresh);
