@@ -73,9 +73,13 @@ const WEEKDAY_ORDER = [
  */
 export default async function ScheduleTemplatePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
+  // Ошибка удаления приходит из экшена: раньше она терялась за редиректом (#159).
+  const { error: actionError } = await searchParams;
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login');
@@ -98,6 +102,12 @@ export default async function ScheduleTemplatePage({
     return (
       <AppShell user={user}>
         <PageHeader title="Расписание" />
+      {actionError ? (
+        <div className="mb-4">
+          <Notice tone="error">{actionError}</Notice>
+        </div>
+      ) : null}
+
         <Notice tone="error">{describeError(template.error)}</Notice>
       </AppShell>
     );
@@ -114,6 +124,13 @@ export default async function ScheduleTemplatePage({
 
   const data = template.data;
   const isPublished = data.publishedAt !== null;
+// Сколько занятий реально создано из шаблона: «опубликовано» ≠ «занятия есть».
+  // Владелец видел опубликованное расписание и пустой календарь у родителя (#159).
+  const sessionsResult = await apiFetch<{ id: string }[]>(
+    `/training-sessions?groupId=${data.groupId}&from=${data.validFrom}&to=${data.validTo}`,
+    { accessToken },
+  );
+  const createdSessions = sessionsResult.ok ? sessionsResult.data.length : null;
   const sortedSlots = [...data.slots].sort(
     (a, b) =>
       WEEKDAY_ORDER.indexOf(a.weekday) - WEEKDAY_ORDER.indexOf(b.weekday) ||
@@ -223,6 +240,21 @@ export default async function ScheduleTemplatePage({
           <p className="mt-1 text-xs text-muted">
             Занятия создаются только на будущие даты. Повторный запуск дублей не создаст.
           </p>
+
+          {/* «Опубликовано» и «занятия есть» — разные вещи (#159). */}
+          <p className="mt-2 text-xs">
+            {createdSessions === null ? (
+              <span className="text-red-600">Не удалось проверить созданные занятия.</span>
+            ) : createdSessions === 0 ? (
+              <span className="font-medium text-amber-700">
+                Занятий ещё нет: расписание опубликовано, но на квартал ничего не создано.
+                Запустите «Создать занятия из расписания».
+              </span>
+            ) : (
+              <span className="text-muted">Создано занятий в квартале: {createdSessions}.</span>
+            )}
+          </p>
+
 
           <div className="mt-4 flex flex-col gap-4">
             {!isPublished ? (

@@ -185,8 +185,9 @@ export class SchedulingService {
     // и запрет заставлял бы редактировать каждый слот вручную. История не
     // теряется: прошедшие занятия остаются, будущие из этого шаблона снимаются,
     // у занятий обнуляется ссылка на шаблон (BR-009).
-    const removed = await this.schedule.deleteFutureSessions(templateId, new Date());
-    await this.schedule.deleteTemplate(templateId);
+    // Транзакция: иначе при сбое удаления шаблона занятия уже сняты, а
+    // шаблон жив — новый квартал не создать, календарь пуст (#159).
+    const removed = await this.schedule.deleteTemplateWithFutureSessions(templateId, new Date());
 
     await this.audit.recordSafely({
       action: AuditAction.SCHEDULE_TEMPLATE_ARCHIVED,
