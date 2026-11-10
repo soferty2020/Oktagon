@@ -133,7 +133,7 @@ class _MemberHomeContentState extends State<MemberHomeContent> {
               ),
               const SizedBox(height: AppSpacing.lg),
 
-              _AthleteSwitcher(
+              AthleteSwitcher(
                 athletes: controller.athletes,
                 selected: controller.selected,
                 onSelect: controller.select,
@@ -269,7 +269,11 @@ class _BeltLine extends StatelessWidget {
 ///
 /// Показывается только если спортсменов больше одного: при одном выборе
 /// переключатель занимал бы место зря.
-class _AthleteSwitcher extends StatelessWidget {  const _AthleteSwitcher({
+/// Переключатель детей. При одном ребёнке показывает его имя: иначе на
+/// главной непонятно, чья ступень отображается (#154).
+class AthleteSwitcher extends StatelessWidget {
+  const AthleteSwitcher({
+    super.key,
     required this.athletes,
     required this.selected,
     required this.onSelect,
@@ -281,8 +285,23 @@ class _AthleteSwitcher extends StatelessWidget {  const _AthleteSwitcher({
 
   @override
   Widget build(BuildContext context) {
+    // Один ребёнок: переключатель не нужен, но имя показать обязательно.
+    // Раньше здесь был `SizedBox.shrink()`, и на главной оставались только
+    // «Привет, Олег!» и ступень — чьи это данные, понять было нельзя (#154).
     if (athletes.length == 1) {
-      return const SizedBox.shrink();
+      final only = selected ?? athletes.first;
+      return Row(
+        children: [
+          const Icon(Icons.child_care_outlined, size: 18, color: AppColors.textSecondary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              only.displayName,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+            ),
+          ),
+        ],
+      );
     }
 
     return Wrap(
