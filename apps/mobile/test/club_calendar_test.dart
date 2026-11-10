@@ -16,22 +16,23 @@ void main() {
   group('интервалы', () {
     test('день — от начала суток до начала следующих', () {
       final range = ClubClock.dayRange(DateTime(2026, 11, 7));
-      expect(range.from, '2026-11-07T00:00:00+05:00');
-      expect(range.to, '2026-11-08T00:00:00+05:00');
+      // Начало суток клуба в UTC: 00:00+05:00 = 19:00Z предыдущего дня.
+      expect(range.from, '2026-11-06T19:00:00.000Z');
+      expect(range.to, '2026-11-07T19:00:00.000Z');
       expect(range.from, isNot(range.to));
     });
 
     test('неделя — от понедельника до следующего понедельника', () {
       // 7 ноября 2026 — суббота.
       final range = ClubClock.weekRange(DateTime(2026, 11, 7));
-      expect(range.from, '2026-11-02T00:00:00+05:00');
-      expect(range.to, '2026-11-09T00:00:00+05:00');
+      expect(range.from, '2026-11-01T19:00:00.000Z');
+      expect(range.to, '2026-11-08T19:00:00.000Z');
     });
 
     test('месяц — от первого числа до первого числа следующего', () {
       final range = ClubClock.monthRange(DateTime(2026, 11, 7));
-      expect(range.from, '2026-11-01T00:00:00+05:00');
-      expect(range.to, '2026-12-01T00:00:00+05:00');
+      expect(range.from, '2026-10-31T19:00:00.000Z');
+      expect(range.to, '2026-11-30T19:00:00.000Z');
     });
 
     test('последний день месяца не исключается', () {
@@ -50,6 +51,21 @@ void main() {
       expect(sunday.isBefore(DateTime.parse(range.to).toUtc()), isTrue);
     });
 
+test('границы не содержат «+»: в query он становится пробелом', () {
+      // Регресс: со смещением `+05:00` сервер отвечал VALIDATION_FAILED,
+      // потому что `+` в query-строке декодируется как пробел.
+      for (final range in [
+        ClubClock.dayRange(DateTime(2026, 11, 7)),
+        ClubClock.weekRange(DateTime(2026, 11, 7)),
+        ClubClock.monthRange(DateTime(2026, 11, 7)),
+      ]) {
+        expect(range.from.contains('+'), isFalse);
+        expect(range.to.contains('+'), isFalse);
+        expect(range.from.endsWith('Z'), isTrue);
+        expect(range.to.endsWith('Z'), isTrue);
+      }
+    });
+
     test('переход через полночь: 23:59 входит в свой день, 00:01 — в следующий', () {
       final day7 = ClubClock.dayRange(DateTime(2026, 11, 7));
       final late = DateTime.parse('2026-11-07T23:59:00+05:00').toUtc();
@@ -62,12 +78,12 @@ void main() {
 
     test('конец года: 31 декабря и 1 января', () {
       final december = ClubClock.monthRange(DateTime(2026, 12, 31));
-      expect(december.from, '2026-12-01T00:00:00+05:00');
-      expect(december.to, '2027-01-01T00:00:00+05:00');
+      expect(december.from, '2026-11-30T19:00:00.000Z');
+      expect(december.to, '2026-12-31T19:00:00.000Z');
 
       final january = ClubClock.dayRange(DateTime(2027, 1, 1));
-      expect(january.from, '2027-01-01T00:00:00+05:00');
-      expect(january.to, '2027-01-02T00:00:00+05:00');
+      expect(january.from, '2026-12-31T19:00:00.000Z');
+      expect(january.to, '2027-01-01T19:00:00.000Z');
     });
 
     test('7 ноября внутри месяца и внутри своей недели', () {

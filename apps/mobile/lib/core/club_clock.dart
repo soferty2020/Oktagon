@@ -107,17 +107,16 @@ class ClubClock {
         '${local.month.toString().padLeft(2, '0')}.${local.year}';
   }
 
-  /// ISO-8601 с явным смещением клуба: `2026-11-07T00:00:00+05:00`.
+  /// Начало суток клуба в ISO-8601 UTC: `2026-11-06T19:00:00.000Z`.
   ///
-  /// Смещение пишется явно, чтобы сервер не зависел от часового пояса
-  /// процесса и не трактовал границу как UTC.
+  /// Возвращается UTC, а не смещение `+05:00`: в query-строке знак `+`
+  /// декодируется как пробел, и сервер отвечал `VALIDATION_FAILED`, если
+  /// значение не закодировано. UTC-форма не требует кодирования и означает
+  /// тот же момент времени.
   static String isoAtClubMidnight(DateTime clubDate) {
-    final y = clubDate.year.toString().padLeft(4, '0');
-    final m = clubDate.month.toString().padLeft(2, '0');
-    final d = clubDate.day.toString().padLeft(2, '0');
-    final sign = _offsetHours >= 0 ? '+' : '-';
-    final abs = _offsetHours.abs().toString().padLeft(2, '0');
-    return '$y-$m-${d}T00:00:00$sign$abs:00';
+    final local = DateTime.utc(clubDate.year, clubDate.month, clubDate.day);
+    // Полночь клуба в UTC: для Алматы 00:00 превращается в 19:00 предыдущего дня.
+    return local.subtract(Duration(hours: _offsetHours)).toIso8601String();
   }
 
   /// Интервал одного дня: `[00:00 даты, 00:00 следующего дня)`.
