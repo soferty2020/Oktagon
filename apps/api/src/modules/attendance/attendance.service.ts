@@ -227,6 +227,12 @@ export class AttendanceService {
   ): Promise<AthleteAttendanceSummary[]> {
     await this.scope.assertGroupAccess(callerUserId, groupId);
 
+    // Родителю доступна группа ребёнка, но не сводка по всей группе:
+    // без этого фильтра ответ содержал имена, отметки и количество занятий
+    // чужих детей (#153). `null` — полный доступ (STAFF/SUPERADMIN).
+    const visible = await this.scope.visibleAthleteIds(callerUserId);
+    const visibleSet = visible === null ? null : new Set(visible);
+
     const sessionIds = await this.attendance.listSessionIds(groupId, from, to);
     if (sessionIds.length === 0) {
       return [];
@@ -269,6 +275,10 @@ export class AttendanceService {
 
       const roster = await this.groups.listRosterAsOf(groupId, session.startsAt);
       for (const member of roster) {
+        // Чужие спортсмены не должны попадать в ответ даже строкой.
+        if (visibleSet !== null && !visibleSet.has(member.athleteId)) {
+          continue;
+        }
         const summary = ensure(member.athleteId);
         summary.total += 1;
 
