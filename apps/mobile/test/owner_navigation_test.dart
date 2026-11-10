@@ -17,6 +17,9 @@ import 'support/fake_api_client.dart';
 
 /// Тесты переходов, а не отрисовки: нажатие на спортсмена открывает карточку,
 /// нажатие на занятие — детали, разделы «Ещё» фильтруются по правам.
+/// Дата в UTC: занятия в моках задаются временем клуба (13:00Z = 18:00 Алматы).
+String utcDay(DateTime date) => date.toUtc().toIso8601String().substring(0, 10);
+
 void main() {
   final now = DateTime.now();
 
@@ -54,8 +57,9 @@ void main() {
           'groupName': 'Дети 5-7 лет',
           'hallName': 'Заречная 4',
           'trainerName': 'Третьяков Алексей',
-          'startsAt': '2026-11-03T13:00:00.000Z',
-          'endsAt': '2026-11-03T14:30:00.000Z',
+          // 13:00Z = 18:00 по Алматы — время клуба, а не устройства.
+          'startsAt': '${utcDay(now)}T13:00:00.000Z',
+          'endsAt': '${utcDay(now)}T14:30:00.000Z',
           'status': 'SCHEDULED',
         },
       ],
