@@ -297,6 +297,45 @@ describe('AttendanceService', () => {
       expect(summary[0]).toMatchObject({ total: 2, present: 1, unmarked: 1 });
     });
 
+it('MEMBER видит только связанных спортсменов, а не всю группу', async () => {
+      // Группа из двух: своя и чужая. Родителю доступна группа ребёнка,
+      // но сводка по чужим детям уходить не должна (#153).
+      groups.listRosterAsOf.mockResolvedValue([
+        { athleteId: 'athlete-1', joinedAt: new Date('2026-09-01'), leftAt: null },
+        { athleteId: 'athlete-2', joinedAt: new Date('2026-09-01'), leftAt: null },
+      ]);
+      scope.visibleAthleteIds.mockResolvedValue(['athlete-1']);
+
+      const summary = await service.summary(
+        'parent-1',
+        'group-1',
+        new Date('2026-10-01T00:00:00.000Z'),
+        new Date('2026-11-01T00:00:00.000Z'),
+      );
+
+      expect(summary).toHaveLength(1);
+      expect(summary[0].athleteId).toBe('athlete-1');
+      expect(summary.map((row) => row.athleteId)).not.toContain('athlete-2');
+    });
+
+    it('STAFF без ограничения зоны видит всю группу', async () => {
+      groups.listRosterAsOf.mockResolvedValue([
+        { athleteId: 'athlete-1', joinedAt: new Date('2026-09-01'), leftAt: null },
+        { athleteId: 'athlete-2', joinedAt: new Date('2026-09-01'), leftAt: null },
+      ]);
+      scope.visibleAthleteIds.mockResolvedValue(null);
+
+      const summary = await service.summary(
+        'coach-1',
+        'group-1',
+        new Date('2026-10-01T00:00:00.000Z'),
+        new Date('2026-11-01T00:00:00.000Z'),
+      );
+
+      expect(summary).toHaveLength(2);
+      expect(summary.map((row) => row.athleteId)).toEqual(['athlete-1', 'athlete-2']);
+    });
+
     it('возвращает пустую сводку, если занятий не было', async () => {
       repository.listSessionIds.mockResolvedValue([]);
 
