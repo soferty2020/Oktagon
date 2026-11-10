@@ -97,7 +97,18 @@ class _ChatScreenState extends State<ChatScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : _buildMessages(context),
           ),
-          bottomNavigationBar: _buildComposer(context),
+          // Composer живёт вне `body: SafeArea`, поэтому системную навигацию
+          // учитывает сам: без этого поле ввода и кнопка уходили под
+          // трёхкнопочную панель Android (#161). `top: false` — верхняя
+          // панель уже учтена AppBar'ом.
+          //
+          // При открытой клавиатуре `MediaQuery.padding.bottom` равен нулю,
+          // а `viewInsets.bottom` обрабатывает Scaffold (resizeToAvoidBottomInset),
+          // поэтому двойного отступа не возникает.
+          bottomNavigationBar: SafeArea(
+            top: false,
+            child: _buildComposer(context),
+          ),
         );
       },
     );
