@@ -143,6 +143,7 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
     .filter((athlete) => athlete.status === 'ACTIVE')
     .map((athlete) => ({ id: athlete.id, label: `${athlete.lastName} ${athlete.firstName}` }));
 
+  const isSuperadmin = user.role === 'SUPERADMIN';
   const canManage = user.permissions.includes('competitions.manage');
   const canResults = user.permissions.includes('competitions.results');
   const canPublish = user.permissions.includes('competitions.publish');
@@ -212,6 +213,30 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
             variant="secondary"
           />
         ) : null}
+
+        {/* Постоянный вход в справочник: раньше ссылка жила только внутри
+            предупреждения «категорий нет» и исчезала после планирования (#157). */}
+        <Link
+          className={`${secondaryButtonClass} sm:ml-auto`}
+          href="/competitions/categories"
+        >
+          <svg
+            aria-hidden="true"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15.5H6.5A2.5 2.5 0 0 0 4 21V5.5Z" />
+            <path d="M19 18.5H6.5A2.5 2.5 0 0 0 4 21" />
+            <path d="M8 7.5h7M8 11h5" />
+          </svg>
+          Справочник категорий
+        </Link>
       </div>
 
       {competition.description ? (
@@ -302,6 +327,7 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
                   <div className="space-y-4 border-t border-neutral-100 pt-3">
                     <AddEntryForm
                       athleteId={participant.athlete.id}
+                      canManageCategories={isSuperadmin}
                       categories={categories}
                       competitionId={id}
                     />
