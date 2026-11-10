@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useActionState } from 'react';
 
 import { fieldClass, labelClass, primaryButtonClass, secondaryButtonClass } from '@/components/ui';
@@ -153,10 +154,13 @@ export function AddEntryForm({
   competitionId,
   athleteId,
   categories,
+  canManageCategories = false,
 }: {
   competitionId: string;
   athleteId: string;
   categories: { id: string; name: string; discipline: string }[];
+  /** Только SUPERADMIN правит справочник: остальным не обещаем управление. */
+  canManageCategories?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(
     addEntryAction.bind(null, competitionId, athleteId),
@@ -195,6 +199,14 @@ export function AddEntryForm({
         {state.fieldErrors?.categoryId ? (
           <p className="mt-1 text-sm text-red-600">{state.fieldErrors.categoryId}</p>
         ) : null}
+        {/* Постоянный вход в справочник рядом с полем (#157): раньше ссылка
+            была только в предупреждении и пропадала вместе с ним. */}
+        <Link
+          className="mt-1 inline-block text-xs text-neutral-600 underline underline-offset-2 hover:text-neutral-900"
+          href="/competitions/categories"
+        >
+          {canManageCategories ? 'Управлять категориями' : 'Справочник категорий'}
+        </Link>
       </div>
 
       <button className={secondaryButtonClass} type="submit" disabled={pending}>

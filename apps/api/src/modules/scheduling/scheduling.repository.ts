@@ -121,6 +121,15 @@ export abstract class SchedulingRepository {
   abstract publishTemplate(id: string, publishedAt: Date): Promise<ScheduleTemplateRecord>;
   abstract deleteTemplate(id: string): Promise<void>;
 
+  /**
+   * Удаляет будущие занятия шаблона и сам шаблон одной транзакцией.
+   *
+   * Раздельные вызовы оставляли расписание без занятий, но с живым
+   * шаблоном: создать новый квартал уже нельзя (SCHEDULE_TEMPLATE_EXISTS),
+   * а занятий в календаре нет (#159).
+   */
+  abstract deleteTemplateWithFutureSessions(templateId: string, now: Date): Promise<number>;
+
   abstract addSlot(input: AddSlotInput): Promise<ScheduleSlotRecord>;
   abstract findSlot(id: string): Promise<ScheduleSlotRecord | null>;
   /**
@@ -318,6 +327,18 @@ export class PrismaSchedulingRepository extends SchedulingRepository {
     });
 
     return this.toTemplateRecord(template);
+  }
+
+async deleteTemplateWithFutureSessions(templateId: string, now: Date): Promise<number> {
+    // Одна транзакция: либо уходят и занятия, и шаблон, либо ничего.
+    const [removed] = await this.prisma.db.$transaction([
+      // Порядок важен: сначала занятия, иначе FK на шаблон не даст удалить.
+      this.prisma.db.trainingSession.deleteMany({
+        where: { scheduleTemplateId: templateId, startsAt: { gt: now } },
+      }),
+      this.prisma.db.scheduleTemplate.delete({ where: { id: templateId } }),
+    ]);
+    return (removed as { count: number }).count;
   }
 
   async deleteTemplate(id: string): Promise<void> {

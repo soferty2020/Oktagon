@@ -73,6 +73,7 @@ describe('SchedulingService', () => {
       createTemplate: jest.fn().mockResolvedValue(template),
       publishTemplate: jest.fn().mockResolvedValue(publishedTemplate),
       deleteTemplate: jest.fn().mockResolvedValue(undefined),
+    deleteTemplateWithFutureSessions: jest.fn().mockResolvedValue(0),
       addSlot: jest.fn().mockResolvedValue(slot),
       findSlot: jest.fn().mockResolvedValue(slot),
       findTemplateBySlot: jest
@@ -183,13 +184,16 @@ describe('SchedulingService', () => {
 
     it('удаляет опубликованный шаблон, снимая будущие занятия', async () => {
       repository.findTemplate.mockResolvedValue(publishedTemplate);
-      repository.deleteFutureSessions.mockResolvedValue(3);
+      repository.deleteTemplateWithFutureSessions.mockResolvedValue(3);
 
       await service.deleteTemplate('admin-1', 'template-1');
 
-      // Прошедшие занятия остаются историей, будущие из шаблона снимаются (#76).
-      expect(repository.deleteFutureSessions).toHaveBeenCalledWith('template-1', expect.any(Date));
-      expect(repository.deleteTemplate).toHaveBeenCalledWith('template-1');
+      // Прошедшие занятия остаются историей, будущие снимаются вместе
+      // с шаблоном в одной транзакции (#76, #159).
+      expect(repository.deleteTemplateWithFutureSessions).toHaveBeenCalledWith(
+        'template-1',
+        expect.any(Date),
+      );
     });
   });
 
@@ -788,6 +792,21 @@ describe('SchedulingService', () => {
       expect(repository.listSessions).toHaveBeenCalledWith(
         expect.objectContaining({ visibleGroupIds: ['group-1'] }),
       );
+    });
+
+it('удаляет шаблон и будущие занятия одной транзакцией', async () => {
+      // Раздельные вызовы оставляли живой шаблон без занятий: новый квартал
+      // не создать, календарь пуст (#159).
+      repository.deleteTemplateWithFutureSessions.mockResolvedValue(3);
+
+      await service.deleteTemplate('admin-1', 'template-1');
+
+      expect(repository.deleteTemplateWithFutureSessions).toHaveBeenCalledWith(
+        'template-1',
+        expect.any(Date),
+      );
+      expect(repository.deleteFutureSessions).not.toHaveBeenCalled();
+      expect(repository.deleteTemplate).not.toHaveBeenCalled();
     });
 
     it('передаёт фильтр по залу в репозиторий', async () => {

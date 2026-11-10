@@ -238,9 +238,16 @@ export async function deleteTemplateAction(formData: FormData): Promise<void> {
     return;
   }
 
-  await withSession((accessToken) =>
+  const result = await withSession((accessToken) =>
     apiFetch(`/schedule-templates/${templateId}`, { accessToken, method: 'DELETE' }),
   );
+
+  // Ошибку нельзя проглатывать: раньше редирект выполнялся всегда, и человек
+  // видел «расписание удалено», хотя запись осталась (#159).
+  if (result.error) {
+    revalidatePath(`/schedule/${templateId}`);
+    redirect(`/schedule/${templateId}?error=${encodeURIComponent(result.error)}`);
+  }
 
   revalidatePath('/schedule');
   revalidatePath('/schedule/sessions');
