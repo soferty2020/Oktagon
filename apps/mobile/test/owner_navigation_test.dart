@@ -38,6 +38,18 @@ void main() {
       ],
       'total': 1,
     };
+    // Карточка грузит аттестации отдельными маршрутами (#150).
+    client.responses['GET /athletes/athlete-1/certifications'] = {
+      'data': [
+        {
+          'id': 'c1',
+          'certifiedOn': '2026-10-29',
+          'stageLabel': '8 кю',
+          'beltGrade': 'BLUE',
+        },
+      ],
+    };
+    client.responses['GET /certification-events'] = {'data': <Map<String, dynamic>>[]};
     client.responses['GET /athletes/athlete-1'] = {
       'id': 'athlete-1',
       'firstName': 'Камила',

@@ -4,6 +4,7 @@ import '../../core/api_client.dart';
 import '../../core/club_clock.dart';
 import '../../design/tokens.dart';
 import '../auth/auth_controller.dart';
+import 'owner_athlete_attestations.dart';
 
 /// Карточка спортсмена для владельца.
 ///
@@ -34,6 +35,10 @@ class _OwnerAthleteCardScreenState extends State<OwnerAthleteCardScreen> {
   bool _loading = true;
   String? _error;
   Map<String, dynamic>? _athlete;
+  List<AthleteCertification> _certifications = const [];
+  List<AthleteParticipation> _participations = const [];
+  bool _attestationsLoading = true;
+  String? _attestationsError;
 
   @override
   void initState() {
@@ -49,7 +54,19 @@ class _OwnerAthleteCardScreenState extends State<OwnerAthleteCardScreen> {
     setState(() {
       _loading = true;
       _error = null;
+      _attestationsLoading = true;
+      _attestationsError = null;
     });
+
+    // Аттестации грузятся отдельно от карточки: `/athletes/:id` отдаёт только
+    // соревнования в `sportsHistory`, а присвоенные ступени и участие в
+    // мероприятиях лежат в других маршрутах (#150).
+    final attestations = loadAthleteAttestations(
+      client: widget.client,
+      token: token,
+      athleteId: widget.athleteId,
+    );
+
     try {
       final athlete = await widget.client.getJson(
         '/athletes/${widget.athleteId}',
@@ -70,6 +87,26 @@ class _OwnerAthleteCardScreenState extends State<OwnerAthleteCardScreen> {
     } finally {
       if (mounted) {
         setState(() => _loading = false);
+      }
+    }
+
+    try {
+      final result = await attestations;
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _certifications = result.certifications;
+        _participations = result.participations;
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() => _attestationsError =
+            'Не удалось загрузить аттестации. Потяните вниз, чтобы повторить.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _attestationsLoading = false);
       }
     }
   }
@@ -146,7 +183,16 @@ class _OwnerAthleteCardScreenState extends State<OwnerAthleteCardScreen> {
                     ('Email', athlete['email'] as String),
                 ]),
                 const SizedBox(height: 20),
-                const _SectionTitle('Посещаемость и результаты'),
+                const _SectionTitle('Аттестации'),
+                const SizedBox(height: 8),
+                AthleteAttestationsSection(
+                  certifications: _certifications,
+                  participations: _participations,
+                  loading: _attestationsLoading,
+                  error: _attestationsError,
+                ),
+                const SizedBox(height: 16),
+                const _SectionTitle('Соревнования'),
                 const SizedBox(height: 8),
                 _SportsHistory(history: athlete['sportsHistory']),
               ],
