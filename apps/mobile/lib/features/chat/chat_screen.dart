@@ -92,22 +92,29 @@ class _ChatScreenState extends State<ChatScreen> {
               onPressed: () => Navigator.of(context).maybePop(),
             ),
           ),
-          body: SafeArea(
-            child: widget.controller.loading
-                ? const Center(child: CircularProgressIndicator())
-                : _buildMessages(context),
-          ),
-          // Composer живёт вне `body: SafeArea`, поэтому системную навигацию
-          // учитывает сам: без этого поле ввода и кнопка уходили под
-          // трёхкнопочную панель Android (#161). `top: false` — верхняя
-          // панель уже учтена AppBar'ом.
+          // Композер живёт в body, а не в bottomNavigationBar.
           //
-          // При открытой клавиатуре `MediaQuery.padding.bottom` равен нулю,
-          // а `viewInsets.bottom` обрабатывает Scaffold (resizeToAvoidBottomInset),
-          // поэтому двойного отступа не возникает.
-          bottomNavigationBar: SafeArea(
-            top: false,
-            child: _buildComposer(context),
+          // `bottomNavigationBar` на реальном Android не поднимался над
+          // экранной клавиатурой: при фокусе на поле весь ввод уходил под IME
+          // (повторная приёмка #161). Scaffold сжимает именно body
+          // (`resizeToAvoidBottomInset`), поэтому `Column` с `Expanded`
+          // гарантирует, что композер окажется над клавиатурой.
+          //
+          // SafeArea учитывает системную навигацию, когда клавиатуры нет:
+          // при её появлении `padding.bottom` обнуляется, а `viewInsets.bottom`
+          // уже применён к body — двойного отступа не возникает.
+          resizeToAvoidBottomInset: true,
+          body: SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: widget.controller.loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _buildMessages(context),
+                ),
+                _buildComposer(context),
+              ],
+            ),
           ),
         );
       },

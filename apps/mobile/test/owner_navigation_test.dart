@@ -21,7 +21,11 @@ import 'support/fake_api_client.dart';
 String utcDay(DateTime date) => date.toUtc().toIso8601String().substring(0, 10);
 
 void main() {
-  final now = DateTime.now();
+  // Дата клуба, а не устройства: обзор строит интервал по `todayInClub()`,
+  // и ночью, когда местное время уже перешло на следующие сутки, локальная
+  // дата расходится с клубной — тест падал.
+  ClubClock.setTimeZoneForTest('Asia/Almaty');
+  final now = ClubClock.todayInClub();
 
   FakeApiClient buildClient() {
     final client = FakeApiClient();
